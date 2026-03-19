@@ -2468,6 +2468,7 @@ export default function App() {
   const [showBilling, setShowBilling] = useState(false);
   const [limitModal, setLimitModal] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const isFree = plan === "free";
   const sessionLimit = isFree ? 3 : 999;
@@ -2616,6 +2617,7 @@ export default function App() {
       )}
 
       <div style={{maxWidth:480,margin:"0 auto",padding:"0 20px"}}>
+        {/* Top bar */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 0 0",marginBottom:20}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <Ham size={40}/>
@@ -2637,50 +2639,95 @@ export default function App() {
           </button>
         </div>
 
-        <UpgradeBanner sessionCount={sessions.length} onUpgrade={()=>setShowPricing(true)}/>
+        <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>setShowPricing(true)}/>
 
-        <PBtn full onClick={()=>{
-          if (isFree && sessions.length >= sessionLimit) { setLimitModal("sessions"); return; }
-          setCreating(true);
-        }} style={{marginBottom:16}}>Create New Session</PBtn>
-
-        <div style={{textAlign:"center",marginBottom:20}}>
-          <button onClick={()=>handleOpen("DEMO")} style={{background:"none",border:"none",fontFamily:"Poppins,sans-serif",fontSize:13,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3}}>Load demo session</button>
+        {/* Hero card */}
+        <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
+          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:TEXT,lineHeight:1.25,marginBottom:6}}>
+            Ready to reward<br/>your participants?
+          </div>
+          <div style={{fontSize:13,color:SUB,marginBottom:20,lineHeight:1.6}}>
+            Start a live session and award coins<br/>in real time — no app needed.
+          </div>
+          <PBtn full onClick={()=>{
+            if (isFree && sessions.filter(s=>!s.archived).length >= sessionLimit) { setLimitModal("sessions"); return; }
+            setCreating(true);
+          }}>+ Create New Session</PBtn>
+          <div style={{marginTop:10}}>
+            <button onClick={()=>handleOpen("DEMO")} style={{background:"none",border:"none",fontFamily:"Poppins,sans-serif",fontSize:13,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3}}>Load demo session</button>
+          </div>
         </div>
 
-        {sessions.length > 0 && <>
-          <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1.2,marginBottom:8,fontFamily:"Poppins,sans-serif"}}>Recent Sessions</div>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {sessions.map(s => (
-              <div key={s.code} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,display:"flex",alignItems:"center",overflow:"hidden"}}>
-                <button onClick={()=>handleOpen(s.code)} style={{flex:1,display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left",transition:"background .12s"}}
-                  onMouseOver={e=>e.currentTarget.style.background=SOFT}
-                  onMouseOut={e=>e.currentTarget.style.background="transparent"}>
-                  {/* Code badge */}
-                  <div style={{width:44,height:44,borderRadius:10,background:SOFT,border:`1.5px solid ${MID}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <div style={{fontFamily:"Poppins,sans-serif",fontWeight:500,fontSize:9,color:PINK,letterSpacing:.5}}>{s.code}</div>
-                  </div>
-                  <div style={{flex:1,textAlign:"left"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:1}}>
-                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:s.archived?SUB:TEXT,lineHeight:1.2}}>{s.name}</div>
-                      {s.archived && <span style={{fontSize:9,fontWeight:700,color:"#fff",background:SUB,borderRadius:99,padding:"2px 6px",flexShrink:0}}>ARCHIVED</span>}
-                    </div>
-                    <div style={{fontSize:11,color:SUB,fontWeight:400}}>{s.date} · {s.count} participants</div>
-                  </div>
-                </button>
-                {/* Gear — opens SessionSettings for this session */}
-                <button onClick={async ()=>{
-                    const full = await sgSession(s.code);
-                    if (full) { setCur(full); setScreen("sessionSettings"); }
-                  }}
-                  style={{padding:"0 14px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",minHeight:62}}
-                  title="Session settings">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                </button>
+        {/* Stats row */}
+        {(() => {
+          const activeSessions = sessions.filter(s=>!s.archived);
+          const totalParticipants = activeSessions.reduce((sum,s)=>sum+(s.count||0),0);
+          const totalCoins = activeSessions.reduce((sum,s)=>sum+(s.totalCoins||0),0);
+          return (
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+              {[
+                {num:activeSessions.length, label:"Sessions"},
+                {num:totalParticipants, label:"Participants"},
+                {num:totalCoins, label:"Coins awarded"},
+              ].map(({num,label})=>(
+                <div key={label} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 10px",textAlign:"center"}}>
+                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,color:PINK,lineHeight:1}}>{num}</div>
+                  <div style={{fontSize:10,color:SUB,fontWeight:500,marginTop:4,lineHeight:1.3}}>{label}</div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
+        {/* Recent sessions — archived hidden */}
+        {(() => {
+          const active = sessions.filter(s=>!s.archived);
+          const archived = sessions.filter(s=>s.archived);
+          return (
+            <>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1.2,fontFamily:"Poppins,sans-serif"}}>Recent Sessions</div>
+                {archived.length > 0 && (
+                  <button onClick={()=>setShowArchived(v=>!v)} style={{background:"none",border:"none",fontSize:11,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:2,fontFamily:"Poppins,sans-serif"}}>
+                    {showArchived ? "Hide archived" : `View archived (${archived.length})`}
+                  </button>
+                )}
               </div>
-            ))}
-          </div>
-        </>}
+
+              {active.length === 0 && !showArchived && (
+                <div style={{border:`1.5px dashed ${BORDER}`,borderRadius:14,padding:"28px",textAlign:"center"}}>
+                  <div style={{fontSize:13,color:SUB,lineHeight:1.7}}>No sessions yet.<br/>Create your first one above!</div>
+                </div>
+              )}
+
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {(showArchived ? sessions : active).map(s => (
+                  <div key={s.code} style={{background:"#fff",border:`1.5px solid ${s.archived?"#E5E7EB":BORDER}`,borderRadius:14,display:"flex",alignItems:"center",overflow:"hidden",opacity:s.archived?.7:1}}>
+                    <button onClick={()=>handleOpen(s.code)} style={{flex:1,display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left",transition:"background .12s"}}
+                      onMouseOver={e=>e.currentTarget.style.background=SOFT}
+                      onMouseOut={e=>e.currentTarget.style.background="transparent"}>
+                      <div style={{width:44,height:44,borderRadius:10,background:s.archived?"#F3F4F6":SOFT,border:`1.5px solid ${s.archived?"#E5E7EB":MID}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <div style={{fontFamily:"Poppins,sans-serif",fontWeight:500,fontSize:9,color:s.archived?SUB:PINK,letterSpacing:.5}}>{s.code}</div>
+                      </div>
+                      <div style={{flex:1,textAlign:"left"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:1}}>
+                          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:s.archived?SUB:TEXT,lineHeight:1.2}}>{s.name}</div>
+                          {s.archived && <span style={{fontSize:9,fontWeight:700,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"2px 6px",flexShrink:0}}>ARCHIVED</span>}
+                        </div>
+                        <div style={{fontSize:11,color:SUB,fontWeight:400}}>{s.date} · {s.count} participants</div>
+                      </div>
+                    </button>
+                    <button onClick={async()=>{const full=await sgSession(s.code);if(full){setCur(full);setScreen("sessionSettings");}}}
+                      style={{padding:"0 14px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",minHeight:62}}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          );
+        })()}
+
         <div style={{height:48}}/>
       </div>
     </div>
