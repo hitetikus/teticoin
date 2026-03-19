@@ -73,10 +73,6 @@ const PAST = [
 
 // storage
 const SK = k => `tc:${k}`;
-async function sg(k) { try { const r = await window.storage.get(SK(k),true); return r ? JSON.parse(r.value) : null; } catch { return null; } }
-async function ss(k,v) { try { await window.storage.set(SK(k),JSON.stringify(v),true); } catch {} }
-async function sd(k) { try { await window.storage.delete(SK(k),true); } catch {} }
-
 const genCode = () => Math.random().toString(36).slice(2,7).toUpperCase();
 const mkAv = n => n.trim().split(/\s+/).map(w=>w[0]).join("").toUpperCase().slice(0,2);
 const pNum = n => `P${String(n).padStart(3,"0")}`;
