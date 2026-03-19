@@ -330,7 +330,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
         <div style={{flex:1,overflowY:"auto",padding:"0 20px 32px"}}>
           <SL>Step 1 — Choose Amount</SL>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8}}>
-            {TV.map(v => (
+            {TV_DEFAULT.map(v => (
               <button key={v} onClick={()=>{setAmt(v);setCAmt("");}}
                 style={{padding:"12px 8px",borderRadius:12,cursor:"pointer",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:17,background:amt===v?GRAD:"transparent",border:amt===v?"2px solid transparent":`1.5px solid ${BORDER}`,color:amt===v?"#fff":TEXT,transition:"all .12s"}}>
                 +{v}
@@ -535,28 +535,13 @@ function CoinCustomizer({ session, onSave, onClose }) {
               Tap the label to rename. Adjust the point value with the stepper or type directly.
             </div>
             {ACTS_DEFAULT.map((a,i)=>{
-              const [editingLabel, setEditingLabel] = useState(false);
-              const [labelVal, setLabelVal] = useState((session.quickLabels||ACTS_DEFAULT.map(x=>x.label))[i]||a.label);
               return(
                 <div key={a.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:`1px solid ${BORDER}`}}>
                   <div style={{width:38,height:38,borderRadius:10,background:`${QCOLS[i]}14`,border:`1.5px solid ${QCOLS[i]}33`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:14,color:QCOLS[i]}}>Q{i+1}</span>
                   </div>
                   <div style={{flex:1}}>
-                    {editingLabel ? (
-                      <input value={labelVal}
-                        onChange={e=>setLabelVal(e.target.value)}
-                        onBlur={()=>setEditingLabel(false)}
-                        onKeyDown={e=>e.key==="Enter"&&setEditingLabel(false)}
-                        autoFocus
-                        style={{background:BG,border:`1.5px solid ${QCOLS[i]}`,borderRadius:8,padding:"4px 10px",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,outline:"none",width:"100%"}}/>
-                    ):(
-                      <button onClick={()=>setEditingLabel(true)}
-                        style={{background:"none",border:"none",cursor:"text",padding:0,textAlign:"left",width:"100%"}}>
-                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{labelVal}</div>
-                        <div style={{fontSize:10,color:QCOLS[i],fontWeight:600,marginTop:1}}>tap to rename</div>
-                      </button>
-                    )}
+                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{a.label}</div>
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:6}}>
                     <button onClick={()=>setQuick(prev=>{const a=[...prev];a[i]=Math.max(-999,a[i]-5);return a;})}
@@ -1612,7 +1597,7 @@ function Session({ session: init, onBack, onPView }) {
           setShowSettings(false);
         }}
         onArchive={()=>{
-          if(!confirm("Archive this session? It will become read-only. This cannot be undone.")) return;
+          if(!window.confirm("Archive this session? It will become read-only. This cannot be undone.")) return;
           mut(s=>{s.live=false;s.archived=true;});
           notify("Session archived");
           setShowSettings(false);
@@ -1624,7 +1609,7 @@ function Session({ session: init, onBack, onPView }) {
           [...ses.participants].sort((a,b)=>b.total-a.total).forEach(p=>{const g=ses.groups.find(g=>g.id===p.gid);rows.push([pNum(p.num),p.name,g?.name||"",p.total]);});
           const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(rows.map(r=>r.join(",")).join("\n"));a.download=`teticoin-${ses.code}.csv`;a.click();notify("CSV exported");
         }}
-        onReset={()=>{if(!confirm("Reset all coins?"))return;mut(s=>{s.participants=s.participants.map(p=>({...p,total:0,bk:{},hist:[]}));s.log=[];});notify("Reset done");setShowSettings(false);}}
+        onReset={()=>{if(!window.confirm("Reset all coins?"))return;mut(s=>{s.participants=s.participants.map(p=>({...p,total:0,bk:{},hist:[]}));s.log=[];});notify("Reset done");setShowSettings(false);}}
         onClose={()=>setShowSettings(false)}
       />}
       {mass && <MassGive participants={ses.participants} groups={ses.groups} onAward={award} onClose={()=>setMass(false)}/>}
@@ -2475,9 +2460,9 @@ export default function App() {
           onRename={async(name)=>{ const s={...cur,name}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,name}:x); setSessions(idx); await ss("sessions_index",idx); }}
           onToggleLive={async()=>{ const s={...cur,live:cur.live===false?true:false}; await ssSession(s.code, s); setCur(s); }}
           onDuplicate={async()=>{ const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
-          onArchive={async()=>{ if(!confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
+          onArchive={async()=>{ if(!window.confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onExport={()=>{ const rows=[["#","Name","Group","Total"]]; [...(cur.participants||[])].sort((a,b)=>b.total-a.total).forEach(p=>{const g=(cur.groups||[]).find(g=>g.id===p.gid);rows.push([pNum(p.num),p.name,g?.name||"",p.total]);}); const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(rows.map(r=>r.join(",")).join("\n"));a.download=`teticoin-${cur.code}.csv`;a.click(); }}
-          onReset={async()=>{ if(!confirm("Reset all coins?")) return; const s={...cur,participants:(cur.participants||[]).map(p=>({...p,total:0,bk:{},hist:[]})),log:[]}; await ssSession(s.code, s); setCur(s); }}
+          onReset={async()=>{ if(!window.confirm("Reset all coins?")) return; const s={...cur,participants:(cur.participants||[]).map(p=>({...p,total:0,bk:{},hist:[]})),log:[]}; await ssSession(s.code, s); setCur(s); }}
           onClose={()=>setScreen("home")}
         />
       </div>
