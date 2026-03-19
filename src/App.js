@@ -67,10 +67,8 @@ const DEMO = {
   ],
 };
 
-const PAST = [
-  {code:"TETI7",name:"Design Thinking Workshop",date:"19 Mar 2025",count:6},
-  {code:"MSTR3",name:"Masterclass: Canva Pro",date:"12 Mar 2025",count:14},
-];
+// No hardcoded past sessions — new users start clean
+const PAST = [];
 
 // storage
 const SK = k => `tc:${k}`;
@@ -1241,12 +1239,38 @@ function Projector({ session, onBack }) {
 // ── QR Share sheet ──
 function QRSheet({ session, onClose }) {
   const [copied, setCopied] = useState("");
+  const qrRef = useRef(null);
   const url = `https://teticoin.app/join/${session.code}`;
   function copy(text, label) { navigator.clipboard.writeText(text); setCopied(label); setTimeout(()=>setCopied(""),2000); }
-  // Generate QR cells deterministically
-  const h = session.code.split("").reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0)|0,0);
-  const corners = [0,1,2,7,8,9,14,6,13,20,36,37,38,43,44,45,42,48];
-  const cells = Array.from({length:49},(_,i)=>{const v=(h^(i*2654435761))>>>0;return corners.includes(i)||(v%3===0);});
+
+  useEffect(() => {
+    const container = qrRef.current;
+    if (!container) return;
+    container.innerHTML = "";
+    // Use qrcode.js to generate a real QR
+    const script = document.querySelector('script[src*="qrcode"]');
+    function renderQR() {
+      if (window.QRCode) {
+        new window.QRCode(container, {
+          text: url,
+          width: 180,
+          height: 180,
+          colorDark: "#E91E8C",
+          colorLight: "#ffffff",
+          correctLevel: window.QRCode.CorrectLevel.M,
+        });
+      }
+    }
+    if (window.QRCode) {
+      renderQR();
+    } else {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+      s.onload = renderQR;
+      document.head.appendChild(s);
+    }
+  }, [url]);
+
   return (
     <div style={{position:"fixed",inset:0,zIndex:420}}>
       <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(26,10,20,.45)",backdropFilter:"blur(3px)"}}/>
@@ -1260,16 +1284,14 @@ function QRSheet({ session, onClose }) {
           <div style={{fontSize:13,color:SUB,marginBottom:20}}>Participants scan or open the link to join. No account needed.</div>
         </div>
         <div style={{padding:"0 20px 32px"}}>
-          {/* Big QR for showing screen */}
+          {/* Real QR code */}
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",background:BG,borderRadius:16,padding:"24px 20px",marginBottom:16}}>
-            <div style={{width:180,height:180,background:"#fff",borderRadius:14,padding:12,border:`1px solid ${BORDER}`,boxShadow:`0 4px 20px ${PINK}15`,marginBottom:14}}>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,height:"100%"}}>
-                {cells.map((on,i)=><div key={i} style={{borderRadius:2,background:on?PINK:"transparent"}}/>)}
-              </div>
+            <div style={{width:180,height:180,background:"#fff",borderRadius:14,padding:8,border:`1px solid ${BORDER}`,boxShadow:`0 4px 20px ${PINK}15`,marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+              <div ref={qrRef}/>
             </div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,letterSpacing:8,color:PINK,marginBottom:4}}>{session.code}</div>
-            <div style={{fontSize:13,color:SUB,fontWeight:500}}>{url}</div>
-            <div style={{marginTop:10,fontSize:12,color:PINK,fontWeight:600,background:SOFT,border:`1px solid ${MID}`,borderRadius:8,padding:"4px 12px"}}>Show this screen to participants to scan</div>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,letterSpacing:6,color:PINK,marginBottom:6}}>{session.code}</div>
+            <div style={{fontSize:11,color:SUB,fontWeight:500,marginBottom:8}}>{url}</div>
+            <div style={{fontSize:12,color:PINK,fontWeight:600,background:SOFT,border:`1px solid ${MID}`,borderRadius:8,padding:"4px 12px"}}>Show this screen to participants to scan</div>
           </div>
           {/* Copy buttons */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
@@ -1634,7 +1656,6 @@ function Session({ session: init, onBack, onPView }) {
             <button onClick={()=>{setTitleVal(ses.name);setEditingTitle(true);}}
               style={{background:"none",border:"none",cursor:"text",padding:0,textAlign:"left",width:"100%"}}>
               <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ses.name}</div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:PINK,letterSpacing:1}}>{ses.code}</div>
             </button>
           )}
         </div>
@@ -2157,7 +2178,27 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                     Downgrade to Free
                   </button>
                 ) : (
-                  <button onClick={()=>onSelect(t.id,billing)}
+                  <button onClick={()=>{
+                    // Chip payment gateway — redirect to Chip checkout
+                    // Replace CHIP_PAYMENT_LINK_PRO / CHIP_PAYMENT_LINK_TEAM with your actual Chip payment page URLs
+                    const links = {
+                      pro: {
+                        monthly: "https://gate.chip-in.asia/p/teticoin-pro-monthly",
+                        yearly:  "https://gate.chip-in.asia/p/teticoin-pro-yearly",
+                      },
+                      team: {
+                        monthly: "https://gate.chip-in.asia/p/teticoin-team-monthly",
+                        yearly:  "https://gate.chip-in.asia/p/teticoin-team-yearly",
+                      },
+                    };
+                    const url = links[t.id]?.[billing];
+                    if (url) {
+                      window.open(url, "_blank");
+                    } else {
+                      // Fallback: local plan selection (dev mode)
+                      onSelect(t.id, billing);
+                    }
+                  }}
                     style={{width:"100%",padding:"13px 0",background:t.id==="pro"?GRAD:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>
                     Get {t.name} {billing==="yearly"?"· Save 35%":""}
                   </button>
@@ -2170,6 +2211,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
         {/* Footer note */}
         <div style={{marginTop:20,textAlign:"center",fontSize:12,color:SUB,lineHeight:1.8}}>
           Cancel anytime · No hidden fees<br/>
+          Secure payment via <span style={{color:PINK,fontWeight:600}}>Chip</span> · Malaysian Ringgit (MYR)<br/>
           <span style={{color:PINK,fontWeight:600}}>✦ Most popular feature among paid users</span>
         </div>
       </div>
@@ -2178,25 +2220,26 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
 }
 
 // ── 2. Upgrade Banner (home screen) ──────────
+const AMBER_GRAD = `linear-gradient(135deg,#F59E0B,#EF6C00)`;
 function UpgradeBanner({ sessionCount, onUpgrade }) {
   const nearLimit = sessionCount >= 2;
   const atLimit   = sessionCount >= 3;
   if (!nearLimit) return null;
   return (
     <div onClick={onUpgrade}
-      style={{background:GRAD,borderRadius:14,padding:"13px 16px",marginBottom:12,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
-      <div style={{width:34,height:34,borderRadius:10,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+      style={{background:AMBER_GRAD,borderRadius:14,padding:"13px 16px",marginBottom:12,cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:"0 2px 12px rgba(245,158,11,.25)"}}>
+      <div style={{width:34,height:34,borderRadius:10,background:"rgba(255,255,255,.18)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       </div>
       <div style={{flex:1}}>
         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff"}}>
           {atLimit?"Session limit reached":"You're using 2 of 3 free sessions"}
         </div>
-        <div style={{fontSize:12,color:"rgba(255,255,255,.8)",marginTop:1,fontWeight:500}}>
+        <div style={{fontSize:12,color:"rgba(255,255,255,.85)",marginTop:1,fontWeight:500}}>
           {atLimit?"Upgrade to Pro — unlimited sessions from $4.99/mo":"Upgrade to Pro for unlimited sessions"}
         </div>
       </div>
-      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:"#fff",flexShrink:0}}>Upgrade →</div>
+      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:"#fff",flexShrink:0,background:"rgba(255,255,255,.18)",borderRadius:8,padding:"4px 10px"}}>Upgrade →</div>
     </div>
   );
 }
@@ -2397,7 +2440,32 @@ export default function App() {
   const isFree = plan === "free";
   const sessionLimit = isFree ? 3 : 999;
 
+  // ── Handle /join/CODE URLs from QR scans ──
   useEffect(() => {
+    const path = window.location.pathname;
+    const match = path.match(/^\/join\/([A-Z0-9]+)$/i);
+    if (match) {
+      const code = match[1].toUpperCase();
+      sgSession(code).then(s => {
+        if (s) {
+          setCur(s);
+          setScreen("participantJoin");
+          setLoading(false);
+        } else {
+          setLoading(false);
+        }
+      }).catch(() => setLoading(false));
+      return; // don't run auth check for join links
+    }
+    // Normal auth flow
+    const { onAuthStateChanged } = require("firebase/auth") || {};
+    // handled below
+  }, []);
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.match(/^\/join\/[A-Z0-9]+$/i)) return; // skip for join URLs
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUid(user.uid);
