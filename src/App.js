@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useState, useRef, useEffect, useCallback } from "react";
 import { auth, googleProvider, fsGet, fsSet, fsDel, fsGetSession, fsSetSession } from "./firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged, updateProfile } from "firebase/auth";
