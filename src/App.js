@@ -67,7 +67,6 @@ const DEMO = {
   ],
 };
 
-// No hardcoded past sessions — new users start clean
 const PAST = [];
 
 // storage
@@ -884,121 +883,95 @@ function Auth({ onDone }) {
 
 // ── Participant view ──
 function ParticipantView({ session: init, hostPlan="free" }) {
-  const [step, setStep] = useState("name");   // name | returning | newpin | pinentry | joined
+  const [step, setStep] = useState("name");
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
   const [myId, setMyId] = useState(null);
-  const [editing, setEditing] = useState(false);
-  const [ev, setEv] = useState("");
   const [live, setLive] = useState(init);
-  const [showQR, setShowQR] = useState(false);
-  const [returnMatch, setReturnMatch] = useState(null); // existing participant found
+  const [showMyQR, setShowMyQR] = useState(false);
+  const [returnMatch, setReturnMatch] = useState(null);
 
   const isPro = hostPlan !== "free";
 
+  // Poll for live updates every 2s once joined
   useEffect(() => {
     if (step !== "joined" || !init?.code) return;
-    const t = setInterval(async () => { const s = await sgSession(init.code); if (s) setLive(s); }, 2000);
+    const t = setInterval(async () => {
+      const s = await sgSession(init.code);
+      if (s) setLive(s);
+    }, 2000);
     return () => clearInterval(t);
   }, [step, init?.code]);
 
   function checkName() {
     if (!name.trim()) return;
-    // Option B: check if name already exists in session
-    const existing = live.participants.find(
+    const existing = (live.participants||[]).find(
       p => p.name.toLowerCase().trim() === name.toLowerCase().trim()
     );
-    if (existing) {
-      setReturnMatch(existing);
-      setStep("returning");
-    } else {
-      setStep(isPro ? "newpin" : "directjoin");
-    }
+    if (existing) { setReturnMatch(existing); setStep("returning"); }
+    else { setStep(isPro ? "newpin" : "directjoin"); }
   }
 
-  function directJoin() {
-    const n = (live.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;
-    const np = {id:Date.now(),name:name.trim(),av:mkAv(name),total:0,bk:{},gid:null,num:n};
+  function directJoin(overrideName) {
+    const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+    const joinName = overrideName || name.trim();
+    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n};
     setMyId(np.id);
-    const u = {...live, participants:[...live.participants,np]};
+    const u = {...live,participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
   }
 
   function confirmReturn() {
-    // Returning participant — verify PIN if they have one
-    if (returnMatch.pin) {
-      setStep("pinentry");
-    } else {
-      // No PIN set — just let them back in
-      setMyId(returnMatch.id);
-      setStep("joined");
-    }
+    if (returnMatch.pin) { setStep("pinentry"); }
+    else { setMyId(returnMatch.id); setStep("joined"); }
   }
 
-  function notMe() {
-    // Different person with same name — add as new with suffix
-    setName(name.trim() + " 2");
-    setStep(isPro ? "newpin" : "directjoin");
-  }
+  function notMe() { setStep(isPro ? "newpin" : "directjoin_new"); }
 
   function setNewPin() {
     if (pin.length !== 4) return;
-    const n = (live.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;
+    const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const np = {id:Date.now(),name:name.trim(),av:mkAv(name),total:0,bk:{},gid:null,num:n,pin};
     setMyId(np.id);
-    const u = {...live, participants:[...live.participants,np]};
+    const u = {...live,participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
   }
 
   function skipPin() { directJoin(); }
 
   function verifyPin() {
-    if (pinInput === returnMatch.pin) {
-      setMyId(returnMatch.id); setStep("joined");
-    } else {
-      setPinError("Wrong PIN. Try again.");
-      setPinInput("");
-    }
+    if (pinInput === returnMatch.pin) { setMyId(returnMatch.id); setStep("joined"); }
+    else { setPinError("Wrong PIN. Try again."); setPinInput(""); }
   }
 
-  // Also handle directjoin step
-  useEffect(() => { if (step === "directjoin") directJoin(); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (step === "directjoin") directJoin();
+    if (step === "directjoin_new") directJoin(name.trim() + " 2");
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function saveName() {
-    if (!ev.trim()) return;
-    const u = {...live, participants:live.participants.map(p=>p.id===myId?{...p,name:ev.trim(),av:mkAv(ev)}:p)};
-    setLive(u); ssSession(init.code, u); setEditing(false);
-  }
+  const me = live?.participants?.find(p => p.id === myId);
+  const sorted = [...(live?.participants||[])].sort((a,b) => b.total - a.total);
+  const myRank = sorted.findIndex(p => p.id === myId) + 1;
 
-  const me = live?.participants.find(p=>p.id===myId);
-  const sorted = [...(live?.participants||[])].sort((a,b)=>b.total-a.total);
-  const myRank = sorted.findIndex(p=>p.id===myId)+1;
-
-  // ── PIN pad component (inline) ──
   function PinPad({ value, onChange, length=4 }) {
     return (
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
-        {/* Display dots */}
         <div style={{display:"flex",gap:12,marginBottom:4}}>
           {Array.from({length}).map((_,i)=>(
             <div key={i} style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${value.length>i?PINK:BORDER}`,background:value.length>i?PINK:"transparent",transition:"all .15s"}}/>
           ))}
         </div>
-        {/* Number pad */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,width:"100%",maxWidth:260}}>
-          {[1,2,3,4,5,6,7,8,9,"","0","⌫"].map((k,i)=>(
+          {[1,2,3,4,5,6,7,8,9,"","0","\u232B"].map((k,i)=>(
             <button key={i} onClick={()=>{
-              if (k==="⌫") onChange(v=>v.slice(0,-1));
-              else if (k!=="" && value.length<length) onChange(v=>v+k);
-            }} style={{padding:"16px 8px",borderRadius:12,border:`1px solid ${BORDER}`,
-              background:k==="⌫"?SOFT:"#fff",cursor:k===""?"default":"pointer",
-              fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:20,
-              color:k==="⌫"?PINK:TEXT,transition:"transform .08s"}}
+              if (k==="\u232B") onChange(v=>v.slice(0,-1));
+              else if (k!=="" && value.length<length) onChange(v=>v+String(k));
+            }} style={{padding:"16px 8px",borderRadius:12,border:`1px solid ${BORDER}`,background:k==="\u232B"?SOFT:"#fff",cursor:k===""?"default":"pointer",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:20,color:k==="\u232B"?PINK:TEXT,transition:"transform .08s"}}
               onMouseDown={e=>e.currentTarget.style.transform="scale(0.92)"}
               onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}
-              onTouchStart={e=>e.currentTarget.style.transform="scale(0.92)"}
+              onTouchStart={e=>{e.preventDefault();e.currentTarget.style.transform="scale(0.92)";}}
               onTouchEnd={e=>e.currentTarget.style.transform="scale(1)"}>
               {k}
             </button>
@@ -1016,7 +989,6 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     </div>
   );
 
-  // ── Step: Enter name ──
   if (step === "name") return card(<>
     <Ham size={60}/>
     <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:6,marginBottom:4,lineHeight:1.1}}>Join Session</div>
@@ -1030,7 +1002,6 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     <div style={{marginTop:12,fontSize:12,color:SUB}}>No account needed</div>
   </>);
 
-  // ── Step: Returning participant detected ──
   if (step === "returning") return card(<>
     <div style={{width:64,height:64,borderRadius:20,background:SOFT,border:`2px solid ${MID}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
       <Av s={returnMatch.av} color={PINK} size={44}/>
@@ -1051,11 +1022,10 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     </div>
   </>);
 
-  // ── Step: PIN entry for returning participant ──
   if (step === "pinentry") return card(<>
     <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Enter your PIN</div>
     <div style={{fontSize:13,color:SUB,marginBottom:20,lineHeight:1.6}}>
-      {returnMatch.name} has a PIN set.<br/>Enter it to rejoin as the same person.
+      {returnMatch.name} has a PIN set.<br/>Enter it to rejoin.
     </div>
     <PinPad value={pinInput} onChange={setPinInput} length={4}/>
     {pinError && <div style={{marginTop:12,fontSize:13,color:"#EF4444",fontWeight:600}}>{pinError}</div>}
@@ -1063,19 +1033,16 @@ function ParticipantView({ session: init, hostPlan="free" }) {
       style={{width:"100%",marginTop:16,padding:"13px 0",background:pinInput.length===4?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:pinInput.length===4?"#fff":SUB,cursor:pinInput.length===4?"pointer":"not-allowed"}}>
       Confirm PIN
     </button>
-    <button onClick={()=>setStep("name")} style={{marginTop:8,background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>
-      ← Back
-    </button>
+    <button onClick={()=>setStep("name")} style={{marginTop:8,background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>\u2190 Back</button>
   </>);
 
-  // ── Step: Set new PIN (Pro sessions only) ──
   if (step === "newpin") return card(<>
     <div style={{width:48,height:48,borderRadius:14,background:`${PURPLE}15`,border:`1.5px solid ${PURPLE}35`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
     </div>
     <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Set a PIN</div>
     <div style={{fontSize:13,color:SUB,marginBottom:20,lineHeight:1.6}}>
-      Create a 4-digit PIN so you can rejoin this session next time and keep your coins &amp; number.
+      Create a 4-digit PIN so you can rejoin and keep your coins &amp; number.
     </div>
     <PinPad value={pin} onChange={setPin} length={4}/>
     <button onClick={setNewPin} disabled={pin.length<4}
@@ -1083,22 +1050,20 @@ function ParticipantView({ session: init, hostPlan="free" }) {
       Set PIN &amp; Join
     </button>
     <button onClick={skipPin} style={{marginTop:10,background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif",textDecoration:"underline"}}>
-      Skip — join without PIN
+      Skip \u2014 join without PIN
     </button>
-    <div style={{marginTop:10,fontSize:11,color:SUB,background:SOFT,borderRadius:8,padding:"6px 10px"}}>
-      PIN lets you rejoin with the same P-number next time
-    </div>
   </>);
 
-  if (live?.boardVisible) return (
-    <div style={{minHeight:"100vh",background:"#0D0008",fontFamily:"Poppins,sans-serif",color:"#fff",padding:"32px 20px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+  // Leaderboard view — host pushed boardVisible=true
+  if (step === "joined" && live?.boardVisible) return (
+    <div style={{minHeight:"100vh",background:"#0D0008",fontFamily:"Poppins,sans-serif",color:"#fff",padding:"24px 20px",display:"flex",flexDirection:"column",alignItems:"center"}}>
       <Confetti active/>
-      <Ham size={60}/>
-      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:26,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:4,marginBottom:4,lineHeight:1.1}}>Final Results</div>
-      <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:24}}>{live?.name}</div>
+      <Ham size={56}/>
+      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:4,marginBottom:2,lineHeight:1.1}}>Leaderboard</div>
+      <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:20}}>{live?.name}</div>
       <div style={{width:"100%",maxWidth:400,display:"flex",flexDirection:"column",gap:8}}>
         {sorted.map((p,i) => (
-          <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 16px",background:p.id===myId?"rgba(233,30,140,.18)":"rgba(255,255,255,.05)",borderRadius:14,border:p.id===myId?`1.5px solid ${PINK}44`:"1.5px solid rgba(255,255,255,.07)"}}>
+          <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 16px",background:p.id===myId?"rgba(233,30,140,.18)":"rgba(255,255,255,.05)",borderRadius:14,border:p.id===myId?`1.5px solid ${PINK}66`:"1.5px solid rgba(255,255,255,.07)"}}>
             <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:rankColor(i),minWidth:22}}>{i+1}</div>
             <Av s={p.av} color={live.groups?.find(g=>g.id===p.gid)?.color||PINK} size={34}/>
             <div style={{flex:1}}>
@@ -1113,71 +1078,90 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     </div>
   );
 
-  return (
-    <div style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column",alignItems:"center"}}>
-      <div style={{width:"100%",background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10}}>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <button onClick={()=>setShowQR(v=>!v)} style={{background:showQR?SOFT:"none",border:`1px solid ${showQR?PINK:BORDER}`,borderRadius:9,padding:"5px 12px",fontSize:12,fontFamily:"Nunito,sans-serif",fontWeight:700,color:showQR?PINK:SUB,cursor:"pointer"}}>{showQR?"Hide QR":"My QR"}</button>
-          <div style={{fontSize:11,color:SUB,fontWeight:600,fontFamily:"Nunito,sans-serif",letterSpacing:1}}>{live?.code}</div>
+  // Main participant dashboard
+  if (step === "joined") return (
+    <div style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10,flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <Ham size={28}/>
+          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <button onClick={()=>setShowMyQR(v=>!v)}
+            style={{display:"flex",alignItems:"center",gap:5,background:showMyQR?SOFT:"none",border:`1px solid ${showMyQR?PINK:BORDER}`,borderRadius:9,padding:"5px 10px",fontSize:12,fontFamily:"Nunito,sans-serif",fontWeight:700,color:showMyQR?PINK:SUB,cursor:"pointer"}}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
+            My QR
+          </button>
+          <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:8,padding:"3px 10px",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:PINK,letterSpacing:1}}>
+            {me ? pNum(me.num) : "—"}
+          </div>
         </div>
       </div>
 
-      <div style={{width:"100%",maxWidth:400,padding:"28px 20px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-        {showQR && me && (
-          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center",marginBottom:20}}>
-            <div style={{fontSize:11,color:SUB,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>My QR Code</div>
-            <PQR p={me} code={live?.code||""} size={160}/>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:PINK,marginTop:12}}>{pNum(me.num)} · {me.name}</div>
-            <div style={{fontSize:12,color:SUB,marginTop:4}}>Show this to the host</div>
+      <div style={{flex:1,overflowY:"auto",padding:"20px 16px",display:"flex",flexDirection:"column",alignItems:"center",gap:12,maxWidth:420,margin:"0 auto",width:"100%"}}>
+
+        {showMyQR && me && (
+          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center"}}>
+            <div style={{fontSize:11,color:SUB,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>My QR Code</div>
+            <div style={{display:"inline-block",background:"#fff",borderRadius:12,padding:10,border:`1px solid ${BORDER}`}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,width:140,height:140}}>
+                {(() => {
+                  const seed = pNum(me.num);
+                  const h = seed.split("").reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0)|0,0);
+                  const corners=[0,1,2,7,8,9,14,6,13,20,36,37,38,43,44,45,42,48];
+                  return Array.from({length:49},(_,i)=>{
+                    const v=(Math.abs(h)^(i*2654435761))>>>0;
+                    return corners.includes(i)||(v%2===0);
+                  });
+                })().map((on,i)=><div key={i} style={{borderRadius:1,background:on?PINK:"transparent"}}/>)}
+              </div>
+            </div>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:10,letterSpacing:2}}>{pNum(me.num)}</div>
+            <div style={{fontSize:12,color:SUB,marginTop:2}}>{me.name}</div>
+            <div style={{fontSize:11,color:SUB,marginTop:6,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
           </div>
         )}
 
-        <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:12,padding:"5px 16px",marginBottom:14,fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:13,color:PINK,letterSpacing:2}}>
-          {me ? pNum(me.num) : "—"}
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:12,padding:"6px 18px",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:PINK,letterSpacing:3}}>
+            {me ? pNum(me.num) : "—"}
+          </div>
+          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:18,color:TEXT}}>{me?.name||"—"}</div>
         </div>
 
-        {editing ? (
-          <div style={{display:"flex",gap:8,marginBottom:20,width:"100%",justifyContent:"center"}}>
-            <input value={ev} onChange={e=>setEv(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveName()} autoFocus
-              style={{background:BG,border:`1.5px solid ${PINK}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:16,color:TEXT,outline:"none",textAlign:"center",width:200}}/>
-            <PBtn onClick={saveName} style={{padding:"10px 16px"}}>Save</PBtn>
-          </div>
-        ) : (
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:24}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:TEXT}}>{me?.name||"—"}</div>
-            <button onClick={()=>{setEv(me?.name||"");setEditing(true);}} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:28,height:28,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-          </div>
-        )}
-
-        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,padding:"32px 24px",textAlign:"center",marginBottom:16,boxShadow:`0 4px 24px ${PINK}10`}}>
-          <div style={{fontSize:12,fontWeight:600,color:SUB,marginBottom:8,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:88,lineHeight:1,color:PINK,letterSpacing:-4}}>{me?.total||0}</div>
+        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,padding:"28px 24px",textAlign:"center",boxShadow:`0 4px 24px ${PINK}10`}}>
+          <div style={{fontSize:11,fontWeight:700,color:SUB,marginBottom:6,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
+          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:80,lineHeight:1,color:PINK,letterSpacing:-4}}>{me?.total||0}</div>
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
         </div>
 
-        <div style={{width:"100%",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
+        <div style={{width:"100%",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
           {ACTS.map(a => (
             <div key={a.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"12px 8px",textAlign:"center"}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:a.col}}>{me?.bk?.[a.id]||0}</div>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:a.col}}>{me?.bk?.[a.id]||0}</div>
               <div style={{fontSize:10,color:SUB,fontWeight:600,lineHeight:1.3,marginTop:2}}>{a.label}</div>
             </div>
           ))}
         </div>
 
-        {myRank > 0 && (
-          <div style={{width:"100%",background:SOFT,border:`1.5px solid ${MID}`,borderRadius:14,padding:"13px 18px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        {myRank > 0 && sorted.length > 1 && (
+          <div style={{width:"100%",background:SOFT,border:`1.5px solid ${MID}`,borderRadius:14,padding:"12px 18px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div style={{fontSize:13,color:SUB,fontWeight:600}}>Your rank</div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:PINK}}>#{myRank} of {sorted.length}</div>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:PINK}}>#{myRank} <span style={{fontSize:13,color:SUB,fontWeight:600}}>of {sorted.length}</span></div>
           </div>
         )}
-        <div style={{marginTop:20,fontSize:12,color:SUB,textAlign:"center",lineHeight:1.8}}>Waiting for the host to share leaderboard...</div>
+
+        <div style={{fontSize:12,color:SUB,textAlign:"center",lineHeight:1.8,marginTop:4}}>
+          {sorted.length <= 1 ? "Waiting for others to join..." : "Leaderboard will appear when host shares it"}
+        </div>
       </div>
     </div>
   );
+
+  return <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center"}}><Ham size={60}/></div>;
 }
+
+
 
 // ── Projector ──
 function Projector({ session, onBack }) {
@@ -1240,7 +1224,7 @@ function Projector({ session, onBack }) {
 function QRSheet({ session, onClose }) {
   const [copied, setCopied] = useState("");
   const qrRef = useRef(null);
-  const url = `https://teticoin.app/join/${session.code}`;
+  const url = `${window.location.origin}/join/${session.code}`;
   function copy(text, label) { navigator.clipboard.writeText(text); setCopied(label); setTimeout(()=>setCopied(""),2000); }
 
   useEffect(() => {
@@ -1640,13 +1624,15 @@ function Session({ session: init, onBack, onPView }) {
 
       {/* ── TOP BAR ── */}
       <div style={{background: isLive?"#fff":"#F9F4F4", borderBottom:`1px solid ${BORDER}`,padding:"0 12px",display:"flex",alignItems:"center",gap:8,height:56,flexShrink:0, transition:"background .3s"}}>
-        {/* Back */}
-        <button onClick={onBack} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:22,padding:"0 2px",lineHeight:1,flexShrink:0}}>‹</button>
+        {/* Back — chevron in circle */}
+        <button onClick={onBack} style={{background:"none",border:`1.5px solid ${BORDER}`,borderRadius:"50%",width:32,height:32,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:0}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
 
-        {/* Title — tap to edit inline */}
-        <div style={{flex:1,overflow:"hidden",minWidth:0}}>
+        {/* Title — vertically centered */}
+        <div style={{flex:1,overflow:"hidden",minWidth:0,display:"flex",alignItems:"center"}}>
           {editingTitle ? (
-            <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <div style={{display:"flex",alignItems:"center",gap:6,width:"100%"}}>
               <input value={titleVal} onChange={e=>setTitleVal(e.target.value)}
                 onKeyDown={e=>{if(e.key==="Enter"){renameSession(titleVal);setEditingTitle(false);}if(e.key==="Escape")setEditingTitle(false);}}
                 autoFocus onBlur={()=>{renameSession(titleVal);setEditingTitle(false);}}
@@ -1654,8 +1640,8 @@ function Session({ session: init, onBack, onPView }) {
             </div>
           ) : (
             <button onClick={()=>{setTitleVal(ses.name);setEditingTitle(true);}}
-              style={{background:"none",border:"none",cursor:"text",padding:0,textAlign:"left",width:"100%"}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ses.name}</div>
+              style={{background:"none",border:"none",cursor:"text",padding:0,textAlign:"left",width:"100%",display:"flex",alignItems:"center"}}>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",lineHeight:1}}>{ses.name}</div>
             </button>
           )}
         </div>
@@ -2220,26 +2206,29 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
 }
 
 // ── 2. Upgrade Banner (home screen) ──────────
-const AMBER_GRAD = `linear-gradient(135deg,#F59E0B,#EF6C00)`;
 function UpgradeBanner({ sessionCount, onUpgrade }) {
   const nearLimit = sessionCount >= 2;
   const atLimit   = sessionCount >= 3;
   if (!nearLimit) return null;
+  const col    = atLimit ? "#E67E00" : "#2563EB";
+  const bg     = atLimit ? "#FFF7ED" : "#EFF6FF";
+  const txtH   = atLimit ? "#92400E" : "#1E3A8A";
+  const txtS   = atLimit ? "#B45309" : "#1D4ED8";
   return (
     <div onClick={onUpgrade}
-      style={{background:AMBER_GRAD,borderRadius:14,padding:"13px 16px",marginBottom:12,cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:"0 2px 12px rgba(245,158,11,.25)"}}>
-      <div style={{width:34,height:34,borderRadius:10,background:"rgba(255,255,255,.18)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      style={{background:bg,border:`1.5px solid ${col}`,borderRadius:14,padding:"12px 14px",marginBottom:12,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+      <div style={{width:32,height:32,borderRadius:9,background:`${col}18`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       </div>
       <div style={{flex:1}}>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff"}}>
+        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:txtH}}>
           {atLimit?"Session limit reached":"You're using 2 of 3 free sessions"}
         </div>
-        <div style={{fontSize:12,color:"rgba(255,255,255,.85)",marginTop:1,fontWeight:500}}>
-          {atLimit?"Upgrade to Pro — unlimited sessions from $4.99/mo":"Upgrade to Pro for unlimited sessions"}
+        <div style={{fontSize:11,color:txtS,marginTop:1,fontWeight:500}}>
+          {atLimit?"Upgrade to Pro — unlimited from $4.99/mo":"Upgrade to Pro for unlimited sessions"}
         </div>
       </div>
-      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:"#fff",flexShrink:0,background:"rgba(255,255,255,.18)",borderRadius:8,padding:"4px 10px"}}>Upgrade →</div>
+      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:"#fff",flexShrink:0,background:col,borderRadius:8,padding:"4px 9px",whiteSpace:"nowrap"}}>Upgrade →</div>
     </div>
   );
 }
@@ -2516,6 +2505,8 @@ export default function App() {
 
   if (loading) return <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center"}}><style>{CSS}</style><Ham size={60}/></div>;
   if (screen==="auth") return <><style>{CSS}</style><Auth onDone={handleAuth}/></>;
+  // participantJoin = loaded from /join/CODE URL — always show participant view, never host view
+  if (screen==="participantJoin" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
   if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} onBack={()=>setScreen("home")} onPView={()=>setScreen("participant")}/></>;
 
