@@ -621,7 +621,7 @@ function CoinCustomizer({ session, onSave, onClose }) {
 // ── Session Settings sheet (gear next to session name in session list) ──
 function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, onDuplicate, onArchive, onClose }) {
   const [editing, setEditing] = useState(false);
-  const [nameVal, setNameVal] = useState(session.name);
+  const [nameVal, setNameVal] = useState(session.name); // eslint-disable-line
   function saveName() { if (nameVal.trim() && nameVal !== session.name) { onRename(nameVal.trim()); } setEditing(false); }
   return (
     <div style={{position:"fixed",inset:0,zIndex:500}}>
@@ -712,14 +712,14 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
   const [ng, setNg] = useState("");
   const [ngc, setNgc] = useState(GC[0]);
   const [editingName, setEditingName] = useState(false);
-  const [nameVal, setNameVal] = useState(session.name);
+  const [nameVal, setNameVal] = useState(session.name); // eslint-disable-line
 
   const sorted = [...session.participants].sort((a,b) => a.num - b.num);
   function addP() { if (!np.trim()) return; const n=(session.participants.reduce((m,p)=>Math.max(m,p.num),0))+1; onUpdate(s=>{s.participants.push({id:Date.now(),name:np.trim(),av:mkAv(np),total:0,bk:{},gid:null,num:n});return s;}); setNp(""); }
   function addG() { if (!ng.trim()) return; onUpdate(s=>{s.groups.push({id:Date.now(),name:ng.trim(),color:ngc});return s;}); setNg(""); }
   function remP(pid) { onUpdate(s=>{s.participants=s.participants.filter(x=>x.id!==pid);return s;}); }
   function asgG(pid,gid) { onUpdate(s=>{const p=s.participants.find(x=>x.id===pid);if(p)p.gid=gid===""?null:Number(gid);return s;}); }
-  function saveName() { if (nameVal.trim()) { onRename(nameVal.trim()); setEditingName(false); } }
+  function saveName() { if (nameVal.trim()) { onRename(nameVal.trim()); setEditingName(false); } } // eslint-disable-line
 
   const tabBtn = (id, label) => (
     <button key={id} onClick={()=>setTab(id)} style={{padding:"8px 14px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s",whiteSpace:"nowrap"}}>{label}</button>
@@ -965,7 +965,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   }
 
   // Also handle directjoin step
-  useEffect(() => { if (step === "directjoin") directJoin(); }, [step]);
+  useEffect(() => { if (step === "directjoin") directJoin(); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function saveName() {
     if (!ev.trim()) return;
@@ -1413,8 +1413,7 @@ function InlineCoinBtn({ value, bg, border, col, disabled, onAward, onEdit, circ
   const [val, setVal] = useState(String(value));
   const [pressed, setPressed] = useState(false);
   const pressTimer = useRef(null);
-  const br = 5;
-  const sz = {};
+
 
   function startPress() {
     setPressed(true);
@@ -1430,9 +1429,9 @@ function InlineCoinBtn({ value, bg, border, col, disabled, onAward, onEdit, circ
   }
 
   if (editing) return (
-    <div style={{borderRadius:10,padding:"8px 6px",border:"1.5px solid #FECDE8",background:"#fff",
+    <div style={{borderRadius:10,border:"1.5px solid #FECDE8",background:"#fff",
       display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-      padding:"6px 4px",minHeight:64}}>
+      padding:"8px 6px",minHeight:64}}>
       <input type="number" value={val} autoFocus
         onChange={e=>setVal(e.target.value)}
         onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape"){setEditing(false);setVal(String(value));}}}
@@ -1486,7 +1485,7 @@ function Session({ session: init, onBack, onPView }) {
   const [titleVal, setTitleVal] = useState(init.name);
   const [anims, setAnims] = useState([]);
   const [confetti, setConfetti] = useState(false);
-  const [snd, setSnd] = useState(true);
+  const [snd] = useState(true);
   const [cAmt, setCAmt] = useState("");
   const [toast, setToast] = useState(null);
   const aid = useRef(0);
