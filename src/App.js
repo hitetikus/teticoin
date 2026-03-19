@@ -290,18 +290,70 @@ function MassGive({ participants, groups, onAward, onClose }) {
   // Participant QR just encodes their number "001", "002" etc — no API needed
   // In production: real camera reads the number string, looks up participant
   // Here: simulated — picks a random unscanned participant
-  function simulateScan() {
+  const [scanning, setScanning] = useState(false);
+  const [scannerErr, setScannerErr] = useState("");
+  const scannerRef = useRef(null);
+  const html5QrRef = useRef(null);
+
+  function startScanner() {
     if (!ok) return;
-    const unscanned = participants.filter(p => !scanLog.find(l => l.id === p.id));
-    if (unscanned.length === 0) return;
-    const p = unscanned[Math.floor(Math.random() * unscanned.length)];
-    setScanLine(true); setTimeout(() => setScanLine(false), 350);
-    onAward(p.id, "token", finalAmt);
-    setScanLog(prev => [{...p, t: new Date().toLocaleTimeString()}, ...prev]);
+    setScannerErr("");
+    setScanning(true);
   }
 
+  function stopScanner() {
+    if (html5QrRef.current) {
+      html5QrRef.current.stop().catch(()=>{});
+      html5QrRef.current = null;
+    }
+    setScanning(false);
+  }
+
+  useEffect(() => {
+    if (!scanning) return;
+    const containerId = "tc-qr-scanner";
+
+    function initScanner() {
+      if (!window.Html5Qrcode) { setScannerErr("Camera library failed to load."); return; }
+      const scanner = new window.Html5Qrcode(containerId);
+      html5QrRef.current = scanner;
+      scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+          // decodedText = "P001" or "001"
+          const raw = decodedText.replace(/^P/i,"").trim();
+          const num = parseInt(raw);
+          if (isNaN(num)) return;
+          const p = participants.find(x => x.num === num);
+          if (!p) return;
+          if (scanLog.find(l => l.id === p.id)) return; // already scanned
+          setScanLine(true); setTimeout(()=>setScanLine(false), 350);
+          onAward(p.id, "token", finalAmt);
+          setScanLog(prev => [{...p, t: new Date().toLocaleTimeString()}, ...prev]);
+        },
+        () => {} // ignore decode errors (normal while scanning)
+      ).catch(err => {
+        setScannerErr("Camera access denied. Please allow camera permission.");
+        setScanning(false);
+      });
+    }
+
+    if (window.Html5Qrcode) {
+      initScanner();
+    } else {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
+      s.onload = initScanner;
+      s.onerror = () => setScannerErr("Failed to load camera library.");
+      document.head.appendChild(s);
+    }
+
+    return () => { stopScanner(); };
+  }, [scanning]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const methodBtn = (id, icon, title, sub) => (
-    <div onClick={()=>setMode(mode===id?null:id)}
+    <div onClick={()=>{if(mode===id){stopScanner();setMode(null);}else{stopScanner();setMode(id);}}}
       style={{padding:"14px 16px",borderRadius:14,border:`1.5px solid ${mode===id?PINK:BORDER}`,background:mode===id?SOFT:"#fff",cursor:"pointer",transition:"all .12s",marginBottom:10}}>
       <div style={{display:"flex",alignItems:"center",gap:12}}>
         <div style={{width:38,height:38,borderRadius:10,background:mode===id?GRAD:`${PINK}14`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
@@ -391,59 +443,46 @@ function MassGive({ participants, groups, onAward, onClose }) {
             )}
           </div>
 
-          {/* QR Scan — reads participant number from QR (e.g. "001") */}
+          {/* QR Scan — real camera */}
           <div>
             {methodBtn("scan",
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={mode==="scan"?"#fff":PINK} strokeWidth="2.2" strokeLinecap="round"><polyline points="23 7 23 1 17 1"/><line x1="16" y1="8" x2="23" y2="1"/><polyline points="1 17 1 23 7 23"/><line x1="8" y1="16" x2="1" y2="23"/><polyline points="23 17 23 23 17 23"/><line x1="16" y1="16" x2="23" y2="23"/><polyline points="1 7 1 1 7 1"/><line x1="8" y1="8" x2="1" y2="1"/></svg>,
-              "Scan QR One by One", `Scan participant's screen · QR = their number · ${scanLog.length} scanned`
+              "Scan QR One by One", `Scan participant's screen · ${scanLog.length} scanned`
             )}
             {mode==="scan" && (
               <div onClick={e=>e.stopPropagation()}>
-                {/* How it works info */}
-                <div style={{background:`${BLUE}10`,border:`1px solid ${BLUE}30`,borderRadius:12,padding:"10px 14px",marginBottom:12,fontSize:12,color:BLUE,fontWeight:600,lineHeight:1.7}}>
-                  Each participant's QR encodes their number (e.g. "001").<br/>
-                  Host scans → system looks up the number → coins awarded.
-                </div>
-                {/* Camera viewfinder simulation */}
-                <div style={{background:"#0D0008",borderRadius:16,aspectRatio:"4/3",position:"relative",marginBottom:12,overflow:"hidden"}}>
-                  <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#1a0010,#0d0020)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <div style={{width:160,height:160,position:"relative"}}>
-                      {/* Corner brackets */}
-                      {[[0,0,"8px 0 0 0"],[1,0,"0 8px 0 0"],[0,1,"0 0 0 8px"],[1,1,"0 0 8px 0"]].map(([r,b,br],i) => (
-                        <div key={i} style={{position:"absolute",[r?"right":"left"]:0,[b?"bottom":"top"]:0,width:30,height:30,border:`2.5px solid ${PINK}`,borderRadius:br}}/>
-                      ))}
-                      {/* Scan line */}
-                      <div style={{position:"absolute",left:8,right:8,height:2,background:`linear-gradient(90deg,transparent,${PINK},transparent)`,top:scanLine?140:10,transition:"top .35s ease",borderRadius:1}}/>
-                      {/* Mock QR showing a number */}
-                      <div style={{position:"absolute",inset:24,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8}}>
-                        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:3,width:"100%"}}>
-                          {Array.from({length:25},(_,i)=>(
-                            <div key={i} style={{aspectRatio:"1",borderRadius:2,background:[0,1,2,5,6,7,10,15,16,17,20,24,12].includes(i)?"rgba(255,255,255,0.5)":"transparent"}}/>
-                          ))}
-                        </div>
-                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:"rgba(255,255,255,0.6)",letterSpacing:4}}>
-                          {scanLog.length > 0 ? pNum(scanLog[0].num) : "---"}
-                        </div>
+                {!ok && <div style={{textAlign:"center",padding:"10px 0 12px",fontSize:13,color:SUB}}>Select an amount above first</div>}
+                {ok && !scanning && (
+                  <button onClick={startScanner}
+                    style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    Open Camera to Scan
+                  </button>
+                )}
+                {ok && scanning && (
+                  <div style={{marginBottom:12}}>
+                    <div style={{borderRadius:14,overflow:"hidden",marginBottom:8,position:"relative"}}>
+                      <div id="tc-qr-scanner" style={{width:"100%"}}/>
+                      {/* Pink corner overlay */}
+                      <div style={{position:"absolute",inset:0,pointerEvents:"none"}}>
+                        {[[0,0],[1,0],[0,1],[1,1]].map(([r,b],i)=>(
+                          <div key={i} style={{position:"absolute",[r?"right":"left"]:16,[b?"bottom":"top"]:16,width:24,height:24,borderTop:b?"none":`2.5px solid ${PINK}`,borderBottom:b?`2.5px solid ${PINK}`:"none",borderLeft:r?"none":`2.5px solid ${PINK}`,borderRight:r?`2.5px solid ${PINK}`:"none"}}/>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                  {/* Status bar */}
-                  <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,.65)",padding:"8px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div style={{fontSize:12,color:"rgba(255,255,255,.7)",fontWeight:600}}>
-                      {scanLog.length===0?"Point at participant's QR code":`Scanned ${scanLog.length} / ${participants.length}`}
+                    <div style={{display:"flex",gap:8,alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                      <div style={{fontSize:12,color:SUB,fontWeight:600}}>
+                        {scanLog.length===0?"Point camera at participant's QR":`Scanned ${scanLog.length} of ${participants.length}`}
+                      </div>
+                      <div style={{fontSize:12,color:PINK,fontWeight:700}}>+{finalAmt} per scan</div>
                     </div>
-                    {ok && <div style={{fontSize:12,color:PINK,fontWeight:700}}>+{finalAmt} per scan</div>}
+                    <button onClick={stopScanner}
+                      style={{width:"100%",padding:"11px 0",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer",marginBottom:8}}>
+                      Stop Camera
+                    </button>
                   </div>
-                </div>
-
-                {ok ? (
-                  <button onClick={simulateScan} disabled={scanLog.length >= participants.length}
-                    style={{width:"100%",padding:"13px 0",background:scanLog.length>=participants.length?BG:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:scanLog.length>=participants.length?SUB:"#fff",cursor:scanLog.length>=participants.length?"not-allowed":"pointer",marginBottom:12}}>
-                    {scanLog.length>=participants.length?"All participants scanned":"Simulate Scan"}
-                  </button>
-                ) : (
-                  <div style={{textAlign:"center",padding:"10px 0 12px",fontSize:13,color:SUB}}>Select an amount above first</div>
                 )}
+                {scannerErr && <div style={{fontSize:12,color:"#EF4444",fontWeight:600,marginBottom:10,textAlign:"center"}}>{scannerErr}</div>}
 
                 {/* Scan log */}
                 {scanLog.length > 0 && (
@@ -1501,6 +1540,18 @@ function Session({ session: init, onBack, onPView }) {
 
   const [confirmOffline, setConfirmOffline] = useState(false);
 
+  // ── Live poll: pull participant updates from Firebase every 3s ──
+  useEffect(() => {
+    if (!isLive) return;
+    const t = setInterval(async () => {
+      const fresh = await sgSession(ses.code);
+      if (!fresh) return;
+      // Only update participants + log from remote — don't overwrite local UI state
+      setSes(prev => ({...prev, participants: fresh.participants||prev.participants, log: fresh.log||prev.log}));
+    }, 3000);
+    return () => clearInterval(t);
+  }, [isLive, ses.code]);
+
   useEffect(() => { ssSession(ses.code, ses); }, [ses]);
   function mut(fn) { setSes(prev => { const s = JSON.parse(JSON.stringify(prev)); fn(s); return s; }); }
   function notify(m, type="ok") { setToast({m,type}); setTimeout(()=>setToast(null), 2200); }
@@ -1686,7 +1737,7 @@ function Session({ session: init, onBack, onPView }) {
       </div>
 
       {/* ── TABS ── */}
-      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",overflowX:"auto",flexShrink:0}}>
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
         {[["award","Award"],["board","Board"],["groups","Groups"],["log","Log"]].map(([id,l]) => (
           <button key={id} onClick={()=>isLive&&setTab(id)}
             style={{padding:"11px 16px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
@@ -1696,6 +1747,11 @@ function Session({ session: init, onBack, onPView }) {
               transition:"all .12s"}}>{l}
           </button>
         ))}
+        {/* Live participant count — right end of tab bar */}
+        <div style={{marginLeft:"auto",paddingRight:14,display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
+        </div>
       </div>
 
       {/* Content area — offline overlay covers everything below tabs */}
@@ -1751,7 +1807,10 @@ function Session({ session: init, onBack, onPView }) {
                     </div>
                     <div style={{fontSize:11,color:PINK,fontWeight:700,marginTop:1}}>{selP.total} coins total</div>
                   </div>
-                  <div style={{fontSize:12,color:PINK,fontWeight:700,flexShrink:0}}>Change ›</div>
+                  <div style={{display:"flex",alignItems:"center",gap:3,flexShrink:0}}>
+                    <span style={{fontFamily:"Poppins,sans-serif",fontSize:11,fontWeight:500,color:SUB}}>Change participant</span>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </div>
                 </>
               ) : (
                 <>
@@ -1765,18 +1824,6 @@ function Session({ session: init, onBack, onPView }) {
 
           {/* Scrollable award content — always visible */}
           <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,position:"relative"}}>
-
-            {/* Breakdown — only if participant selected */}
-            {selP && (
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
-                {[...ACTS,{id:"token",label:"Tokens",col:YELLOW}].map(a => (
-                  <div key={a.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"9px 4px",textAlign:"center"}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:a.col}}>{selP.bk?.[a.id]||0}</div>
-                    <div style={{fontSize:9,color:SUB,fontWeight:600,lineHeight:1.3,marginTop:1}}>{a.label.split(" ")[0]}</div>
-                  </div>
-                ))}
-              </div>
-            )}
 
             {/* GIVE COINS + QUICK COINS — Give Coins on top */}
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
@@ -2210,25 +2257,21 @@ function UpgradeBanner({ sessionCount, onUpgrade }) {
   const nearLimit = sessionCount >= 2;
   const atLimit   = sessionCount >= 3;
   if (!nearLimit) return null;
-  const col    = atLimit ? "#E67E00" : "#2563EB";
-  const bg     = atLimit ? "#FFF7ED" : "#EFF6FF";
-  const txtH   = atLimit ? "#92400E" : "#1E3A8A";
-  const txtS   = atLimit ? "#B45309" : "#1D4ED8";
   return (
     <div onClick={onUpgrade}
-      style={{background:bg,border:`1.5px solid ${col}`,borderRadius:14,padding:"12px 14px",marginBottom:12,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
-      <div style={{width:32,height:32,borderRadius:9,background:`${col}18`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      style={{background:"#EFF6FF",border:`1.5px solid #93C5FD`,borderRadius:14,padding:"12px 14px",marginBottom:12,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+      <div style={{width:32,height:32,borderRadius:9,background:"#DBEAFE",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       </div>
       <div style={{flex:1}}>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:txtH}}>
+        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#1E3A8A"}}>
           {atLimit?"Session limit reached":"You're using 2 of 3 free sessions"}
         </div>
-        <div style={{fontSize:11,color:txtS,marginTop:1,fontWeight:500}}>
+        <div style={{fontSize:11,color:"#2563EB",marginTop:1,fontWeight:500}}>
           {atLimit?"Upgrade to Pro — unlimited from $4.99/mo":"Upgrade to Pro for unlimited sessions"}
         </div>
       </div>
-      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:"#fff",flexShrink:0,background:col,borderRadius:8,padding:"4px 9px",whiteSpace:"nowrap"}}>Upgrade →</div>
+      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:"#fff",flexShrink:0,background:"#2563EB",borderRadius:8,padding:"4px 9px",whiteSpace:"nowrap"}}>Upgrade →</div>
     </div>
   );
 }
