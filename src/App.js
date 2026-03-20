@@ -2347,140 +2347,134 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
   ];
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflowY:"auto"}}>
+    <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style>{CSS}</style>
 
       {/* Header */}
-      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,position:"sticky",top:0,zIndex:10}}>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Choose a Plan</div>
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Choose a Plan</div>
         <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
       </div>
 
-      <div style={{maxWidth:560,width:"100%",margin:"0 auto",padding:"24px 20px 64px"}}>
+      {/* Scrollable body */}
+      <div style={{flex:1,overflowY:"auto"}}>
+        <div style={{maxWidth:1100,margin:"0 auto",padding:"32px 24px 64px"}}>
 
-        {/* Value prop */}
-        <div style={{textAlign:"center",marginBottom:20}}>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:TEXT,lineHeight:1.25,marginBottom:6}}>
-            Reward participation,<br/>not just answers.
+          {/* Value prop + toggle */}
+          <div style={{textAlign:"center",marginBottom:24}}>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,color:TEXT,lineHeight:1.2,marginBottom:6}}>
+              Reward participation,<br/>not just answers.
+            </div>
+            <div style={{fontSize:14,color:SUB,marginBottom:16}}>Kahoot scores quizzes. Teticoin rewards humans.</div>
+            <div style={{display:"inline-flex",background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:99,padding:"4px 14px",fontSize:12,color:SUB,alignItems:"center",gap:6,marginBottom:20}}>
+              <span>🇲🇾</span><span>Prices in MYR · International cards accepted</span>
+            </div>
+
+            {/* Billing toggle — centered */}
+            <div style={{display:"flex",justifyContent:"center"}}>
+              <div style={{display:"flex",background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:3,gap:3,width:320}}>
+                {[["monthly","Monthly",null],["yearly","Yearly","SAVE 35%"]].map(([b,label,badge]) => (
+                  <button key={b} onClick={()=>setBilling(b)}
+                    style={{flex:1,padding:"10px 0",borderRadius:9,border:"none",
+                      background:billing===b?GRAD:"transparent",
+                      fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
+                      color:billing===b?"#fff":SUB,cursor:"pointer",transition:"all .15s",
+                      display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                    {label}
+                    {badge && <span style={{background:billing==="yearly"?"rgba(255,255,255,.25)":GREEN,color:"#fff",fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:99}}>{badge}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div style={{fontSize:13,color:SUB,lineHeight:1.6}}>Kahoot scores quizzes. Teticoin rewards humans.</div>
-        </div>
 
-        {/* Currency note */}
-        <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
-          <div style={{fontSize:12,color:SUB,background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:99,padding:"5px 14px",display:"flex",alignItems:"center",gap:6}}>
-            <span>🇲🇾</span>
-            <span>Prices in Malaysian Ringgit (MYR) · International cards accepted</span>
-          </div>
-        </div>
+          {/* 3-column plan cards */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
+            {tiers.map(t => {
+              const isCurrent = currentPlan === t.id;
+              const isPaid = t.id !== "free";
+              const monthlyNote = t.id === "pro" && billing === "monthly" ? myr.pro.monthlyNote : null;
+              return (
+                <div key={t.id} style={{background:t.bg,border:`2px solid ${isCurrent?t.color:t.id==="free"?BORDER:t.borderColor}`,borderRadius:18,padding:"24px",position:"relative",display:"flex",flexDirection:"column"}}>
+                  {t.badge && <div style={{position:"absolute",top:-11,left:20,background:GRAD,color:"#fff",fontSize:10,fontWeight:800,padding:"3px 12px",borderRadius:99,boxShadow:`0 2px 8px ${PINK}40`}}>{t.badge}</div>}
+                  {isCurrent && <div style={{position:"absolute",top:-11,right:20,background:t.color,color:"#fff",fontSize:10,fontWeight:800,padding:"3px 12px",borderRadius:99}}>✓ Current Plan</div>}
 
-        {/* Billing toggle */}
-        <div style={{display:"flex",background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:3,marginBottom:24,gap:3}}>
-          {[["monthly","Monthly",null],["yearly","Yearly","SAVE 35%"]].map(([b,label,badge]) => (
-            <button key={b} onClick={()=>setBilling(b)}
-              style={{flex:1,padding:"11px 0",borderRadius:9,border:"none",
-                background:billing===b?GRAD:"transparent",
-                fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
-                color:billing===b?"#fff":SUB,cursor:"pointer",transition:"all .15s",
-                display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              {label}
-              {badge && <span style={{background:billing==="yearly"?"rgba(255,255,255,.25)":GREEN,color:"#fff",fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:99}}>{badge}</span>}
-            </button>
-          ))}
-        </div>
-
-        {/* Plan cards */}
-        <div style={{display:"flex",flexDirection:"column",gap:14}}>
-          {tiers.map(t => {
-            const isCurrent = currentPlan === t.id;
-            const isPaid = t.id !== "free";
-            const monthlyNote = t.id === "pro" && billing === "monthly" ? myr.pro.monthlyNote : null;
-            return (
-              <div key={t.id} style={{background:t.bg,border:`2px solid ${isCurrent?t.color:t.id==="free"?BORDER:t.borderColor}`,borderRadius:18,padding:"20px",position:"relative",transition:"all .15s"}}>
-                {t.badge && <div style={{position:"absolute",top:-11,left:20,background:GRAD,color:"#fff",fontSize:10,fontWeight:800,padding:"3px 12px",borderRadius:99,boxShadow:`0 2px 8px ${PINK}40`}}>{t.badge}</div>}
-                {isCurrent && <div style={{position:"absolute",top:-11,right:20,background:t.color,color:"#fff",fontSize:10,fontWeight:800,padding:"3px 12px",borderRadius:99}}>✓ Current Plan</div>}
-
-                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
-                  <div>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:21,color:t.color}}>{t.name}</div>
+                  <div style={{marginBottom:16}}>
+                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:t.color}}>{t.name}</div>
                     <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:2}}>{t.tagline}</div>
                   </div>
 
-                  {/* Price block */}
-                  <div style={{textAlign:"right",flexShrink:0,marginLeft:12}}>
+                  {/* Price */}
+                  <div style={{marginBottom:16}}>
                     {!isPaid ? (
-                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:SUB}}>Free</div>
+                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:32,color:SUB}}>Free</div>
+                    ) : billing === "yearly" ? (
+                      <>
+                        <div style={{display:"flex",alignItems:"baseline",gap:3}}>
+                          <span style={{fontSize:12,fontWeight:600,color:t.color}}>RM</span>
+                          <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:32,color:t.color,lineHeight:1}}>{myrPerMonth(t.id)}</span>
+                          <span style={{fontSize:13,color:SUB}}>/mo</span>
+                        </div>
+                        <div style={{fontSize:12,color:SUB,marginTop:3}}>RM {myr[t.id].yearly}/year</div>
+                        <div style={{fontSize:11,background:`${GREEN}15`,color:GREEN,fontWeight:700,borderRadius:6,padding:"2px 8px",marginTop:4,display:"inline-block"}}>Save RM {saving(t.id)}</div>
+                      </>
                     ) : (
                       <>
-                        {billing === "yearly" ? (
-                          <>
-                            <div style={{display:"flex",alignItems:"baseline",gap:3,justifyContent:"flex-end"}}>
-                              <span style={{fontSize:11,fontWeight:600,color:t.color}}>RM</span>
-                              <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:t.color,lineHeight:1}}>{myrPerMonth(t.id)}</span>
-                              <span style={{fontSize:12,color:SUB}}>/mo</span>
-                            </div>
-                            <div style={{fontSize:11,color:SUB,marginTop:2}}>RM {myr[t.id].yearly}/year</div>
-                            <div style={{fontSize:10,background:`${GREEN}15`,color:GREEN,fontWeight:700,borderRadius:6,padding:"2px 6px",marginTop:3,display:"inline-block"}}>Save RM {saving(t.id)}</div>
-                          </>
-                        ) : (
-                          <>
-                            <div style={{display:"flex",alignItems:"baseline",gap:3,justifyContent:"flex-end"}}>
-                              <span style={{fontSize:11,fontWeight:600,color:t.color}}>RM</span>
-                              <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:t.color,lineHeight:1}}>{myr[t.id].monthly}</span>
-                              <span style={{fontSize:12,color:SUB}}>/mo</span>
-                            </div>
-                            <div style={{fontSize:10,color:SUB,marginTop:2}}>≈ USD {usdEstimate(t.id)}/mo</div>
-                            {monthlyNote && <div style={{fontSize:10,background:`${PINK}12`,color:PINK,fontWeight:700,borderRadius:6,padding:"2px 6px",marginTop:3,display:"inline-block"}}>🎉 {monthlyNote}</div>}
-                          </>
-                        )}
+                        <div style={{display:"flex",alignItems:"baseline",gap:3}}>
+                          <span style={{fontSize:12,fontWeight:600,color:t.color}}>RM</span>
+                          <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:32,color:t.color,lineHeight:1}}>{myr[t.id].monthly}</span>
+                          <span style={{fontSize:13,color:SUB}}>/mo</span>
+                        </div>
+                        <div style={{fontSize:11,color:SUB,marginTop:3}}>≈ USD {usdEstimate(t.id)}/mo</div>
+                        {monthlyNote && <div style={{fontSize:11,background:`${PINK}12`,color:PINK,fontWeight:700,borderRadius:6,padding:"2px 8px",marginTop:4,display:"inline-block"}}>🎉 {monthlyNote}</div>}
                       </>
                     )}
                   </div>
-                </div>
 
-                {/* Features */}
-                <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:16}}>
-                  {t.features.map(f => (
-                    <div key={f} style={{display:"flex",alignItems:"center",gap:8}}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.color} strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>
-                      <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* CTA */}
-                {isCurrent ? (
-                  <div style={{textAlign:"center",padding:"11px 0",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:t.color,background:`${t.color}10`,borderRadius:10}}>
-                    ✓ Your current plan
+                  {/* Features */}
+                  <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20,flex:1}}>
+                    {t.features.map(f => (
+                      <div key={f} style={{display:"flex",alignItems:"center",gap:8}}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.color} strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>
+                        <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
+                      </div>
+                    ))}
                   </div>
-                ) : t.id==="free" ? (
-                  currentPlan !== "free" ? (
-                    <button onClick={()=>onSelect(t.id,"monthly")} style={{width:"100%",padding:"11px 0",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>
-                      Downgrade to Free
-                    </button>
-                  ) : null
-                ) : (
-                  <button onClick={()=>handlePay(t.id)}
-                    style={{width:"100%",padding:"14px 0",background:t.id==="pro"?GRAD:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:t.id==="pro"?`0 4px 16px ${PINK}40`:`0 4px 16px ${PURPLE}40`}}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                    Get {t.name} {billing==="yearly"?"— Save 35%":""} · RM {myrPrice(t.id)}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
 
-        {/* Footer trust signals */}
-        <div style={{marginTop:24,textAlign:"center",fontSize:12,color:SUB,lineHeight:2}}>
-          Cancel anytime · No hidden fees · Secure payment via{" "}
-          <span style={{color:"#6C47FF",fontWeight:700}}>Chip</span><br/>
-          <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,flexWrap:"wrap",marginTop:4}}>
-            {["FPX","DuitNow QR","E-Wallet","Credit / Debit Card"].map(m=>(
-              <span key={m} style={{background:"#F3F4F6",borderRadius:6,padding:"2px 8px",fontWeight:600,color:SUB,fontSize:11}}>{m}</span>
-            ))}
-          </span>
-          <div style={{marginTop:8,color:SUB}}>International cards accepted · Billed in MYR</div>
+                  {/* CTA */}
+                  {isCurrent ? (
+                    <div style={{textAlign:"center",padding:"11px 0",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:t.color,background:`${t.color}10`,borderRadius:10}}>
+                      ✓ Your current plan
+                    </div>
+                  ) : t.id==="free" ? (
+                    currentPlan !== "free" ? (
+                      <button onClick={()=>onSelect(t.id,"monthly")} style={{width:"100%",padding:"11px 0",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>
+                        Downgrade to Free
+                      </button>
+                    ) : null
+                  ) : (
+                    <button onClick={()=>handlePay(t.id)}
+                      style={{width:"100%",padding:"14px 0",background:t.id==="pro"?GRAD:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:t.id==="pro"?`0 4px 16px ${PINK}40`:`0 4px 16px ${PURPLE}40`}}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                      Get {t.name} {billing==="yearly"?"— Save 35%":""} · RM {myrPrice(t.id)}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Footer trust signals */}
+          <div style={{marginTop:28,textAlign:"center",fontSize:12,color:SUB,lineHeight:2}}>
+            Cancel anytime · No hidden fees · Secure payment via{" "}
+            <span style={{color:"#6C47FF",fontWeight:700}}>Chip</span><br/>
+            <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,flexWrap:"wrap",marginTop:4}}>
+              {["FPX","DuitNow QR","E-Wallet","Credit / Debit Card"].map(m=>(
+                <span key={m} style={{background:"#F3F4F6",borderRadius:6,padding:"2px 8px",fontWeight:600,color:SUB,fontSize:11}}>{m}</span>
+              ))}
+            </span>
+            <div style={{marginTop:8,color:SUB}}>International cards accepted · Billed in MYR</div>
+          </div>
         </div>
       </div>
     </div>
@@ -2586,105 +2580,139 @@ function LimitModal({ type, onUpgrade, onClose }) {
 function BillingPage({ plan="free", onUpgrade, onClose }) {
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const planData = {
-    free:  {name:"Free",  price:"$0",    renewal:null,           color:SUB,   next:null},
-    pro:   {name:"Pro",   price:"$4.99", renewal:"monthly",      color:PINK,  next:"Apr 19, 2026"},
-    proY:  {name:"Pro",   price:"$39",   renewal:"yearly",       color:PINK,  next:"Mar 19, 2027"},
-    team:  {name:"Team",  price:"$14.99",renewal:"monthly",      color:PURPLE,next:"Apr 19, 2026"},
+    free:  {name:"Free",   price:"RM 0",    renewal:null,      color:SUB,    next:null},
+    pro:   {name:"Pro",    price:"RM 16",   renewal:"monthly", color:PINK,   next:"Apr 19, 2026"},
+    proY:  {name:"Pro",    price:"RM 169",  renewal:"yearly",  color:PINK,   next:"Mar 19, 2027"},
+    team:  {name:"Team",   price:"RM 32",   renewal:"monthly", color:PURPLE, next:"Apr 19, 2026"},
+    teamY: {name:"Team",   price:"RM 320",  renewal:"yearly",  color:PURPLE, next:"Mar 19, 2027"},
   };
   const pd = planData[plan] || planData.free;
   const isFree = plan==="free";
   const invoices = plan!=="free" ? [
-    {date:"Mar 19, 2026",amount:pd.price,status:"Paid"},
-    {date:"Feb 19, 2026",amount:pd.price,status:"Paid"},
-    {date:"Jan 19, 2026",amount:pd.price,status:"Paid"},
+    {date:"Mar 19, 2026", amount:pd.price, status:"Paid"},
+    {date:"Feb 19, 2026", amount:pd.price, status:"Paid"},
+    {date:"Jan 19, 2026", amount:pd.price, status:"Paid"},
   ] : [];
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",maxWidth:480,margin:"0 auto"}}>
+    <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style>{CSS}</style>
-      {/* Header */}
-      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:22,padding:0,lineHeight:1}}>‹</button>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Billing & Plan</div>
-        <div style={{width:30}}/>
-      </div>
-      <div style={{overflowY:"auto",flex:1,padding:"20px 20px 40px"}}>
 
-        {/* Current plan card */}
-        <div style={{background:isFree?"#fff":pd.color===PINK?SOFT:"#FAF5FF",border:`2px solid ${pd.color}`,borderRadius:16,padding:"18px 20px",marginBottom:16}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:pd.color}}>{pd.name}</div>
-            <div style={{background:`${pd.color}18`,border:`1.5px solid ${pd.color}44`,borderRadius:99,padding:"3px 12px",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:pd.color}}>Active</div>
+      {/* Header — full width */}
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Billing &amp; Plan</div>
+        <div style={{width:60}}/>
+      </div>
+
+      {/* Body — 2-column on desktop */}
+      <div style={{flex:1,overflow:"hidden",display:"flex"}}>
+
+        {/* LEFT: current plan + usage + upgrade CTA */}
+        <div style={{flex:"0 0 420px",borderRight:`1px solid ${BORDER}`,overflowY:"auto",padding:"28px 32px"}}>
+
+          {/* Current plan card */}
+          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Current Plan</div>
+          <div style={{background:isFree?"#fff":pd.color===PINK?SOFT:"#FAF5FF",border:`2px solid ${pd.color}`,borderRadius:16,padding:"20px",marginBottom:20}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:pd.color}}>{pd.name}</div>
+              <div style={{background:`${pd.color}18`,border:`1.5px solid ${pd.color}44`,borderRadius:99,padding:"3px 12px",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:pd.color}}>Active</div>
+            </div>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:32,color:TEXT,marginBottom:4,lineHeight:1}}>
+              {pd.price}{!isFree&&<span style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</span>}
+            </div>
+            {pd.next && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>Renews {pd.next} · Cancel anytime</div>}
+            {isFree && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>3 sessions · 30 participants · Basic features</div>}
           </div>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:TEXT,marginBottom:4}}>{pd.price}{!isFree&&<span style={{fontSize:13,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</span>}</div>
-          {pd.next && <div style={{fontSize:12,color:SUB,fontWeight:500}}>Renews {pd.next} · Cancel anytime</div>}
-          {isFree && <div style={{fontSize:12,color:SUB,fontWeight:500}}>3 sessions · 30 participants · Basic features</div>}
+
+          {/* Usage */}
+          {isFree && (
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px",marginBottom:20}}>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:14}}>Usage</div>
+              {[
+                {label:"Sessions", used:2, max:3, color:PINK},
+                {label:"Participants (last session)", used:18, max:30, color:BLUE},
+              ].map(u=>(
+                <div key={u.label} style={{marginBottom:14}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                    <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{u.label}</div>
+                    <div style={{fontSize:13,color:u.color,fontWeight:700}}>{u.used} / {u.max}</div>
+                  </div>
+                  <div style={{height:6,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                    <div style={{height:6,background:u.used/u.max>0.8?`linear-gradient(90deg,${u.color},#EF4444)`:u.color,width:`${(u.used/u.max)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Upgrade CTA */}
+          {isFree && (
+            <button onClick={onUpgrade}
+              style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:16}}>
+              Upgrade to Pro · RM 16/mo
+            </button>
+          )}
+
+          {/* Cancel */}
+          {!isFree && (
+            cancelConfirm ? (
+              <div style={{background:"#FEF2F2",border:"1.5px solid #EF444440",borderRadius:14,padding:"16px"}}>
+                <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#EF4444",marginBottom:6}}>Cancel subscription?</div>
+                <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>You'll keep your plan features until the end of the billing period. Data preserved for 90 days after.</div>
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>setCancelConfirm(false)} style={{flex:1,padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>Keep Plan</button>
+                  <button style={{flex:1,padding:"11px 0",background:"#EF4444",border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Yes, Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={()=>setCancelConfirm(true)}
+                style={{width:"100%",padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
+                Cancel Subscription
+              </button>
+            )
+          )}
         </div>
 
-        {/* Usage */}
-        {isFree && (
-          <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"16px",marginBottom:16}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:12}}>Usage</div>
-            {[
-              {label:"Sessions",used:2,max:3,color:PINK},
-              {label:"Participants (last session)",used:18,max:30,color:BLUE},
-            ].map(u=>(
-              <div key={u.label} style={{marginBottom:12}}>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                  <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{u.label}</div>
-                  <div style={{fontSize:13,color:u.color,fontWeight:700}}>{u.used} / {u.max}</div>
-                </div>
-                <div style={{height:6,background:BORDER,borderRadius:4,overflow:"hidden"}}>
-                  <div style={{height:6,background:u.used/u.max>0.8?`linear-gradient(90deg,${u.color},#EF4444)`:u.color,width:`${(u.used/u.max)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* RIGHT: invoice history */}
+        <div style={{flex:1,overflowY:"auto",padding:"28px 32px"}}>
+          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Invoice History</div>
 
-        {/* Upgrade CTA for free */}
-        {isFree && (
-          <button onClick={onUpgrade}
-            style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:16}}>
-            Upgrade to Pro · $4.99/mo
-          </button>
-        )}
-
-        {/* Invoice history */}
-        {invoices.length > 0 && (
-          <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:16}}>
-            <div style={{padding:"12px 16px",borderBottom:`1px solid ${BORDER}`,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>Invoice History</div>
-            {invoices.map((inv,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",padding:"12px 16px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none"}}>
-                <div style={{flex:1}}>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{inv.date}</div>
-                  <div style={{fontSize:12,color:SUB,marginTop:1}}>{pd.name} Plan · {pd.renewal}</div>
-                </div>
-                <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:12}}>{inv.amount}</div>
-                <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN}}>{inv.status}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Cancel / manage */}
-        {!isFree && (
-          cancelConfirm ? (
-            <div style={{background:"#FEF2F2",border:"1.5px solid #EF444440",borderRadius:14,padding:"16px"}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#EF4444",marginBottom:6}}>Cancel subscription?</div>
-              <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>You'll keep Pro features until the end of your billing period. Data preserved for 90 days after.</div>
-              <div style={{display:"flex",gap:8}}>
-                <button onClick={()=>setCancelConfirm(false)} style={{flex:1,padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>Keep Plan</button>
-                <button style={{flex:1,padding:"11px 0",background:"#EF4444",border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Yes, Cancel</button>
-              </div>
+          {invoices.length === 0 ? (
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"48px 24px",textAlign:"center"}}>
+              <div style={{fontSize:32,marginBottom:10}}>🧾</div>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>No invoices yet</div>
+              <div style={{fontSize:13,color:SUB}}>Invoices will appear here after your first payment.</div>
             </div>
           ) : (
-            <button onClick={()=>setCancelConfirm(true)}
-              style={{width:"100%",padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
-              Cancel Subscription
-            </button>
-          )
-        )}
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+              {invoices.map((inv,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{inv.date}</div>
+                    <div style={{fontSize:12,color:SUB,marginTop:1}}>{pd.name} Plan · {pd.renewal}</div>
+                  </div>
+                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:12}}>{inv.amount}</div>
+                  <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN}}>{inv.status}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Payment methods info */}
+          <div style={{marginTop:20,background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px 18px"}}>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:TEXT,marginBottom:8}}>Payment Methods</div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              {["FPX","DuitNow QR","E-Wallet","Credit / Debit Card"].map(m=>(
+                <span key={m} style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:6,padding:"4px 10px",fontSize:12,fontWeight:600,color:SUB}}>{m}</span>
+              ))}
+            </div>
+            <div style={{fontSize:12,color:SUB,marginTop:10}}>Payments processed securely by <span style={{color:"#6C47FF",fontWeight:700}}>Chip</span> · International cards accepted</div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -127,6 +127,8 @@ const LANDING_CSS = `
     .lp-pricing{padding:64px 24px;}
     .lp-pricing-grid{grid-template-columns:1fr !important;max-width:100% !important;}
     .lp-pricing-grid > div:first-child{border-right:none !important;border-bottom:1px solid ${LBORDER} !important;}
+    [style*="grid-template-columns:repeat(3,1fr)"]{grid-template-columns:1fr !important;}
+    [style*="grid-template-columns: repeat(3,1fr)"]{grid-template-columns:1fr !important;}
     .lp-cta{padding:64px 24px;}
     .lp-cta h2{font-size:32px;}
     .lp-footer{padding:32px 24px;}
@@ -175,7 +177,7 @@ function LPHam({ size = 32 }) {
 }
 
 // ── Check icon ──
-function Check({ color = "#E91E8C" }) {
+function Check({ color = LPINK }) {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0}}>
       <polyline points="20 6 9 17 4 12"/>
@@ -480,74 +482,111 @@ export default function LandingPage({ onGetStarted, onLogin }) {
             ))}
           </div>
 
-          <div className="lp-pricing-grid" style={{marginTop:28}}>
+          {/* 3-column plan grid */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:0,border:`1px solid ${LBORDER}`,borderRadius:12,overflow:"hidden",marginTop:28,maxWidth:1100}}>
+
             {/* FREE */}
-            <div style={{padding:"48px 40px",background:"#fff",borderRight:`1px solid ${LBORDER}`}}>
+            <div style={{padding:"40px 32px",background:"#fff",borderRight:`1px solid ${LBORDER}`}}>
               <div style={{fontSize:12,fontWeight:600,color:LSUB,textTransform:"uppercase",letterSpacing:1.5,marginBottom:16}}>Free forever</div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:48,color:LTEXT,lineHeight:1}}>RM 0</div>
-              <div style={{fontSize:14,color:LSUB,marginTop:6,marginBottom:32}}>No time limit. No card required.</div>
-              <div style={{height:1,background:LBORDER,marginBottom:28}}/>
-              <ul style={{listStyle:"none",display:"flex",flexDirection:"column",gap:12,marginBottom:36}}>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:44,color:LTEXT,lineHeight:1}}>RM 0</div>
+              <div style={{fontSize:14,color:LSUB,marginTop:6,marginBottom:28}}>No time limit. No card required.</div>
+              <div style={{height:1,background:LBORDER,marginBottom:24}}/>
+              <ul style={{listStyle:"none",display:"flex",flexDirection:"column",gap:10,marginBottom:32}}>
                 {["Up to 3 sessions","30 participants per session","Live leaderboard","QR join — no app needed","1 group per session"].map(f => (
-                  <li key={f} style={{display:"flex",alignItems:"center",gap:10,fontSize:14,color:LSUB}}><Check/>{f}</li>
+                  <li key={f} style={{display:"flex",alignItems:"center",gap:10,fontSize:13,color:LSUB}}><Check/>{f}</li>
                 ))}
               </ul>
-              <button onClick={onGetStarted} style={{width:"100%",padding:"13px 0",borderRadius:8,fontFamily:"Inter,sans-serif",fontWeight:600,fontSize:14,cursor:"pointer",background:"#fff",color:LTEXT,border:`1.5px solid ${LBORDER}`}}>Get started free</button>
+              <button onClick={onGetStarted} style={{width:"100%",padding:"12px 0",borderRadius:8,fontFamily:"Inter,sans-serif",fontWeight:600,fontSize:14,cursor:"pointer",background:"#fff",color:LTEXT,border:`1.5px solid ${LBORDER}`}}>Get started free</button>
             </div>
 
             {/* PRO */}
-            <div style={{padding:"48px 40px",background:LSOFT,position:"relative"}}>
-              <div style={{position:"absolute",top:20,right:20,background:LGRAD,color:"#fff",fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:4,letterSpacing:.3}}>MOST POPULAR</div>
-              {/* Launch discount badge */}
-              <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"#FFF3CD",border:"1px solid #FCD34D",borderRadius:6,padding:"3px 10px",marginBottom:12}}>
-                <span style={{fontSize:11,fontWeight:700,color:"#92400E"}}>🎉 Launch price — limited time</span>
+            <div style={{padding:"40px 32px",background:LSOFT,position:"relative",borderRight:`1px solid ${LBORDER}`}}>
+              <div style={{position:"absolute",top:16,right:16,background:LGRAD,color:"#fff",fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:4}}>POPULAR</div>
+              <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"#FFF3CD",border:"1px solid #FCD34D",borderRadius:6,padding:"3px 10px",marginBottom:10}}>
+                <span style={{fontSize:11,fontWeight:700,color:"#92400E"}}>🎉 Launch price</span>
               </div>
-              <div style={{fontSize:12,fontWeight:600,color:LPINK,textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>Pro</div>
-
+              <div style={{fontSize:12,fontWeight:600,color:LPINK,textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>Pro</div>
               {landingBilling === "monthly" ? (
                 <>
-                  <div style={{display:"flex",alignItems:"baseline",gap:6}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:48,color:LPINK,lineHeight:1}}>RM 16</div>
-                    <div style={{fontSize:14,color:LSUB}}>/month</div>
+                  <div style={{display:"flex",alignItems:"baseline",gap:4}}>
+                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:44,color:LPINK,lineHeight:1}}>RM 16</div>
+                    <div style={{fontSize:14,color:LSUB}}>/mo</div>
                   </div>
-                  <div style={{fontSize:13,color:LSUB,marginTop:4,marginBottom:4}}>≈ USD 3.40 · rate may vary</div>
-                  <div style={{fontSize:12,color:LSUB,textDecoration:"line-through",marginBottom:20}}>Was RM 22/month</div>
+                  <div style={{fontSize:12,color:LSUB,marginTop:3,textDecoration:"line-through"}}>Was RM 22/mo</div>
+                  <div style={{fontSize:12,color:LSUB,marginTop:2,marginBottom:28}}>≈ USD 3.40</div>
                 </>
               ) : (
                 <>
-                  <div style={{display:"flex",alignItems:"baseline",gap:6}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:48,color:LPINK,lineHeight:1}}>RM 14</div>
-                    <div style={{fontSize:14,color:LSUB}}>/month</div>
+                  <div style={{display:"flex",alignItems:"baseline",gap:4}}>
+                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:44,color:LPINK,lineHeight:1}}>RM 14</div>
+                    <div style={{fontSize:14,color:LSUB}}>/mo</div>
                   </div>
-                  <div style={{fontSize:13,color:LSUB,marginTop:4,marginBottom:4}}>Billed RM 169/year · ≈ USD 36</div>
-                  <div style={{fontSize:12,background:"#D1FAE5",color:"#065F46",fontWeight:700,borderRadius:6,padding:"3px 10px",display:"inline-block",marginBottom:20}}>Save RM 23 vs monthly</div>
+                  <div style={{fontSize:12,color:LSUB,marginTop:3}}>Billed RM 169/year</div>
+                  <div style={{fontSize:12,background:"#D1FAE5",color:"#065F46",fontWeight:700,borderRadius:6,padding:"2px 8px",display:"inline-block",marginTop:4,marginBottom:28}}>Save RM 23</div>
                 </>
               )}
-
-              <div style={{height:1,background:"#FECDE8",marginBottom:28}}/>
-              <ul style={{listStyle:"none",display:"flex",flexDirection:"column",gap:12,marginBottom:36}}>
+              <div style={{height:1,background:"#FECDE8",marginBottom:24}}/>
+              <ul style={{listStyle:"none",display:"flex",flexDirection:"column",gap:10,marginBottom:32}}>
                 {["Unlimited sessions","Unlimited participants","Up to 10 groups","Custom award labels","PIN rejoin for returning participants","Full session history","Priority support"].map(f => (
-                  <li key={f} style={{display:"flex",alignItems:"center",gap:10,fontSize:14,color:LTEXT,fontWeight:500}}><Check/>{f}</li>
+                  <li key={f} style={{display:"flex",alignItems:"center",gap:10,fontSize:13,color:LTEXT,fontWeight:500}}><Check color={LPINK}/>{f}</li>
                 ))}
               </ul>
-              <button onClick={()=>window.location.href = landingBilling === "monthly"
+              <button onClick={()=>window.location.href = landingBilling==="monthly"
                   ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL"
                   : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"}
-                style={{width:"100%",padding:"13px 0",borderRadius:8,fontFamily:"Inter,sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",background:LGRAD,color:"#fff",border:"none"}}>
-                {landingBilling === "monthly" ? "Get Pro — RM 16/mo" : "Get Pro — RM 169/year"}
+                style={{width:"100%",padding:"12px 0",borderRadius:8,fontFamily:"Inter,sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",background:LGRAD,color:"#fff",border:"none"}}>
+                {landingBilling==="monthly" ? "Get Pro — RM 16/mo" : "Get Pro — RM 169/year"}
               </button>
-              <div style={{textAlign:"center",fontSize:12,color:LSUB,marginTop:12}}>Cancel anytime · FPX · Card · DuitNow · eWallet</div>
+              <div style={{textAlign:"center",fontSize:11,color:LSUB,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>
             </div>
+
+            {/* TEAM */}
+            <div style={{padding:"40px 32px",background:"#FAF5FF",position:"relative"}}>
+              <div style={{fontSize:12,fontWeight:600,color:"#7C3AED",textTransform:"uppercase",letterSpacing:1.5,marginBottom:16}}>Team</div>
+              {landingBilling === "monthly" ? (
+                <>
+                  <div style={{display:"flex",alignItems:"baseline",gap:4}}>
+                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:44,color:"#7C3AED",lineHeight:1}}>RM 32</div>
+                    <div style={{fontSize:14,color:LSUB}}>/mo</div>
+                  </div>
+                  <div style={{fontSize:12,color:LSUB,marginTop:3,marginBottom:28}}>≈ USD 6.80 · up to 5 hosts</div>
+                </>
+              ) : (
+                <>
+                  <div style={{display:"flex",alignItems:"baseline",gap:4}}>
+                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:44,color:"#7C3AED",lineHeight:1}}>RM 27</div>
+                    <div style={{fontSize:14,color:LSUB}}>/mo</div>
+                  </div>
+                  <div style={{fontSize:12,color:LSUB,marginTop:3}}>Billed RM 320/year</div>
+                  <div style={{fontSize:12,background:"#EDE9FE",color:"#5B21B6",fontWeight:700,borderRadius:6,padding:"2px 8px",display:"inline-block",marginTop:4,marginBottom:28}}>Save RM 64</div>
+                </>
+              )}
+              <div style={{height:1,background:"#DDD6FE",marginBottom:24}}/>
+              <ul style={{listStyle:"none",display:"flex",flexDirection:"column",gap:10,marginBottom:32}}>
+                {["Everything in Pro","5 host accounts","Shared session library","Admin dashboard","Bulk participant import (CSV)","Custom subdomain"].map(f => (
+                  <li key={f} style={{display:"flex",alignItems:"center",gap:10,fontSize:13,color:LTEXT,fontWeight:500}}><Check color="#7C3AED"/>{f}</li>
+                ))}
+              </ul>
+              <button onClick={()=>window.location.href = landingBilling==="monthly"
+                  ? "https://pay.chip-in.asia/4PzNZvVfRlvVVl2N1Y"
+                  : "https://pay.chip-in.asia/X4yoJ2E6269tJoE6xt"}
+                style={{width:"100%",padding:"12px 0",borderRadius:8,fontFamily:"Inter,sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",background:"linear-gradient(135deg,#7C3AED,#A855F7)",color:"#fff",border:"none"}}>
+                {landingBilling==="monthly" ? "Get Team — RM 32/mo" : "Get Team — RM 320/year"}
+              </button>
+              <div style={{textAlign:"center",fontSize:11,color:LSUB,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>
+            </div>
+
           </div>
 
-          {/* Team teaser */}
-          <div style={{marginTop:16,maxWidth:820,padding:"18px 28px",background:"#fff",border:`1px solid ${LBORDER}`,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,flexWrap:"wrap"}}>
-            <div>
-              <div style={{fontSize:14,fontWeight:600,color:LTEXT}}>Managing sessions across a team or organisation?</div>
-              <div style={{fontSize:13,color:LSUB,marginTop:2}}>Team plan — 5 host accounts, shared library, admin dashboard and more, from RM 32/mo.</div>
-            </div>
-            <button onClick={onGetStarted} style={{flexShrink:0,padding:"9px 20px",border:`1.5px solid ${LBORDER}`,borderRadius:8,fontFamily:"Inter,sans-serif",fontWeight:600,fontSize:13,color:LTEXT,background:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>Learn more →</button>
-          </div>
+          {/* Mobile responsive override */}
+          <style>{`
+            @media(max-width:900px){
+              .lp-pricing-3col { grid-template-columns: 1fr !important; }
+              .lp-pricing-3col > div { border-right: none !important; border-bottom: 1px solid ${LBORDER}; }
+              .lp-pricing-3col > div:last-child { border-bottom: none; }
+            }
+          `}</style>
+
         </div>
       </div>
 
