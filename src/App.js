@@ -1882,14 +1882,14 @@ function Session({ session: init, onBack, onPView }) {
 
   const IB = {background:"none",border:`1px solid ${BORDER}`,borderRadius:9,width:34,height:34,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0};
 
+
   return (
-    <div style={{height:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column",maxWidth:480,margin:"0 auto",overflow:"hidden"}}>
+    <div className="tc-app-shell">
       <Confetti active={confetti}/>
       {anims.map(a => <FloatAnim key={a.id} {...a} onDone={()=>setAnims(p=>p.filter(x=>x.id!==a.id))}/>)}
       {toast && (
         <div style={{position:"fixed",bottom:28,left:"50%",transform:"translateX(-50%)",
-          background:toast.type==="warn"?"#FFF3CD":TEXT,
-          color:toast.type==="warn"?"#92400E":"#fff",
+          background:toast.type==="warn"?"#FFF3CD":TEXT,color:toast.type==="warn"?"#92400E":"#fff",
           padding:"10px 22px",borderRadius:12,fontSize:13,fontWeight:600,zIndex:9997,
           fontFamily:"Poppins,sans-serif",boxShadow:"0 8px 32px rgba(0,0,0,.22)",
           whiteSpace:"nowrap",animation:"slideUp .2s ease",
@@ -1902,30 +1902,8 @@ function Session({ session: init, onBack, onPView }) {
       {showCoinCustomizer && <CoinCustomizer session={ses}
         onSave={cfg=>mut(s=>{s.quickCoins=cfg.quickCoins;s.otherCoins=cfg.otherCoins;})}
         onClose={()=>setShowCoinCustomizer(false)}/>}
-
-      {/* Go Offline confirm dialog */}
-      {confirmOffline && (
-        <div style={{position:"fixed",inset:0,zIndex:800,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(4px)",background:"rgba(26,10,20,.35)"}}>
-          <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"24px 24px 36px",width:"100%",maxWidth:480,animation:"slideUp .2s ease"}}>
-            <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 18px"}}/>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT,marginBottom:6}}>Go Offline?</div>
-            <div style={{fontSize:14,color:SUB,lineHeight:1.7,marginBottom:20}}>
-              Participants won't be able to join or earn coins.<br/>
-              All data is saved — you can go live again anytime.
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              <button onClick={goOffline}
-                style={{width:"100%",padding:"13px 0",background:"#1A0A14",border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
-                Go Offline
-              </button>
-              <button onClick={()=>setConfirmOffline(false)}
-                style={{width:"100%",padding:"13px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
-                Stay Live
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {showQR && <QRModal session={ses} onClose={()=>setShowQR(false)}/>}
+      {showLeader && <LeaderSheet session={ses} onToggle={()=>mut(s=>{s.boardVisible=!s.boardVisible;})} onClose={()=>setShowLeader(false)}/>}
       {showSettings && <SessionSettings session={ses}
         onRename={renameSession}
         onToggleLive={toggleLive}
@@ -1934,162 +1912,116 @@ function Session({ session: init, onBack, onPView }) {
           const newEnabled = regenerate ? true : !wasEnabled;
           const newCode = (!wasEnabled || regenerate) ? genCMCode() : ses.coinmasterCode;
           mut(s=>{ s.coinmasterEnabled=newEnabled; s.coinmasterCode=newEnabled?newCode:""; });
-          // Store lookup so any user can find this session by CM code
-          if (newEnabled && newCode) {
-            ssSession("cm-" + newCode, { sessionCode: ses.code });
-          }
+          if (newEnabled && newCode) { ssSession("cm-" + newCode, { sessionCode: ses.code }); }
           notify(newEnabled ? "Coinmaster enabled" : "Coinmaster disabled");
         }}
         onDuplicate={()=>{
           const code=genCode();
           const dup={...JSON.parse(JSON.stringify(ses)),code,name:`${ses.name} (Copy)`,
             participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false,coinmasterCode:""};
-          ssSession(code, dup);
-          notify("Session duplicated with coin settings");
-          setShowSettings(false);
+          ssSession(code, dup); notify("Session duplicated"); setShowSettings(false);
         }}
         onArchive={()=>{
-          if(!window.confirm("Archive this session? It will become read-only. This cannot be undone.")) return;
-          mut(s=>{s.live=false;s.archived=true;});
-          notify("Session archived");
-          setShowSettings(false);
-          // Return to home after a moment
-          setTimeout(()=>onBack(), 1200);
+          if(!window.confirm("Archive this session?")) return;
+          mut(s=>{s.live=false;s.archived=true;}); setShowSettings(false); onBack();
         }}
         onExport={()=>{
           const rows=[["#","Name","Group","Total"]];
-          [...ses.participants].sort((a,b)=>b.total-a.total).forEach(p=>{const g=ses.groups.find(g=>g.id===p.gid);rows.push([pNum(p.num),p.name,g?.name||"",p.total]);});
-          const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(rows.map(r=>r.join(",")).join("\n"));a.download=`teticoin-${ses.code}.csv`;a.click();notify("CSV exported");
+          [...ses.participants].sort((a,b)=>b.total-a.total).forEach(p=>{
+            const g=ses.groups.find(g=>g.id===p.gid);
+            rows.push([pNum(p.num),p.name,g?.name||"",p.total]);
+          });
+          const a=document.createElement("a");
+          a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(rows.map(r=>r.join(",")).join("\n"));
+          a.download=`teticoin-${ses.code}.csv`; a.click();
         }}
-        onReset={()=>{if(!window.confirm("Reset all coins?"))return;mut(s=>{s.participants=s.participants.map(p=>({...p,total:0,bk:{},hist:[]}));s.log=[];});notify("Reset done");setShowSettings(false);}}
-        onClose={()=>setShowSettings(false)}
-      />}
+        onReset={()=>{
+          if(!window.confirm("Reset all coins?")) return;
+          mut(s=>{s.participants=s.participants.map(p=>({...p,total:0,bk:{},hist:[]}));s.log=[];});
+          notify("All coins reset");
+        }}
+        onClose={()=>setShowSettings(false)}/>}
       {mass && <MassGive participants={ses.participants} groups={ses.groups} onAward={award} onClose={()=>setMass(false)}/>}
-      {showQR && <QRSheet session={ses} onClose={()=>setShowQR(false)}/>}
-      {showLeader && <LeaderSheet session={ses} onToggleBoard={()=>mut(s=>{s.boardVisible=!s.boardVisible;notify(s.boardVisible?"Board shown to participants":"Board hidden");})} onClose={()=>setShowLeader(false)}/>}
+
+      {/* Go Offline confirm */}
+      {confirmOffline && (
+        <div style={{position:"fixed",inset:0,zIndex:800,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(4px)",background:"rgba(26,10,20,.35)"}}>
+          <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"24px 24px 36px",width:"100%",maxWidth:520,animation:"slideUp .2s ease"}}>
+            <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 18px"}}/>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT,marginBottom:6}}>Go Offline?</div>
+            <div style={{fontSize:14,color:SUB,lineHeight:1.7,marginBottom:20}}>Participants won't be able to join or earn coins.<br/>All data is saved — you can go live again anytime.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <button onClick={goOffline} style={{width:"100%",padding:"13px 0",background:"#1A0A14",border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>Go Offline</button>
+              <button onClick={()=>setConfirmOffline(false)} style={{width:"100%",padding:"13px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>Stay Live</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── TOP BAR ── */}
-      <div style={{background: isLive?"#fff":"#F9F4F4", borderBottom:`1px solid ${BORDER}`,padding:"0 12px",display:"flex",alignItems:"center",gap:8,height:56,flexShrink:0, transition:"background .3s"}}>
-        {/* Back — chevron in circle */}
-        <button onClick={onBack} style={{background:"none",border:`1.5px solid ${BORDER}`,borderRadius:"50%",width:32,height:32,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:0}}>
+      <div className="tc-session-topbar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",display:"flex",alignItems:"center",gap:8,height:56,flexShrink:0}}>
+        <button onClick={onBack} style={{...IB,borderRadius:"50%"}} title="Back">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-
-        {/* Title — vertically centered */}
         <div style={{flex:1,overflow:"hidden",minWidth:0,display:"flex",alignItems:"center"}}>
-          {editingTitle ? (
-            <div style={{display:"flex",alignItems:"center",gap:6,width:"100%"}}>
-              <input value={titleVal} onChange={e=>setTitleVal(e.target.value)}
-                onKeyDown={e=>{if(e.key==="Enter"){renameSession(titleVal);setEditingTitle(false);}if(e.key==="Escape")setEditingTitle(false);}}
-                autoFocus onBlur={()=>{renameSession(titleVal);setEditingTitle(false);}}
-                style={{flex:1,background:SOFT,border:`1.5px solid ${PINK}`,borderRadius:8,padding:"4px 10px",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,outline:"none",minWidth:0}}/>
-            </div>
-          ) : (
-            <button onClick={()=>{setTitleVal(ses.name);setEditingTitle(true);}}
-              style={{background:"none",border:"none",cursor:"text",padding:0,textAlign:"left",width:"100%",display:"flex",alignItems:"center"}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",lineHeight:1}}>{ses.name}</div>
-            </button>
-          )}
+          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ses.name}</div>
         </div>
-
-        {/* LIVE / OFFLINE — clickable toggle */}
-        <button onClick={toggleLive}
-          style={{display:"flex",alignItems:"center",gap:5,
-            background:isLive?SOFT:"#FEF2F2",
-            border:`1px solid ${isLive?MID:"#EF444455"}`,
-            borderRadius:20,padding:"5px 10px",flexShrink:0,cursor:"pointer",transition:"all .2s"}}>
-          <div style={{width:7,height:7,borderRadius:"50%",
-            background:isLive?GREEN:"#EF4444",
-            
-            animation:isLive?"pulse 2s infinite":"none"}}/>
-          <span style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,
-            color:isLive?PINK:"#EF4444",letterSpacing:.5}}>
-            {isLive?"LIVE":"OFFLINE"}
-          </span>
+        <button onClick={toggleLive} title={isLive?"Go offline":"Go live"}
+          style={{display:"flex",alignItems:"center",gap:5,background:isLive?SOFT:"#FEF2F2",border:`1px solid ${isLive?MID:"#EF444455"}`,borderRadius:20,padding:"5px 12px",cursor:"pointer",flexShrink:0}}>
+          <div style={{width:7,height:7,borderRadius:"50%",background:isLive?GREEN:"#EF4444",animation:isLive?"pulse 2s infinite":"none"}}/>
+          <span style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:isLive?PINK:"#EF4444",letterSpacing:.5}}>{isLive?"LIVE":"OFFLINE"}</span>
         </button>
-
-        {/* Leaderboard icon — green when board is visible to participants */}
-        <button onClick={()=>setShowLeader(true)}
-          style={{...IB, background:ses.boardVisible?`${GREEN}18`:"none", border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`, color:ses.boardVisible?GREEN:SUB}}
-          title="Leaderboard">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <button onClick={()=>setShowQR(true)} style={IB} title="QR Code">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
         </button>
-
-        {/* Participants / Manage icon */}
-        <button onClick={()=>setManage(true)} style={IB} title="Participants & Groups">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <button onClick={()=>setManage(true)} style={IB} title="Participants">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </button>
-
-        {/* QR share icon */}
-        <button onClick={()=>setShowQR(true)} style={IB} title="Share QR">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/><rect x="19" y="14" width="2" height="2" rx=".5"/><rect x="14" y="19" width="2" height="2" rx=".5"/><rect x="18" y="19" width="3" height="2" rx=".5"/></svg>
+        <button onClick={()=>setProj(true)} style={IB} title="Projector view">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         </button>
-
-        {/* Gear — last */}
-        <button onClick={()=>setShowSettings(true)} style={IB} title="Session settings">
+        <button onClick={()=>setShowSettings(true)} style={IB} title="Settings">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
       </div>
 
-      {/* ── TABS ── */}
-      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
+      {/* ── MOBILE TABS (hidden on desktop) ── */}
+      <div className="tc-tab-bar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
         {[["award","Award"],["board","Board"],["groups","Groups"],["log","Log"]].map(([id,l]) => (
           <button key={id} onClick={()=>isLive&&setTab(id)}
-            style={{padding:"11px 16px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
-              color:!isLive?`${SUB}55`:tab===id?PINK:SUB,
-              cursor:isLive?"pointer":"default",flexShrink:0,
-              borderBottom:tab===id&&isLive?`2.5px solid ${PINK}`:"2.5px solid transparent",
-              transition:"all .12s"}}>{l}
+            style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
+              color:!isLive?`${SUB}55`:tab===id?PINK:SUB,cursor:isLive?"pointer":"default",flexShrink:0,
+              borderBottom:tab===id&&isLive?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
           </button>
         ))}
-        {/* Live participant count — right end of tab bar */}
-        <div style={{marginLeft:"auto",paddingRight:14,display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
+        <div style={{marginLeft:"auto",paddingRight:12,display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
         </div>
       </div>
 
-      {/* Content area — offline overlay covers everything below tabs */}
-      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative"}}>
+      {/* ── BODY: two columns on desktop, single column on mobile ── */}
+      <div className="tc-session-body" style={{flex:1,display:"flex",overflow:"hidden",position:"relative"}}>
 
-        {/* ── OFFLINE OVERLAY — covers all tabs, blocks all interaction ── */}
+        {/* Offline overlay */}
         {!isLive && (
-          <div style={{position:"absolute",inset:0,zIndex:20,
-            background:"rgba(255,255,255,0.82)",
-            backdropFilter:"blur(2px)",
-            display:"flex",flexDirection:"column",
-            alignItems:"center",justifyContent:"flex-start",
-            paddingTop:"18%"}}>
-            <div style={{background:"#fff",border:`1.5px solid #EF444428`,borderRadius:20,
-              padding:"28px 32px",textAlign:"center",width:"80%",maxWidth:300}}>
-              <div style={{width:52,height:52,borderRadius:16,background:"#FEF2F2",
-                border:`1.5px solid #EF444430`,display:"flex",alignItems:"center",
-                justifyContent:"center",margin:"0 auto 14px"}}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round">
-                  <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
-                </svg>
+          <div style={{position:"absolute",inset:0,zIndex:20,background:"rgba(255,255,255,0.88)",backdropFilter:"blur(3px)",
+            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+            <div style={{background:"#fff",border:`1.5px solid #EF444428`,borderRadius:20,padding:"32px 36px",textAlign:"center",maxWidth:320,boxShadow:"0 8px 40px rgba(0,0,0,.08)"}}>
+              <div style={{width:52,height:52,borderRadius:16,background:"#FEF2F2",border:`1.5px solid #EF444430`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
               </div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:"#EF4444",marginBottom:6}}>
-                Session Offline
-              </div>
-              <div style={{fontSize:13,color:SUB,marginBottom:20,lineHeight:1.6}}>
-                Participants cannot join or earn coins.<br/>Go live to reactivate.
-              </div>
-              <button onClick={toggleLive}
-                style={{width:"100%",padding:"12px 0",background:"#EF4444",border:"none",
-                  borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,
-                  color:"#fff",cursor:"pointer"}}>
-                Go Live
-              </button>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:"#EF4444",marginBottom:6}}>Session Offline</div>
+              <div style={{fontSize:13,color:SUB,marginBottom:20,lineHeight:1.6}}>Participants cannot join or earn coins.<br/>Go live to reactivate.</div>
+              <button onClick={toggleLive} style={{width:"100%",padding:"12px 0",background:"#EF4444",border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>Go Live</button>
             </div>
           </div>
         )}
 
-      {/* ══ AWARD TAB ══ */}
-      {tab==="award" && (
-        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-
-          {/* Fixed participant selector bar */}
+        {/* ── LEFT PANEL: Award ── */}
+        <div className="tc-session-left" style={{display:"flex",flexDirection:"column",overflow:"hidden",
+          ...(tab!=="award" ? {display:"none"} : {})}}>
+          {/* Participant selector */}
           <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0}}>
             <button onClick={()=>isLive&&setPicker(true)} style={{width:"100%",display:"flex",alignItems:"center",gap:10,background:selP?SOFT:BG,border:`1.5px solid ${selP?PINK:BORDER}`,borderRadius:13,padding:"10px 14px",cursor:isLive?"pointer":"default",textAlign:"left",transition:"all .12s"}}>
               {selP ? (
@@ -2116,47 +2048,24 @@ function Session({ session: init, onBack, onPView }) {
               )}
             </button>
           </div>
-
-          {/* Scrollable award content — always visible */}
-          <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,position:"relative"}}>
-
-            {/* GIVE COINS + QUICK COINS — Give Coins on top */}
+          {/* Award scrollable content */}
+          <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
-
-              {/* Give Coins header + three dots */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                 <SL style={{marginBottom:0}}>Give Coins</SL>
                 <button onClick={()=>setShowCoinCustomizer(true)}
-                  style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:28,height:28,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",gap:2,flexShrink:0}}
-                  title="Customise coins">
-                  <span style={{width:3,height:3,borderRadius:"50%",background:SUB,display:"inline-block"}}/>
-                  <span style={{width:3,height:3,borderRadius:"50%",background:SUB,display:"inline-block"}}/>
-                  <span style={{width:3,height:3,borderRadius:"50%",background:SUB,display:"inline-block"}}/>
+                  style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:28,height:28,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",gap:2,flexShrink:0}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
                 </button>
               </div>
-
-              {/* Give Coins — bold pink circles */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
-                {(ses.otherCoins||TV_DEFAULT).map((v,i) => {
-                  const neg = v < 0;
-                  const bg   = neg ? "#FFF1F1" : "#ffffff";
-                  const bord = neg ? "#FFBBBB" : "#E91E8C";
-                  const col  = neg ? "#DC2626" : "#E91E8C";
-                  return (
-                    <InlineCoinBtn key={i} value={v}
-                      bg={bg} border={bord} col={col}
-                      circle={true}
-                      disabled={!selP}
-                      onAward={e=>awardGuarded("token",v,e)}
-                      onEdit={newVal=>{
-                        const n=parseInt(newVal);
-                        if(!isNaN(n)) mut(s=>{if(!s.otherCoins)s.otherCoins=[...TV_DEFAULT];s.otherCoins[i]=n;});
-                      }}/>
-                  );
-                })}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+                {(ses.otherCoins||TV_DEFAULT).map((v,i) => (
+                  <InlineCoinBtn key={i} value={v}
+                    bg="#ffffff" border="#FECDE8" col={PINK} circle={true}
+                    onAward={e=>awardGuarded("token",v,e)}
+                    onEdit={newV=>mut(s=>{const oc=[...(s.otherCoins||TV_DEFAULT)];oc[i]=newV;s.otherCoins=oc;})}/>
+                ))}
               </div>
-
-              {/* Quick Coins — pill shape */}
               <SL>Quick Coins</SL>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
                 {ACTS.map((a,i) => {
@@ -2166,31 +2075,20 @@ function Session({ session: init, onBack, onPView }) {
                     {bg:"#EEF4FF",border:"#C7D9FF",num:"#4F7CF6",fill:"#4F7CF6"},
                     {bg:"#EDFAF5",border:"#B3EDDA",num:"#1DB87A",fill:"#1DB87A"},
                   ];
-                  const pal = palettes[i];
-                  return (
-                    <QuickCoinBtn key={a.id} pts={pts} label={a.label} pal={pal}
-                      onAward={e=>awardGuarded(a.id,pts,e)}/>
-                  );
+                  return <QuickCoinBtn key={a.id} pts={pts} label={a.label} pal={palettes[i]} onAward={e=>awardGuarded(a.id,pts,e)}/>;
                 })}
               </div>
-
               <div style={{display:"flex",gap:8}}>
                 <input type="number" placeholder="Custom amount" value={cAmt} onChange={e=>setCAmt(e.target.value)}
                   style={{flex:1,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
                 <button onClick={e=>{if(!cAmt||isNaN(cAmt))return;awardGuarded("token",Number(cAmt),e);setCAmt("");}}
-                  style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>
-                  Award
-                </button>
+                  style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Award</button>
               </div>
             </div>
-
-            {/* Mass Give button */}
             <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               Mass Give Coins
             </button>
-
-            {/* Award to all quick row */}
             {ses.participants.length > 0 && (
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
                 <SL>Award to Everyone</SL>
@@ -2216,107 +2114,122 @@ function Session({ session: init, onBack, onPView }) {
             )}
           </div>
         </div>
-      )}
 
-      {/* ══ BOARD TAB ══ */}
-      {tab==="board" && (
-        <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
-          {/* Board status banner — tap to open leaderboard sheet where toggle lives */}
-          <div onClick={()=>setShowLeader(true)}
-            style={{background:ses.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
-            <div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?GREEN:TEXT}}>
-                {ses.boardVisible?"Board is live on participant devices":"Board is hidden from participants"}
-              </div>
-              <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>Tap to manage visibility</div>
+        {/* ── RIGHT PANEL: Board / Groups / Log ── */}
+        <div className="tc-session-right" style={{display: tab==="award" ? "none" : "flex", flexDirection:"column", overflow:"hidden"}}>
+
+          {/* Desktop right-panel tabs */}
+          <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0,display:"none"}}>
+            {[["board","Board"],["groups","Groups"],["log","Log"]].map(([id,l]) => (
+              <button key={id} onClick={()=>setTab(id)}
+                style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
+                  color:tab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
+                  borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
+              </button>
+            ))}
+            <div style={{marginLeft:"auto",paddingRight:12,display:"flex",alignItems:"center",gap:4}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
             </div>
-            <div style={{width:8,height:8,borderRadius:"50%",background:ses.boardVisible?GREEN:BORDER,flexShrink:0,marginLeft:8}}/>
           </div>
-          <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-            {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
-            {sorted.map((p,i) => {
-              const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
-              return (
-                <div key={p.id} onClick={()=>{setSelId(p.id);setTab("award");}} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,cursor:"pointer",background:i===0?SOFT:"#fff",transition:".1s"}} onMouseOver={e=>e.currentTarget.style.background=SOFT} onMouseOut={e=>e.currentTarget.style.background=i===0?SOFT:"#fff"}>
-                  <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
-                    <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
-                    <Av s={p.av} color={grp?.color||PINK} size={34}/>
-                    <div style={{flex:1}}>
-                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
-                      {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
+
+          {/* Board */}
+          {(tab==="board" || tab==="award") && (
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+              <div onClick={()=>setShowLeader(true)}
+                style={{background:ses.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
+                <div>
+                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?GREEN:TEXT}}>{ses.boardVisible?"Board is live on participant devices":"Board is hidden from participants"}</div>
+                  <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>Tap to manage visibility</div>
+                </div>
+                <div style={{width:8,height:8,borderRadius:"50%",background:ses.boardVisible?GREEN:BORDER,flexShrink:0,marginLeft:8}}/>
+              </div>
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
+                {sorted.map((p,i) => {
+                  const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
+                  return (
+                    <div key={p.id} onClick={()=>{setSelId(p.id);setTab("award");}} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,cursor:"pointer",background:i===0?SOFT:"#fff",transition:".1s"}}
+                      onMouseOver={e=>e.currentTarget.style.background=SOFT} onMouseOut={e=>e.currentTarget.style.background=i===0?SOFT:"#fff"}>
+                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
+                        <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
+                        <Av s={p.av} color={grp?.color||PINK} size={34}/>
+                        <div style={{flex:1}}>
+                          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
+                          {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
+                        </div>
+                        <div style={{textAlign:"right"}}>
+                          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
+                          <div style={{fontSize:10,color:SUB}}>coins</div>
+                        </div>
+                      </div>
+                      <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                        <div style={{height:4,background:GRAD,width:`${(p.total/maxP)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
+                      </div>
                     </div>
-                    <div style={{textAlign:"right"}}>
-                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
-                      <div style={{fontSize:10,color:SUB}}>coins</div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Groups */}
+          {tab==="groups" && (
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+              {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:32,textAlign:"center",fontSize:13,color:SUB}}>Create groups via the people icon in the top bar</div>}
+              {gs.map((g,i) => (
+                <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
+                      <div style={{width:11,height:11,borderRadius:3,background:g.color,flexShrink:0}}/>
+                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:16,color:g.color}}>{g.name}</div>
+                      <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
                     </div>
+                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</div>
                   </div>
-                  <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
-                    <div style={{height:4,background:GRAD,width:`${(p.total/maxP)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
+                  <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+                    {g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)}
+                  </div>
+                  <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                    <div style={{height:4,background:g.color,width:`${(g.total/(gs[0]?.total||1))*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+              ))}
+            </div>
+          )}
 
-      {/* ══ GROUPS TAB ══ */}
-      {tab==="groups" && (
-        <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
-          {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:32,textAlign:"center",fontSize:13,color:SUB}}>Create groups via the people icon in the top bar</div>}
-          {gs.map((g,i) => (
-            <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
-                  <div style={{width:11,height:11,borderRadius:3,background:g.color,flexShrink:0}}/>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:16,color:g.color}}>{g.name}</div>
-                  <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
+          {/* Log */}
+          {tab==="log" && (
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <SL>Activity Log</SL>
+                  <span style={{fontSize:11,color:SUB,fontWeight:600}}>{ses.log.length} events</span>
                 </div>
-                <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</div>
-              </div>
-              <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-                {g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)}
-              </div>
-              <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
-                <div style={{height:4,background:g.color,width:`${(g.total/(gs[0]?.total||1))*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
+                {ses.log.length===0 && <div style={{padding:40,textAlign:"center"}}><Ham size={56}/><div style={{marginTop:10,fontSize:13,color:SUB}}>No activity yet</div></div>}
+                {ses.log.map(item => {
+                  const a = ACTS.find(x=>x.id===item.type);
+                  const col = item.type==="token" ? YELLOW : a?.col;
+                  return (
+                    <div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderBottom:`1px solid ${BORDER}`}}>
+                      <div style={{width:6,height:6,borderRadius:"50%",background:col,flexShrink:0}}/>
+                      <div style={{flex:1,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{item.name}</div>
+                      <div style={{fontSize:12,color:SUB,fontWeight:500}}>{item.type==="token"?"Token":a?.label}</div>
+                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:14,color:col}}>+{item.pts}</div>
+                      <div style={{fontSize:11,color:SUB}}>{item.t}</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* ══ LOG TAB ══ */}
-      {tab==="log" && (
-        <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
-          <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-            <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <SL>Activity Log</SL>
-              <span style={{fontSize:11,color:SUB,fontWeight:600}}>{ses.log.length} events</span>
-            </div>
-            {ses.log.length===0 && <div style={{padding:40,textAlign:"center"}}><Ham size={56}/><div style={{marginTop:10,fontSize:13,color:SUB}}>No activity yet</div></div>}
-            {ses.log.map(item => {
-              const a = ACTS.find(x=>x.id===item.type);
-              const col = item.type==="token" ? YELLOW : a?.col;
-              return (
-                <div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderBottom:`1px solid ${BORDER}`}}>
-                  <div style={{width:6,height:6,borderRadius:"50%",background:col,flexShrink:0}}/>
-                  <div style={{flex:1,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{item.name}</div>
-                  <div style={{fontSize:12,color:SUB,fontWeight:500}}>{item.type==="token"?"Token":a?.label}</div>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:14,color:col}}>+{item.pts}</div>
-                  <div style={{fontSize:11,color:SUB}}>{item.t}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      </div>
+          )}
+        </div>{/* end right panel */}
+      </div>{/* end body */}
     </div>
   );
 }
-// ── Create modal ──
 function CreateModal({ onConfirm, onClose }) {
   const [n, setN] = useState("");
   return (
@@ -2942,7 +2855,7 @@ export default function App() {
   const planLabel = plan==="free"?"Free Plan":plan.startsWith("pro")?"Pro Plan":"Team Plan";
 
   return (
-    <div style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif"}}>
+    <div className="tc-app-shell" style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
       <style>{CSS}</style>
 
       {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>setShowPricing(false)}/>}
@@ -3011,124 +2924,146 @@ export default function App() {
         </div>
       )}
 
-      <div style={{maxWidth:480,margin:"0 auto",padding:"0 20px"}}>
-        {/* Top bar */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 0 0",marginBottom:20}}>
+      {/* ── HOME: desktop two-column, mobile single column ── */}
+      <div className="tc-home-wrap" style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column"}}>
+        {/* Desktop top nav bar */}
+        <div className="tc-home-topnav" style={{display:"none",background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 32px",height:64,alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <Ham size={40}/>
-            <div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1}}>Teticoin</div>
-              <div style={{fontSize:10,color:SUB,fontWeight:500}}>by Tetikus</div>
-            </div>
+            <Ham size={36}/>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
+            <div style={{fontSize:11,color:SUB,fontWeight:500,marginLeft:2}}>by Tetikus</div>
           </div>
           <button onClick={()=>setProfileOpen(v=>!v)}
-            style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 12px 7px 8px",cursor:"pointer",transition:"all .15s"}}>
-            <div style={{width:28,height:28,borderRadius:8,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
+            style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 14px 7px 10px",cursor:"pointer",transition:"all .15s"}}>
+            <div style={{width:30,height:30,borderRadius:9,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
               {(trainer?.name||"U").split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}
             </div>
             <div style={{textAlign:"left"}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:TEXT,lineHeight:1.2}}>{trainer?.name}</div>
-              <div style={{fontSize:10,color:plan==="free"?SUB:PINK,fontWeight:600}}>{planLabel}</div>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:TEXT,lineHeight:1.2}}>{trainer?.name}</div>
+              <div style={{fontSize:11,color:plan==="free"?SUB:PINK,fontWeight:600}}>{planLabel}</div>
             </div>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round" style={{transform:profileOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform .2s"}}><polyline points="6 9 12 15 18 9"/></svg>
           </button>
         </div>
 
-        <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>setShowPricing(true)}/>
+        <div className="tc-home-inner">
+          {/* LEFT col: create + stats (desktop sidebar / top on mobile) */}
+          <div className="tc-home-left" style={{padding:"20px"}}>
+            {/* Mobile top bar — only shows on mobile */}
+            <div className="tc-home-mobile-topbar" style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <Ham size={40}/>
+                <div>
+                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1}}>Teticoin</div>
+                  <div style={{fontSize:10,color:SUB,fontWeight:500}}>by Tetikus</div>
+                </div>
+              </div>
+              <button onClick={()=>setProfileOpen(v=>!v)}
+                style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 12px 7px 8px",cursor:"pointer",transition:"all .15s"}}>
+                <div style={{width:28,height:28,borderRadius:8,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
+                  {(trainer?.name||"U").split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}
+                </div>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round" style={{transform:profileOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform .2s"}}><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+            </div>
 
-        {/* Hero card */}
-        <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:TEXT,lineHeight:1.1,marginBottom:6}}>
-            Ready to reward<br/>your participants?
+            <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>setShowPricing(true)}/>
+
+            {/* Hero card */}
+            <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:TEXT,lineHeight:1.1,marginBottom:6}}>
+                Ready to reward<br/>your participants?
+              </div>
+              <div style={{fontSize:13,color:SUB,marginBottom:20,lineHeight:1.6}}>
+                Start a live session and award points<br/>in real time — no app needed.
+              </div>
+              <PBtn full onClick={()=>{
+                if (isFree && sessions.filter(s=>!s.archived).length >= sessionLimit) { setLimitModal("sessions"); return; }
+                setCreating(true);
+              }}>+ Create New Session</PBtn>
+              <div style={{marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:16}}>
+                <button onClick={()=>handleOpen("DEMO")} style={{background:"none",border:"none",fontFamily:"Poppins,sans-serif",fontSize:13,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3}}>Load demo session</button>
+                <span style={{color:BORDER}}>·</span>
+                <button onClick={()=>setShowCMJoin(true)} style={{background:"none",border:"none",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#7C3AED",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontWeight:600}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
+                  Join as Coinmaster
+                </button>
+              </div>
+            </div>
+
+            {/* Stats */}
+            {(() => {
+              const activeSessions = sessions.filter(s=>!s.archived);
+              const totalParticipants = activeSessions.reduce((sum,s)=>sum+(s.count||0),0);
+              const totalCoins = activeSessions.reduce((sum,s)=>sum+(s.totalCoins||0),0);
+              return (
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+                  {[{num:activeSessions.length,label:"Sessions"},{num:totalParticipants,label:"Participants"},{num:totalCoins,label:"Coins awarded"}].map(({num,label})=>(
+                    <div key={label} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 10px",textAlign:"center"}}>
+                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,color:PINK,lineHeight:1}}>{num}</div>
+                      <div style={{fontSize:10,color:SUB,fontWeight:500,marginTop:4,lineHeight:1.3}}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
-          <div style={{fontSize:13,color:SUB,marginBottom:20,lineHeight:1.6}}>
-            Start a live session and award coins<br/>in real time — no app needed.
-          </div>
-          <PBtn full onClick={()=>{
-            if (isFree && sessions.filter(s=>!s.archived).length >= sessionLimit) { setLimitModal("sessions"); return; }
-            setCreating(true);
-          }}>+ Create New Session</PBtn>
-          <div style={{marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:16}}>
-            <button onClick={()=>handleOpen("DEMO")} style={{background:"none",border:"none",fontFamily:"Poppins,sans-serif",fontSize:13,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3}}>Load demo session</button>
-            <span style={{color:BORDER}}>·</span>
-            <button onClick={()=>setShowCMJoin(true)} style={{background:"none",border:"none",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#7C3AED",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontWeight:600}}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
-              Join as Coinmaster
-            </button>
+
+          {/* RIGHT col: recent sessions */}
+          <div className="tc-home-right" style={{padding:"20px"}}>
+            {/* Desktop section label */}
+            <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1.2,fontFamily:"Poppins,sans-serif",marginBottom:12}}>Recent Sessions</div>
+
+            {(() => {
+              const active = sessions.filter(s=>!s.archived);
+              const archived = sessions.filter(s=>s.archived);
+              return (
+                <>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                    <div/>
+                    {archived.length > 0 && (
+                      <button onClick={()=>setShowArchived(v=>!v)} style={{background:"none",border:"none",fontSize:11,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:2,fontFamily:"Poppins,sans-serif"}}>
+                        {showArchived ? "Hide archived" : `View archived (${archived.length})`}
+                      </button>
+                    )}
+                  </div>
+
+                  {active.length === 0 && !showArchived && (
+                    <div style={{border:`1.5px dashed ${BORDER}`,borderRadius:14,padding:"36px",textAlign:"center"}}>
+                      <div style={{fontSize:13,color:SUB,lineHeight:1.7}}>No sessions yet.<br/>Create your first one above!</div>
+                    </div>
+                  )}
+
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    {(showArchived ? sessions : active).map(s => (
+                      <div key={s.code} style={{background:"#fff",border:`1.5px solid ${s.archived?"#E5E7EB":BORDER}`,borderRadius:14,display:"flex",alignItems:"center",overflow:"hidden",opacity:s.archived?.7:1}}>
+                        <button onClick={()=>handleOpen(s.code)} style={{flex:1,display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left",transition:"background .12s"}}
+                          onMouseOver={e=>e.currentTarget.style.background=SOFT}
+                          onMouseOut={e=>e.currentTarget.style.background="transparent"}>
+                          <div style={{width:44,height:44,borderRadius:10,background:s.archived?"#F3F4F6":SOFT,border:`1.5px solid ${s.archived?"#E5E7EB":MID}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            <div style={{fontFamily:"Poppins,sans-serif",fontWeight:500,fontSize:9,color:s.archived?SUB:PINK,letterSpacing:.5}}>{s.code}</div>
+                          </div>
+                          <div style={{flex:1,textAlign:"left"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:1}}>
+                              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:s.archived?SUB:TEXT,lineHeight:1.2}}>{s.name}</div>
+                              {s.archived && <span style={{fontSize:9,fontWeight:700,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"2px 6px",flexShrink:0}}>ARCHIVED</span>}
+                            </div>
+                            <div style={{fontSize:11,color:SUB,fontWeight:400}}>{s.date} · {s.count} participants</div>
+                          </div>
+                        </button>
+                        <button onClick={async()=>{const full=await sgSession(s.code);if(full){setCur(full);setScreen("sessionSettings");}}}
+                          style={{padding:"0 14px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",minHeight:62}}>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
+            <div style={{height:48}}/>
           </div>
         </div>
-
-        {/* Stats row */}
-        {(() => {
-          const activeSessions = sessions.filter(s=>!s.archived);
-          const totalParticipants = activeSessions.reduce((sum,s)=>sum+(s.count||0),0);
-          const totalCoins = activeSessions.reduce((sum,s)=>sum+(s.totalCoins||0),0);
-          return (
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
-              {[
-                {num:activeSessions.length, label:"Sessions"},
-                {num:totalParticipants, label:"Participants"},
-                {num:totalCoins, label:"Coins awarded"},
-              ].map(({num,label})=>(
-                <div key={label} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 10px",textAlign:"center"}}>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,color:PINK,lineHeight:1}}>{num}</div>
-                  <div style={{fontSize:10,color:SUB,fontWeight:500,marginTop:4,lineHeight:1.3}}>{label}</div>
-                </div>
-              ))}
-            </div>
-          );
-        })()}
-
-        {/* Recent sessions — archived hidden */}
-        {(() => {
-          const active = sessions.filter(s=>!s.archived);
-          const archived = sessions.filter(s=>s.archived);
-          return (
-            <>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1.2,fontFamily:"Poppins,sans-serif"}}>Recent Sessions</div>
-                {archived.length > 0 && (
-                  <button onClick={()=>setShowArchived(v=>!v)} style={{background:"none",border:"none",fontSize:11,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:2,fontFamily:"Poppins,sans-serif"}}>
-                    {showArchived ? "Hide archived" : `View archived (${archived.length})`}
-                  </button>
-                )}
-              </div>
-
-              {active.length === 0 && !showArchived && (
-                <div style={{border:`1.5px dashed ${BORDER}`,borderRadius:14,padding:"28px",textAlign:"center"}}>
-                  <div style={{fontSize:13,color:SUB,lineHeight:1.7}}>No sessions yet.<br/>Create your first one above!</div>
-                </div>
-              )}
-
-              <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {(showArchived ? sessions : active).map(s => (
-                  <div key={s.code} style={{background:"#fff",border:`1.5px solid ${s.archived?"#E5E7EB":BORDER}`,borderRadius:14,display:"flex",alignItems:"center",overflow:"hidden",opacity:s.archived?.7:1}}>
-                    <button onClick={()=>handleOpen(s.code)} style={{flex:1,display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left",transition:"background .12s"}}
-                      onMouseOver={e=>e.currentTarget.style.background=SOFT}
-                      onMouseOut={e=>e.currentTarget.style.background="transparent"}>
-                      <div style={{width:44,height:44,borderRadius:10,background:s.archived?"#F3F4F6":SOFT,border:`1.5px solid ${s.archived?"#E5E7EB":MID}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                        <div style={{fontFamily:"Poppins,sans-serif",fontWeight:500,fontSize:9,color:s.archived?SUB:PINK,letterSpacing:.5}}>{s.code}</div>
-                      </div>
-                      <div style={{flex:1,textAlign:"left"}}>
-                        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:1}}>
-                          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:s.archived?SUB:TEXT,lineHeight:1.2}}>{s.name}</div>
-                          {s.archived && <span style={{fontSize:9,fontWeight:700,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"2px 6px",flexShrink:0}}>ARCHIVED</span>}
-                        </div>
-                        <div style={{fontSize:11,color:SUB,fontWeight:400}}>{s.date} · {s.count} participants</div>
-                      </div>
-                    </button>
-                    <button onClick={async()=>{const full=await sgSession(s.code);if(full){setCur(full);setScreen("sessionSettings");}}}
-                      style={{padding:"0 14px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",minHeight:62}}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </>
-          );
-        })()}
-
-        <div style={{height:48}}/>
       </div>
     </div>
   );
@@ -3147,4 +3082,49 @@ const CSS = `
   input, textarea { user-select:text; -webkit-user-select:text; cursor:text; }
   input::placeholder { color:${SUB}; opacity:.6; }
   select option { background:#fff; }
+
+  /* ─── App shell ─── */
+  .tc-app-shell { height:100vh; background:${BG}; font-family:Poppins,sans-serif; display:flex; flex-direction:column; overflow:hidden; }
+
+  /* ─── Session body: stacked on mobile, side-by-side on desktop ─── */
+  .tc-session-body { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .tc-session-left { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .tc-session-right { display:flex; flex-direction:column; overflow:hidden; }
+  .tc-tab-bar { background:#fff; border-bottom:1px solid ${BORDER}; display:flex; align-items:center; flex-shrink:0; }
+  .tc-right-tabs { display:none; }
+  .tc-session-topbar { padding:0 16px; }
+
+  /* ─── Home layout: single column on mobile ─── */
+  .tc-home-wrap { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
+  .tc-home-topnav { display:none; }
+  .tc-home-inner { display:flex; flex-direction:column; max-width:520px; margin:0 auto; width:100%; }
+  .tc-home-left { padding:20px 20px 0; }
+  .tc-home-right { padding:0 20px 20px; }
+  .tc-home-mobile-topbar { display:flex; }
+
+  /* ─── Tablet 600-899px ─── */
+  @media (min-width:600px) and (max-width:899px) {
+    .tc-app-shell { max-width:680px; margin:0 auto; }
+    .tc-session-topbar { padding:0 20px !important; }
+    .tc-home-inner { max-width:640px; }
+  }
+
+  /* ─── Desktop ≥ 900px ─── */
+  @media (min-width:900px) {
+    /* Session: side-by-side panels */
+    .tc-session-body { flex-direction:row !important; }
+    .tc-session-left { width:420px !important; flex:none !important; border-right:1px solid ${BORDER}; display:flex !important; }
+    .tc-session-right { flex:1 !important; display:flex !important; }
+    .tc-tab-bar { display:none !important; }
+    .tc-right-tabs { display:flex !important; background:#fff; border-bottom:1px solid ${BORDER}; align-items:center; flex-shrink:0; }
+    .tc-session-topbar { padding:0 24px !important; }
+
+    /* Home: fixed top nav + two-column body */
+    .tc-home-wrap { flex-direction:column; overflow:hidden; height:100%; }
+    .tc-home-topnav { display:flex !important; }
+    .tc-home-inner { flex:1; overflow:hidden; display:grid !important; grid-template-columns:380px 1fr !important; max-width:100% !important; margin:0 !important; height:100%; }
+    .tc-home-left { overflow-y:auto; padding:28px 32px !important; border-right:1px solid ${BORDER}; }
+    .tc-home-right { overflow-y:auto; padding:28px 32px !important; }
+    .tc-home-mobile-topbar { display:none !important; }
+  }
 `;
