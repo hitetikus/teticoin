@@ -198,7 +198,7 @@ export function PrivacyPage({ onBack }) {
         <h1 style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:38,color:LTEXT,marginBottom:8}}>Privacy Policy</h1>
         <div style={{fontSize:14,color:LSUB,marginBottom:48}}>Last updated: 20 March 2026 · Teticoin by Tetikus</div>
         {[
-          ["", "This Privacy Policy explains how Teticoin ("we", "our", or "us"), operated by Tetikus, collects, uses, and protects your information when you use our platform."],
+          ["", "This Privacy Policy explains how Teticoin ('we', 'our', or 'us'), operated by Tetikus, collects, uses, and protects your information when you use our platform."],
           ["", "By using Teticoin, you agree to the terms of this Privacy Policy. If you do not agree, please do not use the platform."],
           ["1. Information We Collect", "Account holders (hosts): When you create an account, we collect your name, email address, and authentication credentials. We also store your session history and usage data.\n\nParticipants: Participants who join a session via QR code or link only provide a display name. No email or account is required. Participant data is stored as part of the session created by the host.\n\nUsage data: We may collect technical information such as browser type and IP address to improve platform performance."],
           ["2. How We Use Your Information", "We use your information to provide the platform, authenticate host accounts, process payments via Chip, send transactional emails, and improve features. We do not sell your personal data or use participant data for advertising."],
