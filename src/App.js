@@ -2258,88 +2258,328 @@ const PLANS = {
 };
 
 // ── 1. Pricing Page ──────────────────────────
+// ── Payment config ────────────────────────────────────────────────
+// To update prices or links, edit PAYMENT_CONFIG only — nothing else needs changing
+const PAYMENT_CONFIG = {
+  fxRate: 4.70, // rough MYR→USD estimate for display only
+  chip: {
+    pro:  { monthly: "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL", yearly: "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl" },
+    team: { monthly: "https://pay.chip-in.asia/4PzNZvVfRlvVVl2N1Y", yearly: "https://pay.chip-in.asia/X4yoJ2E6269tJoE6xt" },
+  },
+  myr: {
+    pro:  { monthly: 16,  yearly: 169, monthlyNote: "Launch price — was RM 22" },
+    team: { monthly: 32,  yearly: 320 },
+  },
+  // Plan IDs used in return URL ?plan=
+  planMap: {
+    pro_monthly:  { plan:"pro",  billing:"monthly" },
+    pro_yearly:   { plan:"pro",  billing:"yearly"  },
+    team_monthly: { plan:"team", billing:"monthly" },
+    team_yearly:  { plan:"team", billing:"yearly"  },
+  },
+};
+
+// ── Handle payment return from Chip ──
+// Call this on app load to detect ?payment=success&plan=xxx in URL
+async function handlePaymentReturn(onSuccess) {
+  const params = new URLSearchParams(window.location.search);
+  const payment = params.get("payment");
+  const planParam = params.get("plan");
+  if (payment === "success" && planParam && PAYMENT_CONFIG.planMap[planParam]) {
+    const { plan } = PAYMENT_CONFIG.planMap[planParam];
+    await onSuccess(plan);
+    // Clean URL
+    window.history.replaceState({}, "", window.location.pathname);
+    return true;
+  }
+  if (payment === "cancel") {
+    window.history.replaceState({}, "", window.location.pathname);
+  }
+  return false;
+}
+
 function PricingPage({ currentPlan="free", onSelect, onClose }) {
-  const [billing, setBilling] = useState("monthly"); // monthly | yearly
+  const [billing, setBilling] = useState("monthly");
+
+  const { fxRate, chip, myr } = PAYMENT_CONFIG;
+
+  function myrPrice(planId) {
+    return billing === "yearly" ? myr[planId].yearly : myr[planId].monthly;
+  }
+  function usdEstimate(planId) {
+    return (myrPrice(planId) / fxRate).toFixed(2);
+  }
+  function myrPerMonth(planId) {
+    return billing === "yearly"
+      ? (myr[planId].yearly / 12).toFixed(0)
+      : myr[planId].monthly;
+  }
+  function saving(planId) {
+    const annual = myr[planId].monthly * 12;
+    return annual - myr[planId].yearly;
+  }
+
+  function handlePay(planId) {
+    const url = chip[planId]?.[billing];
+    if (url) window.location.href = url;
+  }
 
   const tiers = [
     {
-      id:"free", name:"Free", monthly:0, yearly:0,
+      id:"free", name:"Free",
       color:SUB, borderColor:BORDER, bg:"#fff",
-      tagline:"Get started",
-      features:[
-        "3 sessions",
-        "30 participants/session",
-        "1 group per session",
-        "Basic coin types",
-        "Teticoin branding shown",
-        "30-day session history",
-      ],
-      limits:["No custom coin labels","No session templates","No branding removal"],
+      tagline:"Try it out, no card needed",
+      features:["3 sessions","30 participants / session","1 group per session","Live leaderboard","QR join — no app needed"],
     },
     {
-      id:"pro", name:"Pro", monthly:4.99, yearly:39,
+      id:"pro", name:"Pro",
       color:PINK, borderColor:PINK, bg:SOFT,
-      tagline:"Most popular",
-      badge:"⭐ Popular",
-      features:[
-        "Unlimited sessions",
-        "Unlimited participants",
-        "Up to 10 groups",
-        "Custom coin labels",
-        "Remove Teticoin branding ✦",
-        "Session templates",
-        "Full session history",
-        "Priority support",
-      ],
+      tagline:"For active facilitators",
+      badge:"⭐ Most popular",
+      features:["Unlimited sessions","Unlimited participants","Up to 10 groups","Custom award labels","PIN rejoin for returning participants","Full session history","Priority support"],
     },
     {
-      id:"team", name:"Team", monthly:14.99, yearly:119,
+      id:"team", name:"Team",
       color:PURPLE, borderColor:PURPLE, bg:"#FAF5FF",
-      tagline:"For organisations",
-      features:[
-        "Everything in Pro",
-        "5 host accounts",
-        "Shared session library",
-        "Admin dashboard",
-        "Bulk participant import (CSV)",
-        "Custom subdomain",
-      ],
+      tagline:"For organisations & L&D teams",
+      features:["Everything in Pro","5 host accounts","Shared session library","Admin dashboard","Bulk participant import (CSV)","Custom subdomain"],
     },
   ];
 
-  const price = (t) => billing==="yearly"
-    ? (t.yearly/12).toFixed(2)
-    : t.monthly.toFixed(2);
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflowY:"auto"}}>
+      <style>{CSS}</style>
+
+      {/* Header */}
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,position:"sticky",top:0,zIndex:10}}>
+        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Choose a Plan</div>
+        <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+      </div>
+
+      <div style={{maxWidth:560,width:"100%",margin:"0 auto",padding:"24px 20px 64px"}}>
+
+        {/* Value prop */}
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:TEXT,lineHeight:1.25,marginBottom:6}}>
+            Reward participation,<br/>not just answers.
+          </div>
+          <div style={{fontSize:13,color:SUB,lineHeight:1.6}}>Kahoot scores quizzes. Teticoin rewards humans.</div>
+        </div>
+
+        {/* Currency note */}
+        <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
+          <div style={{fontSize:12,color:SUB,background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:99,padding:"5px 14px",display:"flex",alignItems:"center",gap:6}}>
+            <span>🇲🇾</span>
+            <span>Prices in Malaysian Ringgit (MYR) · International cards accepted</span>
+          </div>
+        </div>
+
+        {/* Billing toggle */}
+        <div style={{display:"flex",background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:3,marginBottom:24,gap:3}}>
+          {[["monthly","Monthly",null],["yearly","Yearly","SAVE 35%"]].map(([b,label,badge]) => (
+            <button key={b} onClick={()=>setBilling(b)}
+              style={{flex:1,padding:"11px 0",borderRadius:9,border:"none",
+                background:billing===b?GRAD:"transparent",
+                fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
+                color:billing===b?"#fff":SUB,cursor:"pointer",transition:"all .15s",
+                display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              {label}
+              {badge && <span style={{background:billing==="yearly"?"rgba(255,255,255,.25)":GREEN,color:"#fff",fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:99}}>{badge}</span>}
+            </button>
+          ))}
+        </div>
+
+        {/* Plan cards */}
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          {tiers.map(t => {
+            const isCurrent = currentPlan === t.id;
+            const isPaid = t.id !== "free";
+            const monthlyNote = t.id === "pro" && billing === "monthly" ? myr.pro.monthlyNote : null;
+            return (
+              <div key={t.id} style={{background:t.bg,border:`2px solid ${isCurrent?t.color:t.id==="free"?BORDER:t.borderColor}`,borderRadius:18,padding:"20px",position:"relative",transition:"all .15s"}}>
+                {t.badge && <div style={{position:"absolute",top:-11,left:20,background:GRAD,color:"#fff",fontSize:10,fontWeight:800,padding:"3px 12px",borderRadius:99,boxShadow:`0 2px 8px ${PINK}40`}}>{t.badge}</div>}
+                {isCurrent && <div style={{position:"absolute",top:-11,right:20,background:t.color,color:"#fff",fontSize:10,fontWeight:800,padding:"3px 12px",borderRadius:99}}>✓ Current Plan</div>}
+
+                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
+                  <div>
+                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:21,color:t.color}}>{t.name}</div>
+                    <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:2}}>{t.tagline}</div>
+                  </div>
+
+                  {/* Price block */}
+                  <div style={{textAlign:"right",flexShrink:0,marginLeft:12}}>
+                    {!isPaid ? (
+                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:SUB}}>Free</div>
+                    ) : (
+                      <>
+                        {billing === "yearly" ? (
+                          <>
+                            <div style={{display:"flex",alignItems:"baseline",gap:3,justifyContent:"flex-end"}}>
+                              <span style={{fontSize:11,fontWeight:600,color:t.color}}>RM</span>
+                              <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:t.color,lineHeight:1}}>{myrPerMonth(t.id)}</span>
+                              <span style={{fontSize:12,color:SUB}}>/mo</span>
+                            </div>
+                            <div style={{fontSize:11,color:SUB,marginTop:2}}>RM {myr[t.id].yearly}/year</div>
+                            <div style={{fontSize:10,background:`${GREEN}15`,color:GREEN,fontWeight:700,borderRadius:6,padding:"2px 6px",marginTop:3,display:"inline-block"}}>Save RM {saving(t.id)}</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{display:"flex",alignItems:"baseline",gap:3,justifyContent:"flex-end"}}>
+                              <span style={{fontSize:11,fontWeight:600,color:t.color}}>RM</span>
+                              <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:t.color,lineHeight:1}}>{myr[t.id].monthly}</span>
+                              <span style={{fontSize:12,color:SUB}}>/mo</span>
+                            </div>
+                            <div style={{fontSize:10,color:SUB,marginTop:2}}>≈ USD {usdEstimate(t.id)}/mo</div>
+                            {monthlyNote && <div style={{fontSize:10,background:`${PINK}12`,color:PINK,fontWeight:700,borderRadius:6,padding:"2px 6px",marginTop:3,display:"inline-block"}}>🎉 {monthlyNote}</div>}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Features */}
+                <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:16}}>
+                  {t.features.map(f => (
+                    <div key={f} style={{display:"flex",alignItems:"center",gap:8}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.color} strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>
+                      <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                {isCurrent ? (
+                  <div style={{textAlign:"center",padding:"11px 0",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:t.color,background:`${t.color}10`,borderRadius:10}}>
+                    ✓ Your current plan
+                  </div>
+                ) : t.id==="free" ? (
+                  currentPlan !== "free" ? (
+                    <button onClick={()=>onSelect(t.id,"monthly")} style={{width:"100%",padding:"11px 0",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>
+                      Downgrade to Free
+                    </button>
+                  ) : null
+                ) : (
+                  <button onClick={()=>handlePay(t.id)}
+                    style={{width:"100%",padding:"14px 0",background:t.id==="pro"?GRAD:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:t.id==="pro"?`0 4px 16px ${PINK}40`:`0 4px 16px ${PURPLE}40`}}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    Get {t.name} {billing==="yearly"?"— Save 35%":""} · RM {myrPrice(t.id)}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer trust signals */}
+        <div style={{marginTop:24,textAlign:"center",fontSize:12,color:SUB,lineHeight:2}}>
+          Cancel anytime · No hidden fees · Secure payment via{" "}
+          <span style={{color:"#6C47FF",fontWeight:700}}>Chip</span><br/>
+          <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,flexWrap:"wrap",marginTop:4}}>
+            {["FPX","DuitNow QR","E-Wallet","Credit / Debit Card"].map(m=>(
+              <span key={m} style={{background:"#F3F4F6",borderRadius:6,padding:"2px 8px",fontWeight:600,color:SUB,fontSize:11}}>{m}</span>
+            ))}
+          </span>
+          <div style={{marginTop:8,color:SUB}}>International cards accepted · Billed in MYR</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PricingPage({ currentPlan="free", onSelect, onClose }) {
+  const [billing, setBilling] = useState("monthly");
+  const [isMY, setIsMY] = useState(null); // null = loading, true = Malaysia, false = international
+
+  // Geo-detect on mount
+  useEffect(() => {
+    fetch("https://ipapi.co/json/")
+      .then(r => r.json())
+      .then(d => setIsMY(d.country_code === "MY"))
+      .catch(() => setIsMY(false)); // default to international on error
+  }, []);
+
+  const { fxRate, chip, myr } = PAYMENT_CONFIG;
+
+  // Format price display
+  function myrPrice(planId) {
+    return billing === "yearly" ? myr[planId].yearly : myr[planId].monthly;
+  }
+  function usdEstimate(planId) {
+    return (myrPrice(planId) / fxRate).toFixed(2);
+  }
+  function myrMonthly(planId) {
+    return billing === "yearly"
+      ? (myr[planId].yearly / 12).toFixed(0)
+      : myr[planId].monthly;
+  }
+
+  function handlePay(planId) {
+    const url = chip[planId]?.[billing];
+    if (url) window.location.href = url;
+  }
+
+  const tiers = [
+    {
+      id:"free", name:"Free",
+      color:SUB, borderColor:BORDER, bg:"#fff",
+      tagline:"Get started — no card needed",
+      features:["3 sessions","30 participants/session","1 group per session","Basic coin types","Live leaderboard","QR join"],
+      limits:["No custom coin labels","No session templates","No branding removal"],
+    },
+    {
+      id:"pro", name:"Pro",
+      color:PINK, borderColor:PINK, bg:SOFT,
+      tagline:"For active facilitators",
+      badge:"⭐ Most popular",
+      features:["Unlimited sessions","Unlimited participants","Up to 10 groups","Custom coin labels","Remove Teticoin branding ✦","Session templates","Full session history","Priority support"],
+    },
+    {
+      id:"team", name:"Team",
+      color:PURPLE, borderColor:PURPLE, bg:"#FAF5FF",
+      tagline:"For organisations & L&D teams",
+      features:["Everything in Pro","5 host accounts","Shared session library","Admin dashboard","Bulk participant import (CSV)","Custom subdomain"],
+    },
+  ];
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",maxWidth:480,margin:"0 auto",overflowY:"auto"}}>
+    <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflowY:"auto"}}>
       <style>{CSS}</style>
+
       {/* Header */}
-      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,maxWidth:560,width:"100%",margin:"0 auto",alignSelf:"stretch"}}>
         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Upgrade Plan</div>
         <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
       </div>
 
-      <div style={{padding:"20px 20px 40px"}}>
-        {/* Value prop — tighter line height */}
+      <div style={{maxWidth:560,width:"100%",margin:"0 auto",padding:"20px 20px 48px"}}>
+
+        {/* Value prop */}
         <div style={{textAlign:"center",marginBottom:20}}>
           <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:TEXT,lineHeight:1.25,marginBottom:8}}>
-            Reward behaviour,<br/>not just answers.
+            Reward participation,<br/>not just answers.
           </div>
-          <div style={{fontSize:13,color:SUB,lineHeight:1.6}}>
-            Kahoot scores quizzes. Teticoin rewards humans.
-          </div>
+          <div style={{fontSize:13,color:SUB,lineHeight:1.6}}>Kahoot scores quizzes. Teticoin rewards humans.</div>
         </div>
 
-        {/* Billing toggle — clear active with solid fill */}
+        {/* Location pill */}
+        {isMY !== null && (
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:16}}>
+            <div style={{fontSize:12,color:SUB,background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:99,padding:"4px 12px",display:"flex",alignItems:"center",gap:5}}>
+              <span>{isMY ? "🇲🇾" : "🌍"}</span>
+              <span>{isMY ? "Prices in Malaysian Ringgit (MYR)" : "Prices in MYR · USD estimate shown"}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Billing toggle */}
         <div style={{display:"flex",background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:3,marginBottom:20,gap:3}}>
           {[["monthly","Monthly",null],["yearly","Yearly","SAVE 35%"]].map(([b,label,badge]) => (
             <button key={b} onClick={()=>setBilling(b)}
               style={{flex:1,padding:"10px 0",borderRadius:9,border:"none",
                 background:billing===b?GRAD:"transparent",
                 fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
-                color:billing===b?"#fff":SUB,
-                cursor:"pointer",transition:"all .15s",position:"relative",
+                color:billing===b?"#fff":SUB,cursor:"pointer",transition:"all .15s",
                 display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
               {label}
               {badge && <span style={{background:billing==="yearly"?"rgba(255,255,255,.25)":GREEN,color:"#fff",fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:99,lineHeight:1.4}}>{badge}</span>}
@@ -2351,7 +2591,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {tiers.map(t => {
             const isCurrent = currentPlan === t.id;
-            const monthly = parseFloat(price(t));
+            const isPaid = t.id !== "free";
             return (
               <div key={t.id} style={{background:t.bg,border:`2px solid ${isCurrent?t.color:t.borderColor}`,borderRadius:16,padding:"18px 20px",position:"relative",transition:"all .15s"}}>
                 {t.badge && <div style={{position:"absolute",top:-10,left:20,background:GRAD,color:"#fff",fontSize:10,fontWeight:800,padding:"3px 10px",borderRadius:99}}>{t.badge}</div>}
@@ -2362,16 +2602,26 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                     <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:t.color}}>{t.name}</div>
                     <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:2}}>{t.tagline}</div>
                   </div>
-                  {/* Price + billing toggle inline */}
-                  <div style={{textAlign:"right"}}>
-                    {monthly === 0 ? (
+
+                  {/* Price block */}
+                  <div style={{textAlign:"right",flexShrink:0,marginLeft:12}}>
+                    {!isPaid ? (
                       <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:26,color:SUB}}>Free</div>
                     ) : (
                       <>
+                        {/* Primary: MYR per month */}
                         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:26,color:t.color,lineHeight:1}}>
-                          ${monthly}<span style={{fontSize:12,fontWeight:700,color:SUB}}>/mo</span>
+                          RM {myrMonthly(t.id)}<span style={{fontSize:12,fontWeight:700,color:SUB}}>/mo</span>
                         </div>
-                        {/* Mini billing toggle per card */}
+                        {/* Yearly total */}
+                        {billing==="yearly" && (
+                          <div style={{fontSize:11,color:SUB,marginTop:2}}>RM {myr[t.id].yearly} billed yearly</div>
+                        )}
+                        {/* USD estimate for international */}
+                        {isMY === false && (
+                          <div style={{fontSize:11,color:SUB,marginTop:3,fontStyle:"italic"}}>≈ ${usdEstimate(t.id)} USD</div>
+                        )}
+                        {/* Billing toggle pills */}
                         <div style={{display:"flex",gap:4,marginTop:6,justifyContent:"flex-end"}}>
                           {[["monthly","Mo"],["yearly","Yr"]].map(([b,lbl])=>(
                             <button key={b} onClick={()=>setBilling(b)}
@@ -2383,7 +2633,6 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                             </button>
                           ))}
                         </div>
-                        {billing==="yearly" && <div style={{fontSize:10,color:SUB,marginTop:3}}>billed ${t.yearly}/yr</div>}
                       </>
                     )}
                   </div>
@@ -2419,29 +2668,10 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                     Downgrade to Free
                   </button>
                 ) : (
-                  <button onClick={()=>{
-                    // Chip payment gateway — redirect to Chip checkout
-                    // Replace CHIP_PAYMENT_LINK_PRO / CHIP_PAYMENT_LINK_TEAM with your actual Chip payment page URLs
-                    const links = {
-                      pro: {
-                        monthly: "https://gate.chip-in.asia/p/teticoin-pro-monthly",
-                        yearly:  "https://gate.chip-in.asia/p/teticoin-pro-yearly",
-                      },
-                      team: {
-                        monthly: "https://gate.chip-in.asia/p/teticoin-team-monthly",
-                        yearly:  "https://gate.chip-in.asia/p/teticoin-team-yearly",
-                      },
-                    };
-                    const url = links[t.id]?.[billing];
-                    if (url) {
-                      window.open(url, "_blank");
-                    } else {
-                      // Fallback: local plan selection (dev mode)
-                      onSelect(t.id, billing);
-                    }
-                  }}
-                    style={{width:"100%",padding:"13px 0",background:t.id==="pro"?GRAD:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>
-                    Get {t.name} {billing==="yearly"?"· Save 35%":""}
+                  <button onClick={()=>handlePay(t.id)}
+                    style={{width:"100%",padding:"13px 0",background:t.id==="pro"?GRAD:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    Get {t.name} {billing==="yearly"?"· Save 35%":""} — RM {myrPrice(t.id)}
                   </button>
                 )}
               </div>
@@ -2449,11 +2679,16 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
           })}
         </div>
 
-        {/* Footer note */}
-        <div style={{marginTop:20,textAlign:"center",fontSize:12,color:SUB,lineHeight:1.8}}>
+        {/* Footer */}
+        <div style={{marginTop:20,textAlign:"center",fontSize:12,color:SUB,lineHeight:1.9}}>
           Cancel anytime · No hidden fees<br/>
-          Secure payment via <span style={{color:PINK,fontWeight:600}}>Chip</span> · Malaysian Ringgit (MYR)<br/>
-          <span style={{color:PINK,fontWeight:600}}>✦ Most popular feature among paid users</span>
+          Secure payment via{" "}
+          <span style={{color:"#6C47FF",fontWeight:700}}>Chip</span>
+          {" "}· FPX · DuitNow · eWallet · Card<br/>
+          {isMY === false && (
+            <span style={{color:SUB}}>International cards accepted · Charged in MYR<br/></span>
+          )}
+          <span style={{color:PINK,fontWeight:600}}>✦ Most popular feature among paid users: custom coin labels</span>
         </div>
       </div>
     </div>
@@ -2734,9 +2969,35 @@ export default function App() {
   const [showArchived, setShowArchived] = useState(false);
   const [showCMJoin, setShowCMJoin] = useState(false);
   const [cmSession, setCmSession] = useState(null);
+  const [paymentToast, setPaymentToast] = useState(null); // plan name string or null
 
   const isFree = plan === "free";
   const sessionLimit = isFree ? 3 : 999;
+
+  // ── Handle payment return from Chip ──
+  useEffect(() => {
+    if (!trainer) return; // wait until logged in
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get("payment");
+    const planParam = params.get("plan");
+    if (payment === "success" && planParam) {
+      const planMap = {
+        pro_monthly:  "pro",
+        pro_yearly:   "proY",
+        team_monthly: "team",
+        team_yearly:  "teamY",
+      };
+      const newPlan = planMap[planParam];
+      if (newPlan) {
+        setPlan(newPlan);
+        ss("plan", newPlan);
+        window.history.replaceState({}, "", window.location.pathname);
+        setScreen("home");
+      }
+    } else if (payment === "cancel") {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [trainer]);
 
   // ── Handle /join/CODE URLs from QR scans ──
   useEffect(() => {
@@ -2771,11 +3032,28 @@ export default function App() {
           const s = await sg("sessions_index"); if (s) setSessions(s);
           const t = { name: user.displayName || user.email.split("@")[0], email: user.email, uid: user.uid };
           setTrainer(t);
-          const p = await sg("plan"); if (p) setPlan(p);
-          setScreen("home"); // already logged in → skip landing
+          let p = await sg("plan"); if (p) setPlan(p);
+
+          // ── Handle payment return from Chip ──
+          const upgraded = await handlePaymentReturn(async (newPlan) => {
+            const planVal = newPlan === "pro" ? "pro" : newPlan;
+            setPlan(planVal);
+            await ss("plan", planVal);
+            setPaymentToast(newPlan); // show success banner
+            setTimeout(() => setPaymentToast(null), 6000);
+          });
+
+          setScreen("home");
         } catch {}
       } else {
-        setScreen("landing"); // not logged in → show landing
+        // Not logged in — check if returning from payment (needs login first)
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("payment") === "success") {
+          // They paid but aren't logged in — send to auth, payment will be picked up after login
+          setScreen("auth");
+        } else {
+          setScreen("landing");
+        }
       }
       setLoading(false);
     });
@@ -2862,6 +3140,28 @@ export default function App() {
       {showBilling && <BillingPage plan={plan} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>setShowBilling(false)}/>}
       {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);setShowPricing(true);}} onClose={()=>setLimitModal(null)}/>}
       {creating && <CreateModal onConfirm={handleNew} onClose={()=>setCreating(false)}/>}
+
+      {/* ── Payment success banner ── */}
+      {paymentToast && (
+        <div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:9999,
+          background:`linear-gradient(135deg,${GREEN},#06B6D4)`,color:"#fff",
+          borderRadius:16,padding:"16px 24px",boxShadow:"0 8px 40px rgba(0,0,0,.18)",
+          display:"flex",alignItems:"center",gap:14,animation:"slideUp .3s ease",
+          maxWidth:480,width:"calc(100% - 32px)"}}>
+          <div style={{width:40,height:40,borderRadius:12,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,lineHeight:1.2}}>
+              🎉 Welcome to {paymentToast === "pro" ? "Pro" : "Team"}!
+            </div>
+            <div style={{fontSize:12,opacity:.9,marginTop:3}}>
+              Your plan has been upgraded. All features are now unlocked.
+            </div>
+          </div>
+          <button onClick={()=>setPaymentToast(null)} style={{background:"none",border:"none",color:"rgba(255,255,255,.7)",cursor:"pointer",fontSize:20,padding:4,flexShrink:0}}>×</button>
+        </div>
+      )}
 
       {/* ── COINMASTER JOIN MODAL ── */}
       {showCMJoin && <CoinmasterJoinModal onJoin={async(code)=>{
