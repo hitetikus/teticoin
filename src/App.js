@@ -2318,8 +2318,11 @@ async function handlePaymentReturn(onSuccess) {
   const payment = params.get("payment");
   const planParam = params.get("plan");
   if (payment === "success" && planParam && PAYMENT_CONFIG.planMap[planParam]) {
-    const { plan } = PAYMENT_CONFIG.planMap[planParam];
-    await onSuccess(plan);
+    const { plan, billing } = PAYMENT_CONFIG.planMap[planParam];
+    // Compute expiry: monthly = 31 days, yearly = 366 days (extra day buffer)
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + (billing === "yearly" ? 366 : 31));
+    await onSuccess(plan, expiry.toISOString());
     // Clean URL
     window.history.replaceState({}, "", window.location.pathname);
     return true;
@@ -2609,22 +2612,31 @@ function LimitModal({ type, onUpgrade, onClose }) {
 }
 
 // ── 4. Billing Page ──────────────────────────
-function BillingPage({ plan="free", onUpgrade, onClose }) {
+function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
   const [cancelConfirm, setCancelConfirm] = useState(false);
+
+  // Format real expiry date, or fall back to a rough estimate label
+  const expiryLabel = planExpiry
+    ? new Date(planExpiry).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" })
+    : null;
+
   const planData = {
     free:  {name:"Free",   price:"RM 0",    renewal:null,      color:SUB,    next:null},
-    pro:   {name:"Pro",    price:"RM 16",   renewal:"monthly", color:PINK,   next:"Apr 19, 2026"},
-    proY:  {name:"Pro",    price:"RM 169",  renewal:"yearly",  color:PINK,   next:"Mar 19, 2027"},
-    team:  {name:"Team",   price:"RM 32",   renewal:"monthly", color:PURPLE, next:"Apr 19, 2026"},
-    teamY: {name:"Team",   price:"RM 320",  renewal:"yearly",  color:PURPLE, next:"Mar 19, 2027"},
+    pro:   {name:"Pro",    price:"RM 16",   renewal:"monthly", color:PINK,   next:expiryLabel},
+    proY:  {name:"Pro",    price:"RM 169",  renewal:"yearly",  color:PINK,   next:expiryLabel},
+    team:  {name:"Team",   price:"RM 32",   renewal:"monthly", color:PURPLE, next:expiryLabel},
+    teamY: {name:"Team",   price:"RM 320",  renewal:"yearly",  color:PURPLE, next:expiryLabel},
   };
   const pd = planData[plan] || planData.free;
   const isFree = plan==="free";
-  const invoices = plan!=="free" ? [
-    {date:"Mar 19, 2026", amount:pd.price, status:"Paid"},
-    {date:"Feb 19, 2026", amount:pd.price, status:"Paid"},
-    {date:"Jan 19, 2026", amount:pd.price, status:"Paid"},
-  ] : [];
+  // Build a single real invoice from the expiry date (payment date = expiry minus billing period)
+  const invoices = plan!=="free" && planExpiry ? (() => {
+    const expDate = new Date(planExpiry);
+    const isYearly = plan === "proY" || plan === "teamY";
+    const payDate = new Date(expDate);
+    payDate.setDate(payDate.getDate() - (isYearly ? 366 : 31));
+    return [{ date: payDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid" }];
+  })() : [];
 
   return (
     <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -2656,7 +2668,7 @@ function BillingPage({ plan="free", onUpgrade, onClose }) {
             <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:32,color:TEXT,marginBottom:4,lineHeight:1}}>
               {pd.price}{!isFree&&<span style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</span>}
             </div>
-            {pd.next && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>Renews {pd.next} · Cancel anytime</div>}
+            {pd.next && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>Access until {pd.next}</div>}
             {isFree && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>3 sessions · 30 participants · Basic features</div>}
           </div>
 
@@ -2814,6 +2826,7 @@ export default function App() {
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState("free");
+  const [planExpiry, setPlanExpiry] = useState(null); // ISO date string or null
   const [showPricing, setShowPricing] = useState(false);
   const [showBilling, setShowBilling] = useState(false);
   const [limitModal, setLimitModal] = useState(null);
@@ -2884,13 +2897,27 @@ export default function App() {
           const s = await sg("sessions_index"); if (s) setSessions(s);
           const t = { name: user.displayName || user.email.split("@")[0], email: user.email, uid: user.uid };
           setTrainer(t);
-          let p = await sg("plan"); if (p) setPlan(p);
+          let p = await sg("plan"); 
+          let exp = await sg("planExpiry");
+          // ── Check if existing plan has expired → downgrade to free ──
+          if (p && p !== "free" && exp) {
+            if (new Date(exp) < new Date()) {
+              // Expired — reset to free
+              p = "free"; exp = null;
+              await ss("plan", "free");
+              await sd("planExpiry");
+            }
+          }
+          if (p) setPlan(p);
+          if (exp) setPlanExpiry(exp);
 
           // ── Handle payment return from Chip ──
-          const upgraded = await handlePaymentReturn(async (newPlan) => {
+          const upgraded = await handlePaymentReturn(async (newPlan, newExpiry) => {
             const planVal = newPlan === "pro" ? "pro" : newPlan;
             setPlan(planVal);
+            setPlanExpiry(newExpiry);
             await ss("plan", planVal);
+            await ss("planExpiry", newExpiry);
             setPaymentToast(newPlan); // show success banner
             setTimeout(() => setPaymentToast(null), 6000);
           });
@@ -2989,7 +3016,7 @@ export default function App() {
       <style>{CSS}</style>
 
       {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>setShowPricing(false)}/>}
-      {showBilling && <BillingPage plan={plan} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>setShowBilling(false)}/>}
+      {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>setShowBilling(false)}/>}
       {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);setShowPricing(true);}} onClose={()=>setLimitModal(null)}/>}
       {creating && <CreateModal onConfirm={handleNew} onClose={()=>setCreating(false)}/>}
 
