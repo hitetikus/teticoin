@@ -2089,29 +2089,6 @@ function Session({ session: init, onBack, onPView }) {
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               Mass Give Coins
             </button>
-            {ses.participants.length > 0 && (
-              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
-                <SL>Award to Everyone</SL>
-                {sorted.map(p => (
-                  <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:`1px solid ${BORDER}`}}>
-                    <span style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32}}>{pNum(p.num)}</span>
-                    <Av s={p.av} color={ses.groups.find(g=>g.id===p.gid)?.color||PINK} size={26}/>
-                    <div style={{flex:1,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:TEXT}}>{p.name}</div>
-                    <div style={{display:"flex",gap:3,flexShrink:0}}>
-                      {ACTS.map(a => (
-                        <button key={a.id} title={`+${a.pts}`} onClick={e=>award(p.id,a.id,a.pts,e.clientX,e.clientY)}
-                          style={{width:28,height:28,borderRadius:7,border:`1.5px solid ${a.col}28`,background:`${a.col}08`,cursor:"pointer",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:11,color:a.col,transition:"all .1s"}}
-                          onMouseOver={e=>e.currentTarget.style.transform="scale(1.12)"}
-                          onMouseOut={e=>e.currentTarget.style.transform="scale(1)"}>
-                          +{a.pts}
-                        </button>
-                      ))}
-                      <button onClick={e=>award(p.id,"token",50,e.clientX,e.clientY)} style={{padding:"0 7px",height:28,borderRadius:7,border:`1.5px solid ${YELLOW}28`,background:`${YELLOW}08`,color:YELLOW,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,cursor:"pointer"}}>+50</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
@@ -2144,6 +2121,8 @@ function Session({ session: init, onBack, onPView }) {
                 </div>
                 <div style={{width:8,height:8,borderRadius:"50%",background:ses.boardVisible?GREEN:BORDER,flexShrink:0,marginLeft:8}}/>
               </div>
+
+              {/* Leaderboard */}
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                 {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
                 {sorted.map((p,i) => {
@@ -2171,6 +2150,60 @@ function Session({ session: init, onBack, onPView }) {
                   );
                 })}
               </div>
+
+              {/* ── AWARD TO EVERYONE — desktop right panel ── */}
+              {sorted.length > 0 && (
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                  <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <SL style={{marginBottom:0}}>Award to Everyone</SL>
+                    <span style={{fontSize:11,color:SUB,fontWeight:500,marginLeft:"auto"}}>Click a value to award that participant</span>
+                  </div>
+                  {sorted.map((p,i) => {
+                    const grp = ses.groups.find(g=>g.id===p.gid);
+                    const coins = ses.otherCoins || TV_DEFAULT; // [10,30,50,100,150,200]
+                    return (
+                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:i<sorted.length-1?`1px solid ${BORDER}`:"none",transition:"background .1s"}}
+                        onMouseOver={e=>e.currentTarget.style.background=SOFT}
+                        onMouseOut={e=>e.currentTarget.style.background="transparent"}>
+                        {/* Rank */}
+                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:13,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
+                        {/* Avatar */}
+                        <Av s={p.av} color={grp?.color||PINK} size={28}/>
+                        {/* Name */}
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:TEXT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
+                          <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
+                        </div>
+                        {/* Award buttons — matching Give Coins style: pink, order 10,30,50,100,150,200 */}
+                        <div style={{display:"flex",gap:3,flexShrink:0}}>
+                          {coins.map((v,ci) => (
+                            <button key={ci}
+                              onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
+                              style={{
+                                width:v>=100?36:30, height:28,
+                                borderRadius:7,
+                                border:`1.5px solid ${MID}`,
+                                background:"#fff",
+                                cursor:"pointer",
+                                fontFamily:"Nunito,sans-serif",fontWeight:900,
+                                fontSize:v>=100?9:10,
+                                color:PINK,
+                                transition:"all .1s",
+                                flexShrink:0,
+                                padding:0,
+                              }}
+                              onMouseOver={e=>{e.currentTarget.style.background=SOFT;e.currentTarget.style.transform="scale(1.1)";}}
+                              onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.transform="scale(1)";}}>
+                              +{v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
