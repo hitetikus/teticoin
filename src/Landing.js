@@ -304,11 +304,11 @@ export default function LandingPage({ onGetStarted, onLogin }) {
             {/* ↓ EDIT: hero tag */}
             <div className="lp-hero-tag" style={{marginBottom:12}}>✦ Gamify any group session</div>
             {/* ↓ EDIT: main headline */}
-            <h1 style={{marginBottom:12}}>Reward participation,<br/>not just <em>increase engagement.</em></h1>
+            <h1 style={{marginBottom:12}}>Make your sessions<br/><em>fun, competitive, unforgettable.</em></h1>
             {/* ↓ EDIT: hero subtitle */}
-            <p className="lp-hero-sub" style={{marginBottom:24}}>Teticoin lets you award points to anyone in your group in real time — for great contributions, active participation, or any behaviour worth recognising. No app needed.</p>
+            <p className="lp-hero-sub" style={{marginBottom:24}}>Teticoin transforms any training, seminar, or gathering into an exciting experience — reward participation, spark competition, and keep everyone engaged from start to finish.</p>
             <div className="lp-hero-btns">
-              <button className="lp-btn-big lp-btn-big-fill" onClick={onGetStarted}>Start for free</button>
+              <button className="lp-btn-big lp-btn-big-fill" onClick={onGetStarted}>🎯 Start Free Session</button>
               <button className="lp-btn-big lp-btn-big-outline" onClick={() => document.getElementById("how")?.scrollIntoView({behavior:"smooth"})}>See how it works →</button>
             </div>
             <p className="lp-hero-note">Free plan available · No credit card required</p>
@@ -503,7 +503,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
         <div className="lp-pricing-inner">
           <div className="lp-section-label">Pricing</div>
           <div className="lp-section-title">Simple, honest pricing.</div>
-          <p className="lp-section-sub" style={{marginBottom:0}}>Start for free. Upgrade when your sessions grow. No credit card needed.</p>
+          <p className="lp-section-sub" style={{marginBottom:0}}>🎯 Start Free Session. Upgrade when your sessions grow. No credit card needed.</p>
 
           {/* Billing toggle — cute pill style */}
           <div className="lp-billing-cute" style={{marginTop:28,display:"inline-flex"}}>
@@ -632,7 +632,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           <h2>Make your next session<br/>one they actually remember.</h2>
           <p>Join groups, classes, and teams who use Teticoin to turn passive participation into something everyone looks forward to.</p>
           <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-            <button className="lp-btn-big lp-btn-big-fill" onClick={onGetStarted}>Start for free</button>
+            <button className="lp-btn-big lp-btn-big-fill" onClick={onGetStarted}>🎯 Start Free Session</button>
           </div>
           <p style={{marginTop:14,fontSize:13,color:"#9CA3AF"}}>No credit card required · Free plan available forever</p>
         </div>
