@@ -224,7 +224,7 @@ function Picker({ participants, groups, selId, onSelect, onClose }) {
   filt.forEach(p => { const k = p.name[0].toUpperCase(); if (!grouped[k]) grouped[k]=[]; grouped[k].push(p); });
   const letters = Object.keys(grouped).sort();
   return (
-    <div style={{position:"fixed",inset:0,zIndex:500,background:BG,display:"flex",flexDirection:"column",maxWidth:480,margin:"0 auto",animation:"slideInRight .2s ease"}}>
+    <div style={{position:"fixed",inset:0,zIndex:500,background:BG,display:"flex",flexDirection:"column",animation:"slideInRight .2s ease"}}>
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",height:54,display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
         <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:PINK,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14}}>Cancel</button>
         <div style={{flex:1,textAlign:"center",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:TEXT}}>Select Participant</div>
@@ -368,9 +368,9 @@ function MassGive({ participants, groups, onAward, onClose }) {
   );
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:450}}>
+    <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:450}}>
       <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(26,10,20,.45)",backdropFilter:"blur(3px)"}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,background:"#fff",borderRadius:"20px 20px 0 0",maxHeight:"90vh",display:"flex",flexDirection:"column",animation:"slideUp .25s ease",maxWidth:480,margin:"0 auto"}}>
+      <div className="tc-modal-sheet" style={{background:"#fff",maxHeight:"90vh",display:"flex",flexDirection:"column",animation:"slideUp .25s ease"}}>
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
@@ -552,9 +552,9 @@ function CoinCustomizer({ session, onSave, onClose }) {
   const QCOLS = [BLUE, GREEN, PINK];
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:600}}>
+    <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:600}}>
       <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(26,10,20,.5)",backdropFilter:"blur(3px)"}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,background:"#fff",borderRadius:"20px 20px 0 0",maxHeight:"85vh",display:"flex",flexDirection:"column",animation:"slideUp .25s ease",maxWidth:480,margin:"0 auto"}}>
+      <div className="tc-modal-sheet" style={{background:"#fff",maxHeight:"85vh",display:"flex",flexDirection:"column",animation:"slideUp .25s ease"}}>
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
@@ -669,9 +669,9 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
   function copyCode() { navigator.clipboard.writeText(cmCode); setCopied(true); setTimeout(()=>setCopied(false), 2000); }
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:500}}>
+    <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:500}}>
       <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(26,10,20,.45)",backdropFilter:"blur(3px)"}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,background:"#fff",borderRadius:"20px 20px 0 0",animation:"slideUp .25s ease",maxWidth:480,margin:"0 auto",maxHeight:"90vh",overflowY:"auto"}}>
+      <div className="tc-modal-sheet" style={{background:"#fff",animation:"slideUp .25s ease",maxHeight:"90vh",overflowY:"auto"}}>
         <div style={{padding:"14px 20px 0"}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 16px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
@@ -804,9 +804,9 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
   );
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:400}}>
+    <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:400}}>
       <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(26,10,20,.45)",backdropFilter:"blur(3px)"}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,background:"#fff",borderRadius:"20px 20px 0 0",maxHeight:"85vh",display:"flex",flexDirection:"column",animation:"slideUp .25s ease",maxWidth:480,margin:"0 auto"}}>
+      <div className="tc-modal-sheet" style={{background:"#fff",maxHeight:"85vh",display:"flex",flexDirection:"column",animation:"slideUp .25s ease"}}>
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 12px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
@@ -1301,7 +1301,7 @@ function Projector({ session, onBack }) {
 }
 
 // ── QR Share sheet ──
-function QRSheet({ session, onClose }) {
+function QRModal({ session, onClose }) {
   const [copied, setCopied] = useState("");
   const qrRef = useRef(null);
   const url = `${window.location.origin}/join/${session.code}`;
@@ -1336,9 +1336,9 @@ function QRSheet({ session, onClose }) {
   }, [url]);
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:420}}>
+    <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:420}}>
       <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(26,10,20,.45)",backdropFilter:"blur(3px)"}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,background:"#fff",borderRadius:"20px 20px 0 0",animation:"slideUp .25s ease",maxWidth:480,margin:"0 auto"}}>
+      <div className="tc-modal-sheet" style={{background:"#fff",animation:"slideUp .25s ease"}}>
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 16px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
@@ -1378,9 +1378,9 @@ function LeaderSheet({ session, onToggleBoard, onClose }) {
   const gs = session.groups.map(g=>({...g,total:session.participants.filter(p=>p.gid===g.id).reduce((s,p)=>s+p.total,0),members:session.participants.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
   const maxP = sorted[0]?.total||1;
   return (
-    <div style={{position:"fixed",inset:0,zIndex:420}}>
+    <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:420}}>
       <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(26,10,20,.45)",backdropFilter:"blur(3px)"}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,background:"#fff",borderRadius:"20px 20px 0 0",maxHeight:"88vh",display:"flex",flexDirection:"column",animation:"slideUp .25s ease",maxWidth:480,margin:"0 auto"}}>
+      <div className="tc-modal-sheet" style={{background:"#fff",maxHeight:"88vh",display:"flex",flexDirection:"column",animation:"slideUp .25s ease"}}>
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
@@ -1608,7 +1608,7 @@ function CoinmasterView({ session: init, onBack }) {
   const IB = {background:"none",border:`1px solid ${BORDER}`,borderRadius:9,width:34,height:34,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0};
 
   return (
-    <div style={{height:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column",maxWidth:480,margin:"0 auto",overflow:"hidden"}}>
+    <div style={{height:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <Confetti active={confetti}/>
       {anims.map(a => <FloatAnim key={a.id} {...a} onDone={()=>setAnims(p=>p.filter(x=>x.id!==a.id))}/>)}
       {toast && (
@@ -1946,8 +1946,8 @@ function Session({ session: init, onBack, onPView }) {
 
       {/* Go Offline confirm */}
       {confirmOffline && (
-        <div style={{position:"fixed",inset:0,zIndex:800,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(4px)",background:"rgba(26,10,20,.35)"}}>
-          <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"24px 24px 36px",width:"100%",maxWidth:520,animation:"slideUp .2s ease"}}>
+        <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:800}}>
+          <div className="tc-modal-sheet" style={{background:"#fff",padding:"24px 24px 36px",width:"100%"}}>
             <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 18px"}}/>
             <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT,marginBottom:6}}>Go Offline?</div>
             <div style={{fontSize:14,color:SUB,lineHeight:1.7,marginBottom:20}}>Participants won't be able to join or earn coins.<br/>All data is saved — you can go live again anytime.</div>
@@ -2265,8 +2265,8 @@ function Session({ session: init, onBack, onPView }) {
 function CreateModal({ onConfirm, onClose }) {
   const [n, setN] = useState("");
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(26,10,20,.5)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:600,backdropFilter:"blur(4px)"}}>
-      <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px",width:"100%",maxWidth:480,animation:"slideUp .25s ease"}}>
+    <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,background:"rgba(26,10,20,.5)",zIndex:600,backdropFilter:"blur(4px)"}}>
+      <div className="tc-modal-sheet" style={{background:"#fff",padding:"28px 24px",width:"100%"}}>
         <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>
         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:4}}>New Session</div>
         <div style={{fontSize:13,color:SUB,marginBottom:16}}>Give your session a name so you can find it later.</div>
@@ -2561,8 +2561,8 @@ function LimitModal({ type, onUpgrade, onClose }) {
   };
   const cfg = configs[type] || configs.sessions;
   return (
-    <div style={{position:"fixed",inset:0,zIndex:800,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(4px)",background:"rgba(26,10,20,.4)"}}>
-      <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 36px",width:"100%",maxWidth:480,animation:"slideUp .25s ease"}}>
+    <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:800,backdropFilter:"blur(4px)",background:"rgba(26,10,20,.4)"}}>
+      <div className="tc-modal-sheet" style={{background:"#fff",padding:"28px 24px 36px",width:"100%"}}>
         <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>
         {/* Icon */}
         <div style={{width:64,height:64,borderRadius:20,background:SOFT,border:`1.5px solid ${MID}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
@@ -2764,8 +2764,8 @@ function CoinmasterJoinModal({ onJoin, onClose }) {
   }
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:600,display:"flex",alignItems:"flex-end",justifyContent:"center",backdropFilter:"blur(4px)",background:"rgba(26,10,20,.4)"}}>
-      <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:480,animation:"slideUp .25s ease"}}>
+    <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:600,backdropFilter:"blur(4px)",background:"rgba(26,10,20,.4)"}}>
+      <div className="tc-modal-sheet" style={{background:"#fff",padding:"28px 24px 40px",width:"100%"}}>
         <div style={{width:36,height:4,background:"#EDD8E8",borderRadius:4,margin:"0 auto 20px"}}/>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:6}}>
           <div style={{width:44,height:44,borderRadius:13,background:"#FAF5FF",border:"1.5px solid #DDD6FE",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -3227,6 +3227,7 @@ const CSS = `
   body { font-family:Poppins,sans-serif; -webkit-font-smoothing:antialiased; background:${BG}; user-select:none; -webkit-user-select:none; cursor:default; }
   @keyframes floatUp { 0%{transform:translateY(0);opacity:1} 100%{transform:translateY(-80px);opacity:0} }
   @keyframes slideUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
+  @keyframes fadeIn { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
   @keyframes slideInRight { from{transform:translateX(100%)} to{transform:translateX(0)} }
   @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(1.2)} }
   ::-webkit-scrollbar { width:4px; }
@@ -3234,6 +3235,33 @@ const CSS = `
   input, textarea { user-select:text; -webkit-user-select:text; cursor:text; }
   input::placeholder { color:${SUB}; opacity:.6; }
   select option { background:#fff; }
+
+  /* ── Responsive modal: bottom-sheet on mobile, centered on desktop ── */
+  .tc-modal-backdrop {
+    position: fixed; inset: 0; z-index: 500;
+    display: flex; align-items: flex-end; justify-content: center;
+    backdrop-filter: blur(3px);
+    background: rgba(26,10,20,.45);
+  }
+  .tc-modal-sheet {
+    position: relative;
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp .25s ease;
+  }
+  @media (min-width: 700px) {
+    .tc-modal-backdrop { align-items: center; }
+    .tc-modal-sheet {
+      border-radius: 20px;
+      max-width: 560px;
+      max-height: 85vh;
+      animation: fadeIn .2s ease;
+    }
+  }
 
   /* ─── App shell ─── */
   .tc-app-shell { height:100vh; background:${BG}; font-family:Poppins,sans-serif; display:flex; flex-direction:column; overflow:hidden; }
