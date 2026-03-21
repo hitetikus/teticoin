@@ -1,162 +1,167 @@
 /* eslint-disable */
 import { useState } from "react";
-// ─── Landing page + Privacy + Terms ───────────────────────────────────────────
-// To edit content: search for the text you want to change and edit inline.
-// All text is plain English inside JSX — no coding knowledge needed.
-// ─────────────────────────────────────────────────────────────────────────────
 
-const LPINK = "#E91E8C";
-const LPINK2 = "#FF4FB8";
-const LGRAD = `linear-gradient(135deg,${LPINK},${LPINK2})`;
-const LTEXT = "#0F0A0D";
-const LSUB = "#6B7280";
-const LBORDER = "#F0E8EE";
-const LSOFT = "#FFF0F7";
+const PINK   = "#FF4FB8";
+const PINK2  = "#E91E8C";
+const CYAN   = "#00E5FF";
+const PURPLE = "#9D50FF";
+const PURPLE2= "#7C3AED";
+const NEUT   = "#6B7280";
+const TEXT   = "#0A0A0F";
+const SOFT   = "#FFF0F7";
+const BORDER = "rgba(255,79,184,0.15)";
+const GRAD   = `linear-gradient(135deg,${PINK},${PURPLE})`;
+const GRAD2  = `linear-gradient(135deg,${CYAN},${PURPLE})`;
 
-const LANDING_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@400;500;600&display=swap');
-  .lp *{box-sizing:border-box;}
-  .lp{font-family:Inter,sans-serif;background:#fff;color:${LTEXT};-webkit-font-smoothing:antialiased;user-select:none;}
-  .lp img{display:block;width:100%;object-fit:cover;}
-  .lp a{text-decoration:none;color:inherit;}
-  @keyframes lpScrollX{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
-  .lp-carousel-track{display:flex;gap:20px;animation:lpScrollX 30s linear infinite;width:max-content;}
-  .lp-carousel-track:hover{animation-play-state:paused;}
-  .lp-carousel-wrap{overflow:hidden;width:100%;mask-image:linear-gradient(to right,transparent 0%,black 8%,black 92%,transparent 100%);-webkit-mask-image:linear-gradient(to right,transparent 0%,black 8%,black 92%,transparent 100%);}
-  .lp-who-card{flex-shrink:0;width:260px;border-radius:14px;overflow:hidden;position:relative;background:#F9FAFB;border:1px solid ${LBORDER};}
-  .lp-who-card img{width:100%;height:170px;object-fit:cover;}
-  .lp-who-label{padding:14px 16px;font-family:Nunito,sans-serif;font-weight:800;font-size:14px;color:${LTEXT};}
-  .lp-who-sub{padding:0 16px 14px;font-size:12px;color:${LSUB};line-height:1.5;margin-top:-4px;}
-  .lp-billing-cute{display:flex;background:#F3F4F6;border-radius:999px;padding:4px;gap:2px;}
-  .lp-billing-cute button{border:none;border-radius:999px;padding:8px 18px;font-family:Inter,sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;white-space:nowrap;}
-  .lp-feat-img{width:100%;height:140px;object-fit:cover;border-radius:8px;margin-bottom:16px;}
-  @keyframes lpFadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-  .lp-nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop-filter:blur(12px);border-bottom:1px solid ${LBORDER};padding:0 48px;height:64px;display:flex;align-items:center;justify-content:space-between;}
-  .lp-logo-text{font-family:Nunito,sans-serif;font-weight:900;font-size:20px;background:${LGRAD};-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-  .lp-nav-links{display:flex;gap:36px;font-size:14px;font-weight:500;color:${LSUB};}
-  .lp-nav-links a:hover{color:${LPINK};}
-  .lp-btn-ghost{padding:8px 20px;border:1.5px solid ${LBORDER};border-radius:8px;font-size:14px;font-weight:600;color:${LTEXT};background:none;cursor:pointer;font-family:Inter,sans-serif;}
-  .lp-btn-ghost:hover{border-color:${LPINK};color:${LPINK};}
-  .lp-btn-fill{padding:8px 20px;border:none;border-radius:8px;font-size:14px;font-weight:600;color:#fff;background:${LGRAD};cursor:pointer;font-family:Inter,sans-serif;}
-  .lp-nav-ham{display:none;background:none;border:none;cursor:pointer;padding:4px;}
-  .lp-hero{min-height:90vh;display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:80px 48px;gap:60px;max-width:1280px;margin:0 auto;position:relative;}
-  .lp-hero-tag{display:inline-flex;align-items:center;gap:6px;background:${LSOFT};border:1px solid #FECDE8;border-radius:4px;padding:5px 12px;font-size:12px;font-weight:600;color:${LPINK};margin-bottom:20px;letter-spacing:.3px;}
-  .lp-hero h1{font-family:Nunito,sans-serif;font-weight:900;font-size:52px;line-height:1.07;color:${LTEXT};margin-bottom:18px;}
-  .lp-hero h1 em{font-style:normal;background:${LGRAD};-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-  .lp-hero-sub{font-size:17px;color:${LSUB};line-height:1.75;margin-bottom:32px;max-width:480px;}
-  .lp-hero-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
-  .lp-btn-big{padding:14px 32px;border-radius:8px;font-family:Inter,sans-serif;font-weight:600;font-size:15px;cursor:pointer;}
-  .lp-btn-big-fill{background:${LGRAD};color:#fff;border:none;}
-  .lp-btn-big-outline{background:#fff;color:${LTEXT};border:1.5px solid #E5E7EB;}
-  .lp-btn-big-outline:hover{border-color:${LPINK};}
-  .lp-hero-note{font-size:13px;color:#9CA3AF;}
-  .lp-hero-img{border-radius:16px;overflow:hidden;height:520px;position:relative;}
-  .lp-hero-img img{height:100%;object-fit:cover;}
-  .lp-hero-badge{position:absolute;bottom:20px;left:20px;background:rgba(255,255,255,0.97);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.12);}
-  .lp-logos{border-top:1px solid ${LBORDER};border-bottom:1px solid ${LBORDER};padding:28px 48px;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;}
-  .lp-logos-label{font-size:12px;font-weight:600;color:#9CA3AF;white-space:nowrap;margin-right:8px;letter-spacing:.5px;text-transform:uppercase;}
-  .lp-logo-pill{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:8px 20px;font-size:13px;font-weight:600;color:#6B7280;}
-  .lp-section{padding:96px 48px;}
-  .lp-section-inner{max-width:1200px;margin:0 auto;}
-  .lp-section-label{font-size:12px;font-weight:600;color:${LPINK};text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;}
-  .lp-section-title{font-family:Nunito,sans-serif;font-weight:900;font-size:40px;line-height:1.1;color:${LTEXT};margin-bottom:14px;}
-  .lp-section-sub{font-size:16px;color:${LSUB};line-height:1.75;max-width:560px;}
-  .lp-how{background:#FAFAFA;position:relative;overflow:hidden;}
-  .lp-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:${LBORDER};margin-top:64px;}
-  .lp-step{background:#fff;padding:40px 36px;}
-  .lp-step-num{font-family:Nunito,sans-serif;font-weight:900;font-size:13px;color:${LPINK};letter-spacing:1px;margin-bottom:20px;}
-  .lp-step-icon{width:48px;height:48px;margin-bottom:20px;}
-  .lp-step-title{font-family:Nunito,sans-serif;font-weight:900;font-size:20px;color:${LTEXT};margin-bottom:8px;}
-  .lp-step-body{font-size:14px;color:${LSUB};line-height:1.7;}
-  .lp-photo-split{display:grid;grid-template-columns:1fr 1fr;min-height:540px;}
-  .lp-photo-split-img{overflow:hidden;}
-  .lp-photo-split-img img{height:100%;object-fit:cover;}
-  .lp-photo-split-content{padding:80px 64px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;background:${LSOFT};}
-  .lp-quote-mark{font-family:Nunito,sans-serif;font-weight:900;font-size:64px;color:${LPINK};line-height:.8;margin-bottom:12px;}
-  .lp-quote-text{font-family:Nunito,sans-serif;font-weight:800;font-size:22px;color:${LTEXT};line-height:1.45;margin-bottom:16px;}
-  .lp-quote-attr{font-size:14px;color:${LSUB};font-weight:500;}
-  .lp-feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border:1px solid ${LBORDER};border-radius:12px;overflow:hidden;margin-top:56px;}
-  .lp-feat{padding:36px;border-right:1px solid ${LBORDER};border-bottom:1px solid ${LBORDER};}
-  .lp-feat:nth-child(2n){border-right:none;}
-  .lp-feat:nth-child(3),.lp-feat:nth-child(4){border-bottom:none;}
-  .lp-feat-icon{width:40px;height:40px;border-radius:8px;background:${LSOFT};display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
-  .lp-feat-title{font-family:Nunito,sans-serif;font-weight:900;font-size:17px;color:${LTEXT};margin-bottom:6px;}
-  .lp-feat-body{font-size:14px;color:${LSUB};line-height:1.7;}
-  .lp-stats{background:${LTEXT};color:#fff;padding:96px 48px;position:relative;overflow:hidden;}
-  .lp-stats-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
-  .lp-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;}
-  .lp-stat-item{border-top:1px solid rgba(255,255,255,.15);padding-top:24px;}
-  .lp-stat-num{font-family:Nunito,sans-serif;font-weight:900;font-size:48px;color:${LPINK2};line-height:1;}
-  .lp-stat-label{font-size:14px;color:rgba(255,255,255,.55);margin-top:6px;line-height:1.5;}
-  .lp-photo-full{position:relative;height:480px;overflow:hidden;}
-  .lp-photo-full img{width:100%;height:100%;object-fit:cover;}
-  .lp-photo-full-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(15,10,13,0.72) 40%,rgba(15,10,13,0.1));}
-  .lp-photo-full-content{position:absolute;inset:0;display:flex;align-items:center;padding:0 96px;max-width:700px;}
-  .lp-pricing{padding:96px 48px;background:#FAFAFA;position:relative;overflow:hidden;}
-  .lp-pricing-inner{max-width:1100px;margin:0 auto;}
-  .lp-pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid ${LBORDER};border-radius:12px;overflow:hidden;margin-top:56px;max-width:820px;}
-  .lp-cta{padding:96px 48px;text-align:center;position:relative;overflow:hidden;}
-  .lp-cta h2{font-family:Nunito,sans-serif;font-weight:900;font-size:44px;color:${LTEXT};line-height:1.1;margin-bottom:14px;}
-  .lp-cta p{font-size:16px;color:${LSUB};margin-bottom:36px;line-height:1.7;}
-  .lp-footer{background:#0F0A0D;color:rgba(255,255,255,.45);padding:32px 48px;}
-  .lp-footer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;}
-  .lp-footer-logo-text{font-family:Nunito,sans-serif;font-weight:900;font-size:16px;background:${LGRAD};-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-  .lp-footer-links{display:flex;gap:24px;}
-  .lp-footer-links a{color:rgba(255,255,255,.4);font-size:13px;}
-  .lp-footer-links a:hover{color:#fff;}
-  .lp-footer-powered{font-size:12px;color:rgba(255,255,255,.25);margin-top:16px;text-align:center;border-top:1px solid rgba(255,255,255,.07);padding-top:16px;max-width:1200px;margin:16px auto 0;}
-  .lp-footer-powered a{color:rgba(255,255,255,.4);}
-  .lp-footer-powered a:hover{color:#fff;}
-  @media(max-width:900px){
-    .lp-nav{padding:0 20px;}
-    .lp-nav-links,.lp-nav .lp-btn-ghost{display:none;}
-    .lp-nav-ham{display:block;}
-    .lp-hero{grid-template-columns:1fr;padding:48px 24px;min-height:auto;gap:36px;}
-    .lp-hero h1{font-size:36px;}
-    .lp-hero-img{height:280px;}
-    .lp-logos{padding:20px 24px;}
-    .lp-section{padding:64px 24px;}
-    .lp-section-title{font-size:30px;}
-    .lp-steps{grid-template-columns:1fr;}
-    .lp-photo-split{grid-template-columns:1fr;}
-    .lp-photo-split-img{height:280px;}
-    .lp-photo-split-content{padding:48px 24px;}
-    .lp-feat-grid{grid-template-columns:1fr;border-radius:0;border-left:none;border-right:none;}
-    .lp-feat{border-right:none !important;border-bottom:1px solid ${LBORDER} !important;}
-    .lp-feat:last-child{border-bottom:none !important;}
-    .lp-stats{padding:64px 24px;}
-    .lp-stats-inner{grid-template-columns:1fr;gap:40px;}
-    .lp-stats-grid{grid-template-columns:1fr 1fr;}
-    .lp-photo-full{height:320px;}
-    .lp-photo-full-content{padding:0 32px;max-width:100%;}
-    .lp-photo-full-content h2{font-size:26px !important;}
-    .lp-pricing{padding:64px 24px;}
-    .lp-pricing-grid{grid-template-columns:1fr !important;max-width:100% !important;}
-    .lp-pricing-grid > div:first-child{border-right:none !important;border-bottom:1px solid ${LBORDER} !important;}
-    [style*="grid-template-columns:repeat(3,1fr)"]{grid-template-columns:1fr !important;}
-    [style*="grid-template-columns: repeat(3,1fr)"]{grid-template-columns:1fr !important;}
-    .lp-cta{padding:64px 24px;}
-    .lp-cta h2{font-size:32px;}
-    .lp-footer{padding:32px 24px;}
-    .lp-footer-inner{flex-direction:column;gap:20px;text-align:center;}
-    .lp-footer-links{flex-wrap:wrap;justify-content:center;}
-  }
-  @media(max-width:480px){
-    .lp-hero h1{font-size:30px;}
-    .lp-hero-btns{flex-direction:column;}
-    .lp-stat-num{font-size:36px;}
-  }
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Nunito:wght@700;800;900&family=DM+Sans:wght@400;500;600&display=swap');
+.lp *{box-sizing:border-box;margin:0;padding:0;}
+.lp{font-family:'DM Sans',sans-serif;background:#fff;color:#0A0A0F;-webkit-font-smoothing:antialiased;user-select:none;}
+.lp h1,.lp h2,.lp h3,.lp h4{font-family:'Plus Jakarta Sans',sans-serif;}
+.lp a{text-decoration:none;color:inherit;}
+.lp img{display:block;}
+.lp-nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,79,184,0.15);padding:0 40px;height:64px;display:flex;align-items:center;justify-content:space-between;}
+.lp-nav-logo{display:flex;align-items:center;gap:8px;font-family:'Nunito',sans-serif;font-weight:900;font-size:18px;}
+.lp-nav-logo span{background:linear-gradient(135deg,#FF4FB8,#9D50FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.lp-nav-links{display:flex;gap:32px;font-size:14px;font-weight:500;color:#6B7280;}
+.lp-nav-links a:hover{color:#FF4FB8;}
+.lp-nav-actions{display:flex;gap:10px;align-items:center;}
+.lp-btn-ghost{padding:8px 18px;border:1.5px solid #E5E7EB;border-radius:999px;font-size:14px;font-weight:600;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;color:#0A0A0F;}
+.lp-btn-ghost:hover{border-color:#FF4FB8;color:#FF4FB8;}
+.lp-btn-fill{padding:9px 20px;border:none;border-radius:999px;font-size:14px;font-weight:600;color:#fff;background:linear-gradient(135deg,#FF4FB8,#9D50FF);cursor:pointer;font-family:'DM Sans',sans-serif;}
+.lp-hero{min-height:96vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px;position:relative;overflow:hidden;background:radial-gradient(ellipse 70% 60% at 50% 0%,rgba(157,80,255,0.08) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(0,229,255,0.06) 0%,transparent 60%),#fff;}
+.lp-hero-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(157,80,255,0.08);border:1px solid rgba(157,80,255,0.25);border-radius:999px;padding:5px 14px;font-size:12px;font-weight:600;color:#9D50FF;margin-bottom:24px;letter-spacing:.3px;}
+.lp-hero h1{font-size:clamp(40px,6vw,76px);line-height:1.04;color:#0A0A0F;max-width:860px;margin:0 auto 20px;letter-spacing:-1.5px;}
+.lp-hero-sub{font-size:18px;color:#6B7280;line-height:1.7;max-width:540px;margin:0 auto 36px;}
+.lp-hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;}
+.lp-btn-big{padding:14px 32px;border-radius:999px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;}
+.lp-btn-big-fill{background:linear-gradient(135deg,#FF4FB8,#9D50FF);color:#fff;border:none;box-shadow:0 8px 32px rgba(255,79,184,0.3);}
+.lp-btn-big-outline{background:#fff;color:#0A0A0F;border:1.5px solid #E5E7EB;}
+.lp-btn-big-outline:hover{border-color:#9D50FF;color:#9D50FF;}
+.lp-hero-note{font-size:12px;color:#9CA3AF;margin-top:8px;}
+.lp-hero-screens{position:relative;width:100%;max-width:1100px;margin:52px auto 0;display:flex;align-items:flex-end;justify-content:center;gap:16px;padding:0 24px;}
+.lp-screen-main{width:280px;border-radius:24px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.18),0 0 0 1px rgba(0,0,0,0.06);flex-shrink:0;}
+.lp-screen-side{width:220px;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.14),0 0 0 1px rgba(0,0,0,0.05);flex-shrink:0;}
+.lp-screen-glow{position:absolute;bottom:-40px;left:50%;transform:translateX(-50%);width:60%;height:120px;background:radial-gradient(ellipse,rgba(255,79,184,0.18) 0%,transparent 70%);pointer-events:none;}
+.lp-logos{border-top:1px solid #F3F4F6;border-bottom:1px solid #F3F4F6;padding:28px 48px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}
+.lp-logos-label{font-size:11px;font-weight:700;color:#9CA3AF;letter-spacing:1.5px;text-transform:uppercase;margin-right:8px;}
+.lp-logo-pill{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:7px 18px;font-size:13px;font-weight:600;color:#6B7280;}
+.lp-section{padding:96px 24px;}
+.lp-section-inner{max-width:1120px;margin:0 auto;}
+.lp-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;}
+.lp-section-title{font-size:clamp(28px,4vw,44px);line-height:1.08;color:#0A0A0F;margin-bottom:14px;letter-spacing:-0.5px;}
+.lp-section-sub{font-size:16px;color:#6B7280;line-height:1.7;max-width:540px;}
+.lp-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#F3F4F6;margin-top:56px;border-radius:16px;overflow:hidden;}
+.lp-step{background:#fff;padding:40px 32px;}
+.lp-step-num{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:11px;letter-spacing:2px;margin-bottom:20px;}
+.lp-step-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;}
+.lp-step-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:#0A0A0F;margin-bottom:8px;}
+.lp-step-body{font-size:14px;color:#6B7280;line-height:1.7;}
+.lp-feat-dark{background:#0A0A0F;color:#fff;padding:96px 24px;position:relative;overflow:hidden;}
+.lp-feat-dark::before{content:'';position:absolute;top:-100px;right:-100px;width:500px;height:500px;background:radial-gradient(circle,rgba(157,80,255,0.15) 0%,transparent 70%);pointer-events:none;}
+.lp-feat-dark::after{content:'';position:absolute;bottom:-80px;left:-80px;width:400px;height:400px;background:radial-gradient(circle,rgba(0,229,255,0.1) 0%,transparent 70%);pointer-events:none;}
+.lp-feat-tabs{display:flex;gap:8px;margin-top:40px;flex-wrap:wrap;}
+.lp-feat-tab{padding:8px 18px;border-radius:999px;border:1px solid rgba(255,255,255,0.12);font-size:13px;font-weight:600;color:rgba(255,255,255,0.5);cursor:pointer;background:none;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.lp-feat-tab.active{background:linear-gradient(135deg,#FF4FB8,#9D50FF);border-color:transparent;color:#fff;}
+.lp-feat-content{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;margin-top:48px;}
+.lp-feat-text h3{font-size:32px;line-height:1.15;color:#fff;margin-bottom:16px;letter-spacing:-0.3px;}
+.lp-feat-text p{font-size:15px;color:rgba(255,255,255,0.6);line-height:1.75;margin-bottom:24px;}
+.lp-feat-list{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.lp-feat-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:rgba(255,255,255,0.75);}
+.lp-feat-list li::before{content:'';width:6px;height:6px;border-radius:50%;background:linear-gradient(135deg,#FF4FB8,#9D50FF);flex-shrink:0;margin-top:6px;}
+.lp-feat-screen{position:relative;}
+.lp-feat-screen-glow{position:absolute;inset:-30px;background:radial-gradient(circle at center,rgba(157,80,255,0.2) 0%,transparent 70%);pointer-events:none;z-index:0;}
+.lp-bento{background:#FAFAFA;padding:96px 24px;}
+.lp-bento-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:56px;}
+.lp-bento-card{background:#fff;border:1px solid #F0F0F0;border-radius:20px;padding:32px;overflow:hidden;position:relative;transition:box-shadow .2s;}
+.lp-bento-card:hover{box-shadow:0 8px 32px rgba(0,0,0,0.07);}
+.lp-bento-card.span2{grid-column:span 2;}
+.lp-bento-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;}
+.lp-bento-card h4{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:17px;color:#0A0A0F;margin-bottom:8px;}
+.lp-bento-card p{font-size:13px;color:#6B7280;line-height:1.65;}
+.lp-stats{background:#0A0A0F;color:#fff;padding:96px 24px;position:relative;overflow:hidden;}
+.lp-stats::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:800px;height:400px;background:radial-gradient(ellipse,rgba(157,80,255,0.12) 0%,transparent 70%);}
+.lp-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;margin-top:56px;}
+.lp-stat-item{padding:40px 32px;background:rgba(255,255,255,0.02);}
+.lp-stat-num{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:52px;line-height:1;margin-bottom:8px;}
+.lp-stat-label{font-size:13px;color:rgba(255,255,255,0.5);line-height:1.5;}
+.lp-who{padding:80px 0;background:#fff;overflow:hidden;}
+.lp-who-inner{max-width:1120px;margin:0 auto;padding:0 24px;margin-bottom:40px;}
+.lp-carousel-wrap{overflow:hidden;mask-image:linear-gradient(to right,transparent 0%,black 6%,black 94%,transparent 100%);-webkit-mask-image:linear-gradient(to right,transparent 0%,black 6%,black 94%,transparent 100%);}
+.lp-carousel-track{display:flex;gap:16px;animation:lpScrollX 32s linear infinite;width:max-content;}
+.lp-carousel-track:hover{animation-play-state:paused;}
+@keyframes lpScrollX{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.lp-who-card{flex-shrink:0;width:240px;border-radius:16px;overflow:hidden;background:#F9FAFB;border:1px solid #F0F0F0;}
+.lp-who-card img{width:100%;height:155px;object-fit:cover;}
+.lp-who-card-body{padding:14px 16px;}
+.lp-who-card-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:13px;color:#0A0A0F;margin-bottom:4px;}
+.lp-who-card-sub{font-size:11px;color:#6B7280;line-height:1.5;}
+.lp-pricing{padding:96px 24px;background:#FAFAFA;}
+.lp-pricing-toggle{display:inline-flex;background:#F3F4F6;border-radius:999px;padding:4px;gap:2px;margin-top:28px;}
+.lp-pricing-toggle button{border:none;border-radius:999px;padding:9px 22px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;white-space:nowrap;background:transparent;color:#6B7280;}
+.lp-pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px;max-width:1000px;}
+.lp-plan-card{background:#fff;border:1px solid #E5E7EB;border-radius:20px;padding:36px 28px;}
+.lp-plan-card.popular{border-color:#FF4FB8;box-shadow:0 0 0 1px #FF4FB8,0 8px 40px rgba(255,79,184,0.12);}
+.lp-plan-badge{display:inline-block;background:linear-gradient(135deg,#FF4FB8,#9D50FF);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:999px;margin-bottom:16px;letter-spacing:.5px;}
+.lp-plan-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;}
+.lp-plan-price{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:42px;line-height:1;margin-bottom:4px;}
+.lp-plan-period{font-size:13px;color:#6B7280;}
+.lp-plan-divider{height:1px;background:#F3F4F6;margin:24px 0;}
+.lp-plan-features{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:28px;}
+.lp-plan-features li{display:flex;align-items:center;gap:8px;font-size:13px;color:#0A0A0F;}
+.lp-plan-btn{width:100%;padding:12px;border-radius:999px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;border:none;transition:all .2s;}
+.lp-plan-btn.primary{background:linear-gradient(135deg,#FF4FB8,#9D50FF);color:#fff;}
+.lp-plan-btn.outline{background:#fff;color:#0A0A0F;border:1.5px solid #E5E7EB;}
+.lp-plan-btn.outline:hover{border-color:#FF4FB8;color:#FF4FB8;}
+.lp-cta-final{padding:80px 24px;display:flex;justify-content:center;}
+.lp-cta-card{background:linear-gradient(135deg,#FF4FB8 0%,#E91E8C 50%,#9D50FF 100%);border-radius:28px;padding:72px 48px;text-align:center;max-width:900px;width:100%;position:relative;overflow:hidden;}
+.lp-cta-card::before{content:'';position:absolute;top:-80px;right:-80px;width:300px;height:300px;background:rgba(255,255,255,0.06);border-radius:50%;}
+.lp-cta-card::after{content:'';position:absolute;bottom:-60px;left:-60px;width:240px;height:240px;background:rgba(255,255,255,0.04);border-radius:50%;}
+.lp-cta-card h2{font-size:clamp(32px,5vw,54px);color:#fff;line-height:1.08;margin-bottom:16px;letter-spacing:-0.5px;position:relative;z-index:1;}
+.lp-cta-card p{font-size:17px;color:rgba(255,255,255,0.8);margin-bottom:36px;line-height:1.65;position:relative;z-index:1;}
+.lp-cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1;}
+.lp-cta-btn-white{padding:14px 32px;border-radius:999px;background:#fff;color:#E91E8C;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;border:none;cursor:pointer;}
+.lp-cta-btn-outline{padding:14px 32px;border-radius:999px;background:rgba(255,255,255,0.12);color:#fff;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;border:1.5px solid rgba(255,255,255,0.3);cursor:pointer;}
+.lp-footer{background:#0A0A0F;color:rgba(255,255,255,0.4);padding:40px 48px;}
+.lp-footer-inner{max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;}
+.lp-footer-logo{font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;background:linear-gradient(135deg,#FF4FB8,#9D50FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.lp-footer-links{display:flex;gap:24px;}
+.lp-footer-links a,.lp-footer-links button{font-size:13px;color:rgba(255,255,255,0.35);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.lp-footer-links a:hover,.lp-footer-links button:hover{color:#fff;}
+.lp-footer-bottom{max-width:1120px;margin:16px auto 0;border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;font-size:12px;text-align:center;color:rgba(255,255,255,0.2);}
+@media(max-width:900px){
+  .lp-nav-links,.lp-nav .lp-btn-ghost{display:none;}
+  .lp-nav{padding:0 20px;}
+  .lp-hero{padding:64px 20px 40px;}
+  .lp-hero-screens{flex-direction:column;align-items:center;}
+  .lp-screen-side{display:none;}
+  .lp-screen-main{width:260px;}
+  .lp-steps{grid-template-columns:1fr;}
+  .lp-feat-content{grid-template-columns:1fr;}
+  .lp-bento-grid{grid-template-columns:1fr;}
+  .lp-bento-card.span2{grid-column:span 1;}
+  .lp-stats-grid{grid-template-columns:1fr 1fr;}
+  .lp-pricing-grid{grid-template-columns:1fr;}
+  .lp-footer-inner{flex-direction:column;gap:20px;text-align:center;}
+  .lp-footer-links{flex-wrap:wrap;justify-content:center;}
+  .lp-logos{padding:20px 16px;}
+  .lp-section{padding:64px 20px;}
+  .lp-cta-card{padding:48px 24px;}
+}
+@media(max-width:480px){
+  .lp-hero h1{font-size:34px;}
+  .lp-stat-num{font-size:36px;}
+  .lp-stats-grid{grid-template-columns:1fr;}
+}
 `;
 
-// ── Ham logo SVG ──
-function LPHam({ size = 32 }) {
+function Ham({ size = 28 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
       <ellipse cx="22" cy="30" rx="16" ry="16" fill="#F9A8D4"/>
       <ellipse cx="78" cy="30" rx="16" ry="16" fill="#F9A8D4"/>
       <ellipse cx="22" cy="30" rx="9" ry="9" fill="#FDE8F0"/>
       <ellipse cx="78" cy="30" rx="9" ry="9" fill="#FDE8F0"/>
-      <ellipse cx="50" cy="78" rx="30" ry="22" fill="#FDE8F0"/>
       <ellipse cx="50" cy="52" rx="32" ry="30" fill="#FCE7F3"/>
       <ellipse cx="50" cy="80" rx="18" ry="14" fill="#FFF0F5"/>
       <ellipse cx="26" cy="58" rx="9" ry="7" fill="#FDA4CF" opacity=".6"/>
@@ -166,58 +171,52 @@ function LPHam({ size = 32 }) {
       <circle cx="41.5" cy="45.5" r="1.8" fill="white" opacity=".85"/>
       <circle cx="61.5" cy="45.5" r="1.8" fill="white" opacity=".85"/>
       <ellipse cx="50" cy="56" rx="3.5" ry="2.5" fill="#E91E8C"/>
-      <path d="M44 62 Q50 68 56 62" stroke="#C0185A" strokeWidth="2" fill="none" strokeLinecap="round"/>
     </svg>
   );
 }
 
-// ── Check icon ──
-function Check({ color = LPINK }) {
+function Check({ color = PINK }) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0}}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0}}>
       <polyline points="20 6 9 17 4 12"/>
     </svg>
   );
 }
 
-// ── Privacy Policy page ──
 export function PrivacyPage({ onBack }) {
   return (
-    <div style={{fontFamily:"Inter,sans-serif",background:"#fff",color:LTEXT,minHeight:"100vh"}}>
-      <style>{LANDING_CSS}</style>
-      <nav style={{borderBottom:`1px solid ${LBORDER}`,padding:"0 48px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+    <div style={{fontFamily:"'DM Sans',sans-serif",background:"#fff",color:TEXT,minHeight:"100vh"}}>
+      <style>{CSS}</style>
+      <nav style={{borderBottom:`1px solid ${BORDER}`,padding:"0 48px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={onBack}>
-          <LPHam size={28}/><span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,background:LGRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</span>
+          <Ham size={28}/><span style={{fontFamily:"'Nunito',sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</span>
         </div>
-        <button onClick={onBack} style={{fontSize:14,color:LSUB,background:"none",border:"none",cursor:"pointer"}}>← Back</button>
+        <button onClick={onBack} style={{fontSize:14,color:NEUT,background:"none",border:"none",cursor:"pointer"}}>← Back</button>
       </nav>
       <div style={{maxWidth:760,margin:"0 auto",padding:"64px 48px"}}>
-        <h1 style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:38,color:LTEXT,marginBottom:8}}>Privacy Policy</h1>
-        <div style={{fontSize:14,color:LSUB,marginBottom:48}}>Last updated: 20 March 2026 · Teticoin by Tetikus</div>
+        <h1 style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:800,fontSize:38,color:TEXT,marginBottom:8}}>Privacy Policy</h1>
+        <div style={{fontSize:14,color:NEUT,marginBottom:48}}>Last updated: 20 March 2026 · Teticoin by Tetikus</div>
         {[
-          ["", "This Privacy Policy explains how Teticoin ('we', 'our', or 'us'), operated by Tetikus, collects, uses, and protects your information when you use our platform."],
-          ["", "By using Teticoin, you agree to the terms of this Privacy Policy. If you do not agree, please do not use the platform."],
-          ["1. Information We Collect", "Account holders (hosts): When you create an account, we collect your name, email address, and authentication credentials. We also store your session history and usage data.\n\nParticipants: Participants who join a session via QR code or link only provide a display name. No email or account is required. Participant data is stored as part of the session created by the host.\n\nUsage data: We may collect technical information such as browser type and IP address to improve platform performance."],
-          ["2. How We Use Your Information", "We use your information to provide the platform, authenticate host accounts, process payments via Chip, send transactional emails, and improve features. We do not sell your personal data or use participant data for advertising."],
-          ["3. Data Storage", "Data is stored securely in Google Firebase (Firestore). Free plan session data is retained for 30 days after last activity. Pro and Team plan data is retained for the subscription lifetime plus 90 days after cancellation."],
-          ["4. Participant Data & Host Responsibility", "Hosts are responsible for informing participants that their name and performance may be recorded. Hosts must not collect sensitive personal information from participants beyond what is needed to run a session."],
-          ["5. Payments", "Paid subscriptions are processed through Chip (chip-in.asia). We do not store card details. All payment data is handled by Chip in accordance with PCI DSS standards."],
-          ["6. Cookies", "Teticoin uses essential cookies to maintain your login session. We do not use advertising or tracking cookies."],
-          ["7. Your Rights", "You have the right to access, correct, or delete your personal data, and to export session data in CSV format. Contact us at hi.tetikus@gmail.com to exercise these rights."],
-          ["8. Third-Party Services", "Teticoin uses Google Firebase (authentication & database), Chip (payments), and Vercel (hosting). Each has its own privacy policy."],
-          ["9. Children's Privacy", "Teticoin is not directed at children under 13. Hosts using Teticoin with younger participants are responsible for obtaining appropriate consents."],
-          ["10. Changes & Contact", "We may update this policy from time to time. For questions, contact hi.tetikus@gmail.com · Tetikus · Malaysia."],
-        ].map(([heading, body], i) => (
+          ["","This Privacy Policy explains how Teticoin ('we', 'our', or 'us'), operated by Tetikus, collects, uses, and protects your information when you use our platform."],
+          ["","By using Teticoin, you agree to the terms of this Privacy Policy. If you do not agree, please do not use the platform."],
+          ["1. Information We Collect","Account holders (hosts): When you create an account, we collect your name, email address, and authentication credentials. We also store your session history and usage data.\n\nParticipants: Participants who join a session via QR code or link only provide a display name. No email or account is required. Participant data is stored as part of the session created by the host.\n\nUsage data: We may collect technical information such as browser type and IP address to improve platform performance."],
+          ["2. How We Use Your Information","We use your information to provide the platform, authenticate host accounts, process payments via Chip, send transactional emails, and improve features. We do not sell your personal data or use participant data for advertising."],
+          ["3. Data Storage","Data is stored securely in Google Firebase (Firestore). Free plan session data is retained for 30 days after last activity. Pro and Team plan data is retained for the subscription lifetime plus 90 days after cancellation."],
+          ["4. Participant Data & Host Responsibility","Hosts are responsible for informing participants that their name and performance may be recorded. Hosts must not collect sensitive personal information from participants beyond what is needed to run a session."],
+          ["5. Payments","Paid subscriptions are processed through Chip (chip-in.asia). We do not store card details. All payment data is handled by Chip in accordance with PCI DSS standards."],
+          ["6. Cookies","Teticoin uses essential cookies to maintain your login session. We do not use advertising or tracking cookies."],
+          ["7. Your Rights","You have the right to access, correct, or delete your personal data, and to export session data in CSV format. Contact us at hi.tetikus@gmail.com to exercise these rights."],
+          ["8. Third-Party Services","Teticoin uses Google Firebase (authentication & database), Chip (payments), and Vercel (hosting). Each has its own privacy policy."],
+          ["9. Changes","We may update this policy from time to time. For questions: hi.tetikus@gmail.com · Tetikus · Malaysia."],
+        ].map(([h,b],i) => (
           <div key={i}>
-            {heading && <h2 style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:20,color:LTEXT,margin:"36px 0 12px"}}>{heading}</h2>}
-            {body.split("\n\n").map((para, j) => (
-              <p key={j} style={{fontSize:15,color:"#374151",marginBottom:14,lineHeight:1.75}}>{para}</p>
-            ))}
+            {h && <h2 style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:800,fontSize:20,color:TEXT,margin:"36px 0 12px"}}>{h}</h2>}
+            <p style={{fontSize:15,color:"#374151",marginBottom:14,lineHeight:1.75}}>{b}</p>
           </div>
         ))}
       </div>
-      <footer style={{background:"#0F0A0D",color:"rgba(255,255,255,.4)",padding:"24px 48px",textAlign:"center",fontSize:13,marginTop:64}}>
-        <span onClick={onBack} style={{color:"rgba(255,255,255,.4)",cursor:"pointer",margin:"0 12px"}}>← Teticoin</span>
+      <footer style={{background:"#0A0A0F",color:"rgba(255,255,255,.4)",padding:"24px 48px",textAlign:"center",fontSize:13,marginTop:64}}>
+        <span onClick={onBack} style={{cursor:"pointer",margin:"0 12px"}}>← Teticoin</span>
         <a href="mailto:hi.tetikus@gmail.com" style={{color:"rgba(255,255,255,.4)",margin:"0 12px"}}>Contact</a>
         <br/><br/>Powered by <a href="https://www.tetikus.com.my" target="_blank" rel="noopener noreferrer" style={{color:"rgba(255,255,255,.4)"}}>Tetikus</a> · © 2026
       </footer>
@@ -225,42 +224,41 @@ export function PrivacyPage({ onBack }) {
   );
 }
 
-// ── Terms of Service page ──
 export function TermsPage({ onBack }) {
   return (
-    <div style={{fontFamily:"Inter,sans-serif",background:"#fff",color:LTEXT,minHeight:"100vh"}}>
-      <style>{LANDING_CSS}</style>
-      <nav style={{borderBottom:`1px solid ${LBORDER}`,padding:"0 48px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+    <div style={{fontFamily:"'DM Sans',sans-serif",background:"#fff",color:TEXT,minHeight:"100vh"}}>
+      <style>{CSS}</style>
+      <nav style={{borderBottom:`1px solid ${BORDER}`,padding:"0 48px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={onBack}>
-          <LPHam size={28}/><span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,background:LGRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</span>
+          <Ham size={28}/><span style={{fontFamily:"'Nunito',sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</span>
         </div>
-        <button onClick={onBack} style={{fontSize:14,color:LSUB,background:"none",border:"none",cursor:"pointer"}}>← Back</button>
+        <button onClick={onBack} style={{fontSize:14,color:NEUT,background:"none",border:"none",cursor:"pointer"}}>← Back</button>
       </nav>
       <div style={{maxWidth:760,margin:"0 auto",padding:"64px 48px"}}>
-        <h1 style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:38,color:LTEXT,marginBottom:8}}>Terms of Service</h1>
-        <div style={{fontSize:14,color:LSUB,marginBottom:48}}>Last updated: 20 March 2026 · Teticoin by Tetikus</div>
+        <h1 style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:800,fontSize:38,color:TEXT,marginBottom:8}}>Terms of Service</h1>
+        <div style={{fontSize:14,color:NEUT,marginBottom:48}}>Last updated: 20 March 2026 · Teticoin by Tetikus</div>
         {[
-          ["", "These Terms govern your access to and use of Teticoin, operated by Tetikus. By accessing or using Teticoin, you agree to be bound by these Terms."],
-          ["1. Acceptance of Terms", "By creating an account or using Teticoin as a host or participant, you agree to these Terms and our Privacy Policy. If you do not agree, do not use the platform."],
-          ["2. Description of Service", "Teticoin is a participation engagement platform that allows hosts to create live sessions and award points to participants in real time. The platform is provided \"as is\" and may be updated, changed, or discontinued at any time."],
-          ["3. Accounts", "To host sessions, you must register with a valid email. You are responsible for maintaining the confidentiality of your credentials and for all activity under your account. Notify us immediately at hi.tetikus@gmail.com if you suspect unauthorised use."],
-          ["4. Acceptable Use", "You agree not to use Teticoin to collect sensitive personal data without consent, harass any participant, violate any law, reverse engineer the platform, or gain unauthorised access to other accounts or sessions. We reserve the right to suspend accounts that violate these terms."],
-          ["5. Subscriptions and Payments", "Paid plans are billed monthly or annually as selected. Payments are processed through Chip (chip-in.asia). Subscriptions auto-renew unless cancelled before the renewal date. Cancellation takes effect at end of the current billing period — no refunds are issued for unused time. We may change pricing with 30 days' notice."],
-          ["6. Intellectual Property", "All content, design, branding, and code on Teticoin is the intellectual property of Tetikus. You may not reproduce or distribute it without prior written consent. Session data entered by users remains the property of the host."],
-          ["7. Disclaimers", "Teticoin is provided \"as is\" without warranties. We do not guarantee uninterrupted availability or that the platform will meet your specific requirements. We are not responsible for loss of data or opportunity arising from your use."],
-          ["8. Limitation of Liability", "To the maximum extent permitted by law, Tetikus shall not be liable for any indirect, incidental, or consequential damages. Our total liability shall not exceed the amount you paid us in the 12 months preceding the claim."],
-          ["9. Termination", "You may delete your account at any time. We may suspend or terminate access for Terms violations. Upon termination, session data is retained for 90 days before permanent deletion."],
-          ["10. Governing Law", "These Terms are governed by the laws of Malaysia. Disputes are subject to the exclusive jurisdiction of Malaysian courts."],
-          ["11. Changes & Contact", "We may update these Terms from time to time and will notify users by email of material changes. For questions: hi.tetikus@gmail.com · Tetikus · Malaysia."],
-        ].map(([heading, body], i) => (
+          ["","These Terms govern your access to and use of Teticoin, operated by Tetikus. By accessing or using Teticoin, you agree to be bound by these Terms."],
+          ["1. Acceptance of Terms","By creating an account or using Teticoin as a host or participant, you agree to these Terms and our Privacy Policy. If you do not agree, do not use the platform."],
+          ["2. Description of Service","Teticoin is a participation engagement platform that allows hosts to create live sessions and award points to participants in real time. The platform is provided \"as is\" and may be updated, changed, or discontinued at any time."],
+          ["3. Accounts","To host sessions, you must register with a valid email. You are responsible for maintaining the confidentiality of your credentials and for all activity under your account. Notify us immediately at hi.tetikus@gmail.com if you suspect unauthorised use."],
+          ["4. Acceptable Use","You agree not to use Teticoin to collect sensitive personal data without consent, harass any participant, violate any law, reverse engineer the platform, or gain unauthorised access to other accounts or sessions."],
+          ["5. Subscriptions and Payments","Paid plans are billed monthly or annually as selected. Payments are processed through Chip (chip-in.asia). Subscriptions auto-renew unless cancelled before the renewal date. No refunds are issued for unused time."],
+          ["6. Intellectual Property","All content, design, branding, and code on Teticoin is the intellectual property of Tetikus. Session data entered by users remains the property of the host."],
+          ["7. Disclaimers","Teticoin is provided \"as is\" without warranties. We do not guarantee uninterrupted availability or that the platform will meet your specific requirements."],
+          ["8. Limitation of Liability","To the maximum extent permitted by law, Tetikus shall not be liable for any indirect, incidental, or consequential damages."],
+          ["9. Termination","You may delete your account at any time. Upon termination, session data is retained for 90 days before permanent deletion."],
+          ["10. Governing Law","These Terms are governed by the laws of Malaysia."],
+          ["11. Contact","For questions: hi.tetikus@gmail.com · Tetikus · Malaysia."],
+        ].map(([h,b],i) => (
           <div key={i}>
-            {heading && <h2 style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:20,color:LTEXT,margin:"36px 0 12px"}}>{heading}</h2>}
-            <p style={{fontSize:15,color:"#374151",marginBottom:14,lineHeight:1.75}}>{body}</p>
+            {h && <h2 style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:800,fontSize:20,color:TEXT,margin:"36px 0 12px"}}>{h}</h2>}
+            <p style={{fontSize:15,color:"#374151",marginBottom:14,lineHeight:1.75}}>{b}</p>
           </div>
         ))}
       </div>
-      <footer style={{background:"#0F0A0D",color:"rgba(255,255,255,.4)",padding:"24px 48px",textAlign:"center",fontSize:13,marginTop:64}}>
-        <span onClick={onBack} style={{color:"rgba(255,255,255,.4)",cursor:"pointer",margin:"0 12px"}}>← Teticoin</span>
+      <footer style={{background:"#0A0A0F",color:"rgba(255,255,255,.4)",padding:"24px 48px",textAlign:"center",fontSize:13,marginTop:64}}>
+        <span onClick={onBack} style={{cursor:"pointer",margin:"0 12px"}}>← Teticoin</span>
         <a href="mailto:hi.tetikus@gmail.com" style={{color:"rgba(255,255,255,.4)",margin:"0 12px"}}>Contact</a>
         <br/><br/>Powered by <a href="https://www.tetikus.com.my" target="_blank" rel="noopener noreferrer" style={{color:"rgba(255,255,255,.4)"}}>Tetikus</a> · © 2026
       </footer>
@@ -268,393 +266,478 @@ export function TermsPage({ onBack }) {
   );
 }
 
-// ── Main Landing Page ──
 export default function LandingPage({ onGetStarted, onLogin }) {
-  const [subpage, setSubpage] = useState(null); // null | "privacy" | "terms"
-  const [landingBilling, setLandingBilling] = useState("monthly");
+  const [subpage, setSubpage]   = useState(null);
+  const [billing, setBilling]   = useState("monthly");
+  const [activeTab, setActiveTab] = useState(0);
 
   if (subpage === "privacy") return <PrivacyPage onBack={() => setSubpage(null)}/>;
-  if (subpage === "terms") return <TermsPage onBack={() => setSubpage(null)}/>;
+  if (subpage === "terms")   return <TermsPage   onBack={() => setSubpage(null)}/>;
+
+  const proPrice  = billing === "monthly" ? "RM 16" : "RM 14";
+  const proPeriod = billing === "monthly" ? "/mo · Was RM 22/mo" : "/mo · Billed RM 169/year · Save RM 23";
+  const proBtn    = billing === "monthly" ? "Get Pro — RM 16/mo" : "Get Pro — RM 169/year";
+  const teamPrice = billing === "monthly" ? "RM 32" : "RM 27";
+  const teamPeriod= billing === "monthly" ? "/mo · up to 5 hosts" : "/mo · Billed RM 320/year · Save RM 64";
+  const teamBtn   = billing === "monthly" ? "Get Team — RM 32/mo" : "Get Team — RM 320/year";
+  const proLink   = billing === "monthly" ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL" : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl";
+  const teamLink  = billing === "monthly" ? "https://pay.chip-in.asia/4PzNZvVfRlvVVl2N1Y" : "https://pay.chip-in.asia/X4yoJ2E6269tJoE6xt";
+
+  const N = {fontFamily:"Nunito,sans-serif"};
+
+  const whoCards = [
+    {img:"https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=480&q=80&fit=crop",title:"Corporate Trainers",sub:"Award points for great ideas and active participation in L&D sessions."},
+    {img:"https://images.unsplash.com/photo-1509062522246-3755977927d7?w=480&q=80&fit=crop",title:"Teachers & Lecturers",sub:"Gamify classroom participation and boost student engagement instantly."},
+    {img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=480&q=80&fit=crop",title:"Workshop Facilitators",sub:"Keep energy high in half-day and full-day sessions."},
+    {img:"https://images.unsplash.com/photo-1556761175-4b46a572b786?w=480&q=80&fit=crop",title:"Team Leaders",sub:"Run engaging team meetings where every contribution gets recognised."},
+    {img:"https://images.unsplash.com/photo-1515169067868-5387ec356754?w=480&q=80&fit=crop",title:"Event Hosts",sub:"Add a competitive leaderboard element to any live event."},
+    {img:"https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=480&q=80&fit=crop",title:"HR & L&D Teams",sub:"Build a culture of recognition across onboarding and training days."},
+    {img:"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=480&q=80&fit=crop",title:"Coaches & Mentors",sub:"Turn group coaching sessions into high-energy rewarding experiences."},
+    {img:"https://images.unsplash.com/photo-1491895200222-0fc4a4c35e18?w=480&q=80&fit=crop",title:"Online Class Hosts",sub:"Bring real-time interaction to Zoom, Meet, or any virtual class."},
+  ];
 
   return (
     <div className="lp">
-      <style>{LANDING_CSS}</style>
+      <style>{CSS}</style>
 
       {/* NAV */}
       <nav className="lp-nav">
-        <div style={{display:"flex",alignItems:"center",gap:10}}><LPHam size={32}/><span className="lp-logo-text">Teticoin</span></div>
+        <div className="lp-nav-logo"><Ham size={28}/><span>Teticoin</span></div>
         <div className="lp-nav-links">
           <a href="#how">How it works</a>
           <a href="#features">Features</a>
           <a href="#pricing">Pricing</a>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <div className="lp-nav-actions">
           <button className="lp-btn-ghost" onClick={onLogin}>Log in</button>
           <button className="lp-btn-fill" onClick={onGetStarted}>Get started free</button>
         </div>
-        <button className="lp-nav-ham" onClick={onGetStarted}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A0A14" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
       </nav>
 
       {/* HERO */}
-      <div style={{maxWidth:1280,margin:"0 auto"}}>
-        <div className="lp-hero">
-          <div>
-            {/* ↓ EDIT: hero tag */}
-            <div className="lp-hero-tag" style={{marginBottom:12}}>✦ Gamify any group session</div>
-            {/* ↓ EDIT: main headline */}
-            <h1 style={{marginBottom:12}}>Make your sessions<br/><em>fun, competitive, unforgettable.</em></h1>
-            {/* ↓ EDIT: hero subtitle */}
-            <p className="lp-hero-sub" style={{marginBottom:24}}>Teticoin transforms any training, seminar, or gathering into an exciting experience — reward participation, spark competition, and keep everyone engaged from start to finish.</p>
-            <div className="lp-hero-btns">
-              <button className="lp-btn-big lp-btn-big-fill" onClick={onGetStarted}>🎯 Start Free Session</button>
-              <button className="lp-btn-big lp-btn-big-outline" onClick={() => document.getElementById("how")?.scrollIntoView({behavior:"smooth"})}>See how it works →</button>
-            </div>
-            <p className="lp-hero-note">Free plan available · No credit card required</p>
-          </div>
-          <div className="lp-hero-img">
-            <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=900&q=80&fit=crop" alt="Engaged group session"/>
-            <div className="lp-hero-badge">
-              <div style={{width:8,height:8,borderRadius:"50%",background:"#10B981",flexShrink:0}}/>
-              <div>
-                <div style={{fontSize:12,fontWeight:600,color:LTEXT}}>Live session</div>
-                {/* ↓ EDIT: badge session name */}
-                <div style={{fontSize:11,color:LSUB}}>Design Thinking Workshop</div>
-              </div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:LPINK}}>+100 pts</div>
-            </div>
-          </div>
+      <section className="lp-hero">
+        <div className="lp-hero-tag">✦ Real-time participation gamification</div>
+        <h1>Reward participation.<br/>Watch engagement <span style={{background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>skyrocket.</span></h1>
+        <p className="lp-hero-sub">Award points to anyone in your group in real time — for great contributions, active participation, or any behaviour worth recognising. No app needed.</p>
+        <div className="lp-hero-btns">
+          <button className="lp-btn-big lp-btn-big-fill" onClick={onGetStarted}>Start for free</button>
+          <button className="lp-btn-big lp-btn-big-outline" onClick={() => document.getElementById("how")?.scrollIntoView({behavior:"smooth"})}>See how it works →</button>
         </div>
-      </div>
+        <p className="lp-hero-note">Free plan available · No credit card required</p>
+
+        <div className="lp-hero-screens">
+          {/* LEFT — Home screen */}
+          <div className="lp-screen-side" style={{transform:"translateY(32px) rotate(-3deg)"}}>
+            <div style={{background:"linear-gradient(145deg,#FFF0F7,#FCE7F3)",borderRadius:20,width:"100%",padding:20,display:"flex",flexDirection:"column",gap:10,minHeight:380}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                <Ham size={22}/>
+                <span style={{...N,fontWeight:800,fontSize:14,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</span>
+              </div>
+              <div style={{background:"#fff",borderRadius:14,padding:16,textAlign:"center",marginTop:4}}>
+                <p style={{...N,fontWeight:700,fontSize:12,color:TEXT,marginBottom:8}}>Ready to reward<br/>your participants?</p>
+                <div style={{background:GRAD,color:"#fff",borderRadius:999,padding:"8px 12px",fontSize:11,fontWeight:700}}>+ Create New Session</div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginTop:4}}>
+                <div style={{background:"#fff",borderRadius:10,padding:"10px 6px",textAlign:"center"}}><div style={{...N,fontWeight:800,fontSize:16,color:PINK}}>2</div><div style={{fontSize:9,color:NEUT}}>Sessions</div></div>
+                <div style={{background:"#fff",borderRadius:10,padding:"10px 6px",textAlign:"center"}}><div style={{...N,fontWeight:800,fontSize:16,color:CYAN}}>6</div><div style={{fontSize:9,color:NEUT}}>People</div></div>
+                <div style={{background:"#fff",borderRadius:10,padding:"10px 6px",textAlign:"center"}}><div style={{...N,fontWeight:800,fontSize:16,color:PURPLE}}>920</div><div style={{fontSize:9,color:NEUT}}>Coins</div></div>
+              </div>
+              <div style={{background:"#fff",borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
+                <div style={{background:SOFT,borderRadius:8,padding:"6px 8px",fontSize:9,fontWeight:700,color:PINK}}>DZ6</div>
+                <div><div style={{fontSize:11,fontWeight:700,color:TEXT}}>Team Building BNI</div><div style={{fontSize:9,color:NEUT}}>21 Mar · 0 participants</div></div>
+              </div>
+            </div>
+          </div>
+
+          {/* CENTER — Award screen */}
+          <div className="lp-screen-main">
+            <div style={{background:"#fff",borderRadius:24,width:"100%",padding:20,minHeight:520}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:16,flexWrap:"wrap"}}>
+                <div style={{...N,fontWeight:800,fontSize:13,color:PINK}}>Design ...</div>
+                <div style={{background:"#DCFCE7",color:"#15803D",fontSize:10,fontWeight:700,borderRadius:999,padding:"3px 10px",display:"flex",alignItems:"center",gap:4}}><span style={{width:5,height:5,background:"#15803D",borderRadius:"50%",display:"inline-block"}}/>LIVE</div>
+                <div style={{marginLeft:"auto",display:"flex",gap:8}}>
+                  <div style={{width:26,height:26,background:"#F3F4F6",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>⊞</div>
+                  <div style={{width:26,height:26,background:"#F3F4F6",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>👥</div>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:0,borderBottom:"1px solid #F3F4F6",marginBottom:16}}>
+                {["Award","Board","Groups","Log"].map((t,i) => (
+                  <div key={t} style={{padding:"8px 12px",fontSize:12,fontWeight:i===0?700:400,color:i===0?PINK:NEUT,borderBottom:i===0?`2px solid ${PINK}`:"none"}}>{t}</div>
+                ))}
+                <div style={{marginLeft:"auto",padding:"8px 12px",fontSize:12,color:NEUT}}>👥 6</div>
+              </div>
+              <div style={{border:`1.5px dashed #FECDE8`,borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+                <div style={{width:28,height:28,borderRadius:8,border:`1.5px dashed #FECDE8`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:PINK}}>+</div>
+                <span style={{fontSize:12,color:NEUT}}>Tap to select participant</span>
+                <span style={{marginLeft:"auto",fontSize:14,color:NEUT}}>🔍</span>
+              </div>
+              <div style={{background:"#FFF9FC",border:`1px solid ${BORDER}`,borderRadius:14,padding:14}}>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,color:NEUT,textTransform:"uppercase",marginBottom:10}}>Give Coins</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:10}}>
+                  {["+10","+30","+50","+100","+150","+200"].map(v => (
+                    <div key={v} style={{border:`1px solid #FECDE8`,borderRadius:10,padding:10,textAlign:"center",...N,fontWeight:800,fontSize:15,color:PINK}}>{v}</div>
+                  ))}
+                </div>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,color:NEUT,textTransform:"uppercase",marginBottom:8}}>Quick Coins</div>
+                <div style={{display:"flex",gap:6,marginBottom:10}}>
+                  <div style={{flex:1,background:"#F3F0FF",borderRadius:10,padding:"8px 6px",textAlign:"center"}}><div style={{...N,fontWeight:800,fontSize:13,color:PURPLE}}>+50</div><div style={{fontSize:9,color:PURPLE}}>Correct</div></div>
+                  <div style={{flex:1,background:"#E0F2FE",borderRadius:10,padding:"8px 6px",textAlign:"center"}}><div style={{...N,fontWeight:800,fontSize:13,color:"#0284C7"}}>+30</div><div style={{fontSize:9,color:"#0284C7"}}>Question</div></div>
+                  <div style={{flex:1,background:"#DCFCE7",borderRadius:10,padding:"8px 6px",textAlign:"center"}}><div style={{...N,fontWeight:800,fontSize:13,color:"#15803D"}}>+10</div><div style={{fontSize:9,color:"#15803D"}}>Reply</div></div>
+                </div>
+                <div style={{background:`linear-gradient(135deg,${PURPLE2},${PURPLE})`,color:"#fff",borderRadius:12,padding:12,textAlign:"center",fontSize:12,fontWeight:700}}>👥 Mass Give Coins</div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT — Leaderboard */}
+          <div className="lp-screen-side" style={{transform:"translateY(32px) rotate(3deg)"}}>
+            <div style={{background:"#0A0A0F",borderRadius:20,padding:20,minHeight:380}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                <Ham size={20}/>
+                <span style={{...N,fontWeight:800,fontSize:13,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</span>
+                <span style={{marginLeft:"auto",background:"#2A2A2F",borderRadius:8,padding:"4px 10px",fontSize:10,color:"rgba(255,255,255,0.5)"}}>Back</span>
+              </div>
+              <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",marginBottom:14,letterSpacing:1}}>DESIGN THINKING · DEMO1</div>
+              <div style={{fontSize:9,fontWeight:700,letterSpacing:1.5,color:"rgba(255,255,255,0.3)",marginBottom:10}}>INDIVIDUAL</div>
+              {[
+                {rank:"1",init:"HI",name:"Haziq Ibrahim",pts:"210",av:`linear-gradient(135deg,${PURPLE2},${PURPLE})`,rankCol:"#F5A623",ptsCol:PINK,rowBg:"rgba(255,79,184,0.12)",rowBorder:"rgba(255,79,184,0.2)"},
+                {rank:"2",init:"AF",name:"Ahmad Faris",pts:"180",av:`linear-gradient(135deg,${PINK},${PINK2})`,rankCol:"rgba(255,255,255,0.3)",ptsCol:"#fff",rowBg:"rgba(255,255,255,0.04)",rowBorder:"transparent"},
+                {rank:"3",init:"NA",name:"Nurul Ain",pts:"140",av:`linear-gradient(135deg,${PINK},${PINK2})`,rankCol:"rgba(255,255,255,0.3)",ptsCol:"#fff",rowBg:"rgba(255,255,255,0.04)",rowBorder:"transparent"},
+                {rank:"4",init:"LH",name:"Luqman Hakim",pts:"120",av:"linear-gradient(135deg,#3B82F6,#1D4ED8)",rankCol:"rgba(255,255,255,0.3)",ptsCol:"#fff",rowBg:"rgba(255,255,255,0.04)",rowBorder:"transparent"},
+              ].map(r => (
+                <div key={r.rank} style={{background:r.rowBg,border:`1px solid ${r.rowBorder}`,borderRadius:12,padding:"10px 12px",marginBottom:6,display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{...N,color:r.rankCol,fontWeight:800,fontSize:12,width:12}}>{r.rank}</span>
+                  <div style={{width:26,height:26,borderRadius:8,background:r.av,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{r.init}</div>
+                  <div style={{flex:1,minWidth:0}}><div style={{fontSize:10,fontWeight:700,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.name}</div></div>
+                  <span style={{...N,fontWeight:800,fontSize:13,color:r.ptsCol}}>{r.pts}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="lp-screen-glow"/>
+        </div>
+      </section>
 
       {/* LOGOS */}
       <div className="lp-logos">
         <span className="lp-logos-label">Trusted by</span>
-        {[
-          { name:"Petronas", src:"/logos/logo1.png" },
-          { name:"Maybank", src:"/logos/logo2.png" },
-          { name:"TalentCorp", src:"/logos/logo3.png" },
-          { name:"Universiti Malaya", src:"/logos/logo4.png" },
-          { name:"MDEC", src:"/logos/logo5.png" },
-        ].map(({name, src}) => (
-          <div key={name} className="lp-logo-pill" style={{display:"flex",alignItems:"center",gap:8}}>
-            <img src={src} alt={name} onError={e=>{e.target.style.display="none"}} style={{height:20,width:"auto",objectFit:"contain",display:"block"}}/>
-            <span>{name}</span>
-          </div>
+        {["Petronas","Maybank","TalentCorp","Universiti Malaya","MDEC"].map(n => (
+          <div key={n} className="lp-logo-pill">{n}</div>
         ))}
       </div>
 
       {/* HOW IT WORKS */}
-      <div className="lp-section lp-how" id="how">
+      <section className="lp-section" id="how" style={{background:"#FAFAFA"}}>
         <div className="lp-section-inner">
-          <div className="lp-section-label">How it works</div>
-          {/* ↓ EDIT: section titles and body text */}
-          <div className="lp-section-title">Start rewarding in 30 seconds.</div>
+          <div className="lp-label" style={{color:PINK}}>How it works</div>
+          <div className="lp-section-title">Start rewarding<br/>in 30 seconds.</div>
           <p className="lp-section-sub">No setup headaches, no IT approval needed. Just create a session and start recognising great participation.</p>
-        </div>
-        <div style={{position:"relative",marginTop:56}}>
-          {/* Timeline connector line */}
-          <div style={{position:"absolute",top:32,left:"calc(16.6% + 12px)",right:"calc(16.6% + 12px)",height:2,background:`linear-gradient(to right,${LPINK},${LPINK2})`,opacity:0.25,display:"none"}} className="lp-timeline-line"/>
           <div className="lp-steps">
-          {[
-            { num:"01", title:"Create a session", body:"Give your session a name and go live. Share a QR code or link — everyone joins instantly from any device, no account or download needed." },
-            { num:"02", title:"Add participants & award points", body:"Tap to award points for great contributions, good answers, or active involvement. Award one person or the whole group at once." },
-            { num:"03", title:"Reveal the leaderboard", body:"Push the live leaderboard to everyone's screen with one tap. Watch energy spike the moment the rankings appear." },
-          ].map(s => (
-            <div key={s.num} className="lp-step">
-              <div className="lp-step-num">{s.num}</div>
-              <svg className="lp-step-icon" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="10" fill={LSOFT}/><rect x="13" y="28" width="5" height="8" rx="1" fill={LPINK} opacity=".4"/><rect x="21" y="22" width="5" height="14" rx="1" fill={LPINK} opacity=".7"/><rect x="29" y="16" width="5" height="20" rx="1" fill={LPINK}/></svg>
-              <div className="lp-step-title">{s.title}</div>
-              <div className="lp-step-body">{s.body}</div>
-            </div>
-          ))}
-          </div>
-        </div>
-      </div>
-
-      {/* PHOTO + QUOTE */}
-      <div className="lp-photo-split">
-        <div className="lp-photo-split-img">
-          <img src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&q=80&fit=crop" alt="Engaging seminar"/>
-        </div>
-        <div className="lp-photo-split-content">
-          <div className="lp-section-label">Why it works</div>
-          <div className="lp-quote-mark">"</div>
-          {/* ↓ EDIT: quote text and attribution */}
-          <div className="lp-quote-text">Research shows immediate recognition increases participation by up to 3×. When people know their contributions matter right now, they give more of themselves.</div>
-          <div className="lp-quote-attr">Ahmad Faris, Training Facilitator · Petronas</div>
-          <div style={{marginTop:28,display:"flex",gap:24}}>
-            <div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:LPINK}}>3×</div>
-              <div style={{fontSize:13,color:LSUB,marginTop:3}}>more contributions per session</div>
-            </div>
-            <div style={{width:1,background:"#FECDE8"}}/>
-            <div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:LPINK}}>94%</div>
-              <div style={{fontSize:13,color:LSUB,marginTop:3}}>felt more engaged throughout</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* FEATURES */}
-      <div className="lp-section" id="features" style={{paddingTop:72,paddingBottom:72}}>
-        <div className="lp-section-inner">
-          <div className="lp-section-label">Features</div>
-          <div className="lp-section-title">Everything you need<br/><em style={{fontStyle:"normal",background:LGRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>to recognise participation — online &amp; offline.</em></div>
-          <p className="lp-section-sub" style={{lineHeight:1.55}}>Teticoin is built to be picked up in the middle of any session, not learned over a weekend.</p>
-          <div className="lp-feat-grid">
             {[
-              { img:"https://images.unsplash.com/photo-1601370690183-1c7796ecec61?w=600&q=80&fit=crop", icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={LPINK} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>, title:"QR join — no app needed", body:"Scan a QR or open a link. Enter a name, get a unique number, and start earning points — from any phone or laptop, instantly." },
-              { img:"https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&q=80&fit=crop", icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={LPINK} strokeWidth="2.2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, title:"Live leaderboard push", body:"One tap sends the leaderboard to every participant's screen at once. Great for mid-session energy boosts or a final reveal." },
-              { img:"https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=600&q=80&fit=crop", icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={LPINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, title:"Groups & team scoring", body:"Organise participants into teams. Points accumulate individually and for the group — perfect for competitions, workshops, or classroom activities." },
-              { img:"https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&q=80&fit=crop", icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={LPINK} strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>, title:"Fully customisable awards", body:"Set your own point values for any behaviour worth recognising — or deduct points as a fun penalty. Works for any format, any group size." },
-            ].map(f => (
-              <div key={f.title} className="lp-feat">
-                <img src={f.img} alt={f.title} className="lp-feat-img"/>
-                <div className="lp-feat-icon">{f.icon}</div>
-                <div className="lp-feat-title">{f.title}</div>
-                <div className="lp-feat-body">{f.body}</div>
+              {num:"01",col:PINK,bg:"rgba(255,79,184,0.08)",icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>,title:"Create a session",body:"Give your session a name and go live. Share a QR code or link — everyone joins instantly from any device, no account or download needed."},
+              {num:"02",col:CYAN,bg:"rgba(0,229,255,0.08)",icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={CYAN} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>,title:"Add participants & award points",body:"Tap to award points for great contributions, good answers, or active involvement. Award one person or the whole group at once."},
+              {num:"03",col:PURPLE,bg:"rgba(157,80,255,0.08)",icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,title:"Reveal the leaderboard",body:"Push the live leaderboard to everyone's screen with one tap. Watch energy spike the moment the rankings appear."},
+            ].map(s => (
+              <div key={s.num} className="lp-step">
+                <div className="lp-step-num" style={{color:s.col}}>{s.num}</div>
+                <div className="lp-step-icon" style={{background:s.bg}}>{s.icon}</div>
+                <div className="lp-step-title">{s.title}</div>
+                <div className="lp-step-body">{s.body}</div>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* DARK STATS */}
-      <div className="lp-stats">
-        <div className="lp-stats-inner">
-          <div>
-            <div className="lp-section-label" style={{color:"#FDA4CF"}}>Impact</div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:40,lineHeight:1.1,color:"#fff",marginBottom:14}}>Engagement goes up.<br/>Every single time.</div>
-            <p style={{fontSize:16,color:"rgba(255,255,255,.6)",lineHeight:1.75,maxWidth:400}}>Teticoin creates a simple recognition loop — acknowledge great participation, and watch more of it happen naturally.</p>
+      {/* FEATURE DARK */}
+      <section className="lp-feat-dark" id="features">
+        <div className="lp-section-inner">
+          <div className="lp-label" style={{color:CYAN,textShadow:`0 0 12px rgba(0,229,255,0.4)`}}>Features</div>
+          <div className="lp-section-title" style={{color:"#fff"}}>Built to recognise participation<br/><span style={{background:GRAD2,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>online &amp; offline.</span></div>
+          <div className="lp-feat-tabs">
+            {["Award Screen","Live Leaderboard","Groups & Teams","QR Join","Coinmaster"].map((t,i) => (
+              <button key={t} className={`lp-feat-tab${activeTab===i?" active":""}`} onClick={() => setActiveTab(i)}>{t}</button>
+            ))}
+          </div>
+          <div className="lp-feat-content">
+            <div className="lp-feat-text">
+              <h3>Award points<br/>in one tap.</h3>
+              <p>Select a participant, tap a coin value, and the points land instantly. Customise every button label — "Correct Answer", "Great Idea", "Most Energetic" — whatever fits your session.</p>
+              <ul className="lp-feat-list">
+                <li>6-button coin grid with fully custom values</li>
+                <li>Named Quick Coins for recurring behaviours</li>
+                <li>Custom amount field for any value</li>
+                <li>Mass Give — award coins to everyone at once</li>
+                <li>Negative coins for fun penalties</li>
+              </ul>
+            </div>
+            <div className="lp-feat-screen">
+              <div className="lp-feat-screen-glow"/>
+              <div style={{background:"#1A1A22",borderRadius:20,padding:20,maxWidth:280,margin:"0 auto",boxShadow:"0 32px 80px rgba(0,0,0,0.5)",position:"relative",zIndex:1}}>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:12}}>
+                  <span style={{...N,fontSize:12,fontWeight:800,color:PINK}}>Design Thinking</span>
+                  <span style={{background:"#1A3A22",color:"#10B981",fontSize:9,fontWeight:700,borderRadius:999,padding:"2px 8px"}}>● LIVE</span>
+                </div>
+                <div style={{display:"flex",gap:6,marginBottom:12,borderBottom:"1px solid rgba(255,255,255,0.07)",paddingBottom:10}}>
+                  {["Award","Board","Groups","Log"].map((t,i) => (
+                    <span key={t} style={{fontSize:11,fontWeight:i===0?700:400,color:i===0?PINK:"rgba(255,255,255,0.3)",borderBottom:i===0?`2px solid ${PINK}`:"none",paddingBottom:i===0?6:0}}>{t}</span>
+                  ))}
+                </div>
+                <div style={{border:`1.5px dashed rgba(255,79,184,0.3)`,borderRadius:10,padding:10,display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                  <div style={{width:24,height:24,border:`1.5px dashed rgba(255,79,184,0.4)`,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:PINK}}>+</div>
+                  <span style={{fontSize:11,color:"rgba(255,255,255,0.35)"}}>Tap to select participant</span>
+                </div>
+                <div style={{background:"rgba(255,255,255,0.04)",borderRadius:12,padding:12}}>
+                  <div style={{fontSize:9,fontWeight:700,letterSpacing:1.5,color:"rgba(255,255,255,0.3)",marginBottom:8}}>GIVE COINS</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:5,marginBottom:8}}>
+                    {["+10","+30","+50","+100","+150","+200"].map(v => (
+                      <div key={v} style={{border:`1px solid rgba(255,79,184,0.25)`,borderRadius:8,padding:8,textAlign:"center",...N,fontWeight:800,fontSize:13,color:PINK}}>{v}</div>
+                    ))}
+                  </div>
+                  <div style={{fontSize:9,fontWeight:700,letterSpacing:1.5,color:"rgba(255,255,255,0.3)",marginBottom:6}}>QUICK COINS</div>
+                  <div style={{display:"flex",gap:5,marginBottom:8}}>
+                    <div style={{flex:1,background:"rgba(157,80,255,0.15)",borderRadius:8,padding:6,textAlign:"center"}}><div style={{...N,fontWeight:800,fontSize:11,color:PURPLE}}>+50</div><div style={{fontSize:8,color:PURPLE}}>Correct</div></div>
+                    <div style={{flex:1,background:"rgba(0,229,255,0.1)",borderRadius:8,padding:6,textAlign:"center"}}><div style={{...N,fontWeight:800,fontSize:11,color:CYAN}}>+30</div><div style={{fontSize:8,color:CYAN}}>Question</div></div>
+                    <div style={{flex:1,background:"rgba(16,185,129,0.12)",borderRadius:8,padding:6,textAlign:"center"}}><div style={{...N,fontWeight:800,fontSize:11,color:"#10B981"}}>+10</div><div style={{fontSize:8,color:"#10B981"}}>Reply</div></div>
+                  </div>
+                  <div style={{background:`linear-gradient(135deg,${PURPLE2},${PURPLE})`,borderRadius:10,padding:10,textAlign:"center",fontSize:11,fontWeight:700,color:"#fff"}}>👥 Mass Give Coins</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BENTO */}
+      <section className="lp-bento">
+        <div className="lp-section-inner">
+          <div className="lp-label" style={{color:PURPLE}}>Everything included</div>
+          <div className="lp-section-title">More features.<br/>Zero complexity.</div>
+          <p className="lp-section-sub">Every feature is designed to be discovered mid-session, not after a training course.</p>
+          <div className="lp-bento-grid">
+
+            <div className="lp-bento-card span2">
+              <div className="lp-bento-icon" style={{background:"rgba(255,79,184,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></div>
+              <h4>QR join — no app, no account</h4>
+              <p>Participants scan a QR code or open a link, type their name, and they're in. Works on any phone or laptop instantly. Can be joined mid-session too.</p>
+              <div style={{marginTop:20,background:"rgba(255,79,184,0.04)",border:"1px solid rgba(255,79,184,0.1)",borderRadius:12,padding:16,display:"flex",alignItems:"center",gap:20,flexWrap:"wrap"}}>
+                <div style={{textAlign:"center"}}>
+                  <div style={{width:72,height:72,background:`linear-gradient(135deg,rgba(255,79,184,0.15),rgba(157,80,255,0.15))`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px"}}>
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill={PINK}/><rect x="16" y="5" width="3" height="3" fill={PINK}/><rect x="5" y="16" width="3" height="3" fill={PINK}/><rect x="16" y="16" width="3" height="3" fill={PURPLE}/><rect x="14" y="14" width="7" height="7" rx="1" stroke={PURPLE}/></svg>
+                  </div>
+                  <div style={{fontSize:10,fontWeight:700,color:PINK}}>DEMO1</div>
+                </div>
+                <div>
+                  <div style={{fontSize:12,fontWeight:600,color:TEXT,marginBottom:4}}>teticoin.tetikus.com.my/join/DEMO1</div>
+                  <div style={{fontSize:11,color:NEUT}}>Shareable link — works on any browser</div>
+                </div>
+              </div>
+              <div style={{position:"absolute",bottom:0,right:0,width:180,height:180,background:"radial-gradient(circle,rgba(255,79,184,0.06) 0%,transparent 70%)",pointerEvents:"none",borderRadius:20}}/>
+            </div>
+
+            <div className="lp-bento-card">
+              <div className="lp-bento-icon" style={{background:"rgba(0,229,255,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={CYAN} strokeWidth="2.2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+              <h4>Live leaderboard push</h4>
+              <p>One tap sends the leaderboard to every participant's screen at once. Instant energy spike guaranteed.</p>
+              <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:6}}>
+                {[{n:"1",c:"#F5A623",name:"Haziq Ibrahim",pts:"210",pc:PINK},{n:"2",c:NEUT,name:"Ahmad Faris",pts:"180",pc:TEXT},{n:"3",c:NEUT,name:"Nurul Ain",pts:"140",pc:TEXT}].map(r => (
+                  <div key={r.n} style={{background:"#F9FAFB",borderRadius:8,padding:"8px 12px",display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{...N,fontWeight:800,fontSize:11,color:r.c}}>{r.n}</span>
+                    <div style={{width:20,height:20,borderRadius:6,background:GRAD}}/>
+                    <span style={{flex:1,fontSize:12,fontWeight:600,color:TEXT}}>{r.name}</span>
+                    <span style={{...N,fontWeight:800,fontSize:12,color:r.pc}}>{r.pts}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{position:"absolute",bottom:0,right:0,width:120,height:120,background:"radial-gradient(circle,rgba(0,229,255,0.07) 0%,transparent 70%)",pointerEvents:"none"}}/>
+            </div>
+
+            <div className="lp-bento-card">
+              <div className="lp-bento-icon" style={{background:"rgba(157,80,255,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+              <h4>Groups & team scoring</h4>
+              <p>Organise into teams. Points accumulate individually and for the group — perfect for competitions and workshops.</p>
+              <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:6}}>
+                {[{col:PINK,name:"Team Alpha"},{col:PURPLE,name:"Team Bravo"},{col:"#3B82F6",name:"Team Charlie"}].map(g => (
+                  <div key={g.name} style={{display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{width:10,height:10,borderRadius:"50%",background:g.col}}/>
+                    <span style={{fontSize:12,fontWeight:700,color:g.col}}>{g.name}</span>
+                    <span style={{marginLeft:"auto",fontSize:11,color:NEUT}}>2 members</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{position:"absolute",bottom:0,right:0,width:120,height:120,background:"radial-gradient(circle,rgba(157,80,255,0.07) 0%,transparent 70%)",pointerEvents:"none"}}/>
+            </div>
+
+            <div className="lp-bento-card">
+              <div className="lp-bento-icon" style={{background:"rgba(0,229,255,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={CYAN} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></div>
+              <h4>Coinmaster — co-host mode</h4>
+              <p>Give a helper a code to award coins from their own device. No account needed. Perfect for big rooms.</p>
+              <div style={{marginTop:14,background:"rgba(0,229,255,0.06)",border:"1px solid rgba(0,229,255,0.15)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={CYAN} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                <div><div style={{fontSize:11,fontWeight:700,color:CYAN}}>CM-4X8K</div><div style={{fontSize:10,color:NEUT}}>Active coinmaster code</div></div>
+              </div>
+            </div>
+
+            <div className="lp-bento-card">
+              <div className="lp-bento-icon" style={{background:"rgba(255,79,184,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+              <h4>Projector / TV mode</h4>
+              <p>Cast a clean full-screen leaderboard to your projector or second screen. Auto-refresh keeps it live.</p>
+            </div>
+
+            <div className="lp-bento-card span2">
+              <div className="lp-bento-icon" style={{background:"rgba(157,80,255,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+              <h4>Fully customisable awards</h4>
+              <p>Name every coin button anything you want. Mix positive and negative points. Works for any format, any group size.</p>
+              <div style={{marginTop:16,display:"flex",gap:8,flexWrap:"wrap"}}>
+                {[{bg:"rgba(157,80,255,0.08)",border:"rgba(157,80,255,0.2)",col:PURPLE,label:"+50 Correct Answer"},{bg:"rgba(0,229,255,0.08)",border:"rgba(0,229,255,0.2)",col:CYAN,label:"+30 Great Idea"},{bg:"rgba(255,79,184,0.08)",border:"rgba(255,79,184,0.2)",col:PINK,label:"+100 MVP"},{bg:"rgba(239,68,68,0.06)",border:"rgba(239,68,68,0.15)",col:"#EF4444",label:"-10 Phone Out"}].map(t => (
+                  <div key={t.label} style={{background:t.bg,border:`1px solid ${t.border}`,borderRadius:999,padding:"6px 14px",fontSize:12,fontWeight:600,color:t.col}}>{t.label}</div>
+                ))}
+              </div>
+              <div style={{position:"absolute",bottom:0,right:0,width:180,height:180,background:"radial-gradient(circle,rgba(157,80,255,0.05) 0%,transparent 70%)",pointerEvents:"none",borderRadius:20}}/>
+            </div>
+
+            <div className="lp-bento-card">
+              <div className="lp-bento-icon" style={{background:"rgba(255,79,184,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/></svg></div>
+              <h4>Full session history & log</h4>
+              <p>Every coin award is logged with timestamp and participant. Export, review, and replay your sessions anytime.</p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* STATS */}
+      <section className="lp-stats">
+        <div className="lp-section-inner" style={{position:"relative",zIndex:1}}>
+          <div style={{textAlign:"center"}}>
+            <div className="lp-label" style={{color:"#FDA4CF",display:"block",textAlign:"center"}}>Impact</div>
+            <div className="lp-section-title" style={{color:"#fff",textAlign:"center",maxWidth:600,margin:"0 auto 14px"}}>Engagement goes up.<br/>Every single time.</div>
+            <p style={{fontSize:16,color:"rgba(255,255,255,0.5)",lineHeight:1.75,maxWidth:480,margin:"0 auto"}}>The recognition loop is simple: acknowledge great participation, and watch more of it happen naturally.</p>
           </div>
           <div className="lp-stats-grid">
             {[
-              { num:"3×", label:"More contributions per session when points are on the line" },
-              { num:"94%", label:"Participants reported feeling more engaged throughout" },
-              { num:"60s", label:"Average time to start a live session from scratch" },
-              { num:"0", label:"Apps to install — works on any device, any browser" },
+              {num:"3×",grad:GRAD,label:"More contributions per session when points are on the line"},
+              {num:"94%",grad:GRAD2,label:"Participants reported feeling more engaged throughout"},
+              {num:"30s",grad:GRAD,label:"Average time to start a live session from scratch"},
+              {num:"0",grad:GRAD2,label:"Apps to install — works on any device, any browser"},
             ].map(s => (
               <div key={s.num} className="lp-stat-item">
-                <div className="lp-stat-num">{s.num}</div>
+                <div className="lp-stat-num" style={{background:s.grad,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>{s.num}</div>
                 <div className="lp-stat-label">{s.label}</div>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* FULL PHOTO */}
-      <div className="lp-photo-full">
-        <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1600&q=80&fit=crop" alt="Group session in progress"/>
-        <div className="lp-photo-full-overlay"/>
-        <div className="lp-photo-full-content">
-          <div>
-            <div style={{fontSize:12,fontWeight:600,color:"#FDA4CF",textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Works for any setting</div>
-            {/* ↓ EDIT: full-width photo headline */}
-            <h2 style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:38,color:"#fff",lineHeight:1.15}}>Classrooms. Workshops.<br/>Team meetings. Online.<br/>Teticoin fits them all.</h2>
-            <p style={{fontSize:15,color:"rgba(255,255,255,.7)",marginTop:14,lineHeight:1.7,maxWidth:460}}>Participants join from their own device. The host manages everything in real time. Works in-person, remote, or hybrid.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* WHO SHOULD USE TETICOIN */}
-      <div style={{padding:"80px 0",background:"#fff",overflow:"hidden"}}>
-        <div style={{maxWidth:1200,margin:"0 auto",padding:"0 48px",marginBottom:40}}>
-          <div className="lp-section-label">Who it's for</div>
-          <div className="lp-section-title" style={{fontSize:34}}>Built for anyone who runs groups.</div>
-          <p className="lp-section-sub" style={{lineHeight:1.55}}>From classrooms to corporate training — if you lead a group, Teticoin makes engagement effortless.</p>
+      {/* WHO CAROUSEL */}
+      <section className="lp-who">
+        <div className="lp-who-inner">
+          <div className="lp-label" style={{color:PINK}}>Who it's for</div>
+          <div className="lp-section-title">Built for anyone who runs groups.</div>
+          <p className="lp-section-sub">From classrooms to corporate training — if you lead a group, Teticoin makes engagement effortless.</p>
         </div>
         <div className="lp-carousel-wrap">
           <div className="lp-carousel-track">
-            {[
-              { img:"https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80&fit=crop", label:"Corporate Trainers", sub:"Award points for great ideas, active questions, and top performers." },
-              { img:"https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&q=80&fit=crop", label:"Teachers & Lecturers", sub:"Gamify classroom participation and boost student engagement instantly." },
-              { img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80&fit=crop", label:"Workshop Facilitators", sub:"Keep energy high in half-day and full-day sessions with real-time rewards." },
-              { img:"https://images.unsplash.com/photo-1556761175-4b46a572b786?w=600&q=80&fit=crop", label:"Team Leaders", sub:"Run engaging team meetings where every contribution gets recognised." },
-              { img:"https://images.unsplash.com/photo-1515169067868-5387ec356754?w=600&q=80&fit=crop", label:"Event Hosts", sub:"Add a competitive leaderboard element to any live event or conference." },
-              { img:"https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=600&q=80&fit=crop", label:"HR & L&D Teams", sub:"Build a culture of recognition across onboarding, upskilling, and training days." },
-              { img:"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80&fit=crop", label:"Coaches & Mentors", sub:"Turn group coaching sessions into high-energy, rewarding experiences." },
-              { img:"https://images.unsplash.com/photo-1491895200222-0fc4a4c35e18?w=600&q=80&fit=crop", label:"Online Class Hosts", sub:"Bring real-time interaction to Zoom, Google Meet, or any virtual class." },
-              // Duplicate for seamless loop
-              { img:"https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80&fit=crop", label:"Corporate Trainers", sub:"Award points for great ideas, active questions, and top performers." },
-              { img:"https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&q=80&fit=crop", label:"Teachers & Lecturers", sub:"Gamify classroom participation and boost student engagement instantly." },
-              { img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80&fit=crop", label:"Workshop Facilitators", sub:"Keep energy high in half-day and full-day sessions with real-time rewards." },
-              { img:"https://images.unsplash.com/photo-1556761175-4b46a572b786?w=600&q=80&fit=crop", label:"Team Leaders", sub:"Run engaging team meetings where every contribution gets recognised." },
-              { img:"https://images.unsplash.com/photo-1515169067868-5387ec356754?w=600&q=80&fit=crop", label:"Event Hosts", sub:"Add a competitive leaderboard element to any live event or conference." },
-              { img:"https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=600&q=80&fit=crop", label:"HR & L&D Teams", sub:"Build a culture of recognition across onboarding, upskilling, and training days." },
-              { img:"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80&fit=crop", label:"Coaches & Mentors", sub:"Turn group coaching sessions into high-energy, rewarding experiences." },
-              { img:"https://images.unsplash.com/photo-1491895200222-0fc4a4c35e18?w=600&q=80&fit=crop", label:"Online Class Hosts", sub:"Bring real-time interaction to Zoom, Google Meet, or any virtual class." },
-            ].map((c,i) => (
+            {[...whoCards,...whoCards].map((c,i) => (
               <div key={i} className="lp-who-card">
-                <img src={c.img} alt={c.label}/>
-                <div className="lp-who-label">{c.label}</div>
-                <div className="lp-who-sub">{c.sub}</div>
+                <img src={c.img} alt={c.title}/>
+                <div className="lp-who-card-body">
+                  <div className="lp-who-card-title">{c.title}</div>
+                  <div className="lp-who-card-sub">{c.sub}</div>
+                </div>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* PRICING */}
-      <div className="lp-pricing" id="pricing">
-        <div className="lp-pricing-inner">
-          <div className="lp-section-label">Pricing</div>
+      <section className="lp-pricing" id="pricing">
+        <div className="lp-section-inner">
+          <div className="lp-label" style={{color:PINK}}>Pricing</div>
           <div className="lp-section-title">Simple, honest pricing.</div>
-          <p className="lp-section-sub" style={{marginBottom:0}}>🎯 Start Free Session. Upgrade when your sessions grow. No credit card needed.</p>
-
-          {/* Billing toggle — cute pill style */}
-          <div className="lp-billing-cute" style={{marginTop:28,display:"inline-flex"}}>
-            {[["monthly","Monthly"],["yearly","Yearly — save 35%"]].map(([b,label]) => (
-              <button key={b} onClick={()=>setLandingBilling(b)}
-                className="lp-billing-cute"
-                style={{flex:"none",padding:"8px 20px",borderRadius:999,border:"none",
-                  background:landingBilling===b?LGRAD:"transparent",
-                  fontFamily:"Inter,sans-serif",fontWeight:700,fontSize:13,
-                  color:landingBilling===b?"#fff":"#6B7280",cursor:"pointer",transition:"all .2s",
-                  whiteSpace:"nowrap"}}>
-                {label}
+          <p className="lp-section-sub">Start for free. Upgrade when your sessions grow.</p>
+          <div className="lp-pricing-toggle">
+            {[["monthly","Monthly"],["yearly","Yearly — save 35%"]].map(([v,l]) => (
+              <button key={v} onClick={() => setBilling(v)}
+                style={{background:billing===v?GRAD:"transparent",color:billing===v?"#fff":NEUT,
+                  boxShadow:billing===v?"0 4px 16px rgba(255,79,184,0.25)":"none"}}>
+                {l}
               </button>
             ))}
           </div>
-
-          {/* 3-column plan grid */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:0,border:`1px solid ${LBORDER}`,borderRadius:12,overflow:"hidden",marginTop:28,maxWidth:1100}}>
-
-            {/* FREE */}
-            <div style={{padding:"40px 32px",background:"#fff",borderRight:`1px solid ${LBORDER}`}}>
-              <div style={{fontSize:12,fontWeight:600,color:LSUB,textTransform:"uppercase",letterSpacing:1.5,marginBottom:16}}>Free forever</div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:44,color:LTEXT,lineHeight:1}}>RM 0</div>
-              <div style={{fontSize:14,color:LSUB,marginTop:6,marginBottom:28}}>No time limit. No card required.</div>
-              <div style={{height:1,background:LBORDER,marginBottom:24}}/>
-              <ul style={{listStyle:"none",display:"flex",flexDirection:"column",gap:10,marginBottom:32}}>
+          <div className="lp-pricing-grid">
+            <div className="lp-plan-card">
+              <div className="lp-plan-label" style={{color:NEUT}}>Free forever</div>
+              <div className="lp-plan-price" style={{color:TEXT}}>RM 0</div>
+              <div className="lp-plan-period">No time limit. No card required.</div>
+              <div className="lp-plan-divider"/>
+              <ul className="lp-plan-features">
                 {["Up to 3 sessions","30 participants per session","Live leaderboard","QR join — no app needed","1 group per session"].map(f => (
-                  <li key={f} style={{display:"flex",alignItems:"center",gap:10,fontSize:13,color:LSUB}}><Check/>{f}</li>
+                  <li key={f}><Check color={NEUT}/>{f}</li>
                 ))}
               </ul>
-              <button onClick={onGetStarted} style={{width:"100%",padding:"12px 0",borderRadius:8,fontFamily:"Inter,sans-serif",fontWeight:600,fontSize:14,cursor:"pointer",background:"#fff",color:LTEXT,border:`1.5px solid ${LBORDER}`}}>Get started free</button>
+              <button className="lp-plan-btn outline" onClick={onGetStarted}>Get started free</button>
             </div>
-
-            {/* PRO */}
-            <div style={{padding:"40px 32px",background:LSOFT,position:"relative",borderRight:`1px solid ${LBORDER}`}}>
-              <div style={{position:"absolute",top:16,right:16,background:LGRAD,color:"#fff",fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:4}}>POPULAR</div>
-              <div style={{fontSize:12,fontWeight:600,color:LPINK,textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>Pro</div>
-              {landingBilling === "monthly" ? (
-                <>
-                  <div style={{display:"flex",alignItems:"baseline",gap:4}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:44,color:LPINK,lineHeight:1}}>RM 16</div>
-                    <div style={{fontSize:14,color:LSUB}}>/mo</div>
-                  </div>
-                  <div style={{fontSize:12,color:LSUB,marginTop:3,textDecoration:"line-through",marginBottom:28}}>Was RM 22/mo</div>
-                </>
-              ) : (
-                <>
-                  <div style={{display:"flex",alignItems:"baseline",gap:4}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:44,color:LPINK,lineHeight:1}}>RM 14</div>
-                    <div style={{fontSize:14,color:LSUB}}>/mo</div>
-                  </div>
-                  <div style={{fontSize:12,color:LSUB,marginTop:3}}>Billed RM 169/year</div>
-                  <div style={{fontSize:12,background:"#D1FAE5",color:"#065F46",fontWeight:700,borderRadius:6,padding:"2px 8px",display:"inline-block",marginTop:4,marginBottom:28}}>Save RM 23</div>
-                </>
-              )}
-              <div style={{height:1,background:"#FECDE8",marginBottom:24}}/>
-              <ul style={{listStyle:"none",display:"flex",flexDirection:"column",gap:10,marginBottom:32}}>
-                {["Unlimited sessions","Unlimited participants","Up to 10 groups","Custom award labels","PIN rejoin for returning participants","Full session history","Priority support"].map(f => (
-                  <li key={f} style={{display:"flex",alignItems:"center",gap:10,fontSize:13,color:LTEXT,fontWeight:500}}><Check color={LPINK}/>{f}</li>
+            <div className="lp-plan-card popular">
+              <div className="lp-plan-badge">POPULAR</div>
+              <div className="lp-plan-label" style={{color:PINK}}>Pro</div>
+              <div className="lp-plan-price" style={{color:PINK}}>{proPrice}</div>
+              <div className="lp-plan-period">{proPeriod}</div>
+              <div className="lp-plan-divider" style={{background:"#FECDE8"}}/>
+              <ul className="lp-plan-features">
+                {["Unlimited sessions","Unlimited participants","Up to 10 groups","Custom award labels","PIN rejoin for returning participants","Full session history","Coinmaster co-host mode"].map(f => (
+                  <li key={f}><Check/>{f}</li>
                 ))}
               </ul>
-              <button onClick={()=>window.location.href = landingBilling==="monthly"
-                  ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL"
-                  : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"}
-                style={{width:"100%",padding:"12px 0",borderRadius:8,fontFamily:"Inter,sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",background:LGRAD,color:"#fff",border:"none"}}>
-                {landingBilling==="monthly" ? "Get Pro — RM 16/mo" : "Get Pro — RM 169/year"}
-              </button>
-              <div style={{textAlign:"center",fontSize:11,color:LSUB,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>
+              <button className="lp-plan-btn primary" onClick={() => window.location.href = proLink}>{proBtn}</button>
+              <div style={{textAlign:"center",fontSize:11,color:NEUT,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>
             </div>
-
-            {/* TEAM */}
-            <div style={{padding:"40px 32px",background:"#FAF5FF",position:"relative"}}>
-              <div style={{fontSize:12,fontWeight:600,color:"#7C3AED",textTransform:"uppercase",letterSpacing:1.5,marginBottom:16}}>Team</div>
-              {landingBilling === "monthly" ? (
-                <>
-                  <div style={{display:"flex",alignItems:"baseline",gap:4}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:44,color:"#7C3AED",lineHeight:1}}>RM 32</div>
-                    <div style={{fontSize:14,color:LSUB}}>/mo</div>
-                  </div>
-                  <div style={{fontSize:12,color:LSUB,marginTop:3,marginBottom:28}}>up to 5 hosts</div>
-                </>
-              ) : (
-                <>
-                  <div style={{display:"flex",alignItems:"baseline",gap:4}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:44,color:"#7C3AED",lineHeight:1}}>RM 27</div>
-                    <div style={{fontSize:14,color:LSUB}}>/mo</div>
-                  </div>
-                  <div style={{fontSize:12,color:LSUB,marginTop:3}}>Billed RM 320/year</div>
-                  <div style={{fontSize:12,background:"#EDE9FE",color:"#5B21B6",fontWeight:700,borderRadius:6,padding:"2px 8px",display:"inline-block",marginTop:4,marginBottom:28}}>Save RM 64</div>
-                </>
-              )}
-              <div style={{height:1,background:"#DDD6FE",marginBottom:24}}/>
-              <ul style={{listStyle:"none",display:"flex",flexDirection:"column",gap:10,marginBottom:32}}>
-                {["Everything in Pro","5 host accounts","Shared session library","Admin dashboard","Bulk participant import (CSV)","Custom subdomain"].map(f => (
-                  <li key={f} style={{display:"flex",alignItems:"center",gap:10,fontSize:13,color:LTEXT,fontWeight:500}}><Check color="#7C3AED"/>{f}</li>
+            <div className="lp-plan-card">
+              <div className="lp-plan-label" style={{color:PURPLE}}>Team</div>
+              <div className="lp-plan-price" style={{color:PURPLE}}>{teamPrice}</div>
+              <div className="lp-plan-period">{teamPeriod}</div>
+              <div className="lp-plan-divider" style={{background:"#DDD6FE"}}/>
+              <ul className="lp-plan-features">
+                {["Everything in Pro","5 host accounts","Shared session library","Admin dashboard","Bulk participant import (CSV)"].map(f => (
+                  <li key={f}><Check color={PURPLE}/>{f}</li>
                 ))}
               </ul>
-              <button onClick={()=>window.location.href = landingBilling==="monthly"
-                  ? "https://pay.chip-in.asia/4PzNZvVfRlvVVl2N1Y"
-                  : "https://pay.chip-in.asia/X4yoJ2E6269tJoE6xt"}
-                style={{width:"100%",padding:"12px 0",borderRadius:8,fontFamily:"Inter,sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",background:"linear-gradient(135deg,#7C3AED,#A855F7)",color:"#fff",border:"none"}}>
-                {landingBilling==="monthly" ? "Get Team — RM 32/mo" : "Get Team — RM 320/year"}
-              </button>
-              <div style={{textAlign:"center",fontSize:11,color:LSUB,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>
+              <button className="lp-plan-btn outline" style={{borderColor:"#DDD6FE",color:PURPLE}} onClick={() => window.location.href = teamLink}>{teamBtn}</button>
+              <div style={{textAlign:"center",fontSize:11,color:NEUT,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>
             </div>
-
           </div>
-
-          {/* Mobile responsive override */}
-          <style>{`
-            @media(max-width:900px){
-              .lp-pricing-3col { grid-template-columns: 1fr !important; }
-              .lp-pricing-3col > div { border-right: none !important; border-bottom: 1px solid ${LBORDER}; }
-              .lp-pricing-3col > div:last-child { border-bottom: none; }
-            }
-          `}</style>
-
         </div>
-      </div>
+      </section>
 
       {/* CTA */}
-      <div className="lp-cta">
-        <div style={{maxWidth:640,margin:"0 auto",position:"relative",zIndex:1}}>
-          <div className="lp-section-label" style={{display:"block",textAlign:"center",marginBottom:16}}>Get started today</div>
-          {/* ↓ EDIT: CTA headline and subtext */}
-          <h2>Make your next session<br/>one they actually remember.</h2>
-          <p>Join groups, classes, and teams who use Teticoin to turn passive participation into something everyone looks forward to.</p>
-          <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-            <button className="lp-btn-big lp-btn-big-fill" onClick={onGetStarted}>🎯 Start Free Session</button>
+      <section className="lp-cta-final">
+        <div className="lp-cta-card">
+          <h2>Make your next session<br/>one they'll remember.</h2>
+          <p>Join trainers, teachers, and facilitators who use Teticoin<br/>to turn passive attendance into active participation.</p>
+          <div className="lp-cta-btns">
+            <button className="lp-cta-btn-white" onClick={onGetStarted}>Launch Dashboard</button>
+            <button className="lp-cta-btn-outline" onClick={() => document.getElementById("pricing")?.scrollIntoView({behavior:"smooth"})}>See Pricing →</button>
           </div>
-          <p style={{marginTop:14,fontSize:13,color:"#9CA3AF"}}>No credit card required · Free plan available forever</p>
+          <p style={{marginTop:16,fontSize:12,color:"rgba(255,255,255,0.5)"}}>No credit card required · Free plan available forever</p>
         </div>
-      </div>
+      </section>
 
       {/* FOOTER */}
       <footer className="lp-footer">
         <div className="lp-footer-inner">
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <LPHam size={22}/>
-            <span className="lp-footer-logo-text">Teticoin</span>
-            <span style={{fontSize:13}}>© 2026</span>
+          <div>
+            <div className="lp-footer-logo">Teticoin</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.2)",marginTop:4}}>by Tetikus · © 2026</div>
           </div>
           <div className="lp-footer-links">
-            <button onClick={() => setSubpage("privacy")} style={{background:"none",border:"none",cursor:"pointer",color:"rgba(255,255,255,.4)",fontSize:13}}>Privacy Policy</button>
-            <button onClick={() => setSubpage("terms")} style={{background:"none",border:"none",cursor:"pointer",color:"rgba(255,255,255,.4)",fontSize:13}}>Terms of Service</button>
+            <button onClick={() => setSubpage("privacy")}>Privacy Policy</button>
+            <button onClick={() => setSubpage("terms")}>Terms of Service</button>
             <a href="mailto:hi.tetikus@gmail.com">Contact</a>
           </div>
         </div>
-        <div className="lp-footer-powered">
-          Powered by <a href="https://www.tetikus.com.my" target="_blank" rel="noopener noreferrer">Tetikus</a>
-        </div>
+        <div className="lp-footer-bottom">Powered by <a href="https://www.tetikus.com.my" target="_blank" rel="noopener noreferrer" style={{color:"rgba(255,255,255,0.35)"}}>Tetikus</a></div>
       </footer>
     </div>
   );
