@@ -1801,16 +1801,9 @@ function CoinmasterView({ session: init, onBack }) {
 // ── Session screen ──
 function Session({ session: init, onBack, onPView }) {
   const [ses, setSes] = useState(init);
-  const [tab, setTab] = useState("award");
+  const [tab, setTab] = useState("award");       // mobile left panel tabs
+  const [rightTab, setRightTab] = useState("award_all"); // desktop right panel tabs
   const [selId, setSelId] = useState(null);
-  const [picker, setPicker] = useState(false);
-  const [manage, setManage] = useState(false);
-  const [mass, setMass] = useState(false);
-  const [proj, setProj] = useState(false);
-  const [showQR, setShowQR] = useState(false);
-  const [showLeader, setShowLeader] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showCoinCustomizer, setShowCoinCustomizer] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleVal, setTitleVal] = useState(init.name);
   const [anims, setAnims] = useState([]);
@@ -2092,16 +2085,16 @@ function Session({ session: init, onBack, onPView }) {
           </div>
         </div>
 
-        {/* ── RIGHT PANEL: Board / Groups / Log ── */}
+        {/* ── RIGHT PANEL: Award All / Board / Groups / Log ── */}
         <div className="tc-session-right" style={{display: tab==="award" ? "none" : "flex", flexDirection:"column", overflow:"hidden"}}>
 
           {/* Desktop right-panel tabs */}
           <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0,display:"none"}}>
-            {[["board","Board"],["groups","Groups"],["log","Log"]].map(([id,l]) => (
-              <button key={id} onClick={()=>setTab(id)}
+            {[["award_all","Award All"],["board","Board"],["groups","Groups"],["log","Log"]].map(([id,l]) => (
+              <button key={id} onClick={()=>setRightTab(id)}
                 style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
-                  color:tab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
-                  borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
+                  color:rightTab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
+                  borderBottom:rightTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
               </button>
             ))}
             <div style={{marginLeft:"auto",paddingRight:12,display:"flex",alignItems:"center",gap:4}}>
@@ -2110,8 +2103,55 @@ function Session({ session: init, onBack, onPView }) {
             </div>
           </div>
 
-          {/* Board */}
-          {(tab==="board" || tab==="award") && (
+          {/* ── AWARD ALL TAB (desktop default) ── */}
+          {(rightTab==="award_all" || tab==="board") && (
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+              {sorted.length === 0 ? (
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"48px 24px",textAlign:"center"}}>
+                  <Ham size={56}/>
+                  <div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet — add them via the people icon</div>
+                </div>
+              ) : (
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                  <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <SL style={{marginBottom:0}}>Award to Everyone</SL>
+                    <span style={{fontSize:11,color:SUB,fontWeight:500,marginLeft:"auto"}}>Click a value to award</span>
+                  </div>
+                  {sorted.map((p,i) => {
+                    const grp = ses.groups.find(g=>g.id===p.gid);
+                    const coins = ses.otherCoins || TV_DEFAULT;
+                    return (
+                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:i<sorted.length-1?`1px solid ${BORDER}`:"none",transition:"background .1s"}}
+                        onMouseOver={e=>e.currentTarget.style.background=SOFT}
+                        onMouseOut={e=>e.currentTarget.style.background="transparent"}>
+                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:13,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
+                        <Av s={p.av} color={grp?.color||PINK} size={28}/>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:TEXT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
+                          <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
+                        </div>
+                        <div style={{display:"flex",gap:3,flexShrink:0}}>
+                          {coins.map((v,ci) => (
+                            <button key={ci}
+                              onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
+                              style={{width:v>=100?36:30,height:28,borderRadius:7,border:`1.5px solid ${MID}`,background:"#fff",cursor:"pointer",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:v>=100?9:10,color:PINK,transition:"all .1s",flexShrink:0,padding:0}}
+                              onMouseOver={e=>{e.currentTarget.style.background=SOFT;e.currentTarget.style.transform="scale(1.1)";}}
+                              onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.transform="scale(1)";}}>
+                              +{v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── BOARD TAB ── */}
+          {(rightTab==="board" || tab==="board") && rightTab!=="award_all" && (
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
               <div onClick={()=>setShowLeader(true)}
                 style={{background:ses.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
@@ -2121,8 +2161,6 @@ function Session({ session: init, onBack, onPView }) {
                 </div>
                 <div style={{width:8,height:8,borderRadius:"50%",background:ses.boardVisible?GREEN:BORDER,flexShrink:0,marginLeft:8}}/>
               </div>
-
-              {/* Leaderboard */}
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                 {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
                 {sorted.map((p,i) => {
@@ -2150,65 +2188,11 @@ function Session({ session: init, onBack, onPView }) {
                   );
                 })}
               </div>
-
-              {/* ── AWARD TO EVERYONE — desktop right panel ── */}
-              {sorted.length > 0 && (
-                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                  <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    <SL style={{marginBottom:0}}>Award to Everyone</SL>
-                    <span style={{fontSize:11,color:SUB,fontWeight:500,marginLeft:"auto"}}>Click a value to award that participant</span>
-                  </div>
-                  {sorted.map((p,i) => {
-                    const grp = ses.groups.find(g=>g.id===p.gid);
-                    const coins = ses.otherCoins || TV_DEFAULT; // [10,30,50,100,150,200]
-                    return (
-                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:i<sorted.length-1?`1px solid ${BORDER}`:"none",transition:"background .1s"}}
-                        onMouseOver={e=>e.currentTarget.style.background=SOFT}
-                        onMouseOut={e=>e.currentTarget.style.background="transparent"}>
-                        {/* Rank */}
-                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:13,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
-                        {/* Avatar */}
-                        <Av s={p.av} color={grp?.color||PINK} size={28}/>
-                        {/* Name */}
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:TEXT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
-                          <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
-                        </div>
-                        {/* Award buttons — matching Give Coins style: pink, order 10,30,50,100,150,200 */}
-                        <div style={{display:"flex",gap:3,flexShrink:0}}>
-                          {coins.map((v,ci) => (
-                            <button key={ci}
-                              onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
-                              style={{
-                                width:v>=100?36:30, height:28,
-                                borderRadius:7,
-                                border:`1.5px solid ${MID}`,
-                                background:"#fff",
-                                cursor:"pointer",
-                                fontFamily:"Nunito,sans-serif",fontWeight:900,
-                                fontSize:v>=100?9:10,
-                                color:PINK,
-                                transition:"all .1s",
-                                flexShrink:0,
-                                padding:0,
-                              }}
-                              onMouseOver={e=>{e.currentTarget.style.background=SOFT;e.currentTarget.style.transform="scale(1.1)";}}
-                              onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.transform="scale(1)";}}>
-                              +{v}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           )}
 
           {/* Groups */}
-          {tab==="groups" && (
+          {(rightTab==="groups" || tab==="groups") && (
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
               {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:32,textAlign:"center",fontSize:13,color:SUB}}>Create groups via the people icon in the top bar</div>}
               {gs.map((g,i) => (
@@ -2234,7 +2218,7 @@ function Session({ session: init, onBack, onPView }) {
           )}
 
           {/* Log */}
-          {tab==="log" && (
+          {(rightTab==="log" || tab==="log") && (
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                 <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
