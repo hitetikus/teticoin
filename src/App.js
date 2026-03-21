@@ -1260,7 +1260,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
           ))}
         </div>
 
-        {myRank > 0 && sorted.length > 1 && live?.boardVisible && (
+        {myRank > 0 && sorted.length > 1 && (
           <div style={{width:"100%",background:SOFT,border:`1.5px solid ${MID}`,borderRadius:14,padding:"12px 18px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div style={{fontSize:13,color:SUB,fontWeight:600}}>Your rank</div>
             <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:PINK}}>#{myRank} <span style={{fontSize:13,color:SUB,fontWeight:600}}>of {sorted.length}</span></div>
@@ -1940,7 +1940,7 @@ function Session({ session: init, onBack, onPView }) {
         onSave={cfg=>mut(s=>{s.quickCoins=cfg.quickCoins;s.otherCoins=cfg.otherCoins;})}
         onClose={()=>setShowCoinCustomizer(false)}/>}
       {showQR && <QRModal session={ses} onClose={()=>setShowQR(false)}/>}
-      {showLeader && <LeaderSheet session={ses} onToggleBoard={()=>mut(s=>{s.boardVisible=!s.boardVisible;})} onClose={()=>setShowLeader(false)}/>}
+      {showLeader && <LeaderSheet session={ses} onToggle={()=>mut(s=>{s.boardVisible=!s.boardVisible;})} onClose={()=>setShowLeader(false)}/>}
       {showSettings && <SessionSettings session={ses}
         onRename={renameSession}
         onToggleLive={toggleLive}
@@ -2204,7 +2204,7 @@ function Session({ session: init, onBack, onPView }) {
                         onMouseOut={e=>e.currentTarget.style.background="transparent"}>
                         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:13,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
                         <Av s={p.av} color={grp?.color||PINK} size={28}/>
-                        <div style={{width:140,flexShrink:0,minWidth:0}}>
+                        <div style={{minWidth:0,maxWidth:160,marginRight:4}}>
                           <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:TEXT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
                           <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
                         </div>
@@ -2860,7 +2860,7 @@ function SettingsPage({ onClose }) {
 }
 
 // ── 4. Billing Page ──────────────────────────
-function BillingPage({ plan="free", planExpiry=null, sessionCount=0, onUpgrade, onClose }) {
+function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
   const [cancelConfirm, setCancelConfirm] = useState(false);
 
   // Format real expiry date, or fall back to a rough estimate label
@@ -2920,40 +2920,26 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, onUpgrade, 
             {isFree && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>3 sessions · 30 participants · Basic features</div>}
           </div>
 
-          {/* Usage — all plans */}
-          <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px",marginBottom:20}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:14}}>Usage</div>
-            {/* Sessions */}
-            <div style={{marginBottom:14}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                <div style={{fontSize:13,color:TEXT,fontWeight:500}}>Active Sessions</div>
-                <div style={{fontSize:13,color:isFree&&sessionCount>=3?"#EF4444":PINK,fontWeight:700}}>
-                  {sessionCount} / {isFree?"3":"Unlimited"}
+          {/* Usage */}
+          {isFree && (
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px",marginBottom:20}}>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:14}}>Usage</div>
+              {[
+                {label:"Sessions", used:2, max:3, color:PINK},
+                {label:"Participants (last session)", used:18, max:30, color:BLUE},
+              ].map(u=>(
+                <div key={u.label} style={{marginBottom:14}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                    <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{u.label}</div>
+                    <div style={{fontSize:13,color:u.color,fontWeight:700}}>{u.used} / {u.max}</div>
+                  </div>
+                  <div style={{height:6,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                    <div style={{height:6,background:u.used/u.max>0.8?`linear-gradient(90deg,${u.color},#EF4444)`:u.color,width:`${(u.used/u.max)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
+                  </div>
                 </div>
-              </div>
-              <div style={{height:6,background:BORDER,borderRadius:4,overflow:"hidden"}}>
-                {isFree
-                  ? <div style={{height:6,background:sessionCount/3>0.8?`linear-gradient(90deg,${PINK},#EF4444)`:PINK,width:`${Math.min((sessionCount/3)*100,100)}%`,borderRadius:4,transition:"width .5s ease"}}/>
-                  : <div style={{height:6,background:GRAD,width:"100%",borderRadius:4}}/>
-                }
-              </div>
-              {!isFree && <div style={{fontSize:11,color:SUB,marginTop:4}}>No session limit on your plan ✓</div>}
+              ))}
             </div>
-            {/* Participants */}
-            <div>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                <div style={{fontSize:13,color:TEXT,fontWeight:500}}>Participants per session</div>
-                <div style={{fontSize:13,color:BLUE,fontWeight:700}}>{isFree?"Max 30":"Unlimited"}</div>
-              </div>
-              <div style={{height:6,background:BORDER,borderRadius:4,overflow:"hidden"}}>
-                {isFree
-                  ? <div style={{height:6,background:BLUE,width:"100%",borderRadius:4,opacity:.3}}/>
-                  : <div style={{height:6,background:`linear-gradient(90deg,${BLUE},#60A5FA)`,width:"100%",borderRadius:4}}/>
-                }
-              </div>
-              {!isFree && <div style={{fontSize:11,color:SUB,marginTop:4}}>No participant limit on your plan ✓</div>}
-            </div>
-          </div>
+          )}
 
           {/* Upgrade CTA */}
           {isFree && (
@@ -3285,7 +3271,7 @@ export default function App() {
       <style>{CSS}</style>
 
       {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>setShowPricing(false)}/>}
-      {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>setShowBilling(false)}/>}
+      {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>setShowBilling(false)}/>}
       {showProfile && <ProfilePage trainer={trainer} onClose={()=>setShowProfile(false)} onSaved={(newName)=>setTrainer(t=>({...t,name:newName}))}/>}
       {showSettings && <SettingsPage onClose={()=>setShowSettings(false)}/>}
       {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);setShowPricing(true);}} onClose={()=>setLimitModal(null)}/>}
@@ -3417,7 +3403,7 @@ export default function App() {
               </button>
             </div>
 
-            <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>setShowPricing(true)}/>
+            {isFree && <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>setShowPricing(true)}/>}
 
             {/* Hero card */}
             <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
