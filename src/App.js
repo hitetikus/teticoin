@@ -192,9 +192,11 @@ function Inp({ placeholder, value, onChange, type="text", onKeyDown, autoFocus, 
 function PBtn({ children, onClick, disabled, full, style: sx = {} }) {
   return (
     <button onClick={onClick} disabled={disabled}
-      style={{background:disabled?BG:GRAD,border:"none",borderRadius:13,padding:"13px 22px",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:disabled?SUB:"#fff",cursor:disabled?"not-allowed":"pointer",opacity:disabled?.5:1,transition:"all .2s",width:full?"100%":"auto",...sx}}
-      // hover
-      onMouseOut={e => { e.currentTarget.style.transform="translateY(0)"; }}>
+      style={{background:disabled?BG:GRAD,border:"none",borderRadius:13,padding:"13px 22px",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:disabled?SUB:"#fff",cursor:disabled?"not-allowed":"pointer",opacity:disabled?.5:1,transition:"all .15s",width:full?"100%":"auto",...sx}}
+      onMouseOver={e=>{ if(!disabled){ e.currentTarget.style.filter="brightness(1.08)"; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow=`0 4px 14px rgba(233,30,140,.35)`; }}}
+      onMouseOut={e=>{ e.currentTarget.style.filter="none"; e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.boxShadow="none"; }}
+      onMouseDown={e=>{ if(!disabled){ e.currentTarget.style.transform="translateY(1px)"; e.currentTarget.style.filter="brightness(.95)"; }}}
+      onMouseUp={e=>{ if(!disabled){ e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.filter="brightness(1.08)"; }}}>
       {children}
     </button>
   );
@@ -938,7 +940,10 @@ function Auth({ onDone }) {
         {view!=="forgot" && (
           <div style={{display:"flex",background:BG,borderRadius:12,padding:4,marginBottom:20}}>
             {["login","register"].map(v => (
-              <button key={v} onClick={()=>setView(v)} style={{flex:1,padding:"9px 0",borderRadius:9,border:"none",background:view===v?"#fff":"transparent",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:view===v?TEXT:SUB,cursor:"pointer",boxShadow:view===v?"0 1px 6px rgba(0,0,0,.08)":"none",transition:"all .15s"}}>
+              <button key={v} onClick={()=>{setView(v);setErr("");}} 
+                style={{flex:1,padding:"9px 0",borderRadius:9,border:"none",background:view===v?"#fff":"transparent",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:view===v?TEXT:SUB,cursor:"pointer",boxShadow:view===v?"0 1px 6px rgba(0,0,0,.08)":"none",transition:"all .15s"}}
+                onMouseOver={e=>{ if(view!==v) e.currentTarget.style.color=TEXT; }}
+                onMouseOut={e=>{ if(view!==v) e.currentTarget.style.color=SUB; }}>
                 {v==="login"?"Sign In":"Register"}
               </button>
             ))}
@@ -2153,9 +2158,35 @@ function Session({ session: init, onBack, onPView }) {
           {rightTab==="award_all" && (
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
               {sorted.length === 0 ? (
-                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"48px 24px",textAlign:"center"}}>
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"36px 24px",textAlign:"center"}}>
                   <Ham size={56}/>
-                  <div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet — add them via the people icon</div>
+                  <div style={{marginTop:12,fontSize:13,color:SUB,marginBottom:20}}>No participants yet</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:10,maxWidth:280,margin:"0 auto"}}>
+                    <button onClick={()=>setShowQR(true)}
+                      style={{display:"flex",alignItems:"center",gap:12,padding:"13px 18px",background:SOFT,border:`1.5px solid ${MID}`,borderRadius:13,cursor:"pointer",textAlign:"left",transition:"all .15s"}}
+                      onMouseOver={e=>{e.currentTarget.style.background=MID;}}
+                      onMouseOut={e=>{e.currentTarget.style.background=SOFT;}}>
+                      <div style={{width:36,height:36,borderRadius:10,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3m0 4h4v-4m-4 0h4"/></svg>
+                      </div>
+                      <div>
+                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>Show QR Code</div>
+                        <div style={{fontSize:11,color:SUB,marginTop:1}}>Participants scan to join instantly</div>
+                      </div>
+                    </button>
+                    <button onClick={()=>setManage(true)}
+                      style={{display:"flex",alignItems:"center",gap:12,padding:"13px 18px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:13,cursor:"pointer",textAlign:"left",transition:"all .15s"}}
+                      onMouseOver={e=>{e.currentTarget.style.background=SOFT;e.currentTarget.style.borderColor=MID;}}
+                      onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.borderColor=BORDER;}}>
+                      <div style={{width:36,height:36,borderRadius:10,background:"#F3F0FF",border:`1.5px solid #DDD6FE`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.2" strokeLinecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                      </div>
+                      <div>
+                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>Add Manually</div>
+                        <div style={{fontSize:11,color:SUB,marginTop:1}}>Host adds participant by name</div>
+                      </div>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
@@ -2173,11 +2204,11 @@ function Session({ session: init, onBack, onPView }) {
                         onMouseOut={e=>e.currentTarget.style.background="transparent"}>
                         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:13,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
                         <Av s={p.av} color={grp?.color||PINK} size={28}/>
-                        <div style={{flex:1,minWidth:0}}>
+                        <div style={{minWidth:0,maxWidth:160,marginRight:4}}>
                           <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:TEXT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
                           <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
                         </div>
-                        <div style={{display:"flex",gap:4,flexShrink:0}}>
+                        <div style={{display:"flex",gap:4,flexShrink:0,flexWrap:"nowrap"}}>
                           {coins.map((v,ci) => (
                             <button key={ci}
                               onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
@@ -2821,20 +2852,6 @@ function SettingsPage({ onClose }) {
         <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:20}}>
           <Row label="Sound Effects" sub="Play sounds when coins are awarded" value={soundOn} onToggle={()=>toggle("tc_sound",!soundOn,setSoundOn)}/>
           <Row label="Confetti Animation" sub="Show confetti burst on large awards" value={confettiOn} onToggle={()=>toggle("tc_confetti",!confettiOn,setConfettiOn)}/>
-        </div>
-
-        <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>About</div>
-        <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-          {[
-            {label:"Version", val:"1.0.0"},
-            {label:"Built by", val:"Tetikus"},
-            {label:"Support", val:"hello@tetikus.com.my"},
-          ].map((r,i,arr) => (
-            <div key={r.label} style={{display:"flex",alignItems:"center",padding:"13px 18px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
-              <div style={{flex:1,fontSize:13,fontWeight:600,color:TEXT,fontFamily:"Poppins,sans-serif"}}>{r.label}</div>
-              <div style={{fontSize:13,color:SUB}}>{r.val}</div>
-            </div>
-          ))}
         </div>
 
       </div>
