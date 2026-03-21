@@ -19,12 +19,18 @@ const LANDING_CSS = `
   .lp{font-family:Inter,sans-serif;background:#fff;color:${LTEXT};-webkit-font-smoothing:antialiased;user-select:none;}
   .lp img{display:block;width:100%;object-fit:cover;}
   .lp a{text-decoration:none;color:inherit;}
-  @keyframes lpFloatA{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-18px) rotate(8deg);}}
-  @keyframes lpFloatB{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-12px) rotate(-6deg);}}
-  @keyframes lpFloatC{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-22px) rotate(10deg);}}
-  .lp-coin{position:absolute;pointer-events:none;opacity:0.18;animation:lpFloatA 4s ease-in-out infinite;}
-  .lp-coin-b{animation:lpFloatB 5.5s ease-in-out infinite;}
-  .lp-coin-c{animation:lpFloatC 3.8s ease-in-out infinite;}
+  @keyframes lpScrollX{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+  .lp-carousel-track{display:flex;gap:20px;animation:lpScrollX 30s linear infinite;width:max-content;}
+  .lp-carousel-track:hover{animation-play-state:paused;}
+  .lp-carousel-wrap{overflow:hidden;width:100%;mask-image:linear-gradient(to right,transparent 0%,black 8%,black 92%,transparent 100%);-webkit-mask-image:linear-gradient(to right,transparent 0%,black 8%,black 92%,transparent 100%);}
+  .lp-who-card{flex-shrink:0;width:260px;border-radius:14px;overflow:hidden;position:relative;background:#F9FAFB;border:1px solid ${LBORDER};}
+  .lp-who-card img{width:100%;height:170px;object-fit:cover;}
+  .lp-who-label{padding:14px 16px;font-family:Nunito,sans-serif;font-weight:800;font-size:14px;color:${LTEXT};}
+  .lp-who-sub{padding:0 16px 14px;font-size:12px;color:${LSUB};line-height:1.5;margin-top:-4px;}
+  .lp-billing-cute{display:flex;background:#F3F4F6;border-radius:999px;padding:4px;gap:2px;}
+  .lp-billing-cute button{border:none;border-radius:999px;padding:8px 18px;font-family:Inter,sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+  .lp-feat-img{width:100%;height:140px;object-fit:cover;border-radius:8px;margin-bottom:16px;}
+  @keyframes lpFadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
   .lp-nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop-filter:blur(12px);border-bottom:1px solid ${LBORDER};padding:0 48px;height:64px;display:flex;align-items:center;justify-content:space-between;}
   .lp-logo-text{font-family:Nunito,sans-serif;font-weight:900;font-size:20px;background:${LGRAD};-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
   .lp-nav-links{display:flex;gap:36px;font-size:14px;font-weight:500;color:${LSUB};}
@@ -141,17 +147,6 @@ const LANDING_CSS = `
     .lp-stat-num{font-size:36px;}
   }
 `;
-
-// ── Gold coin SVG (reusable) ──
-function GoldCoin({ size = 44, style = {} }) {
-  return (
-    <svg style={{ position:"absolute", pointerEvents:"none", ...style }} width={size} height={size} viewBox="0 0 44 44" fill="none">
-      <circle cx="22" cy="22" r="20" fill="#F5A623" stroke="#E8920A" strokeWidth="1.5"/>
-      <circle cx="22" cy="22" r="15" fill="#F8BB3C" stroke="#F5A623" strokeWidth="1"/>
-      <text x="22" y="27" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#B8740A" fontFamily="sans-serif">T</text>
-    </svg>
-  );
-}
 
 // ── Ham logo SVG ──
 function LPHam({ size = 32 }) {
@@ -305,16 +300,13 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       {/* HERO */}
       <div style={{maxWidth:1280,margin:"0 auto"}}>
         <div className="lp-hero">
-          <GoldCoin size={44} style={{top:60,left:80,opacity:.18,animation:"lpFloatA 4s ease-in-out infinite"}}/>
-          <GoldCoin size={32} style={{top:120,right:80,opacity:.15,animation:"lpFloatB 5.5s ease-in-out infinite"}}/>
-          <GoldCoin size={28} style={{bottom:100,left:40,opacity:.18,animation:"lpFloatC 3.8s ease-in-out infinite"}}/>
           <div>
             {/* ↓ EDIT: hero tag */}
-            <div className="lp-hero-tag">✦ Gamify any group session</div>
+            <div className="lp-hero-tag" style={{marginBottom:12}}>✦ Gamify any group session</div>
             {/* ↓ EDIT: main headline */}
-            <h1>Reward participation,<br/>not just <em>answers.</em></h1>
+            <h1 style={{marginBottom:12}}>Reward participation,<br/>not just <em>increase engagement.</em></h1>
             {/* ↓ EDIT: hero subtitle */}
-            <p className="lp-hero-sub">Teticoin lets you award points to anyone in your group in real time — for great contributions, active participation, or any behaviour worth recognising. No app needed.</p>
+            <p className="lp-hero-sub" style={{marginBottom:24}}>Teticoin lets you award points to anyone in your group in real time — for great contributions, active participation, or any behaviour worth recognising. No app needed.</p>
             <div className="lp-hero-btns">
               <button className="lp-btn-big lp-btn-big-fill" onClick={onGetStarted}>Start for free</button>
               <button className="lp-btn-big lp-btn-big-outline" onClick={() => document.getElementById("how")?.scrollIntoView({behavior:"smooth"})}>See how it works →</button>
@@ -322,7 +314,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
             <p className="lp-hero-note">Free plan available · No credit card required</p>
           </div>
           <div className="lp-hero-img">
-            <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=900&q=80&fit=crop" alt="Engaged group session"/>
+            <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=900&q=80&fit=crop" alt="Engaged group session"/>
             <div className="lp-hero-badge">
               <div style={{width:8,height:8,borderRadius:"50%",background:"#10B981",flexShrink:0}}/>
               <div>
@@ -330,34 +322,44 @@ export default function LandingPage({ onGetStarted, onLogin }) {
                 {/* ↓ EDIT: badge session name */}
                 <div style={{fontSize:11,color:LSUB}}>Design Thinking Workshop</div>
               </div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:LPINK}}>24 pts</div>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:LPINK}}>+100 pts</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* LOGOS — ↓ EDIT: replace with real organisations you've worked with */}
+      {/* LOGOS */}
       <div className="lp-logos">
-        <span className="lp-logos-label">Used by groups at</span>
-        {["Petronas","Maybank","TalentCorp","Universiti Malaya","MDEC"].map(n => (
-          <div key={n} className="lp-logo-pill">{n}</div>
+        <span className="lp-logos-label">Trusted by</span>
+        {[
+          { name:"Petronas", src:"/logos/logo1.png" },
+          { name:"Maybank", src:"/logos/logo2.png" },
+          { name:"TalentCorp", src:"/logos/logo3.png" },
+          { name:"Universiti Malaya", src:"/logos/logo4.png" },
+          { name:"MDEC", src:"/logos/logo5.png" },
+        ].map(({name, src}) => (
+          <div key={name} className="lp-logo-pill" style={{display:"flex",alignItems:"center",gap:8}}>
+            <img src={src} alt={name} onError={e=>{e.target.style.display="none"}} style={{height:20,width:"auto",objectFit:"contain",display:"block"}}/>
+            <span>{name}</span>
+          </div>
         ))}
       </div>
 
       {/* HOW IT WORKS */}
       <div className="lp-section lp-how" id="how">
-        <GoldCoin size={52} style={{top:40,right:120,opacity:.18,animation:"lpFloatB 5.5s ease-in-out infinite"}}/>
-        <GoldCoin size={36} style={{bottom:60,left:80,opacity:.18,animation:"lpFloatC 3.8s ease-in-out infinite"}}/>
         <div className="lp-section-inner">
           <div className="lp-section-label">How it works</div>
           {/* ↓ EDIT: section titles and body text */}
-          <div className="lp-section-title">Up and running in 60 seconds.</div>
+          <div className="lp-section-title">Start rewarding in 30 seconds.</div>
           <p className="lp-section-sub">No setup headaches, no IT approval needed. Just create a session and start recognising great participation.</p>
         </div>
-        <div className="lp-steps">
+        <div style={{position:"relative",marginTop:56}}>
+          {/* Timeline connector line */}
+          <div style={{position:"absolute",top:32,left:"calc(16.6% + 12px)",right:"calc(16.6% + 12px)",height:2,background:`linear-gradient(to right,${LPINK},${LPINK2})`,opacity:0.25,display:"none"}} className="lp-timeline-line"/>
+          <div className="lp-steps">
           {[
             { num:"01", title:"Create a session", body:"Give your session a name and go live. Share a QR code or link — everyone joins instantly from any device, no account or download needed." },
-            { num:"02", title:"Award points in real time", body:"Tap to award points for great contributions, good answers, or active involvement. Award one person or the whole group at once." },
+            { num:"02", title:"Add participants & award points", body:"Tap to award points for great contributions, good answers, or active involvement. Award one person or the whole group at once." },
             { num:"03", title:"Reveal the leaderboard", body:"Push the live leaderboard to everyone's screen with one tap. Watch energy spike the moment the rankings appear." },
           ].map(s => (
             <div key={s.num} className="lp-step">
@@ -367,22 +369,22 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               <div className="lp-step-body">{s.body}</div>
             </div>
           ))}
+          </div>
         </div>
       </div>
 
       {/* PHOTO + QUOTE */}
       <div className="lp-photo-split">
         <div className="lp-photo-split-img">
-          <img src="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=900&q=80&fit=crop" alt="Engaged group"/>
+          <img src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&q=80&fit=crop" alt="Engaging seminar"/>
         </div>
         <div className="lp-photo-split-content">
-          <GoldCoin size={60} style={{bottom:40,right:40,opacity:.15,animation:"lpFloatA 4s ease-in-out infinite"}}/>
           <div className="lp-section-label">Why it works</div>
           <div className="lp-quote-mark">"</div>
           {/* ↓ EDIT: quote text and attribution */}
-          <div className="lp-quote-text">People engage more when recognition is immediate. Teticoin makes every contribution feel valued — whether it's a classroom, a workshop, or a team meeting.</div>
-          <div className="lp-quote-attr">Najmi Aliff, Brand &amp; Strategy Consultant · Tetikus</div>
-          <div style={{marginTop:32,display:"flex",gap:24}}>
+          <div className="lp-quote-text">Research shows immediate recognition increases participation by up to 3×. When people know their contributions matter right now, they give more of themselves.</div>
+          <div className="lp-quote-attr">Ahmad Faris, Training Facilitator · Petronas</div>
+          <div style={{marginTop:28,display:"flex",gap:24}}>
             <div>
               <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:LPINK}}>3×</div>
               <div style={{fontSize:13,color:LSUB,marginTop:3}}>more contributions per session</div>
@@ -397,19 +399,20 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       </div>
 
       {/* FEATURES */}
-      <div className="lp-section" id="features">
+      <div className="lp-section" id="features" style={{paddingTop:72,paddingBottom:72}}>
         <div className="lp-section-inner">
           <div className="lp-section-label">Features</div>
-          <div className="lp-section-title">Everything you need.<br/>Nothing you don't.</div>
-          <p className="lp-section-sub">Teticoin is built to be picked up in the middle of any session, not learned over a weekend.</p>
+          <div className="lp-section-title">Everything you need<br/><em style={{fontStyle:"normal",background:LGRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>to recognise participation — online &amp; offline.</em></div>
+          <p className="lp-section-sub" style={{lineHeight:1.55}}>Teticoin is built to be picked up in the middle of any session, not learned over a weekend.</p>
           <div className="lp-feat-grid">
             {[
-              { icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={LPINK} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>, title:"QR join — no app needed", body:"Scan a QR or open a link. Enter a name, get a unique number, and start earning points — from any phone or laptop, instantly." },
-              { icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={LPINK} strokeWidth="2.2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, title:"Live leaderboard push", body:"One tap sends the leaderboard to every participant's screen at once. Great for mid-session energy boosts or a final reveal." },
-              { icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={LPINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, title:"Groups & team scoring", body:"Organise participants into teams. Points accumulate individually and for the group — perfect for competitions, workshops, or classroom activities." },
-              { icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={LPINK} strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>, title:"Fully customisable awards", body:"Set your own point values for any behaviour worth recognising — or deduct points as a fun penalty. Works for any format, any group size." },
+              { img:"https://images.unsplash.com/photo-1601370690183-1c7796ecec61?w=600&q=80&fit=crop", icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={LPINK} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>, title:"QR join — no app needed", body:"Scan a QR or open a link. Enter a name, get a unique number, and start earning points — from any phone or laptop, instantly." },
+              { img:"https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&q=80&fit=crop", icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={LPINK} strokeWidth="2.2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, title:"Live leaderboard push", body:"One tap sends the leaderboard to every participant's screen at once. Great for mid-session energy boosts or a final reveal." },
+              { img:"https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=600&q=80&fit=crop", icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={LPINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, title:"Groups & team scoring", body:"Organise participants into teams. Points accumulate individually and for the group — perfect for competitions, workshops, or classroom activities." },
+              { img:"https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&q=80&fit=crop", icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={LPINK} strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>, title:"Fully customisable awards", body:"Set your own point values for any behaviour worth recognising — or deduct points as a fun penalty. Works for any format, any group size." },
             ].map(f => (
               <div key={f.title} className="lp-feat">
+                <img src={f.img} alt={f.title} className="lp-feat-img"/>
                 <div className="lp-feat-icon">{f.icon}</div>
                 <div className="lp-feat-title">{f.title}</div>
                 <div className="lp-feat-body">{f.body}</div>
@@ -421,8 +424,6 @@ export default function LandingPage({ onGetStarted, onLogin }) {
 
       {/* DARK STATS */}
       <div className="lp-stats">
-        <GoldCoin size={48} style={{top:40,right:160,opacity:.12,animation:"lpFloatB 5.5s ease-in-out infinite"}}/>
-        <GoldCoin size={36} style={{bottom:60,left:100,opacity:.1,animation:"lpFloatC 3.8s ease-in-out infinite"}}/>
         <div className="lp-stats-inner">
           <div>
             <div className="lp-section-label" style={{color:"#FDA4CF"}}>Impact</div>
@@ -459,23 +460,60 @@ export default function LandingPage({ onGetStarted, onLogin }) {
         </div>
       </div>
 
+      {/* WHO SHOULD USE TETICOIN */}
+      <div style={{padding:"80px 0",background:"#fff",overflow:"hidden"}}>
+        <div style={{maxWidth:1200,margin:"0 auto",padding:"0 48px",marginBottom:40}}>
+          <div className="lp-section-label">Who it's for</div>
+          <div className="lp-section-title" style={{fontSize:34}}>Built for anyone who runs groups.</div>
+          <p className="lp-section-sub" style={{lineHeight:1.55}}>From classrooms to corporate training — if you lead a group, Teticoin makes engagement effortless.</p>
+        </div>
+        <div className="lp-carousel-wrap">
+          <div className="lp-carousel-track">
+            {[
+              { img:"https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80&fit=crop", label:"Corporate Trainers", sub:"Award points for great ideas, active questions, and top performers." },
+              { img:"https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&q=80&fit=crop", label:"Teachers & Lecturers", sub:"Gamify classroom participation and boost student engagement instantly." },
+              { img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80&fit=crop", label:"Workshop Facilitators", sub:"Keep energy high in half-day and full-day sessions with real-time rewards." },
+              { img:"https://images.unsplash.com/photo-1556761175-4b46a572b786?w=600&q=80&fit=crop", label:"Team Leaders", sub:"Run engaging team meetings where every contribution gets recognised." },
+              { img:"https://images.unsplash.com/photo-1515169067868-5387ec356754?w=600&q=80&fit=crop", label:"Event Hosts", sub:"Add a competitive leaderboard element to any live event or conference." },
+              { img:"https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=600&q=80&fit=crop", label:"HR & L&D Teams", sub:"Build a culture of recognition across onboarding, upskilling, and training days." },
+              { img:"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80&fit=crop", label:"Coaches & Mentors", sub:"Turn group coaching sessions into high-energy, rewarding experiences." },
+              { img:"https://images.unsplash.com/photo-1491895200222-0fc4a4c35e18?w=600&q=80&fit=crop", label:"Online Class Hosts", sub:"Bring real-time interaction to Zoom, Google Meet, or any virtual class." },
+              // Duplicate for seamless loop
+              { img:"https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80&fit=crop", label:"Corporate Trainers", sub:"Award points for great ideas, active questions, and top performers." },
+              { img:"https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&q=80&fit=crop", label:"Teachers & Lecturers", sub:"Gamify classroom participation and boost student engagement instantly." },
+              { img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80&fit=crop", label:"Workshop Facilitators", sub:"Keep energy high in half-day and full-day sessions with real-time rewards." },
+              { img:"https://images.unsplash.com/photo-1556761175-4b46a572b786?w=600&q=80&fit=crop", label:"Team Leaders", sub:"Run engaging team meetings where every contribution gets recognised." },
+              { img:"https://images.unsplash.com/photo-1515169067868-5387ec356754?w=600&q=80&fit=crop", label:"Event Hosts", sub:"Add a competitive leaderboard element to any live event or conference." },
+              { img:"https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=600&q=80&fit=crop", label:"HR & L&D Teams", sub:"Build a culture of recognition across onboarding, upskilling, and training days." },
+              { img:"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80&fit=crop", label:"Coaches & Mentors", sub:"Turn group coaching sessions into high-energy, rewarding experiences." },
+              { img:"https://images.unsplash.com/photo-1491895200222-0fc4a4c35e18?w=600&q=80&fit=crop", label:"Online Class Hosts", sub:"Bring real-time interaction to Zoom, Google Meet, or any virtual class." },
+            ].map((c,i) => (
+              <div key={i} className="lp-who-card">
+                <img src={c.img} alt={c.label}/>
+                <div className="lp-who-label">{c.label}</div>
+                <div className="lp-who-sub">{c.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* PRICING */}
       <div className="lp-pricing" id="pricing">
-        <GoldCoin size={56} style={{top:40,right:100,opacity:.18,animation:"lpFloatB 5.5s ease-in-out infinite"}}/>
-        <GoldCoin size={40} style={{bottom:80,left:60,opacity:.18,animation:"lpFloatC 3.8s ease-in-out infinite"}}/>
         <div className="lp-pricing-inner">
           <div className="lp-section-label">Pricing</div>
           <div className="lp-section-title">Simple, honest pricing.</div>
           <p className="lp-section-sub" style={{marginBottom:0}}>Start for free. Upgrade when your sessions grow. No credit card needed.</p>
 
-          {/* Billing toggle */}
-          <div style={{display:"flex",background:"#fff",border:`1.5px solid ${LBORDER}`,borderRadius:10,padding:3,marginTop:28,maxWidth:320,gap:3}}>
+          {/* Billing toggle — cute pill style */}
+          <div className="lp-billing-cute" style={{marginTop:28,display:"inline-flex"}}>
             {[["monthly","Monthly"],["yearly","Yearly — save 35%"]].map(([b,label]) => (
               <button key={b} onClick={()=>setLandingBilling(b)}
-                style={{flex:1,padding:"9px 0",borderRadius:7,border:"none",
+                className="lp-billing-cute"
+                style={{flex:"none",padding:"8px 20px",borderRadius:999,border:"none",
                   background:landingBilling===b?LGRAD:"transparent",
                   fontFamily:"Inter,sans-serif",fontWeight:700,fontSize:13,
-                  color:landingBilling===b?"#fff":LSUB,cursor:"pointer",transition:"all .15s",
+                  color:landingBilling===b?"#fff":"#6B7280",cursor:"pointer",transition:"all .2s",
                   whiteSpace:"nowrap"}}>
                 {label}
               </button>
@@ -502,9 +540,6 @@ export default function LandingPage({ onGetStarted, onLogin }) {
             {/* PRO */}
             <div style={{padding:"40px 32px",background:LSOFT,position:"relative",borderRight:`1px solid ${LBORDER}`}}>
               <div style={{position:"absolute",top:16,right:16,background:LGRAD,color:"#fff",fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:4}}>POPULAR</div>
-              <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"#FFF3CD",border:"1px solid #FCD34D",borderRadius:6,padding:"3px 10px",marginBottom:10}}>
-                <span style={{fontSize:11,fontWeight:700,color:"#92400E"}}>🎉 Launch price</span>
-              </div>
               <div style={{fontSize:12,fontWeight:600,color:LPINK,textTransform:"uppercase",letterSpacing:1.5,marginBottom:10}}>Pro</div>
               {landingBilling === "monthly" ? (
                 <>
@@ -512,8 +547,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
                     <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:44,color:LPINK,lineHeight:1}}>RM 16</div>
                     <div style={{fontSize:14,color:LSUB}}>/mo</div>
                   </div>
-                  <div style={{fontSize:12,color:LSUB,marginTop:3,textDecoration:"line-through"}}>Was RM 22/mo</div>
-                  <div style={{fontSize:12,color:LSUB,marginTop:2,marginBottom:28}}>≈ USD 3.40</div>
+                  <div style={{fontSize:12,color:LSUB,marginTop:3,textDecoration:"line-through",marginBottom:28}}>Was RM 22/mo</div>
                 </>
               ) : (
                 <>
@@ -549,7 +583,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
                     <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:44,color:"#7C3AED",lineHeight:1}}>RM 32</div>
                     <div style={{fontSize:14,color:LSUB}}>/mo</div>
                   </div>
-                  <div style={{fontSize:12,color:LSUB,marginTop:3,marginBottom:28}}>≈ USD 6.80 · up to 5 hosts</div>
+                  <div style={{fontSize:12,color:LSUB,marginTop:3,marginBottom:28}}>up to 5 hosts</div>
                 </>
               ) : (
                 <>
@@ -592,9 +626,6 @@ export default function LandingPage({ onGetStarted, onLogin }) {
 
       {/* CTA */}
       <div className="lp-cta">
-        <GoldCoin size={48} style={{top:40,left:120,opacity:.18,animation:"lpFloatA 4s ease-in-out infinite"}}/>
-        <GoldCoin size={36} style={{top:60,right:100,opacity:.15,animation:"lpFloatB 5.5s ease-in-out infinite"}}/>
-        <GoldCoin size={28} style={{bottom:40,left:200,opacity:.18,animation:"lpFloatC 3.8s ease-in-out infinite"}}/>
         <div style={{maxWidth:640,margin:"0 auto",position:"relative",zIndex:1}}>
           <div className="lp-section-label" style={{display:"block",textAlign:"center",marginBottom:16}}>Get started today</div>
           {/* ↓ EDIT: CTA headline and subtext */}
