@@ -1804,6 +1804,14 @@ function Session({ session: init, onBack, onPView }) {
   const [tab, setTab] = useState("award");       // mobile left panel tabs
   const [rightTab, setRightTab] = useState("award_all"); // desktop right panel tabs
   const [selId, setSelId] = useState(null);
+  const [picker, setPicker] = useState(false);
+  const [manage, setManage] = useState(false);
+  const [mass, setMass] = useState(false);
+  const [proj, setProj] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [showLeader, setShowLeader] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showCoinCustomizer, setShowCoinCustomizer] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleVal, setTitleVal] = useState(init.name);
   const [anims, setAnims] = useState([]);
