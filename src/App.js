@@ -1981,7 +1981,15 @@ function Session({ session: init, onBack, onPView }) {
       {/* ── MOBILE TABS (hidden on desktop) ── */}
       <div className="tc-tab-bar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
         {[["award","Award"],["board","Board"],["groups","Groups"],["log","Log"]].map(([id,l]) => (
-          <button key={id} onClick={()=>isLive&&setTab(id)}
+          <button key={id} onClick={()=>{
+            if (!isLive) return;
+            setTab(id);
+            // Sync right panel — mobile board/groups/log map to rightTab
+            if (id==="board") setRightTab("board");
+            else if (id==="groups") setRightTab("groups");
+            else if (id==="log") setRightTab("log");
+            // award tab doesn't change rightTab — right panel is hidden anyway
+          }}
             style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
               color:!isLive?`${SUB}55`:tab===id?PINK:SUB,cursor:isLive?"pointer":"default",flexShrink:0,
               borderBottom:tab===id&&isLive?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
@@ -2012,8 +2020,7 @@ function Session({ session: init, onBack, onPView }) {
         )}
 
         {/* ── LEFT PANEL: Award ── */}
-        <div className="tc-session-left" style={{display:"flex",flexDirection:"column",overflow:"hidden",
-          ...(tab!=="award" ? {display:"none"} : {})}}>
+        <div className="tc-session-left" style={{display: tab!=="award" ? "none" : "flex", flexDirection:"column", overflow:"hidden"}}>
           {/* Participant selector */}
           <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0}}>
             <button onClick={()=>isLive&&setPicker(true)} style={{width:"100%",display:"flex",alignItems:"center",gap:10,background:selP?SOFT:BG,border:`1.5px solid ${selP?PINK:BORDER}`,borderRadius:13,padding:"10px 14px",cursor:isLive?"pointer":"default",textAlign:"left",transition:"all .12s"}}>
@@ -2104,7 +2111,7 @@ function Session({ session: init, onBack, onPView }) {
           </div>
 
           {/* ── AWARD ALL TAB (desktop default) ── */}
-          {(rightTab==="award_all" || tab==="board") && (
+          {rightTab==="award_all" && (
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
               {sorted.length === 0 ? (
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"48px 24px",textAlign:"center"}}>
@@ -2151,7 +2158,7 @@ function Session({ session: init, onBack, onPView }) {
           )}
 
           {/* ── BOARD TAB ── */}
-          {(rightTab==="board" || tab==="board") && rightTab!=="award_all" && (
+          {rightTab==="board" && (
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
               <div onClick={()=>setShowLeader(true)}
                 style={{background:ses.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
@@ -2192,7 +2199,7 @@ function Session({ session: init, onBack, onPView }) {
           )}
 
           {/* Groups */}
-          {(rightTab==="groups" || tab==="groups") && (
+          {rightTab==="groups" && (
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
               {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:32,textAlign:"center",fontSize:13,color:SUB}}>Create groups via the people icon in the top bar</div>}
               {gs.map((g,i) => (
@@ -2218,7 +2225,7 @@ function Session({ session: init, onBack, onPView }) {
           )}
 
           {/* Log */}
-          {(rightTab==="log" || tab==="log") && (
+          {rightTab==="log" && (
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                 <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
