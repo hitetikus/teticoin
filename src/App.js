@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { useState, useRef, useEffect, useCallback } from "react";
 import { auth, googleProvider, fsGet, fsSet, fsDel, fsGetSession, fsSetSession } from "./firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged, updateProfile } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged, updateProfile, linkWithPopup, fetchSignInMethodsForEmail, EmailAuthProvider, linkWithCredential } from "firebase/auth";
 import LandingPage from "./Landing";
 
 const PINK = "#E91E8C";
@@ -874,6 +874,44 @@ function Auth({ onDone }) {
   const [pass, setPass] = useState("");
   const [name, setName] = useState("");
   const [showP, setShowP] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function submit() {
+    setErr(""); setBusy(true);
+    try {
+      if (view==="forgot") {
+        await sendPasswordResetEmail(auth, email);
+        setView("sent");
+      } else if (view==="login") {
+        const c = await signInWithEmailAndPassword(auth, email, pass);
+        onDone({ name: c.user.displayName||email.split("@")[0]||"User", email, uid: c.user.uid });
+      } else {
+        const c = await createUserWithEmailAndPassword(auth, email, pass);
+        await updateProfile(c.user, { displayName: name||email.split("@")[0] });
+        onDone({ name: name||email.split("@")[0], email, uid: c.user.uid });
+      }
+    } catch(e) {
+      const msg = e.code==="auth/user-not-found"||e.code==="auth/wrong-password" ? "Incorrect email or password."
+        : e.code==="auth/email-already-in-use" ? "An account with this email already exists."
+        : e.code==="auth/weak-password" ? "Password must be at least 6 characters."
+        : e.code==="auth/invalid-email" ? "Please enter a valid email address."
+        : e.message;
+      setErr(msg);
+    }
+    setBusy(false);
+  }
+
+  async function googleSignIn() {
+    setErr(""); setBusy(true);
+    try {
+      const c = await signInWithPopup(auth, googleProvider);
+      onDone({ name: c.user.displayName||"User", email: c.user.email, uid: c.user.uid });
+    } catch(e) {
+      setErr("Google sign-in failed. Please try again.");
+    }
+    setBusy(false);
+  }
 
   if (view==="sent") return (
     <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 20px"}}>
@@ -920,35 +958,28 @@ function Auth({ onDone }) {
           <Inp placeholder="Email address" value={email} onChange={e=>setEmail(e.target.value)} type="email"/>
           {view!=="forgot" && (
             <div style={{position:"relative"}}>
-              <Inp placeholder="Password" value={pass} onChange={e=>setPass(e.target.value)} type={showP?"text":"password"} style={{paddingRight:56}}/>
+              <Inp placeholder="Password" value={pass} onChange={e=>setPass(e.target.value)} type={showP?"text":"password"} onKeyDown={e=>e.key==="Enter"&&submit()} style={{paddingRight:56}}/>
               <button onClick={()=>setShowP(v=>!v)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:11,fontWeight:700,cursor:"pointer"}}>{showP?"HIDE":"SHOW"}</button>
             </div>
           )}
           {view==="login" && (
             <div style={{textAlign:"right",marginTop:-4}}>
-              <button onClick={()=>setView("forgot")} style={{background:"none",border:"none",color:PINK,fontFamily:"Poppins,sans-serif",fontSize:12,cursor:"pointer",fontWeight:600}}>Forgot password?</button>
+              <button onClick={()=>{setView("forgot");setErr("");}} style={{background:"none",border:"none",color:PINK,fontFamily:"Poppins,sans-serif",fontSize:12,cursor:"pointer",fontWeight:600}}>Forgot password?</button>
             </div>
           )}
-          <PBtn full onClick={async()=>{
-              if(view==="forgot"){
-                try{ await sendPasswordResetEmail(auth,email); setView("sent"); }
-                catch(e){ alert("Error: "+e.message); }
-              } else if(view==="login"){
-                try{ const c=await signInWithEmailAndPassword(auth,email,pass); onDone({name:c.user.displayName||email.split("@")[0]||"User",email,uid:c.user.uid}); }
-                catch(e){ alert("Login failed: "+e.message); }
-              } else {
-                try{ const c=await createUserWithEmailAndPassword(auth,email,pass); await updateProfile(c.user,{displayName:name||email.split("@")[0]}); onDone({name:name||email.split("@")[0],email,uid:c.user.uid}); }
-                catch(e){ alert("Register failed: "+e.message); }
-              }
-            }}>
-            {view==="login"?"Sign In":view==="register"?"Create Account":"Send Reset Link"}
+          {err && <div style={{background:"#FEF2F2",border:"1px solid #EF444440",borderRadius:10,padding:"10px 14px",fontSize:13,color:"#EF4444",fontWeight:600,lineHeight:1.5}}>{err}</div>}
+          <PBtn full onClick={submit} disabled={busy}>
+            {busy
+              ? <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><span style={{width:14,height:14,border:"2px solid rgba(255,255,255,.4)",borderTopColor:"#fff",borderRadius:"50%",display:"inline-block",animation:"spin .7s linear infinite"}}/>{view==="login"?"Signing in...":view==="register"?"Creating account...":"Sending..."}</span>
+              : view==="login"?"Sign In":view==="register"?"Create Account":"Send Reset Link"
+            }
           </PBtn>
           {view!=="forgot" && <>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <div style={{flex:1,height:1,background:BORDER}}/><span style={{fontSize:12,color:SUB,fontWeight:600}}>or</span><div style={{flex:1,height:1,background:BORDER}}/>
             </div>
-            <button onClick={async()=>{try{const c=await signInWithPopup(auth,googleProvider);onDone({name:c.user.displayName||"User",email:c.user.email,uid:c.user.uid});}catch(e){alert("Google sign-in failed: "+e.message);}}}
-              style={{width:"100%",padding:"12px 0",borderRadius:13,border:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,transition:"all .15s"}}
+            <button onClick={googleSignIn} disabled={busy}
+              style={{width:"100%",padding:"12px 0",borderRadius:13,border:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,transition:"all .15s",opacity:busy?.6:1}}
               onMouseOver={e=>{e.currentTarget.style.background=BG;e.currentTarget.style.borderColor=PINK;}}
               onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.borderColor=BORDER;}}>
               <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 32.3 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7 29 5 24 5 13.5 5 5 13.5 5 24s8.5 19 19 19c10 0 18.7-7.2 18.7-19 0-1.3-.1-2.7-.1-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16.1 19 13 24 13c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7 29 5 24 5c-7.2 0-13.4 4-16.7 9.7z"/><path fill="#4CAF50" d="M24 43c5.2 0 9.8-1.8 13.4-4.7l-6.2-5.2C29.3 34.3 26.8 35 24 35c-5.2 0-9.6-3.5-11.2-8.3l-6.5 5C9.8 39.2 16.4 43 24 43z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.6-2.7 4.8-5.1 6.1l6.2 5.2C40 35.8 44 30.4 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
@@ -2143,16 +2174,16 @@ function Session({ session: init, onBack, onPView }) {
                         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:13,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
                         <Av s={p.av} color={grp?.color||PINK} size={28}/>
                         <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:TEXT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
+                          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:TEXT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
                           <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
                         </div>
-                        <div style={{display:"flex",gap:3,flexShrink:0}}>
+                        <div style={{display:"flex",gap:4,flexShrink:0}}>
                           {coins.map((v,ci) => (
                             <button key={ci}
                               onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
-                              style={{width:v>=100?36:30,height:28,borderRadius:7,border:`1.5px solid ${MID}`,background:"#fff",cursor:"pointer",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:v>=100?9:10,color:PINK,transition:"all .1s",flexShrink:0,padding:0}}
-                              onMouseOver={e=>{e.currentTarget.style.background=SOFT;e.currentTarget.style.transform="scale(1.1)";}}
-                              onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.transform="scale(1)";}}>
+                              style={{width:v>=100?42:36,height:34,borderRadius:8,border:`1.5px solid ${MID}`,background:"#fff",cursor:"pointer",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:v>=100?10:11,color:PINK,transition:"all .1s",flexShrink:0,padding:0}}
+                              onMouseOver={e=>{e.currentTarget.style.background=SOFT;e.currentTarget.style.transform="scale(1.08)";e.currentTarget.style.borderColor=PINK;}}
+                              onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.transform="scale(1)";e.currentTarget.style.borderColor=MID;}}>
                               +{v}
                             </button>
                           ))}
@@ -2611,6 +2642,206 @@ function LimitModal({ type, onUpgrade, onClose }) {
   );
 }
 
+// ── Profile Page ──────────────────────────
+function ProfilePage({ trainer, onClose, onSaved }) {
+  const [displayName, setDisplayName] = useState(trainer?.name || "");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linked, setLinked] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  // Check if Google is already linked
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user) {
+      const hasGoogle = user.providerData.some(p => p.providerId === "google.com");
+      setLinked(hasGoogle);
+    }
+  }, []);
+
+  async function saveName() {
+    if (!displayName.trim()) return;
+    setBusy(true); setErr(""); setMsg("");
+    try {
+      await updateProfile(auth.currentUser, { displayName: displayName.trim() });
+      await ss("name", displayName.trim());
+      onSaved(displayName.trim());
+      setMsg("Name updated!");
+    } catch(e) { setErr("Failed to update name."); }
+    setBusy(false);
+  }
+
+  async function linkGoogle() {
+    setLinkBusy(true); setErr(""); setMsg("");
+    try {
+      await linkWithPopup(auth.currentUser, googleProvider);
+      setLinked(true);
+      setMsg("Google account linked! You can now sign in with either method.");
+    } catch(e) {
+      if (e.code === "auth/credential-already-in-use") setErr("This Google account is already linked to another Teticoin account.");
+      else if (e.code === "auth/provider-already-linked") { setLinked(true); setMsg("Google is already linked to this account."); }
+      else setErr("Could not link Google account. Please try again.");
+    }
+    setLinkBusy(false);
+  }
+
+  async function sendReset() {
+    setErr(""); setMsg("");
+    try {
+      await sendPasswordResetEmail(auth, trainer.email);
+      setResetSent(true);
+      setMsg("Password reset email sent to " + trainer.email);
+    } catch(e) { setErr("Failed to send reset email."); }
+  }
+
+  const PageHeader = ({ title }) => (
+    <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+      <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </button>
+      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>{title}</div>
+      <div style={{width:60}}/>
+    </div>
+  );
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <style>{CSS}</style>
+      <PageHeader title="My Profile"/>
+      <div style={{flex:1,overflowY:"auto",padding:"28px 24px",maxWidth:520,width:"100%",margin:"0 auto"}}>
+
+        {/* Avatar */}
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:28}}>
+          <div style={{width:72,height:72,borderRadius:"50%",background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:"#fff",marginBottom:8}}>
+            {(displayName||trainer?.name||"?").slice(0,2).toUpperCase()}
+          </div>
+          <div style={{fontSize:12,color:SUB,fontWeight:500}}>{trainer?.email}</div>
+        </div>
+
+        {/* Feedback */}
+        {msg && <div style={{background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:10,padding:"10px 14px",fontSize:13,color:"#16A34A",fontWeight:600,marginBottom:14}}>{msg}</div>}
+        {err && <div style={{background:"#FEF2F2",border:"1px solid #EF444440",borderRadius:10,padding:"10px 14px",fontSize:13,color:"#EF4444",fontWeight:600,marginBottom:14}}>{err}</div>}
+
+        {/* Display name */}
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Display Name</div>
+          <div style={{display:"flex",gap:8}}>
+            <Inp value={displayName} onChange={e=>setDisplayName(e.target.value)} placeholder="Your name" style={{flex:1,margin:0}}/>
+            <button onClick={saveName} disabled={busy||displayName.trim()===trainer?.name}
+              style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",opacity:busy||displayName.trim()===trainer?.name?.6:1,flexShrink:0}}>
+              {busy?"Saving...":"Save"}
+            </button>
+          </div>
+        </div>
+
+        {/* Email (read-only) */}
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Email Address</div>
+          <div style={{background:"#F9FAFB",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"13px 16px",fontSize:14,color:SUB,fontFamily:"Poppins,sans-serif"}}>{trainer?.email}</div>
+          <div style={{fontSize:11,color:SUB,marginTop:5}}>Email cannot be changed. Contact support if needed.</div>
+        </div>
+
+        {/* Password reset */}
+        <div style={{marginBottom:20,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"16px 18px"}}>
+          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Password</div>
+          <div style={{fontSize:12,color:SUB,marginBottom:12}}>Send a reset link to your email to change your password.</div>
+          <button onClick={sendReset} disabled={resetSent}
+            style={{padding:"10px 18px",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:resetSent?SUB:TEXT,cursor:resetSent?"default":"pointer"}}>
+            {resetSent?"Reset email sent ✓":"Send Password Reset Email"}
+          </button>
+        </div>
+
+        {/* Link Google */}
+        <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"16px 18px"}}>
+          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Sign-in Methods</div>
+          <div style={{fontSize:12,color:SUB,marginBottom:12}}>Link your Google account so you can sign in with either method.</div>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 32.3 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7 29 5 24 5 13.5 5 5 13.5 5 24s8.5 19 19 19c10 0 18.7-7.2 18.7-19 0-1.3-.1-2.7-.1-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16.1 19 13 24 13c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7 29 5 24 5c-7.2 0-13.4 4-16.7 9.7z"/><path fill="#4CAF50" d="M24 43c5.2 0 9.8-1.8 13.4-4.7l-6.2-5.2C29.3 34.3 26.8 35 24 35c-5.2 0-9.6-3.5-11.2-8.3l-6.5 5C9.8 39.2 16.4 43 24 43z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.6-2.7 4.8-5.1 6.1l6.2 5.2C40 35.8 44 30.4 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:"Poppins,sans-serif",fontSize:13,fontWeight:600,color:TEXT}}>Google</div>
+              <div style={{fontSize:11,color:linked?GREEN:SUB}}>{linked?"Linked ✓":"Not linked"}</div>
+            </div>
+            {!linked && (
+              <button onClick={linkGoogle} disabled={linkBusy}
+                style={{padding:"8px 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",opacity:linkBusy?.6:1}}>
+                {linkBusy?"Linking...":"Link"}
+              </button>
+            )}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ── Settings Page ──────────────────────────
+function SettingsPage({ onClose }) {
+  const [soundOn, setSoundOn] = useState(() => {
+    try { return localStorage.getItem("tc_sound") !== "off"; } catch { return true; }
+  });
+  const [confettiOn, setConfettiOn] = useState(() => {
+    try { return localStorage.getItem("tc_confetti") !== "off"; } catch { return true; }
+  });
+
+  function toggle(key, val, setter) {
+    setter(val);
+    try { localStorage.setItem(key, val ? "on" : "off"); } catch {}
+  }
+
+  const Row = ({ label, sub, value, onToggle }) => (
+    <div style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:`1px solid ${BORDER}`}}>
+      <div style={{flex:1}}>
+        <div style={{fontFamily:"Poppins,sans-serif",fontSize:13,fontWeight:600,color:TEXT}}>{label}</div>
+        <div style={{fontSize:11,color:SUB,marginTop:2}}>{sub}</div>
+      </div>
+      <button onClick={onToggle} style={{width:44,height:26,borderRadius:13,border:"none",background:value?PINK:"#D1D5DB",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}>
+        <div style={{width:20,height:20,borderRadius:"50%",background:"#fff",position:"absolute",top:3,left:value?21:3,transition:"left .2s",boxShadow:"0 1px 4px rgba(0,0,0,.2)"}}/>
+      </button>
+    </div>
+  );
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <style>{CSS}</style>
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Settings</div>
+        <div style={{width:60}}/>
+      </div>
+      <div style={{flex:1,overflowY:"auto",padding:"24px 20px",maxWidth:520,width:"100%",margin:"0 auto"}}>
+
+        <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Session Experience</div>
+        <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:20}}>
+          <Row label="Sound Effects" sub="Play sounds when coins are awarded" value={soundOn} onToggle={()=>toggle("tc_sound",!soundOn,setSoundOn)}/>
+          <Row label="Confetti Animation" sub="Show confetti burst on large awards" value={confettiOn} onToggle={()=>toggle("tc_confetti",!confettiOn,setConfettiOn)}/>
+        </div>
+
+        <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>About</div>
+        <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+          {[
+            {label:"Version", val:"1.0.0"},
+            {label:"Built by", val:"Tetikus"},
+            {label:"Support", val:"hello@tetikus.com.my"},
+          ].map((r,i,arr) => (
+            <div key={r.label} style={{display:"flex",alignItems:"center",padding:"13px 18px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
+              <div style={{flex:1,fontSize:13,fontWeight:600,color:TEXT,fontFamily:"Poppins,sans-serif"}}>{r.label}</div>
+              <div style={{fontSize:13,color:SUB}}>{r.val}</div>
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 // ── 4. Billing Page ──────────────────────────
 function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
   const [cancelConfirm, setCancelConfirm] = useState(false);
@@ -2829,6 +3060,8 @@ export default function App() {
   const [planExpiry, setPlanExpiry] = useState(null); // ISO date string or null
   const [showPricing, setShowPricing] = useState(false);
   const [showBilling, setShowBilling] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [limitModal, setLimitModal] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -3022,6 +3255,8 @@ export default function App() {
 
       {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>setShowPricing(false)}/>}
       {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>setShowBilling(false)}/>}
+      {showProfile && <ProfilePage trainer={trainer} onClose={()=>setShowProfile(false)} onSaved={(newName)=>setTrainer(t=>({...t,name:newName}))}/>}
+      {showSettings && <SettingsPage onClose={()=>setShowSettings(false)}/>}
       {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);setShowPricing(true);}} onClose={()=>setLimitModal(null)}/>}
       {creating && <CreateModal onConfirm={handleNew} onClose={()=>setCreating(false)}/>}
 
@@ -3084,9 +3319,9 @@ export default function App() {
               <div style={{fontSize:12,color:plan==="free"?SUB:PINK,marginTop:2,fontWeight:600}}>{planLabel}</div>
             </div>
             {[
-              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, label:"Profile", fn:()=>{setShowBilling(true);}},
+              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, label:"Profile", fn:()=>{setShowProfile(true);}},
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, label:"Billing & Plan", fn:()=>{setShowBilling(true);}},
-              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>, label:"Settings", fn:()=>{setShowBilling(true);}},
+              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>, label:"Settings", fn:()=>{setShowSettings(true);}},
             ].map(item => (
               <button key={item.label} onClick={()=>{setProfileOpen(false);item.fn();}}
                 style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,fontWeight:600,color:TEXT}}
@@ -3262,6 +3497,7 @@ const CSS = `
   @keyframes fadeIn { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
   @keyframes slideInRight { from{transform:translateX(100%)} to{transform:translateX(0)} }
   @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(1.2)} }
+  @keyframes spin { to{transform:rotate(360deg)} }
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-thumb { background:${MID}; border-radius:4px; }
   input, textarea { user-select:text; -webkit-user-select:text; cursor:text; }
