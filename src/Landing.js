@@ -13,6 +13,61 @@ const BORDER = "rgba(255,79,184,0.15)";
 const GRAD   = `linear-gradient(135deg,${PINK},${PURPLE})`;
 const GRAD2  = `linear-gradient(135deg,${CYAN},${PURPLE})`;
 
+// ── EmailJS credentials — fill these in after EmailJS setup ──
+const EMAILJS_SERVICE_ID  = "service_xxxxxxx";   // ← paste your Service ID
+const EMAILJS_TEMPLATE_ID = "template_xxxxxxx";  // ← paste your Template ID
+const EMAILJS_PUBLIC_KEY  = "xxxxxxxxxxxxxxx";    // ← paste your Public Key
+
+// ── Floating coin pop animation component ──
+const COIN_POP_DATA = [
+  { label:"+50 pts",  color:PINK,   icon:"🎯", x:"12%",  delay:0.8  },
+  { label:"+150 pts", color:PURPLE, icon:"⚡", x:"82%",  delay:1.8  },
+  { label:"+30 pts",  color:CYAN,   icon:"💡", x:"22%",  delay:3.2  },
+  { label:"+100 pts", color:PINK,   icon:"🏆", x:"76%",  delay:4.1  },
+  { label:"+200 pts", color:PURPLE, icon:"🌟", x:"58%",  delay:5.5  },
+  { label:"+50 pts",  color:"#00C896",icon:"🔥",x:"38%", delay:6.8  },
+  { label:"+30 pts",  color:PINK,   icon:"🎯", x:"68%",  delay:8.2  },
+  { label:"+100 pts", color:CYAN,   icon:"👑", x:"18%",  delay:9.0  },
+];
+
+function CoinPops() {
+  const [pops, setPops] = useState([]);
+  const counterRef = useState(0);
+
+  useEffect(() => {
+    let idx = 0;
+    function spawnNext() {
+      const data = COIN_POP_DATA[idx % COIN_POP_DATA.length];
+      const id = Date.now() + Math.random();
+      const yBase = 52 + Math.random() * 36; // % from top, within hero-screens area
+      setPops(prev => [...prev.slice(-6), { ...data, id, yBase }]);
+      idx++;
+      const nextDelay = 1400 + Math.random() * 1200;
+      setTimeout(spawnNext, nextDelay);
+    }
+    const t = setTimeout(spawnNext, 1200);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <>
+      {pops.map(p => (
+        <div key={p.id} className="lp-coin-pop"
+          style={{
+            left: p.x,
+            top: `${p.yBase}%`,
+            color: p.color,
+            borderColor: `${p.color}35`,
+            animationDelay: "0s",
+          }}>
+          <span style={{fontSize:14}}>{p.icon}</span>
+          <span style={{color:p.color}}>{p.label}</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Nunito:wght@700;800;900&family=DM+Sans:wght@400;500;600&display=swap');
 .lp *{box-sizing:border-box;margin:0;padding:0;}
@@ -21,25 +76,30 @@ const CSS = `
 .lp a{text-decoration:none;color:inherit;}
 .lp img{display:block;}
 .lp-nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,79,184,0.15);padding:0 40px;height:64px;display:flex;align-items:center;justify-content:space-between;}
-.lp-nav-logo{display:flex;align-items:center;gap:8px;font-family:'Nunito',sans-serif;font-weight:900;font-size:18px;}
+.lp-nav-logo{display:flex;align-items:center;gap:8px;font-family:'Nunito',sans-serif;font-weight:900;font-size:18px;cursor:pointer;transition:opacity .15s;}
+.lp-nav-logo:hover{opacity:.8;}
 .lp-nav-logo span{background:linear-gradient(135deg,#FF4FB8,#9D50FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.lp-nav-links{display:flex;gap:32px;font-size:14px;font-weight:500;color:#6B7280;}
+.lp-nav-links{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:32px;font-size:14px;font-weight:500;color:#6B7280;}
 .lp-nav-links a:hover{color:#FF4FB8;}
-.lp-nav-actions{display:flex;gap:10px;align-items:center;}
+.lp-nav-actions{display:flex;gap:10px;align-items:center;margin-left:auto;}
 .lp-btn-ghost{padding:8px 18px;border:1.5px solid #E5E7EB;border-radius:999px;font-size:14px;font-weight:600;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;color:#0A0A0F;}
 .lp-btn-ghost:hover{border-color:#FF4FB8;color:#FF4FB8;}
 .lp-btn-fill{padding:9px 20px;border:none;border-radius:999px;font-size:14px;font-weight:600;color:#fff;background:linear-gradient(135deg,#FF4FB8,#9D50FF);cursor:pointer;font-family:'DM Sans',sans-serif;}
 .lp-hero{min-height:96vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px;position:relative;overflow:hidden;background:radial-gradient(ellipse 70% 60% at 50% 0%,rgba(157,80,255,0.08) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(0,229,255,0.06) 0%,transparent 60%),#fff;}
-.lp-hero-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(157,80,255,0.08);border:1px solid rgba(157,80,255,0.25);border-radius:999px;padding:5px 14px;font-size:12px;font-weight:600;color:#9D50FF;margin-bottom:24px;letter-spacing:.3px;}
-.lp-hero h1{font-size:clamp(40px,6vw,72px);line-height:1.04;color:#0A0A0F;max-width:760px;margin:0 auto 20px;letter-spacing:-1.5px;}
-.lp-hero-sub{font-size:18px;color:#6B7280;line-height:1.7;max-width:540px;margin:0 auto 36px;}
-.lp-hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;}
+@keyframes lpHeroFadeUp{0%{opacity:0;transform:translateY(28px);}100%{opacity:1;transform:translateY(0);}}
+@keyframes lpHeroFadeIn{0%{opacity:0;}100%{opacity:1;}}
+@keyframes lpFloatPop{0%{opacity:0;transform:translateY(0) scale(0.7);}15%{opacity:1;transform:translateY(-10px) scale(1.05);}75%{opacity:1;transform:translateY(-44px) scale(1);}100%{opacity:0;transform:translateY(-72px) scale(0.9);}}
+.lp-coin-pop{position:absolute;pointer-events:none;display:flex;align-items:center;gap:5px;background:#fff;border:1.5px solid rgba(255,79,184,0.3);border-radius:10px;padding:6px 12px;font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;white-space:nowrap;animation:lpFloatPop 2.6s ease-out forwards;box-shadow:0 4px 16px rgba(0,0,0,0.1);z-index:5;}
+.lp-hero-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(157,80,255,0.08);border:1px solid rgba(157,80,255,0.25);border-radius:999px;padding:5px 14px;font-size:12px;font-weight:600;color:#9D50FF;margin-bottom:24px;letter-spacing:.3px;animation:lpHeroFadeUp .7s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.05s;}
+.lp-hero h1{font-size:clamp(40px,6vw,72px);line-height:1.04;color:#0A0A0F;max-width:760px;margin:0 auto 20px;letter-spacing:-1.5px;animation:lpHeroFadeUp .8s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.2s;}
+.lp-hero-sub{font-size:18px;color:#6B7280;line-height:1.7;max-width:540px;margin:0 auto 36px;animation:lpHeroFadeUp .8s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.35s;}
+.lp-hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;animation:lpHeroFadeUp .8s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.48s;}
 .lp-btn-big{padding:14px 32px;border-radius:999px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;}
 .lp-btn-big-fill{background:linear-gradient(135deg,#FF4FB8,#9D50FF);color:#fff;border:none;box-shadow:0 8px 32px rgba(255,79,184,0.3);}
 .lp-btn-big-outline{background:#fff;color:#0A0A0F;border:1.5px solid #E5E7EB;}
 .lp-btn-big-outline:hover{border-color:#9D50FF;color:#9D50FF;}
-.lp-hero-note{font-size:12px;color:#9CA3AF;margin-top:8px;}
-.lp-hero-screens{position:relative;width:100%;max-width:960px;margin:52px auto 0;display:flex;align-items:flex-end;justify-content:center;gap:16px;padding:0 24px;}
+.lp-hero-note{font-size:12px;color:#9CA3AF;margin-top:8px;animation:lpHeroFadeIn .9s ease both;animation-delay:.62s;}
+.lp-hero-screens{position:relative;width:100%;max-width:960px;margin:52px auto 0;display:flex;align-items:flex-end;justify-content:center;gap:16px;padding:0 24px;animation:lpHeroFadeUp .9s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.55s;}
 .lp-screen-main{width:280px;border-radius:24px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.18),0 0 0 1px rgba(0,0,0,0.06);flex-shrink:0;}
 .lp-screen-side{width:220px;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.14),0 0 0 1px rgba(0,0,0,0.05);flex-shrink:0;}
 .lp-screen-glow{position:absolute;bottom:-40px;left:50%;transform:translateX(-50%);width:60%;height:120px;background:radial-gradient(ellipse,rgba(255,79,184,0.18) 0%,transparent 70%);pointer-events:none;}
@@ -330,7 +390,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
 
       {/* NAV */}
       <nav className="lp-nav">
-        <div className="lp-nav-logo"><Ham size={28}/><span>Teticoin</span></div>
+        <div className="lp-nav-logo" onClick={() => window.scrollTo({top:0, behavior:"smooth"})}><Ham size={28}/><span>Teticoin</span></div>
         <div className="lp-nav-links">
           <a href="#how" onClick={(e)=>{e.preventDefault();scrollTo("how")}}>How it works</a>
           <a href="#features" onClick={(e)=>{e.preventDefault();scrollTo("features")}}>Features</a>
@@ -352,6 +412,8 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           <button className="lp-btn-big lp-btn-big-outline" onClick={() => scrollTo("how")}>See how it works →</button>
         </div>
         <p className="lp-hero-note">Free plan available · No credit card required</p>
+
+        <CoinPops/>
 
         <div className="lp-hero-screens">
           {/* LEFT — Home screen */}
