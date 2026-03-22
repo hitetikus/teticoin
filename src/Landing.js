@@ -92,9 +92,6 @@ function CoinPops() {
     </>
   );
 }
-    </>
-  );
-}
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Nunito:wght@700;800;900&family=DM+Sans:wght@400;500;600&display=swap');
