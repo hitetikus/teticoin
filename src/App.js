@@ -145,7 +145,27 @@ function playSound(big) {
 // ── Hamster ──
 function Ham({ size = 72 }) {
   return (
-    
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+      <ellipse cx="22" cy="30" rx="16" ry="16" fill="#F9A8D4"/>
+      <ellipse cx="78" cy="30" rx="16" ry="16" fill="#F9A8D4"/>
+      <ellipse cx="22" cy="30" rx="9" ry="9" fill="#FDE8F0"/>
+      <ellipse cx="78" cy="30" rx="9" ry="9" fill="#FDE8F0"/>
+      <ellipse cx="50" cy="78" rx="30" ry="22" fill="#FDE8F0"/>
+      <ellipse cx="50" cy="52" rx="32" ry="30" fill="#FCE7F3"/>
+      <ellipse cx="50" cy="80" rx="18" ry="14" fill="#FFF0F5"/>
+      <ellipse cx="26" cy="58" rx="9" ry="7" fill="#FDA4CF" opacity=".6"/>
+      <ellipse cx="74" cy="58" rx="9" ry="7" fill="#FDA4CF" opacity=".6"/>
+      <circle cx="40" cy="47" r="4.5" fill="#1A0A14"/>
+      <circle cx="60" cy="47" r="4.5" fill="#1A0A14"/>
+      <circle cx="41.5" cy="45.5" r="1.8" fill="white" opacity=".85"/>
+      <circle cx="61.5" cy="45.5" r="1.8" fill="white" opacity=".85"/>
+      <ellipse cx="50" cy="56" rx="3.5" ry="2.5" fill={PINK}/>
+      <path d="M44 62 Q50 68 56 62" stroke="#C0185A" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      <line x1="54" y1="57" x2="76" y2="53" stroke="#FDA4CF" strokeWidth="1.2" opacity=".7"/>
+      <line x1="54" y1="59" x2="76" y2="59" stroke="#FDA4CF" strokeWidth="1.2" opacity=".7"/>
+      <line x1="46" y1="57" x2="24" y2="53" stroke="#FDA4CF" strokeWidth="1.2" opacity=".7"/>
+      <line x1="46" y1="59" x2="24" y2="59" stroke="#FDA4CF" strokeWidth="1.2" opacity=".7"/>
+    </svg>
   );
 }
 
