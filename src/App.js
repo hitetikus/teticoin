@@ -1008,6 +1008,14 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   const [live, setLive] = useState(init);
   const [showMyQR, setShowMyQR] = useState(false);
   const [returnMatch, setReturnMatch] = useState(null);
+  const [linkedUid, setLinkedUid] = useState(null);       // set after optional login
+  const [linkedName, setLinkedName] = useState(null);     // display name from linked account
+  const [showLoginBanner, setShowLoginBanner] = useState(true); // can be dismissed
+  const [loginModal, setLoginModal] = useState(false);    // optional login modal open
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPass, setLoginPass] = useState("");
+  const [loginErr, setLoginErr] = useState("");
+  const [loginBusy, setLoginBusy] = useState(false);
 
   const isPro = hostPlan !== "free";
 
@@ -1033,7 +1041,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   function directJoin(overrideName) {
     const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const joinName = overrideName || name.trim();
-    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n};
+    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,uid:null};
     setMyId(np.id);
     const u = {...live,participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
@@ -1049,7 +1057,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   function setNewPin() {
     if (pin.length !== 4) return;
     const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
-    const np = {id:Date.now(),name:name.trim(),av:mkAv(name),total:0,bk:{},gid:null,num:n,pin};
+    const np = {id:Date.now(),name:name.trim(),av:mkAv(name),total:0,bk:{},gid:null,num:n,pin,uid:null};
     setMyId(np.id);
     const u = {...live,participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
@@ -1061,6 +1069,130 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     if (pinInput === returnMatch.pin) { setMyId(returnMatch.id); setStep("joined"); }
     else { setPinError("Wrong PIN. Try again."); setPinInput(""); }
   }
+
+  // Link account after joining anonymously
+  async function handleOptionalLogin(e, method) {
+    if (e) e.preventDefault();
+    setLoginErr(""); setLoginBusy(true);
+    try {
+      let cred;
+      if (method === "google") {
+        const result = await signInWithPopup(auth, googleProvider);
+        cred = result.user;
+      } else {
+        const result = await signInWithEmailAndPassword(auth, loginEmail.trim(), loginPass);
+        cred = result.user;
+      }
+      const uid = cred.uid;
+      const displayName = cred.displayName || cred.email.split("@")[0];
+      setLinkedUid(uid);
+      setLinkedName(displayName);
+      // Patch participant record in Firestore with uid
+      const fresh = await sgSession(init.code);
+      if (fresh) {
+        const updated = {
+          ...fresh,
+          participants: (fresh.participants||[]).map(p =>
+            p.id === myId ? {...p, uid, name: p.name} : p
+          )
+        };
+        setLive(updated);
+        await ssSession(init.code, updated);
+      }
+      setLoginModal(false);
+      setShowLoginBanner(false);
+    } catch(err) {
+      const msg = err.code === "auth/wrong-password" || err.code === "auth/user-not-found"
+        ? "Incorrect email or password."
+        : err.code === "auth/invalid-email" ? "Invalid email address."
+        : err.code === "auth/too-many-requests" ? "Too many attempts. Try again later."
+        : "Something went wrong. Please try again.";
+      setLoginErr(msg);
+    }
+    setLoginBusy(false);
+  }
+
+  // Optional login modal
+  const OptionalLoginModal = () => (
+    <div style={{position:"fixed",inset:0,zIndex:600,display:"flex",alignItems:"flex-end",justifyContent:"center",background:"rgba(26,10,20,.5)",backdropFilter:"blur(4px)"}}>
+      <div style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:420,padding:"24px 24px 40px",animation:"slideUp .25s ease"}}>
+        <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>
+        {linkedUid ? (
+          <div style={{textAlign:"center"}}>
+            <div style={{width:56,height:56,borderRadius:16,background:`${GREEN}15`,border:`1.5px solid ${GREEN}40`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Account linked! 🎉</div>
+            <div style={{fontSize:14,color:SUB,lineHeight:1.6,marginBottom:20}}>
+              You're now logged in as <strong style={{color:TEXT}}>{linkedName}</strong>.<br/>
+              Your coins and badges will be saved to your account.
+            </div>
+            <button onClick={()=>setLoginModal(false)} style={{width:"100%",padding:"13px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
+              Done
+            </button>
+          </div>
+        ) : (
+          <>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:4}}>Save your progress 🏅</div>
+            <div style={{fontSize:13,color:SUB,lineHeight:1.6,marginBottom:20}}>
+              Log in to earn badges and keep your coins across sessions. Your participation here will be saved.
+            </div>
+            {/* Google */}
+            <button onClick={(e)=>handleOptionalLogin(e,"google")} disabled={loginBusy}
+              style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"12px 0",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,cursor:loginBusy?"not-allowed":"pointer",marginBottom:10,opacity:loginBusy?.6:1}}>
+              <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+              {loginBusy ? "Logging in…" : "Continue with Google"}
+            </button>
+            {/* Divider */}
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+              <div style={{flex:1,height:1,background:BORDER}}/>
+              <span style={{fontSize:12,color:SUB}}>or email</span>
+              <div style={{flex:1,height:1,background:BORDER}}/>
+            </div>
+            {/* Email */}
+            <Inp placeholder="Email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} style={{marginBottom:8}} type="email"/>
+            <Inp placeholder="Password" value={loginPass} onChange={e=>setLoginPass(e.target.value)} style={{marginBottom:loginErr?8:12}} type="password"
+              onKeyDown={e=>e.key==="Enter"&&handleOptionalLogin(null,"email")}/>
+            {loginErr && <div style={{fontSize:12,color:"#EF4444",fontWeight:600,marginBottom:10}}>{loginErr}</div>}
+            <button onClick={(e)=>handleOptionalLogin(e,"email")} disabled={loginBusy||!loginEmail.trim()||!loginPass}
+              style={{width:"100%",padding:"13px 0",background:loginEmail.trim()&&loginPass?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:loginEmail.trim()&&loginPass?"#fff":SUB,cursor:loginEmail.trim()&&loginPass?"pointer":"not-allowed",marginBottom:10,opacity:loginBusy?.6:1}}>
+              {loginBusy ? "Logging in…" : "Log in"}
+            </button>
+            {loginErr && <div style={{fontSize:12,color:SUB,textAlign:"center"}}><a href="https://teticoin.tetikus.com.my" target="_blank" rel="noopener noreferrer" style={{color:PINK}}>Don't have an account? Sign up →</a></div>}
+            <button onClick={()=>setLoginModal(false)} style={{width:"100%",marginTop:6,padding:"10px 0",background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>Skip for now</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  // Login banner shown in joined view
+  const LoginBanner = () => linkedUid ? (
+    <div style={{width:"100%",background:`${GREEN}12`,border:`1.5px solid ${GREEN}30`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",gap:12}}>
+      <div style={{width:32,height:32,borderRadius:10,background:`${GREEN}20`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style={{flex:1}}>
+        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Logged in as {linkedName}</div>
+        <div style={{fontSize:11,color:SUB,marginTop:1}}>Your coins & badges are being saved</div>
+      </div>
+    </div>
+  ) : showLoginBanner ? (
+    <div style={{width:"100%",background:`linear-gradient(135deg,${PURPLE}10,${PINK}08)`,border:`1.5px solid ${PURPLE}25`,borderRadius:14,padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
+      <div style={{width:32,height:32,borderRadius:10,background:`${PURPLE}15`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/><path d="M12 12v4"/><path d="M10 15h4"/></svg>
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Earn badges &amp; save progress</div>
+        <div style={{fontSize:11,color:SUB,marginTop:1}}>Log in to keep your coins across sessions</div>
+      </div>
+      <button onClick={()=>setLoginModal(true)}
+        style={{flexShrink:0,padding:"6px 14px",background:GRAD,border:"none",borderRadius:9,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
+        Log in
+      </button>
+      <button onClick={()=>setShowLoginBanner(false)} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:16,padding:2,flexShrink:0,lineHeight:1}}>×</button>
+    </div>
+  ) : null;
 
   useEffect(() => {
     if (step === "directjoin") directJoin();
@@ -1173,6 +1305,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   // Leaderboard view — host pushed boardVisible=true
   if (step === "joined" && live?.boardVisible) return (
     <div style={{minHeight:"100vh",background:"#0D0008",fontFamily:"Poppins,sans-serif",color:"#fff",padding:"24px 20px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+      {loginModal && <OptionalLoginModal/>}
       <Confetti active/>
       <Ham size={56}/>
       <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:4,marginBottom:2,lineHeight:1.1}}>Leaderboard</div>
@@ -1197,6 +1330,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   // Main participant dashboard
   if (step === "joined") return (
     <div style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
+      {loginModal && <OptionalLoginModal/>}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10,flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <Ham size={28}/>
@@ -1244,6 +1378,8 @@ function ParticipantView({ session: init, hostPlan="free" }) {
           </div>
           <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:18,color:TEXT}}>{me?.name||"—"}</div>
         </div>
+
+        <LoginBanner/>
 
         <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,padding:"28px 24px",textAlign:"center",boxShadow:`0 4px 24px ${PINK}10`}}>
           <div style={{fontSize:11,fontWeight:700,color:SUB,marginBottom:6,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
@@ -3011,6 +3147,40 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
 }
 
 // ── Coinmaster Join Modal ──
+// ── JoinSessionField — compact code entry used on home screen ──
+function JoinSessionField({ onJoin }) {
+  const [code, setCode] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    if (!code.trim()) return;
+    setBusy(true); setErr("");
+    const result = await onJoin(code.trim().toUpperCase());
+    if (result) { setErr(result); setBusy(false); }
+  }
+
+  return (
+    <div>
+      <div style={{display:"flex",gap:8}}>
+        <input
+          value={code}
+          onChange={e=>{ setCode(e.target.value.toUpperCase()); setErr(""); }}
+          onKeyDown={e=>e.key==="Enter"&&submit()}
+          placeholder="Enter session code"
+          maxLength={8}
+          style={{flex:1,padding:"10px 14px",border:`1.5px solid ${err?'#EF4444':BORDER}`,borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",letterSpacing:2,textTransform:"uppercase"}}
+        />
+        <button onClick={submit} disabled={!code.trim()||busy}
+          style={{padding:"10px 18px",background:code.trim()?GRAD:BG,border:"none",borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:code.trim()?"#fff":SUB,cursor:code.trim()?"pointer":"not-allowed",flexShrink:0,transition:"all .15s"}}>
+          {busy ? "…" : "Join →"}
+        </button>
+      </div>
+      {err && <div style={{fontSize:12,color:"#EF4444",marginTop:6,fontWeight:600}}>{err}</div>}
+    </div>
+  );
+}
+
 function CoinmasterJoinModal({ onJoin, onClose }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
@@ -3424,6 +3594,16 @@ export default function App() {
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
                   Join as Coinmaster
                 </button>
+              </div>
+
+              {/* Join a session as participant */}
+              <div style={{marginTop:14,borderTop:`1px solid ${BORDER}`,paddingTop:14}}>
+                <div style={{fontSize:11,color:SUB,fontWeight:600,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Join a session as participant</div>
+                <JoinSessionField onJoin={async(code)=>{
+                  const s = await sgSession(code.toUpperCase().trim());
+                  if (s) { setCur(s); setScreen("participant"); return null; }
+                  return "Session not found. Check the code and try again.";
+                }}/> 
               </div>
             </div>
 

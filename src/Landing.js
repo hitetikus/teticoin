@@ -105,7 +105,7 @@ const CSS = `
 .lp-who-card-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:13px;color:#0A0A0F;margin-bottom:4px;}
 .lp-who-card-sub{font-size:11px;color:#6B7280;line-height:1.5;}
 .lp-pricing{padding:96px 24px;background:#FAFAFA;}
-.lp-pricing-toggle{display:inline-flex;background:#F3F4F6;border-radius:999px;padding:4px;gap:2px;margin-top:28px;}
+.lp-pricing-toggle{display:inline-flex;background:#F3F4F6;border:1.5px solid #D1D5DB;border-radius:999px;padding:4px;gap:2px;margin-top:28px;}
 .lp-pricing-toggle button{border:none;border-radius:999px;padding:9px 22px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;white-space:nowrap;background:transparent;color:#6B7280;}
 .lp-pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px;max-width:860px;margin-left:auto;margin-right:auto;}
 .lp-plan-card{background:#fff;border:1px solid #E5E7EB;border-radius:20px;padding:36px 28px;}
@@ -687,7 +687,8 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           <div className="lp-label lp-fade-up" style={{color:PINK}}>Pricing</div>
           <div className="lp-section-title lp-fade-up lp-fade-up-d1">Simple, honest pricing.</div>
           <p className="lp-section-sub lp-fade-up lp-fade-up-d2">Start for free. Upgrade when your sessions grow.</p>
-          <div className="lp-pricing-toggle lp-fade-up lp-fade-up-d3" style={{display:"flex",justifyContent:"center",marginTop:28}}>
+          <div style={{display:"flex",justifyContent:"center",marginTop:28}}>
+          <div className="lp-pricing-toggle lp-fade-up lp-fade-up-d3">
             {[["monthly","Monthly"],["yearly","Yearly — save 35%"]].map(([v,l]) => (
               <button key={v} onClick={() => setBilling(v)}
                 style={{background:billing===v?GRAD:"transparent",color:billing===v?"#fff":NEUT,
@@ -695,6 +696,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
                 {l}
               </button>
             ))}
+          </div>
           </div>
           <div className="lp-pricing-grid lp-fade-up lp-fade-up-d4" style={{margin:"32px auto 0"}}>
             <div className="lp-plan-card">
