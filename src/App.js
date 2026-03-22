@@ -4,22 +4,6 @@ import { auth, googleProvider, fsGet, fsSet, fsDel, fsGetSession, fsSetSession }
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged, updateProfile, linkWithPopup, fetchSignInMethodsForEmail, EmailAuthProvider, linkWithCredential } from "firebase/auth";
 import LandingPage from "./Landing";
 
-// ===== FIX: Participant loading guard =====
-const [__tc_loading, __tc_setLoading] = useState(true);
-
-async function __tc_safeLoadSession(code, setter){
-  try{
-    const s = await sgSession(code);
-    setter(s || null);
-  }catch(e){
-    console.error("Session load error:", e);
-    setter(null);
-  }finally{
-    __tc_setLoading(false);
-  }
-}
-
-
 const PINK = "#E91E8C";
 const PINK2 = "#FF4FB8";
 const SOFT = "#FFF0F7";
@@ -159,17 +143,7 @@ function playSound(big) {
 
 // ── Hamster ──
 function Ham({ size = 72 }) {
-  
-if (typeof __tc_loading !== "undefined" && __tc_loading) {
   return (
-    <div style={{display:"flex",justifyContent:"center",alignItems:"center",height:"100vh"}}>
-      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900}}>Loading session...</div>
-    </div>
-  );
-}
-
-return (
-
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
       <ellipse cx="22" cy="30" rx="16" ry="16" fill="#F9A8D4"/>
       <ellipse cx="78" cy="30" rx="16" ry="16" fill="#F9A8D4"/>
