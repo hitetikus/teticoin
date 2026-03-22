@@ -2799,7 +2799,7 @@ function LuckyDraw({ participants, badgeAwarded, onClose }) {
       ctx.save(); ctx.translate(cx,cy); ctx.rotate(start+slice/2);
       ctx.textAlign="right"; ctx.fillStyle="#fff";
       const fs = Math.max(9, Math.min(13, 120/Math.max(eligible.length,1)));
-      ctx.font = \`bold \${fs}px Nunito,sans-serif\`;
+      ctx.font = `bold ${fs}px Nunito,sans-serif`;
       ctx.shadowColor="rgba(0,0,0,.6)"; ctx.shadowBlur=3;
       ctx.fillText(p.name.split(" ")[0], r-10, 4);
       ctx.restore();
