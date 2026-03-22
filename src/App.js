@@ -1584,28 +1584,8 @@ function ParticipantView({ session: init, hostPlan="free" }) {
 
         <LoginBanner/>
 
-        {/* Earned badges — shown if logged in and has badges */}
-        {linkedUid && (() => {
-          const [badges, setBadges] = useState([]);
-          useEffect(()=>{
-            if (linkedUid) fsGet(linkedUid,"badges").then(b=>{ if(b) setBadges(b); });
-          },[linkedUid]);
-          if (!badges.length) return null;
-          return (
-            <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
-              <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.5,marginBottom:10}}>Your Badges</div>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                {badges.map((b,i)=>(
-                  <div key={i} title={`${b.label} · ${b.sessionName||""}`}
-                    style={{display:"flex",alignItems:"center",gap:5,background:`${b.color||PINK}12`,border:`1.5px solid ${b.color||PINK}30`,borderRadius:999,padding:"5px 12px",fontSize:13}}>
-                    {b.svgData?<img src={b.svgData} alt="" style={{width:16,height:16}}/>:<span>{b.icon}</span>}
-                    <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:b.color||PINK}}>{b.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
+        {/* Earned badges — shown if logged in */}
+        {linkedUid && <ParticipantBadges uid={linkedUid}/>}
 
         <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,padding:"28px 24px",textAlign:"center",boxShadow:`0 4px 24px ${PINK}10`}}>
           <div style={{fontSize:11,fontWeight:700,color:SUB,marginBottom:6,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
@@ -1640,6 +1620,29 @@ function ParticipantView({ session: init, hostPlan="free" }) {
 }
 
 
+
+// ── ParticipantBadges — proper component so hooks are legal ──
+function ParticipantBadges({ uid }) {
+  const [badges, setBadges] = useState([]);
+  useEffect(() => {
+    if (uid) fsGet(uid, "badges").then(b => { if (b) setBadges(b); });
+  }, [uid]);
+  if (!badges.length) return null;
+  return (
+    <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
+      <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.5,marginBottom:10}}>Your Badges</div>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        {badges.map((b,i) => (
+          <div key={i} title={`${b.label} · ${b.sessionName||""}`}
+            style={{display:"flex",alignItems:"center",gap:5,background:`${b.color||PINK}12`,border:`1.5px solid ${b.color||PINK}30`,borderRadius:999,padding:"5px 12px"}}>
+            {b.svgData?<img src={b.svgData} alt="" style={{width:16,height:16}}/>:<span style={{fontSize:14}}>{b.icon}</span>}
+            <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:b.color||PINK}}>{b.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ── Projector ──
 function Projector({ session, onBack }) {
@@ -2223,7 +2226,8 @@ function Session({ session: init, onBack, onPView }) {
 
   const [confirmOffline, setConfirmOffline] = useState(false);
   const [showBadgePicker, setShowBadgePicker] = useState(false);
-  const [badgePickerTarget, setBadgePickerTarget] = useState(null); // participant object
+  const [badgePickerTarget, setBadgePickerTarget] = useState(null);
+  const [showLuckyDraw, setShowLuckyDraw] = useState(false);
 
   // ── Live poll: pull participant updates from Firebase every 3s ──
   useEffect(() => {
@@ -2343,6 +2347,7 @@ function Session({ session: init, onBack, onPView }) {
         }}
         onClose={()=>setShowSettings(false)}/>}
       {mass && <MassGive participants={ses.participants} groups={ses.groups} onAward={award} onClose={()=>setMass(false)}/>}
+      {showLuckyDraw && <LuckyDraw participants={ses.participants} onClose={()=>setShowLuckyDraw(false)}/>}
       {showBadgePicker && badgePickerTarget && (
         <BadgePickerModal
           participant={badgePickerTarget}
@@ -2404,7 +2409,7 @@ function Session({ session: init, onBack, onPView }) {
 
       {/* ── MOBILE TABS (hidden on desktop) ── */}
       <div className="tc-tab-bar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
-        {[["award","Award"],["board","Board"],["groups","Groups"],["log","Log"],["wheel","🎡"]].map(([id,l]) => (
+        {[["award","Award"],["board","Board"],["groups","Groups"],["log","Log"]].map(([id,l]) => (
           <button key={id} onClick={()=>{
             if (!isLive) return;
             setTab(id);
@@ -2515,7 +2520,7 @@ function Session({ session: init, onBack, onPView }) {
         </div>
 
         {/* ── RIGHT PANEL: Award All / Board / Groups / Log ── */}
-        <div className="tc-session-right" style={{display: (tab==="award"||tab==="wheel") ? "none" : "flex", flexDirection:"column", overflow:"hidden"}}>
+        <div className="tc-session-right" style={{display: tab==="award" ? "none" : "flex", flexDirection:"column", overflow:"hidden"}}>
 
           {/* Desktop right-panel tabs */}
           <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0,display:"none"}}>
@@ -2618,6 +2623,15 @@ function Session({ session: init, onBack, onPView }) {
                   <div style={{position:"absolute",top:3,left:ses.boardVisible?21:3,width:20,height:20,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
                 </div>
               </div>
+              {/* Lucky Draw button — only shown when board is live */}
+              {ses.boardVisible && (
+                <button onClick={()=>setShowLuckyDraw(true)}
+                  style={{width:"100%",padding:"11px 0",background:"linear-gradient(135deg,#1A0A14,#2D0A22)",border:"1.5px solid rgba(255,79,184,.3)",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#FF4FB8",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .2s"}}
+                  onMouseOver={e=>{e.currentTarget.style.borderColor="#FF4FB8";e.currentTarget.style.background="linear-gradient(135deg,#2D0A22,#3D0A30)";}}
+                  onMouseOut={e=>{e.currentTarget.style.borderColor="rgba(255,79,184,.3)";e.currentTarget.style.background="linear-gradient(135deg,#1A0A14,#2D0A22)";}}>
+                  🎡 <span>Lucky Draw Wheel</span>
+                </button>
+              )}
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                 {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
                 {sorted.map((p,i) => {
@@ -2722,191 +2736,218 @@ function Session({ session: init, onBack, onPView }) {
           )}
         </div>{/* end right panel */}
 
-        {/* ── WHEEL COLUMN (desktop only) ── */}
-        <div className="tc-session-wheel">
-          <LuckyDraw participants={ses.participants} sessionName={ses.name}/>
-        </div>
-
       </div>{/* end body */}
     </div>
   );
 }
 // ── Lucky Draw Wheel ──────────────────────────────────────────────────────────
-function LuckyDraw({ participants, sessionName }) {
+// ── Lucky Draw Wheel Modal ───────────────────────────────────────────────────
+function LuckyDraw({ participants, badgeAwarded, onClose }) {
   const canvasRef = useRef(null);
-  const spinRef = useRef({ spinning:false, angle:0, velocity:0, raf:null });
-  const [winner, setWinner] = useState(null);
-  const [spinning, setSpinning] = useState(false);
-  const [history, setHistory] = useState([]);
-
-  // Weight by coins — min 1 ticket each
-  const tickets = participants.map(p => ({
-    ...p, tickets: Math.max(1, Math.floor((p.total||0) / 10))
-  }));
-  const totalTickets = tickets.reduce((s,p) => s+p.tickets, 0) || 1;
+  const spinRef   = useRef({ spinning:false, angle:0, velocity:0, raf:null });
+  const [spinning,  setSpinning]  = useState(false);
+  const [winner,    setWinner]    = useState(null);   // current pending winner
+  const [removed,   setRemoved]   = useState([]);     // ids removed from wheel
+  const [winners,   setWinners]   = useState([]);     // history list {name,av,pts,status}
+  const [spinsLeft, setSpinsLeft] = useState(10);
 
   const COLORS = ["#FF4FB8","#9D50FF","#00E5FF","#00C48C","#F5A623","#EF4444","#3B82F6","#F97316","#8B5CF6","#06B6D4"];
 
-  function drawWheel(angle) {
-    const canvas = canvasRef.current;
-    if (!canvas || participants.length === 0) return;
-    const ctx = canvas.getContext("2d");
-    const cx = canvas.width / 2, cy = canvas.height / 2, r = cx - 8;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Eligible = not in top 5 AND no pendingBadge AND not already removed
+  const sorted   = [...participants].sort((a,b)=>b.total-a.total);
+  const top5ids  = new Set(sorted.slice(0,5).map(p=>p.id));
+  const badgeIds = new Set(participants.filter(p=>p.pendingBadge).map(p=>p.id));
+  const eligible = participants.filter(p =>
+    !top5ids.has(p.id) && !badgeIds.has(p.id) && !removed.includes(p.id)
+  );
 
-    // Draw dark background circle
-    ctx.beginPath(); ctx.arc(cx,cy,r+6,0,Math.PI*2);
+  // Weight tickets by coins, min 1 each
+  const tickets      = eligible.map(p=>({...p, tickets:Math.max(1,Math.floor((p.total||0)/10))}));
+  const totalTickets = tickets.reduce((s,p)=>s+p.tickets,0)||1;
+
+  function drawWheel(angle) {
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width, H = canvas.height;
+    const cx = W/2, cy = H/2, r = cx-10;
+    ctx.clearRect(0,0,W,H);
+
+    if (eligible.length === 0) {
+      ctx.fillStyle = "#1A0A14";
+      ctx.beginPath(); ctx.arc(cx,cy,r+8,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.3)";
+      ctx.font = "bold 13px Nunito,sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("No more eligible", cx, cy-10);
+      ctx.fillText("participants", cx, cy+10);
+      return;
+    }
+
+    // Outer glow ring
+    ctx.beginPath(); ctx.arc(cx,cy,r+8,0,Math.PI*2);
     ctx.fillStyle = "#1A0A14"; ctx.fill();
 
     let start = angle;
-    tickets.forEach((p, i) => {
-      const slice = (p.tickets / totalTickets) * Math.PI * 2;
-      const color = COLORS[i % COLORS.length];
-      // Slice
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.arc(cx, cy, r, start, start + slice);
-      ctx.closePath();
-      ctx.fillStyle = color;
-      ctx.fill();
-      ctx.strokeStyle = "#0D0008";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+    tickets.forEach((p,i) => {
+      const slice = (p.tickets/totalTickets)*Math.PI*2;
+      const color = COLORS[i%COLORS.length];
+      ctx.beginPath(); ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,r,start,start+slice); ctx.closePath();
+      ctx.fillStyle = color; ctx.fill();
+      ctx.strokeStyle = "#0D0008"; ctx.lineWidth = 1.5; ctx.stroke();
       // Label
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(start + slice / 2);
-      ctx.textAlign = "right";
-      ctx.fillStyle = "#fff";
-      ctx.font = `bold ${Math.min(12, 130/participants.length)}px Nunito,sans-serif`;
-      ctx.shadowColor = "rgba(0,0,0,.5)";
-      ctx.shadowBlur = 3;
-      const label = p.name.split(" ")[0]; // first name only
-      ctx.fillText(label, r - 8, 4);
+      ctx.save(); ctx.translate(cx,cy); ctx.rotate(start+slice/2);
+      ctx.textAlign="right"; ctx.fillStyle="#fff";
+      const fs = Math.max(9, Math.min(13, 120/Math.max(eligible.length,1)));
+      ctx.font = \`bold \${fs}px Nunito,sans-serif\`;
+      ctx.shadowColor="rgba(0,0,0,.6)"; ctx.shadowBlur=3;
+      ctx.fillText(p.name.split(" ")[0], r-10, 4);
       ctx.restore();
       start += slice;
     });
 
-    // Centre circle
-    ctx.beginPath(); ctx.arc(cx,cy,22,0,Math.PI*2);
-    ctx.fillStyle = "#0D0008"; ctx.fill();
-    ctx.strokeStyle = "#FF4FB8"; ctx.lineWidth = 2.5; ctx.stroke();
-    // Ham logo placeholder
-    ctx.fillStyle = "#FF4FB8"; ctx.font = "bold 14px sans-serif";
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText("🎡", cx, cy);
+    // Centre hub
+    ctx.beginPath(); ctx.arc(cx,cy,24,0,Math.PI*2);
+    ctx.fillStyle="#0D0008"; ctx.fill();
+    ctx.strokeStyle="#FF4FB8"; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.font="16px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText("🎡",cx,cy);
 
-    // Pointer triangle at top center
-    ctx.save();
-    ctx.translate(cx, cy - r + 4);
-    ctx.beginPath();
-    ctx.moveTo(0, 18); ctx.lineTo(-10, 0); ctx.lineTo(10, 0);
-    ctx.closePath();
-    ctx.fillStyle = "#FF4FB8";
-    ctx.shadowColor = "#FF4FB8"; ctx.shadowBlur = 10;
-    ctx.fill();
-    ctx.restore();
+    // Pointer at top centre
+    ctx.save(); ctx.translate(cx, 8);
+    ctx.beginPath(); ctx.moveTo(0,20); ctx.lineTo(-8,0); ctx.lineTo(8,0); ctx.closePath();
+    ctx.fillStyle="#FF4FB8";
+    ctx.shadowColor="#FF4FB8"; ctx.shadowBlur=10;
+    ctx.fill(); ctx.restore();
   }
 
-  useEffect(() => { drawWheel(spinRef.current.angle); }, [participants]);
+  useEffect(()=>{ drawWheel(spinRef.current.angle); }, [eligible.length, removed.length]);
 
   function spin() {
-    if (spinRef.current.spinning || participants.length < 2) return;
-    setWinner(null);
+    if (spinRef.current.spinning || eligible.length < 1 || spinsLeft <= 0 || winner) return;
+    setSpinsLeft(n=>n-1);
     spinRef.current.spinning = true;
-    spinRef.current.velocity = 0.25 + Math.random() * 0.2;
+    spinRef.current.velocity = 0.28 + Math.random()*0.18;
     setSpinning(true);
-
     function animate() {
       const s = spinRef.current;
-      s.angle += s.velocity;
-      s.velocity *= 0.985;
+      s.angle += s.velocity; s.velocity *= 0.984;
       drawWheel(s.angle);
-      if (s.velocity > 0.004) {
-        s.raf = requestAnimationFrame(animate);
-      } else {
-        s.spinning = false;
-        setSpinning(false);
-        // Pointer is at top (12 o'clock = -π/2 from 3 o'clock)
-        // Wheel draws slices starting at angle 0 (3 o'clock) going clockwise
-        // So we need to find which slice is under the top
-        const normalised = ((s.angle % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
-        const pointer = (Math.PI*2*1.75 - normalised) % (Math.PI*2);
-        let acc = 0;
-        let won = tickets[0];
+      if (s.velocity > 0.004) { s.raf = requestAnimationFrame(animate); }
+      else {
+        s.spinning = false; setSpinning(false);
+        // Resolve winner
+        const norm = ((s.angle%(Math.PI*2))+Math.PI*2)%(Math.PI*2);
+        const pointer = (Math.PI*2 - norm + Math.PI*1.5)%(Math.PI*2);
+        let acc=0, won=tickets[0];
         for (const p of tickets) {
-          acc += (p.tickets / totalTickets) * Math.PI * 2;
-          if (pointer < acc) { won = p; break; }
+          acc += (p.tickets/totalTickets)*Math.PI*2;
+          if (pointer < acc) { won=p; break; }
         }
         setWinner(won);
-        setHistory(h => [{name:won.name, av:won.av, t:new Date().toLocaleTimeString()}, ...h.slice(0,4)]);
       }
     }
     animate();
   }
 
-  if (participants.length === 0) return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}>
-      <div style={{fontSize:32,marginBottom:8}}>🎡</div>
-      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Lucky Draw</div>
-      <div style={{fontSize:12,color:SUB,lineHeight:1.6}}>Add participants to<br/>enable the wheel</div>
-    </div>
-  );
+  function handleAward() {
+    if (!winner) return;
+    setWinners(h=>[{...winner, status:"awarded", t:new Date().toLocaleTimeString()},...h]);
+    setRemoved(r=>[...r, winner.id]);
+    setWinner(null);
+  }
+  function handleCancel() {
+    if (!winner) return;
+    setWinners(h=>[{...winner, status:"skipped", t:new Date().toLocaleTimeString()},...h]);
+    setRemoved(r=>[...r, winner.id]);
+    setWinner(null);
+  }
+
+  const canSpin = !spinning && !winner && eligible.length >= 1 && spinsLeft > 0;
 
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",background:"#0D0008"}}>
-      {/* Header */}
-      <div style={{padding:"10px 14px",borderBottom:"1px solid rgba(255,79,184,.2)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:14,color:"#fff"}}>🎡 Lucky Draw</div>
-        <div style={{fontSize:10,color:"rgba(255,255,255,.4)",fontWeight:600}}>COINS = MORE CHANCES</div>
-      </div>
+    <div style={{position:"fixed",inset:0,zIndex:800,background:"rgba(13,0,8,.85)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 16px"}}>
+      <div style={{background:"#0D0008",borderRadius:24,border:"1.5px solid rgba(255,79,184,.2)",width:"100%",maxWidth:560,maxHeight:"90vh",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 32px 80px rgba(0,0,0,.7)"}}>
 
-      {/* Canvas */}
-      <div style={{padding:"14px 12px 8px",display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0}}>
-        <canvas ref={canvasRef} width={240} height={240}
-          style={{borderRadius:"50%",boxShadow:"0 0 32px rgba(255,79,184,.25)"}}
-          onLoad={()=>drawWheel(spinRef.current.angle)}
-        />
-      </div>
-
-      {/* Spin button */}
-      <div style={{padding:"0 14px 12px",flexShrink:0}}>
-        <button onClick={spin} disabled={spinning}
-          style={{width:"100%",padding:"12px 0",background:spinning?"rgba(255,79,184,.3)":`linear-gradient(135deg,#FF4FB8,#9D50FF)`,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,color:"#fff",cursor:spinning?"not-allowed":"pointer",transition:"all .2s",boxShadow:spinning?"none":"0 4px 20px rgba(255,79,184,.4)"}}>
-          {spinning ? "Spinning…" : "🎲 SPIN"}
-        </button>
-      </div>
-
-      {/* Winner announcement */}
-      {winner && (
-        <div style={{margin:"0 12px 12px",background:"rgba(255,79,184,.12)",border:"1.5px solid rgba(255,79,184,.3)",borderRadius:12,padding:"12px 14px",textAlign:"center",flexShrink:0,animation:"slideUp .3s ease"}}>
-          <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.5)",letterSpacing:1,marginBottom:6,textTransform:"uppercase"}}>Winner!</div>
-          <div style={{display:"flex",alignItems:"center",gap:10,justifyContent:"center"}}>
-            <Av s={winner.av} color={PINK} size={36}/>
-            <div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:"#fff"}}>{winner.name}</div>
-              <div style={{fontSize:11,color:"rgba(255,255,255,.5)"}}>{winner.total} coins</div>
-            </div>
+        {/* Header */}
+        <div style={{padding:"16px 20px",borderBottom:"1px solid rgba(255,79,184,.15)",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:"#fff"}}>🎡 Lucky Draw</div>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.4)",fontWeight:600}}>{spinsLeft} spins left</div>
+            <button onClick={onClose} style={{width:30,height:30,borderRadius:8,background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.12)",color:"rgba(255,255,255,.6)",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
         </div>
-      )}
 
-      {/* History */}
-      {history.length > 0 && (
-        <div style={{flex:1,overflowY:"auto",padding:"0 12px 12px"}}>
-          <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:1,textTransform:"uppercase",marginBottom:6}}>Previous Draws</div>
-          {history.map((h,i) => (
-            <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-              <Av s={h.av} color={PINK} size={22}/>
-              <span style={{flex:1,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:"rgba(255,255,255,.7)"}}>{h.name}</span>
-              <span style={{fontSize:10,color:"rgba(255,255,255,.3)"}}>{h.t}</span>
+        <div style={{display:"flex",flex:1,overflow:"hidden"}}>
+
+          {/* Wheel + controls */}
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",padding:"16px 12px",overflow:"auto"}}>
+
+            {/* Info about eligible */}
+            <div style={{fontSize:11,color:"rgba(255,255,255,.35)",marginBottom:10,textAlign:"center",lineHeight:1.5}}>
+              Eligible: {eligible.length} participants · Top 5 &amp; badge recipients excluded<br/>
+              <span style={{color:"rgba(255,79,184,.6)"}}>More coins = more chances</span>
             </div>
-          ))}
+
+            {/* Canvas */}
+            <canvas ref={canvasRef} width={240} height={240}
+              style={{borderRadius:"50%",boxShadow:"0 0 40px rgba(255,79,184,.2)",flexShrink:0}}/>
+
+            {/* Winner announcement */}
+            {winner && (
+              <div style={{width:"100%",marginTop:14,background:"rgba(255,79,184,.1)",border:"1.5px solid rgba(255,79,184,.3)",borderRadius:14,padding:"14px 16px",textAlign:"center",animation:"slideUp .3s ease"}}>
+                <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.5)",letterSpacing:1,marginBottom:8,textTransform:"uppercase"}}>🎉 Winner!</div>
+                <div style={{display:"flex",alignItems:"center",gap:12,justifyContent:"center",marginBottom:14}}>
+                  <Av s={winner.av} color={PINK} size={40}/>
+                  <div style={{textAlign:"left"}}>
+                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:"#fff"}}>{winner.name}</div>
+                    <div style={{fontSize:12,color:"rgba(255,255,255,.4)"}}>{winner.total} coins</div>
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={handleAward}
+                    style={{flex:1,padding:"11px 0",background:"linear-gradient(135deg,#FF4FB8,#9D50FF)",border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>
+                    ✓ Award &amp; Continue
+                  </button>
+                  <button onClick={handleCancel}
+                    style={{flex:1,padding:"11px 0",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:"rgba(255,255,255,.6)",cursor:"pointer"}}>
+                    ✕ Skip
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Spin button */}
+            {!winner && (
+              <button onClick={spin} disabled={!canSpin}
+                style={{width:"100%",marginTop:14,padding:"14px 0",background:canSpin?"linear-gradient(135deg,#FF4FB8,#9D50FF)":"rgba(255,255,255,.06)",border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:canSpin?"#fff":"rgba(255,255,255,.3)",cursor:canSpin?"pointer":"not-allowed",transition:"all .2s",boxShadow:canSpin?"0 4px 24px rgba(255,79,184,.4)":"none"}}>
+                {spinning ? "Spinning…" : eligible.length===0 ? "No participants left" : spinsLeft===0 ? "Spin limit reached" : "🎲 SPIN"}
+              </button>
+            )}
+          </div>
+
+          {/* Winners history sidebar */}
+          {winners.length > 0 && (
+            <div style={{width:160,borderLeft:"1px solid rgba(255,79,184,.12)",padding:"12px 10px",overflowY:"auto",flexShrink:0}}>
+              <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:1,textTransform:"uppercase",marginBottom:10}}>Results</div>
+              {winners.map((h,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:8,opacity:h.status==="skipped"?.5:1}}>
+                  <Av s={h.av} color={PINK} size={24}/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:11,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.name}</div>
+                    <div style={{fontSize:9,color:h.status==="awarded"?"#00C48C":"rgba(255,255,255,.3)"}}>{h.status==="awarded"?"✓ Awarded":"✕ Skipped"}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
         </div>
-      )}
+      </div>
     </div>
   );
 }
+
 
 function CreateModal({ onConfirm, onClose }) {
   const [n, setN] = useState("");
@@ -4412,7 +4453,6 @@ const CSS = `
   .tc-session-body { flex:1; display:flex; flex-direction:column; overflow:hidden; }
   .tc-session-left { flex:1; display:flex; flex-direction:column; overflow:hidden; }
   .tc-session-right { display:flex; flex-direction:column; overflow:hidden; }
-  .tc-session-wheel { display:none; }
   .tc-tab-bar { background:#fff; border-bottom:1px solid ${BORDER}; display:flex; align-items:center; flex-shrink:0; }
   .tc-right-tabs { display:none; }
   .tc-session-topbar { padding:0 16px; }
@@ -4438,7 +4478,6 @@ const CSS = `
     .tc-session-body { flex-direction:row !important; }
     .tc-session-left { width:420px !important; flex:none !important; border-right:1px solid ${BORDER}; display:flex !important; }
     .tc-session-right { flex:1 !important; display:flex !important; }
-    .tc-session-wheel { width:280px !important; flex:none !important; border-left:1px solid ${BORDER}; display:flex !important; flex-direction:column; overflow:hidden; }
     .tc-tab-bar { display:none !important; }
     .tc-right-tabs { display:flex !important; background:#fff; border-bottom:1px solid ${BORDER}; align-items:center; flex-shrink:0; }
     .tc-session-topbar { padding:0 24px !important; }
