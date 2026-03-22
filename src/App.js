@@ -3778,10 +3778,16 @@ export default function App() {
 
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.match(/^\/join\/[A-Z0-9]+$/i)) return; // skip for join URLs
-    if (path.match(/^\/claim\/[a-z0-9]+$/i)) return;  // skip for claim URLs
+    if (path.match(/^\/join\/[A-Z0-9]+$/i)) return; // skip entirely for join URLs
+    if (path.match(/^\/claim\/[a-z0-9]+$/i)) return;  // skip entirely for claim URLs
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {      if (user) {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // Double-check path inside callback — async timing means URL could have changed
+      const currentPath = window.location.pathname;
+      if (currentPath.match(/^\/join\/[A-Z0-9]+$/i)) return;
+      if (currentPath.match(/^\/claim\/[a-z0-9]+$/i)) return;
+
+      if (user) {
         setCurrentUid(user.uid);
         try {
           const s = await sg("sessions_index"); if (s) setSessions(s);
@@ -3871,7 +3877,10 @@ export default function App() {
   if (screen==="landing") return <LandingPage onGetStarted={()=>setScreen("auth")} onLogin={()=>setScreen("auth")}/>;
   if (screen==="auth") return <><style>{CSS}</style><Auth onDone={handleAuth}/></>;
   // participantJoin = loaded from /join/CODE URL — always show participant view, never host view
-  if (screen==="participantJoin" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
+  if (screen==="participantJoin") {
+    if (cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
+    return <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}><style>{CSS}</style><Ham size={60}/><div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:PINK}}>Loading session…</div></div>;
+  }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
   if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
   if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} onBack={()=>setScreen("home")} onPView={()=>setScreen("participant")}/></>;
