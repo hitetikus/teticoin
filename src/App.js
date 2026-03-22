@@ -49,7 +49,6 @@ async function ssSession(code, data) { await fsSetSession(code, data); }
 
 const DEMO = {
   code:"DEMO1", name:"Design Thinking Workshop", boardVisible:false,
-  coinmasters:[],
   participants:[
     {id:1,name:"Ahmad Faris",av:"AF",total:180,bk:{question:3,chat:2,token:2},gid:0,num:1},
     {id:2,name:"Nurul Ain",av:"NA",total:140,bk:{question:1,chat:4,token:1},gid:0,num:2},
@@ -705,7 +704,7 @@ function CoinCustomizer({ session, onSave, onClose }) {
 }
 
 // ── Session Settings sheet (gear next to session name in session list) ──
-function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, onDuplicate, onArchive, onToggleCoinmaster, onClose }) {
+function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, onDuplicate, onArchive, onToggleAssistant, onClose }) {
   const [editing, setEditing] = useState(false);
   const [nameVal, setNameVal] = useState(session.name); // eslint-disable-line
   const [copied, setCopied] = useState(false);
@@ -767,19 +766,19 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:cmEnabled?12:0}}>
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:cmEnabled?"#7C3AED":TEXT}}>Allow Coinmaster</div>
+                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:cmEnabled?"#7C3AED":TEXT}}>Allow Assistant</div>
                   {cmEnabled && <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#7C3AED",borderRadius:99,padding:"2px 8px",letterSpacing:.3}}>ON</span>}
                 </div>
                 <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>Let others award coins in this session</div>
               </div>
-              <div onClick={onToggleCoinmaster}
+              <div onClick={onToggleAssistant}
                 style={{width:44,height:26,borderRadius:13,background:cmEnabled?"#7C3AED":"#E5E7EB",position:"relative",transition:"all .2s",flexShrink:0,marginLeft:12,cursor:"pointer"}}>
                 <div style={{position:"absolute",top:3,left:cmEnabled?21:3,width:20,height:20,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
               </div>
             </div>
             {cmEnabled && cmCode && (
               <div style={{background:"#fff",border:`1px solid #DDD6FE`,borderRadius:10,padding:"12px 14px"}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#7C3AED",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Coinmaster Code</div>
+                <div style={{fontSize:10,fontWeight:700,color:"#7C3AED",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Assistant Code</div>
                 <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,letterSpacing:6,color:"#7C3AED",marginBottom:4}}>{cmCode}</div>
                 <div style={{fontSize:11,color:SUB,marginBottom:10}}>Share this code with your coinmasters. All coinmasters use the same code.</div>
                 <div style={{display:"flex",gap:8}}>
@@ -787,7 +786,7 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
                     style={{flex:1,padding:"8px 0",background:copied?`#7C3AED10`:"#FAF5FF",border:`1px solid ${copied?"#7C3AED":"#DDD6FE"}`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:copied?"#7C3AED":"#7C3AED",cursor:"pointer",transition:"all .2s"}}>
                     {copied?"Copied!":"Copy Code"}
                   </button>
-                  <button onClick={()=>onToggleCoinmaster(true)}
+                  <button onClick={()=>onToggleAssistant(true)}
                     style={{padding:"8px 14px",background:"none",border:`1px solid #E5E7EB`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer"}}>
                     Regenerate
                   </button>
@@ -1091,8 +1090,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,uid:(auth.currentUser?.uid || linkedUid || null),guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
-    const u = {...live,coinmasters:[],
-  participants:[...(live.participants||[]),np]};
+    const u = {...live,participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
   }
 
@@ -1111,8 +1109,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,pin,uid:(auth.currentUser?.uid || linkedUid || null),guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
-    const u = {...live,coinmasters:[],
-  participants:[...(live.participants||[]),np]};
+    const u = {...live,participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
   }
 
@@ -1410,7 +1407,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   const LoginBanner = () => linkedUid ? (
     <div style={{width:"100%",background:`${GREEN}12`,border:`1.5px solid ${GREEN}30`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",gap:12}}>
       <div style={{width:32,height:32,borderRadius:10,background:`${GREEN}20`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-        < fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div style={{flex:1}}>
         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Logged in as {linkedName}</div>
@@ -1420,7 +1417,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   ) : showLoginBanner ? (
     <div style={{width:"100%",background:`linear-gradient(135deg,${PURPLE}10,${PINK}08)`,border:`1.5px solid ${PURPLE}25`,borderRadius:14,padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
       <div style={{width:32,height:32,borderRadius:10,background:`${PURPLE}15`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-        < fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/><path d="M12 12v4"/><path d="M10 15h4"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/><path d="M12 12v4"/><path d="M10 15h4"/></svg>
       </div>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Earn badges &amp; save progress</div>
@@ -2003,9 +2000,9 @@ function InlineCoinBtn({ value, bg, border, col, disabled, onAward, onEdit, circ
   );
 }
 
-// ── Coinmaster View ──
+// ── Assistant View ──
 // Same award UI as host but read-only for settings/live/coin values
-function CoinmasterView({ session: init, onBack }) {
+function AssistantView({ session: init, onBack }) {
   const [ses, setSes] = useState(init);
   const [tab, setTab] = useState("award");
   const [selId, setSelId] = useState(null);
@@ -2359,19 +2356,18 @@ function Session({ session: init, onBack, onPView }) {
       {showSettings && <SessionSettings session={ses}
         onRename={renameSession}
         onToggleLive={toggleLive}
-        onToggleCoinmaster={(regenerate=false)=>{
+        onToggleAssistant={(regenerate=false)=>{
           const wasEnabled = !!ses.coinmasterEnabled;
           const newEnabled = regenerate ? true : !wasEnabled;
           const newCode = (!wasEnabled || regenerate) ? genCMCode() : ses.coinmasterCode;
           mut(s=>{ s.coinmasterEnabled=newEnabled; s.coinmasterCode=newEnabled?newCode:""; });
           if (newEnabled && newCode) { ssSession("cm-" + newCode, { sessionCode: ses.code }); }
-          notify(newEnabled ? "Coinmaster enabled" : "Coinmaster disabled");
+          notify(newEnabled ? "Assistant enabled" : "Assistant disabled");
         }}
         onDuplicate={()=>{
           const code=genCode();
           const dup={...JSON.parse(JSON.stringify(ses)),code,name:`${ses.name} (Copy)`,
-            coinmasters:[],
-  participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false,coinmasterCode:""};
+            participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false,coinmasterCode:""};
           ssSession(code, dup); notify("Session duplicated"); setShowSettings(false);
         }}
         onArchive={()=>{
@@ -3012,14 +3008,14 @@ function CreateModal({ onConfirm, onClose }) {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={enableCM?PURPLE:SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
           </div>
           <div style={{flex:1}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:enableCM?PURPLE:TEXT}}>Enable Coinmaster</div>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:enableCM?PURPLE:TEXT}}>Enable Assistant</div>
             <div style={{fontSize:11,color:SUB,marginTop:1}}>Let an assistant award coins from their own device</div>
           </div>
           <div style={{width:40,height:24,borderRadius:12,background:enableCM?PURPLE:BORDER,position:"relative",transition:"all .2s",flexShrink:0}}>
             <div style={{position:"absolute",top:3,left:enableCM?19:3,width:18,height:18,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
           </div>
         </div>
-        {enableCM && <div style={{background:`${PURPLE}08`,border:`1px solid ${PURPLE}20`,borderRadius:10,padding:"8px 12px",marginBottom:14,fontSize:12,color:PURPLE,fontWeight:600}}>A Coinmaster code will be generated in Session Settings</div>}
+        {enableCM && <div style={{background:`${PURPLE}08`,border:`1px solid ${PURPLE}20`,borderRadius:10,padding:"8px 12px",marginBottom:14,fontSize:12,color:PURPLE,fontWeight:600}}>A Assistant code will be generated in Session Settings</div>}
         <div style={{display:"flex",gap:10}}>
           <button onClick={onClose} style={{flex:1,padding:"13px 0",background:BG,border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:SUB,cursor:"pointer"}}>Cancel</button>
           <PBtn onClick={()=>n.trim()&&onConfirm(n.trim(),enableCM)} disabled={!n.trim()} style={{flex:2,padding:"13px 22px"}}>Start Session</PBtn>
@@ -3417,7 +3413,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
   const PageHeader = ({ title }) => (
     <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
       <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
-        < fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
         Back
       </button>
       <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>{title}</div>
@@ -3527,7 +3523,7 @@ function SettingsPage({ onClose }) {
       <style>{CSS}</style>
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
         <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
-          < fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Settings</div>
@@ -3580,7 +3576,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
       {/* Header — full width */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
         <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
-          < fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Billing &amp; Plan</div>
@@ -3697,7 +3693,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
   );
 }
 
-// ── Coinmaster Join Modal ──
+// ── Assistant Join Modal ──
 // ── JoinSessionField — compact code entry used on home screen ──
 function JoinSessionField({ onJoin }) {
   const [code, setCode] = useState("");
@@ -3787,7 +3783,7 @@ function BadgePickerModal({ participant, sessionName, hostName, onAward, onClose
               style={{width:"100%",padding:"12px",border:`1.5px dashed ${uploadErr?'#EF4444':BORDER}`,borderRadius:12,background:customFile?"#F0FDF4":SOFT,cursor:"pointer",fontSize:13,color:SUB,fontFamily:"Poppins,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
               {customFile
                 ? <><img src={customFile} alt="custom" style={{width:28,height:28}}/><span style={{color:GREEN,fontWeight:600}}>SVG uploaded ✓</span></>
-                : <>< fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>.svg only · max 10KB · 48×48px recommended</span></>
+                : <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>.svg only · max 10KB · 48×48px recommended</span></>
               }
             </button>
             <input ref={fileRef} type="file" accept=".svg,image/svg+xml" style={{display:"none"}} onChange={handleSvgUpload}/>
@@ -3923,7 +3919,7 @@ function BadgeClaimScreen({ token, onDone }) {
   );
 }
 
-function CoinmasterJoinModal({ onJoin, onClose }) {
+function AssistantJoinModal({ onJoin, onClose }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -3961,7 +3957,7 @@ function CoinmasterJoinModal({ onJoin, onClose }) {
         </div>
         {error && <div style={{fontSize:13,color:"#EF4444",fontWeight:600,marginBottom:8,textAlign:"center"}}>{error}</div>}
         <div style={{fontSize:12,color:"#9CA3AF",textAlign:"center",marginBottom:20,lineHeight:1.6}}>
-          The host shares this code from their Session Settings.<br/>You must be logged in to join as Coinmaster.
+          The host shares this code from their Session Settings.<br/>You must be logged in to join as Assistant.
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <button onClick={handleJoin} disabled={code.trim().length < 4 || loading}
@@ -4141,8 +4137,7 @@ export default function App() {
     if (isFree && sessions.length >= sessionLimit) { setLimitModal("sessions"); return; }
     const code = genCode();
     const cmCode = enableCM ? genCMCode() : "";
-    const s = {code, name, createdAt:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), boardVisible:false, coinmasters:[],
-  participants:[], groups:[], log:[], coinmasterEnabled:!!enableCM, coinmasterCode:cmCode};
+    const s = {code, name, createdAt:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), boardVisible:false, participants:[], groups:[], log:[], coinmasterEnabled:!!enableCM, coinmasterCode:cmCode};
     await ssSession(code, s);
     if (enableCM && cmCode) await ssSession("cm-" + cmCode, { sessionCode: code });
     const idx = [{code, name, date:s.createdAt, count:0}, ...sessions];
@@ -4169,7 +4164,7 @@ export default function App() {
     return <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}><style>{CSS}</style><Ham size={60}/><div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:PINK}}>Loading session…</div></div>;
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
-  if (false && screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
+  if (false && screen==="coinmaster" && cmSession) return <><style>{CSS}</style><AssistantView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
   if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} onBack={()=>setScreen("home")} onPView={()=>setScreen("participant")}/></>;
 
   // Session settings from home list gear icon
@@ -4180,7 +4175,7 @@ export default function App() {
         <SessionSettings session={cur}
           onRename={async(name)=>{ const s={...cur,name}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,name}:x); setSessions(idx); await ss("sessions_index",idx); }}
           onToggleLive={async()=>{ const s={...cur,live:cur.live===false?true:false}; await ssSession(s.code, s); setCur(s); }}
-          onToggleCoinmaster={async(regenerate=false)=>{
+          onToggleAssistant={async(regenerate=false)=>{
             const wasEnabled = !!cur.coinmasterEnabled;
             const newEnabled = regenerate ? true : !wasEnabled;
             const newCode = (!wasEnabled || regenerate) ? genCMCode() : cur.coinmasterCode;
@@ -4191,8 +4186,7 @@ export default function App() {
               await ssSession("cm-" + newCode, { sessionCode: s.code });
             }
           }}
-          onDuplicate={async()=>{ const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,coinmasters:[],
-  participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false,coinmasterCode:""}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
+          onDuplicate={async()=>{ const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false,coinmasterCode:""}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onArchive={async()=>{ if(!window.confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onExport={()=>{ const rows=[["#","Name","Group","Total"]]; [...(cur.participants||[])].sort((a,b)=>b.total-a.total).forEach(p=>{const g=(cur.groups||[]).find(g=>g.id===p.gid);rows.push([pNum(p.num),p.name,g?.name||"",p.total]);}); const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(rows.map(r=>r.join(",")).join("\n"));a.download=`teticoin-${cur.code}.csv`;a.click(); }}
           onReset={async()=>{ if(!window.confirm("Reset all coins?")) return; const s={...cur,participants:(cur.participants||[]).map(p=>({...p,total:0,bk:{},hist:[]})),log:[]}; await ssSession(s.code, s); setCur(s); }}
@@ -4238,7 +4232,7 @@ export default function App() {
       )}
 
       {/* ── COINMASTER JOIN MODAL ── */}
-      {false && showCMJoin && <CoinmasterJoinModal onJoin={async(code)=>{
+      {false && showCMJoin && <AssistantJoinModal onJoin={async(code)=>{
         let upperCode = code.toUpperCase().trim();
         if (!upperCode.startsWith("CM-") && upperCode.length === 4) upperCode = "CM-" + upperCode;
         // Strategy: we store a lookup doc in sessions collection keyed "cm-{code}"
