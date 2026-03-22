@@ -314,6 +314,12 @@ function PRow({ p, groups, sel, onSelect }) {
         </div>
       </div>
       <div style={{color:BORDER,fontSize:20}}>›</div>
+    
+      <button onClick={(e)=>{
+        e.stopPropagation();
+        onSelect && onSelect();
+      }} style={{marginLeft:8,fontSize:10}}>Assign CM</button>
+    
     </button>
   );
 }
@@ -839,7 +845,7 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
   const [nameVal, setNameVal] = useState(session.name); // eslint-disable-line
 
   const sorted = [...session.participants].sort((a,b) => a.num - b.num);
-  function addP() { if (!np.trim()) return; const n=(session.participants.reduce((m,p)=>Math.max(m,p.num),0))+1; onUpdate(s=>{s.participants.push({id:Date.now(),name:np.trim(),av:mkAv(np),total:0,bk:{},gid:null,num:n});return s;}); setNp(""); }
+  function addP() { if (!np.trim()) return; const n=(session.participants.reduce((m,p)=>Math.max(m,p.num),0))+1; onUpdate(s=>{s.participants.push({id:Date.now(),name:np.trim(),av:mkAv(np),total:0,bk:{, role:"participant"},gid:null,num:n});return s;}); setNp(""); }
   function addG() { if (!ng.trim()) return; onUpdate(s=>{s.groups.push({id:Date.now(),name:ng.trim(),color:ngc});return s;}); setNg(""); }
   function remP(pid) { onUpdate(s=>{s.participants=s.participants.filter(x=>x.id!==pid);return s;}); }
   function asgG(pid,gid) { onUpdate(s=>{const p=s.participants.find(x=>x.id===pid);if(p)p.gid=gid===""?null:Number(gid);return s;}); }
@@ -3940,7 +3946,6 @@ function CoinmasterJoinModal({ onJoin, onClose }) {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
           </div>
           <div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:"#1A0A14"}}>Join as Coinmaster</div>
             <div style={{fontSize:13,color:"#6B7280",marginTop:1}}>Enter the code from your host</div>
           </div>
         </div>
@@ -4364,7 +4369,6 @@ export default function App() {
               <div style={{marginTop:12,textAlign:"center"}}>
                 <button onClick={()=>setShowCMJoin(true)} style={{background:"none",border:"none",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#7C3AED",cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:5,fontWeight:600}}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
-                  Join as Coinmaster
                 </button>
               </div>
             </div>
