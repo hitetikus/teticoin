@@ -2624,6 +2624,8 @@ function Session({ session: init, onBack, onPView }) {
                 {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
                 {sorted.map((p,i) => {
                   const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
+                  const showBadgeBtn = ses.boardVisible && i < 5 && !p.pendingBadge;
+                  const showPending  = ses.boardVisible && p.pendingBadge;
                   return (
                     <div key={p.id} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff",cursor:"pointer",transition:"background .1s"}}
                       onClick={()=>{setSelId(p.id);setTab("award");}}
@@ -2640,24 +2642,25 @@ function Session({ session: init, onBack, onPView }) {
                           </div>
                           {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
                         </div>
-                        <div style={{textAlign:"right",flexShrink:0}}>
-                          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
-                          <div style={{fontSize:10,color:SUB}}>coins</div>
+                        {/* Score + badge button inline, right-aligned to same limit */}
+                        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0,width:ses.boardVisible&&i<5?196:64,justifyContent:"flex-end"}}>
+                          {showBadgeBtn && (
+                            <button onClick={e=>{e.stopPropagation();setBadgePickerTarget(p);setShowBadgePicker(true);}}
+                              style={{padding:"6px 14px",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:5,flexShrink:0,boxShadow:`0 2px 8px ${PURPLE}40`,whiteSpace:"nowrap"}}>
+                              🏅 Award
+                            </button>
+                          )}
+                          {showPending && (
+                            <div style={{fontSize:11,color:PURPLE,fontWeight:700,display:"flex",alignItems:"center",gap:4,flexShrink:0}} onClick={e=>e.stopPropagation()}>
+                              {p.pendingBadge.icon}<span>Pending</span>
+                            </div>
+                          )}
+                          <div style={{textAlign:"right",minWidth:56}}>
+                            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
+                            <div style={{fontSize:10,color:SUB}}>coins</div>
+                          </div>
                         </div>
                       </div>
-                      {ses.boardVisible && !p.pendingBadge && (
-                        <div style={{marginTop:8,display:"flex",justifyContent:"flex-end"}} onClick={e=>e.stopPropagation()}>
-                          <button onClick={()=>{setBadgePickerTarget(p);setShowBadgePicker(true);}}
-                            style={{padding:"5px 12px",background:SOFT,border:`1px solid ${MID}`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:PINK,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
-                            🏅 Award Badge
-                          </button>
-                        </div>
-                      )}
-                      {ses.boardVisible && p.pendingBadge && (
-                        <div style={{marginTop:4,fontSize:11,color:SUB,textAlign:"right",fontStyle:"italic"}} onClick={e=>e.stopPropagation()}>
-                          {p.pendingBadge.icon} {p.pendingBadge.label} — pending claim
-                        </div>
-                      )}
                       <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
                         <div style={{height:4,background:GRAD,width:`${(p.total/maxP)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
                       </div>
@@ -3778,8 +3781,7 @@ export default function App() {
     if (path.match(/^\/join\/[A-Z0-9]+$/i)) return; // skip for join URLs
     if (path.match(/^\/claim\/[a-z0-9]+$/i)) return;  // skip for claim URLs
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {      if (user) {
         setCurrentUid(user.uid);
         try {
           const s = await sg("sessions_index"); if (s) setSessions(s);
