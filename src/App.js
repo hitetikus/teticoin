@@ -49,8 +49,6 @@ async function ssSession(code, data) { await fsSetSession(code, data); }
 
 const DEMO = {
   code:"DEMO1", name:"Design Thinking Workshop", boardVisible:false,
-  participants:[
-    ],
   coinmasters:[],
   participants:[
     {id:1,name:"Ahmad Faris",av:"AF",total:180,bk:{question:3,chat:2,token:2},gid:0,num:1},
@@ -1093,9 +1091,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,uid:(auth.currentUser?.uid || linkedUid || null),guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
-    const u = {...live,participants:[
-    ],
-  coinmasters:[],
+    const u = {...live,coinmasters:[],
   participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
   }
@@ -1115,9 +1111,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,pin,uid:(auth.currentUser?.uid || linkedUid || null),guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
-    const u = {...live,participants:[
-    ],
-  coinmasters:[],
+    const u = {...live,coinmasters:[],
   participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
   }
@@ -1416,7 +1410,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   const LoginBanner = () => linkedUid ? (
     <div style={{width:"100%",background:`${GREEN}12`,border:`1.5px solid ${GREEN}30`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",gap:12}}>
       <div style={{width:32,height:32,borderRadius:10,background:`${GREEN}20`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        < fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div style={{flex:1}}>
         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Logged in as {linkedName}</div>
@@ -1426,7 +1420,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   ) : showLoginBanner ? (
     <div style={{width:"100%",background:`linear-gradient(135deg,${PURPLE}10,${PINK}08)`,border:`1.5px solid ${PURPLE}25`,borderRadius:14,padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
       <div style={{width:32,height:32,borderRadius:10,background:`${PURPLE}15`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/><path d="M12 12v4"/><path d="M10 15h4"/></svg>
+        < fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/><path d="M12 12v4"/><path d="M10 15h4"/></svg>
       </div>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Earn badges &amp; save progress</div>
@@ -2376,9 +2370,7 @@ function Session({ session: init, onBack, onPView }) {
         onDuplicate={()=>{
           const code=genCode();
           const dup={...JSON.parse(JSON.stringify(ses)),code,name:`${ses.name} (Copy)`,
-            participants:[
-    ],
-  coinmasters:[],
+            coinmasters:[],
   participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false,coinmasterCode:""};
           ssSession(code, dup); notify("Session duplicated"); setShowSettings(false);
         }}
@@ -3425,7 +3417,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
   const PageHeader = ({ title }) => (
     <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
       <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        < fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
         Back
       </button>
       <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>{title}</div>
@@ -3535,7 +3527,7 @@ function SettingsPage({ onClose }) {
       <style>{CSS}</style>
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
         <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          < fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Settings</div>
@@ -3588,7 +3580,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
       {/* Header — full width */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
         <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          < fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Billing &amp; Plan</div>
@@ -3795,7 +3787,7 @@ function BadgePickerModal({ participant, sessionName, hostName, onAward, onClose
               style={{width:"100%",padding:"12px",border:`1.5px dashed ${uploadErr?'#EF4444':BORDER}`,borderRadius:12,background:customFile?"#F0FDF4":SOFT,cursor:"pointer",fontSize:13,color:SUB,fontFamily:"Poppins,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
               {customFile
                 ? <><img src={customFile} alt="custom" style={{width:28,height:28}}/><span style={{color:GREEN,fontWeight:600}}>SVG uploaded ✓</span></>
-                : <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>.svg only · max 10KB · 48×48px recommended</span></>
+                : <>< fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>.svg only · max 10KB · 48×48px recommended</span></>
               }
             </button>
             <input ref={fileRef} type="file" accept=".svg,image/svg+xml" style={{display:"none"}} onChange={handleSvgUpload}/>
@@ -4149,9 +4141,7 @@ export default function App() {
     if (isFree && sessions.length >= sessionLimit) { setLimitModal("sessions"); return; }
     const code = genCode();
     const cmCode = enableCM ? genCMCode() : "";
-    const s = {code, name, createdAt:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), boardVisible:false, participants:[
-    ],
-  coinmasters:[],
+    const s = {code, name, createdAt:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), boardVisible:false, coinmasters:[],
   participants:[], groups:[], log:[], coinmasterEnabled:!!enableCM, coinmasterCode:cmCode};
     await ssSession(code, s);
     if (enableCM && cmCode) await ssSession("cm-" + cmCode, { sessionCode: code });
@@ -4201,9 +4191,7 @@ export default function App() {
               await ssSession("cm-" + newCode, { sessionCode: s.code });
             }
           }}
-          onDuplicate={async()=>{ const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[
-    ],
-  coinmasters:[],
+          onDuplicate={async()=>{ const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,coinmasters:[],
   participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false,coinmasterCode:""}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onArchive={async()=>{ if(!window.confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onExport={()=>{ const rows=[["#","Name","Group","Total"]]; [...(cur.participants||[])].sort((a,b)=>b.total-a.total).forEach(p=>{const g=(cur.groups||[]).find(g=>g.id===p.gid);rows.push([pNum(p.num),p.name,g?.name||"",p.total]);}); const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(rows.map(r=>r.join(",")).join("\n"));a.download=`teticoin-${cur.code}.csv`;a.click(); }}
