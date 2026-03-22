@@ -50,6 +50,9 @@ async function ssSession(code, data) { await fsSetSession(code, data); }
 const DEMO = {
   code:"DEMO1", name:"Design Thinking Workshop", boardVisible:false,
   participants:[
+    ],
+  coinmasters:[],
+  participants:[
     {id:1,name:"Ahmad Faris",av:"AF",total:180,bk:{question:3,chat:2,token:2},gid:0,num:1},
     {id:2,name:"Nurul Ain",av:"NA",total:140,bk:{question:1,chat:4,token:1},gid:0,num:2},
     {id:3,name:"Haziq Ibrahim",av:"HI",total:210,bk:{question:2,chat:1,token:3},gid:1,num:3},
@@ -1090,7 +1093,10 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,uid:(auth.currentUser?.uid || linkedUid || null),guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
-    const u = {...live,participants:[...(live.participants||[]),np]};
+    const u = {...live,participants:[
+    ],
+  coinmasters:[],
+  participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
   }
 
@@ -1109,7 +1115,10 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,pin,uid:(auth.currentUser?.uid || linkedUid || null),guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
-    const u = {...live,participants:[...(live.participants||[]),np]};
+    const u = {...live,participants:[
+    ],
+  coinmasters:[],
+  participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
   }
 
@@ -2367,7 +2376,10 @@ function Session({ session: init, onBack, onPView }) {
         onDuplicate={()=>{
           const code=genCode();
           const dup={...JSON.parse(JSON.stringify(ses)),code,name:`${ses.name} (Copy)`,
-            participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false,coinmasterCode:""};
+            participants:[
+    ],
+  coinmasters:[],
+  participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false,coinmasterCode:""};
           ssSession(code, dup); notify("Session duplicated"); setShowSettings(false);
         }}
         onArchive={()=>{
@@ -3714,7 +3726,7 @@ function JoinSessionField({ onJoin }) {
           value={code}
           onChange={e=>{ setCode(e.target.value.toUpperCase()); setErr(""); }}
           onKeyDown={e=>e.key==="Enter"&&submit()}
-          placeholder="enter session code"
+          placeholder="Enter session code"
           maxLength={8}
           style={{flex:1,padding:"10px 14px",border:`1.5px solid ${err?'#EF4444':BORDER}`,borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",letterSpacing:2}}
         />
@@ -4137,7 +4149,10 @@ export default function App() {
     if (isFree && sessions.length >= sessionLimit) { setLimitModal("sessions"); return; }
     const code = genCode();
     const cmCode = enableCM ? genCMCode() : "";
-    const s = {code, name, createdAt:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), boardVisible:false, participants:[], groups:[], log:[], coinmasterEnabled:!!enableCM, coinmasterCode:cmCode};
+    const s = {code, name, createdAt:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), boardVisible:false, participants:[
+    ],
+  coinmasters:[],
+  participants:[], groups:[], log:[], coinmasterEnabled:!!enableCM, coinmasterCode:cmCode};
     await ssSession(code, s);
     if (enableCM && cmCode) await ssSession("cm-" + cmCode, { sessionCode: code });
     const idx = [{code, name, date:s.createdAt, count:0}, ...sessions];
@@ -4186,7 +4201,10 @@ export default function App() {
               await ssSession("cm-" + newCode, { sessionCode: s.code });
             }
           }}
-          onDuplicate={async()=>{ const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false,coinmasterCode:""}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
+          onDuplicate={async()=>{ const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[
+    ],
+  coinmasters:[],
+  participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false,coinmasterCode:""}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onArchive={async()=>{ if(!window.confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onExport={()=>{ const rows=[["#","Name","Group","Total"]]; [...(cur.participants||[])].sort((a,b)=>b.total-a.total).forEach(p=>{const g=(cur.groups||[]).find(g=>g.id===p.gid);rows.push([pNum(p.num),p.name,g?.name||"",p.total]);}); const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(rows.map(r=>r.join(",")).join("\n"));a.download=`teticoin-${cur.code}.csv`;a.click(); }}
           onReset={async()=>{ if(!window.confirm("Reset all coins?")) return; const s={...cur,participants:(cur.participants||[]).map(p=>({...p,total:0,bk:{},hist:[]})),log:[]}; await ssSession(s.code, s); setCur(s); }}
