@@ -2584,7 +2584,7 @@ function Session({ session: init, onBack, onPView }) {
                         onMouseOut={e=>e.currentTarget.style.background="transparent"}>
                         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:13,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
                         <Av s={p.av} color={grp?.color||PINK} size={28}/>
-                        <div style={{minWidth:0,maxWidth:160,marginRight:4}}>
+                        <div style={{width:130,flexShrink:0}}>
                           <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:TEXT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
                           <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
                         </div>
@@ -2610,41 +2610,43 @@ function Session({ session: init, onBack, onPView }) {
           {/* ── BOARD TAB ── */}
           {rightTab==="board" && (
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
-              <div onClick={()=>setShowLeader(true)}
-                style={{background:ses.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}>
+              <div onClick={()=>mut(s=>{s.boardVisible=!s.boardVisible;})}
+                style={{background:ses.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .2s"}}>
                 <div>
                   <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?GREEN:TEXT}}>{ses.boardVisible?"Board is live on participant devices":"Board is hidden from participants"}</div>
-                  <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>Tap to manage visibility</div>
+                  <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>Tap to {ses.boardVisible?"hide":"show"} leaderboard on participant screens</div>
                 </div>
-                <div style={{width:8,height:8,borderRadius:"50%",background:ses.boardVisible?GREEN:BORDER,flexShrink:0,marginLeft:8}}/>
+                <div style={{width:44,height:26,borderRadius:13,background:ses.boardVisible?GREEN:BORDER,position:"relative",transition:"all .2s",flexShrink:0,marginLeft:12}}>
+                  <div style={{position:"absolute",top:3,left:ses.boardVisible?21:3,width:20,height:20,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
+                </div>
               </div>
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                 {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
                 {sorted.map((p,i) => {
                   const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
                   return (
-                    <div key={p.id} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:10}}
-                        onClick={()=>{setSelId(p.id);setTab("award");}}
-                        onMouseOver={e=>e.currentTarget.style.background=SOFT} onMouseOut={e=>e.currentTarget.style.background=i===0?SOFT:"#fff"}
-                        style={{cursor:"pointer",transition:".1s"}}>
+                    <div key={p.id} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff",cursor:"pointer",transition:"background .1s"}}
+                      onClick={()=>{setSelId(p.id);setTab("award");}}
+                      onMouseOver={e=>e.currentTarget.style.background=SOFT}
+                      onMouseOut={e=>e.currentTarget.style.background=i===0?SOFT:"#fff"}>
+                      <div style={{display:"flex",alignItems:"center",gap:10}}>
                         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
                         <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
                         <Av s={p.av} color={grp?.color||PINK} size={34}/>
                         <div style={{flex:1}}>
                           <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
                             <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
-                            {p.pendingBadge && <span title="Badge pending claim" style={{fontSize:14}}>{p.pendingBadge.svgData?<img src={p.pendingBadge.svgData} alt="" style={{width:14,height:14}}/>:p.pendingBadge.icon}</span>}
+                            {p.pendingBadge && <span title="Badge pending claim" style={{fontSize:13}}>{p.pendingBadge.svgData?<img src={p.pendingBadge.svgData} alt="" style={{width:13,height:13}}/>:p.pendingBadge.icon}</span>}
                           </div>
                           {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
                         </div>
-                        <div style={{textAlign:"right"}}>
+                        <div style={{textAlign:"right",flexShrink:0}}>
                           <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
                           <div style={{fontSize:10,color:SUB}}>coins</div>
                         </div>
                       </div>
                       {ses.boardVisible && !p.pendingBadge && (
-                        <div style={{marginTop:8,display:"flex",justifyContent:"flex-end"}}>
+                        <div style={{marginTop:8,display:"flex",justifyContent:"flex-end"}} onClick={e=>e.stopPropagation()}>
                           <button onClick={()=>{setBadgePickerTarget(p);setShowBadgePicker(true);}}
                             style={{padding:"5px 12px",background:SOFT,border:`1px solid ${MID}`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:PINK,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
                             🏅 Award Badge
@@ -2652,7 +2654,7 @@ function Session({ session: init, onBack, onPView }) {
                         </div>
                       )}
                       {ses.boardVisible && p.pendingBadge && (
-                        <div style={{marginTop:6,fontSize:11,color:SUB,textAlign:"right",fontStyle:"italic"}}>
+                        <div style={{marginTop:4,fontSize:11,color:SUB,textAlign:"right",fontStyle:"italic"}} onClick={e=>e.stopPropagation()}>
                           {p.pendingBadge.icon} {p.pendingBadge.label} — pending claim
                         </div>
                       )}
