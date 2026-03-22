@@ -74,6 +74,50 @@ const PAST = [];
 const SK = k => `tc:${k}`;
 const genCode = () => Math.random().toString(36).slice(2,7).toUpperCase();
 const genCMCode = () => "CM-" + Math.random().toString(36).slice(2,6).toUpperCase();
+const genToken = () => Math.random().toString(36).slice(2,10) + Math.random().toString(36).slice(2,10);
+
+// ── EmailJS credentials — paste yours here ──
+const EMAILJS_SERVICE_ID  = "service_xxxxxxx";
+const EMAILJS_TEMPLATE_ID = "template_xxxxxxx";
+const EMAILJS_PUBLIC_KEY  = "xxxxxxxxxxxxxxx";
+
+// ── Premade badge library ──
+const BADGE_PRESETS = [
+  { id:"top",      icon:"🏆", label:"Top Scorer",    color:"#F5A623" },
+  { id:"first",    icon:"🥇", label:"First Place",   color:"#F5A623" },
+  { id:"star",     icon:"🌟", label:"Star Performer",color:"#F59E0B" },
+  { id:"active",   icon:"⚡", label:"Most Active",   color:"#00E5FF" },
+  { id:"idea",     icon:"💡", label:"Best Idea",     color:"#9D50FF" },
+  { id:"sharp",    icon:"🎯", label:"Sharp Shooter", color:"#E91E8C" },
+  { id:"fire",     icon:"🔥", label:"On Fire",       color:"#F97316" },
+  { id:"mvp",      icon:"👑", label:"MVP",           color:"#F5A623" },
+  { id:"rising",   icon:"🚀", label:"Rising Star",   color:"#3B82F6" },
+  { id:"diamond",  icon:"💎", label:"Diamond",       color:"#06B6D4" },
+  { id:"special",  icon:"🎖️", label:"Special Award", color:"#E91E8C" },
+  { id:"team",     icon:"🤝", label:"Team Player",   color:"#00C48C" },
+];
+
+// ── Send badge claim email via EmailJS ──
+async function sendClaimEmail({ toEmail, participantName, sessionName, hostName, badge, token }) {
+  const expiryDate = new Date(Date.now() + 7*24*60*60*1000).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+  const claimUrl = `${window.location.origin}/claim/${token}`;
+  try {
+    if (!window.emailjs) throw new Error("EmailJS not loaded");
+    await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email:         toEmail,
+      participant_name: participantName,
+      session_name:     sessionName,
+      host_name:        hostName,
+      badge_icon:       badge.icon,
+      badge_label:      badge.label,
+      claim_url:        claimUrl,
+      expiry_date:      expiryDate,
+    }, EMAILJS_PUBLIC_KEY);
+    return { ok: true };
+  } catch(e) {
+    return { ok: false, error: e.message };
+  }
+}
 const mkAv = n => n.trim().split(/\s+/).map(w=>w[0]).join("").toUpperCase().slice(0,2);
 const pNum = n => `P${String(n).padStart(3,"0")}`;
 const rankColor = i => [YELLOW,"#94A3B8","#CD7C2E"][i] || SUB;
@@ -1112,6 +1156,163 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     setLoginBusy(false);
   }
 
+  // Badge claim prompt — appears when host awards a badge (detected via polling)
+  const [badgeClaimStep, setBadgeClaimStep] = useState("idle"); // idle|prompt|email|sent|claiming
+  const [claimEmail, setClaimEmail] = useState("");
+  const [claimEmailErr, setClaimEmailErr] = useState("");
+  const [claimEmailBusy, setClaimEmailBusy] = useState(false);
+
+  const pendingBadge = me?.pendingBadge;
+
+  async function handleEmailClaim() {
+    if (!claimEmail.trim() || !pendingBadge) return;
+    setClaimEmailBusy(true); setClaimEmailErr("");
+    const token = genToken();
+    const claimDoc = {
+      token,
+      sessionCode:     init.code,
+      sessionName:     live.name,
+      hostName:        live.hostName || "the host",
+      participantId:   myId,
+      participantName: me.name,
+      badge:           pendingBadge,
+      email:           claimEmail.trim(),
+      createdAt:       new Date().toISOString(),
+      claimed:         false,
+      claimedAt:       null,
+      claimedUid:      null,
+    };
+    await fsSetSession("claim-" + token, claimDoc);
+    // Patch session participant with claimEmail + token
+    const fresh = await sgSession(init.code);
+    if (fresh) {
+      const updated = { ...fresh, participants: (fresh.participants||[]).map(p =>
+        p.id === myId ? { ...p, pendingBadge: { ...p.pendingBadge, claimToken: token, claimEmail: claimEmail.trim() } } : p
+      )};
+      setLive(updated);
+      await ssSession(init.code, updated);
+    }
+    const result = await sendClaimEmail({
+      toEmail:         claimEmail.trim(),
+      participantName: me.name,
+      sessionName:     live.name,
+      hostName:        live.hostName || "the host",
+      badge:           pendingBadge,
+      token,
+    });
+    setClaimEmailBusy(false);
+    if (result.ok) { setBadgeClaimStep("sent"); }
+    else { setClaimEmailErr("Couldn't send email. Please try again."); }
+  }
+
+  async function dismissBadge() {
+    if (!window.confirm("Are you sure? This badge will be permanently gone.")) return;
+    const fresh = await sgSession(init.code);
+    if (fresh) {
+      const updated = { ...fresh, participants: (fresh.participants||[]).map(p =>
+        p.id === myId ? { ...p, pendingBadge: null } : p
+      )};
+      setLive(updated);
+      await ssSession(init.code, updated);
+    }
+    setBadgeClaimStep("idle");
+  }
+
+  async function claimWithLogin(user) {
+    if (!pendingBadge || !user) return;
+    const uid = user.uid;
+    const badge = { ...pendingBadge, sessionCode: init.code, sessionName: live.name, awardedAt: new Date().toISOString() };
+    const existing = await fsGet(uid, "badges") || [];
+    await fsSet(uid, "badges", [...existing, badge]);
+    // Clear pendingBadge from session record
+    const fresh = await sgSession(init.code);
+    if (fresh) {
+      const updated = { ...fresh, participants: (fresh.participants||[]).map(p =>
+        p.id === myId ? { ...p, pendingBadge: null, uid } : p
+      )};
+      setLive(updated);
+      await ssSession(init.code, updated);
+    }
+    setLinkedUid(uid);
+    setLinkedName(user.displayName || user.email?.split("@")[0]);
+    setBadgeClaimStep("idle");
+  }
+
+  // Show prompt when pendingBadge detected and not yet acting on it
+  useEffect(() => {
+    if (pendingBadge && badgeClaimStep === "idle") setBadgeClaimStep("prompt");
+  }, [pendingBadge?.label]);
+
+  const BadgeClaimPrompt = () => {
+    if (!pendingBadge || badgeClaimStep === "idle") return null;
+    const badge = pendingBadge;
+    return (
+      <div style={{position:"fixed",inset:0,zIndex:650,display:"flex",alignItems:"flex-end",justifyContent:"center",background:"rgba(26,10,20,.6)",backdropFilter:"blur(4px)"}}>
+        <div style={{background:"#fff",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:460,padding:"24px 24px 48px",animation:"slideUp .3s ease"}}>
+          <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>
+          {badgeClaimStep === "prompt" && (<>
+            <div style={{textAlign:"center",marginBottom:20}}>
+              <div style={{fontSize:64,lineHeight:1,marginBottom:12}}>
+                {badge.svgData ? <img src={badge.svgData} alt="" style={{width:64,height:64,margin:"0 auto"}}/> : badge.icon}
+              </div>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:TEXT,marginBottom:4}}>You've been awarded!</div>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:18,color:badge.color||PINK,marginBottom:4}}>{badge.label}</div>
+              <div style={{fontSize:13,color:SUB}}>at {live.name}</div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <button onClick={()=>setBadgeClaimStep("loginClaim")}
+                style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
+                🏅 Log in / Register to claim
+              </button>
+              <button onClick={()=>setBadgeClaimStep("email")}
+                style={{width:"100%",padding:"13px 0",background:SOFT,border:`1.5px solid ${MID}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:PINK,cursor:"pointer"}}>
+                📧 Send claim link to my email
+              </button>
+              <button onClick={dismissBadge}
+                style={{width:"100%",padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
+                I don't want this badge
+              </button>
+            </div>
+          </>)}
+          {badgeClaimStep === "email" && (<>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT,marginBottom:6}}>Send to my email</div>
+            <div style={{fontSize:13,color:SUB,lineHeight:1.6,marginBottom:16}}>
+              We'll send a claim link valid for <strong>7 days</strong>. Click it any time to register and save your badge.
+            </div>
+            <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:12,padding:"10px 14px",marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:24}}>{badge.svgData?<img src={badge.svgData} alt="" style={{width:24,height:24}}/>:badge.icon}</span>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{badge.label}</div>
+            </div>
+            <Inp type="email" placeholder="your@email.com" value={claimEmail} onChange={e=>{setClaimEmail(e.target.value);setClaimEmailErr("");}} style={{marginBottom:claimEmailErr?6:12}} onKeyDown={e=>e.key==="Enter"&&handleEmailClaim()}/>
+            {claimEmailErr && <div style={{fontSize:12,color:"#EF4444",marginBottom:10,fontWeight:600}}>{claimEmailErr}</div>}
+            <button onClick={handleEmailClaim} disabled={!claimEmail.trim()||claimEmailBusy}
+              style={{width:"100%",padding:"13px 0",background:claimEmail.trim()?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:claimEmail.trim()?"#fff":SUB,cursor:claimEmail.trim()?"pointer":"not-allowed",marginBottom:10,opacity:claimEmailBusy?.6:1}}>
+              {claimEmailBusy?"Sending…":"Send Claim Link →"}
+            </button>
+            <button onClick={()=>setBadgeClaimStep("prompt")} style={{width:"100%",padding:"10px 0",background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>← Back</button>
+          </>)}
+          {badgeClaimStep === "sent" && (<>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:56,marginBottom:14}}>📬</div>
+              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:8}}>Check your inbox!</div>
+              <div style={{fontSize:14,color:SUB,lineHeight:1.65,marginBottom:6}}>We sent a claim link to<br/><strong style={{color:TEXT}}>{claimEmail}</strong></div>
+              <div style={{fontSize:13,color:SUB,marginBottom:24}}>Link is valid for <strong>7 days</strong>. Click it to register and claim your badge.</div>
+              <button onClick={()=>setBadgeClaimStep("idle")} style={{padding:"12px 32px",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>Got it!</button>
+            </div>
+          </>)}
+          {badgeClaimStep === "loginClaim" && (<>
+            <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:12,padding:"10px 14px",marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:28}}>{badge.svgData?<img src={badge.svgData} alt="" style={{width:28,height:28}}/>:badge.icon}</span>
+              <div><div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{badge.label}</div><div style={{fontSize:12,color:SUB}}>Log in or register to claim</div></div>
+            </div>
+            <Auth onDone={async(user)=>{ await claimWithLogin(user); }} claimContext="Save your badge to your Teticoin profile."/>
+            <button onClick={()=>setBadgeClaimStep("prompt")} style={{width:"100%",marginTop:10,padding:"10px 0",background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>← Back</button>
+          </>)}
+        </div>
+      </div>
+    );
+  };
+
   // Optional login modal
   const OptionalLoginModal = () => (
     <div style={{position:"fixed",inset:0,zIndex:600,display:"flex",alignItems:"flex-end",justifyContent:"center",background:"rgba(26,10,20,.5)",backdropFilter:"blur(4px)"}}>
@@ -1306,6 +1507,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   if (step === "joined" && live?.boardVisible) return (
     <div style={{minHeight:"100vh",background:"#0D0008",fontFamily:"Poppins,sans-serif",color:"#fff",padding:"24px 20px",display:"flex",flexDirection:"column",alignItems:"center"}}>
       {loginModal && <OptionalLoginModal/>}
+      <BadgeClaimPrompt/>
       <Confetti active/>
       <Ham size={56}/>
       <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:4,marginBottom:2,lineHeight:1.1}}>Leaderboard</div>
@@ -1331,6 +1533,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   if (step === "joined") return (
     <div style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
       {loginModal && <OptionalLoginModal/>}
+      <BadgeClaimPrompt/>
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10,flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <Ham size={28}/>
@@ -1380,6 +1583,29 @@ function ParticipantView({ session: init, hostPlan="free" }) {
         </div>
 
         <LoginBanner/>
+
+        {/* Earned badges — shown if logged in and has badges */}
+        {linkedUid && (() => {
+          const [badges, setBadges] = useState([]);
+          useEffect(()=>{
+            if (linkedUid) fsGet(linkedUid,"badges").then(b=>{ if(b) setBadges(b); });
+          },[linkedUid]);
+          if (!badges.length) return null;
+          return (
+            <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
+              <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.5,marginBottom:10}}>Your Badges</div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                {badges.map((b,i)=>(
+                  <div key={i} title={`${b.label} · ${b.sessionName||""}`}
+                    style={{display:"flex",alignItems:"center",gap:5,background:`${b.color||PINK}12`,border:`1.5px solid ${b.color||PINK}30`,borderRadius:999,padding:"5px 12px",fontSize:13}}>
+                    {b.svgData?<img src={b.svgData} alt="" style={{width:16,height:16}}/>:<span>{b.icon}</span>}
+                    <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:b.color||PINK}}>{b.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,padding:"28px 24px",textAlign:"center",boxShadow:`0 4px 24px ${PINK}10`}}>
           <div style={{fontSize:11,fontWeight:700,color:SUB,marginBottom:6,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
@@ -1996,6 +2222,8 @@ function Session({ session: init, onBack, onPView }) {
   const isLive = ses.live !== false; // default true
 
   const [confirmOffline, setConfirmOffline] = useState(false);
+  const [showBadgePicker, setShowBadgePicker] = useState(false);
+  const [badgePickerTarget, setBadgePickerTarget] = useState(null); // participant object
 
   // ── Live poll: pull participant updates from Firebase every 3s ──
   useEffect(() => {
@@ -2115,6 +2343,22 @@ function Session({ session: init, onBack, onPView }) {
         }}
         onClose={()=>setShowSettings(false)}/>}
       {mass && <MassGive participants={ses.participants} groups={ses.groups} onAward={award} onClose={()=>setMass(false)}/>}
+      {showBadgePicker && badgePickerTarget && (
+        <BadgePickerModal
+          participant={badgePickerTarget}
+          sessionName={ses.name}
+          hostName={ses.hostName||"Host"}
+          onAward={async(badge)=>{
+            mut(s=>{
+              const p=s.participants.find(x=>x.id===badgePickerTarget.id);
+              if(p) p.pendingBadge={...badge, awardedAt:new Date().toISOString()};
+            });
+            notify(`Badge awarded to ${badgePickerTarget.name} 🏅`);
+            setShowBadgePicker(false); setBadgePickerTarget(null);
+          }}
+          onClose={()=>{setShowBadgePicker(false);setBadgePickerTarget(null);}}
+        />
+      )}
 
       {/* Go Offline confirm */}
       {confirmOffline && (
@@ -2379,14 +2623,19 @@ function Session({ session: init, onBack, onPView }) {
                 {sorted.map((p,i) => {
                   const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
                   return (
-                    <div key={p.id} onClick={()=>{setSelId(p.id);setTab("award");}} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,cursor:"pointer",background:i===0?SOFT:"#fff",transition:".1s"}}
-                      onMouseOver={e=>e.currentTarget.style.background=SOFT} onMouseOut={e=>e.currentTarget.style.background=i===0?SOFT:"#fff"}>
-                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div key={p.id} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:10}}
+                        onClick={()=>{setSelId(p.id);setTab("award");}}
+                        onMouseOver={e=>e.currentTarget.style.background=SOFT} onMouseOut={e=>e.currentTarget.style.background=i===0?SOFT:"#fff"}
+                        style={{cursor:"pointer",transition:".1s"}}>
                         <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
                         <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
                         <Av s={p.av} color={grp?.color||PINK} size={34}/>
                         <div style={{flex:1}}>
-                          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
+                          <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
+                            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
+                            {p.pendingBadge && <span title="Badge pending claim" style={{fontSize:14}}>{p.pendingBadge.svgData?<img src={p.pendingBadge.svgData} alt="" style={{width:14,height:14}}/>:p.pendingBadge.icon}</span>}
+                          </div>
                           {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
                         </div>
                         <div style={{textAlign:"right"}}>
@@ -2394,6 +2643,19 @@ function Session({ session: init, onBack, onPView }) {
                           <div style={{fontSize:10,color:SUB}}>coins</div>
                         </div>
                       </div>
+                      {ses.boardVisible && !p.pendingBadge && (
+                        <div style={{marginTop:8,display:"flex",justifyContent:"flex-end"}}>
+                          <button onClick={()=>{setBadgePickerTarget(p);setShowBadgePicker(true);}}
+                            style={{padding:"5px 12px",background:SOFT,border:`1px solid ${MID}`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:PINK,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+                            🏅 Award Badge
+                          </button>
+                        </div>
+                      )}
+                      {ses.boardVisible && p.pendingBadge && (
+                        <div style={{marginTop:6,fontSize:11,color:SUB,textAlign:"right",fontStyle:"italic"}}>
+                          {p.pendingBadge.icon} {p.pendingBadge.label} — pending claim
+                        </div>
+                      )}
                       <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
                         <div style={{height:4,background:GRAD,width:`${(p.total/maxP)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
                       </div>
@@ -3181,6 +3443,197 @@ function JoinSessionField({ onJoin }) {
   );
 }
 
+// ── BadgePickerModal — host awards badge to a participant ──
+function BadgePickerModal({ participant, sessionName, hostName, onAward, onClose }) {
+  const [selected, setSelected] = useState(null);
+  const [customFile, setCustomFile] = useState(null); // SVG data URL
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState("");
+  const fileRef = useRef(null);
+
+  function handleSvgUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "image/svg+xml") { setUploadErr("Only .svg files allowed"); return; }
+    if (file.size > 10240) { setUploadErr("File must be under 10KB"); return; }
+    setUploadErr(""); setUploading(true);
+    const reader = new FileReader();
+    reader.onload = ev => {
+      setCustomFile(ev.target.result);
+      setSelected({ id:"custom", icon:"", label:"Custom Badge", color:PINK, svgData:ev.target.result });
+      setUploading(false);
+    };
+    reader.onerror = () => { setUploadErr("Failed to read file"); setUploading(false); };
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:700}}>
+      <div onClick={onClose} style={{position:"absolute",inset:0}}/>
+      <div className="tc-modal-sheet" style={{background:"#fff",display:"flex",flexDirection:"column",maxHeight:"88vh"}}>
+        <div style={{padding:"14px 20px 0",flexShrink:0}}>
+          <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Award Badge</div>
+            <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+          </div>
+          <div style={{fontSize:13,color:SUB,marginBottom:16}}>Awarding to <strong style={{color:TEXT}}>{participant.name}</strong></div>
+        </div>
+        <div style={{overflowY:"auto",flex:1,padding:"0 20px 32px"}}>
+          {/* Premade grid */}
+          <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Choose a badge</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
+            {BADGE_PRESETS.map(b => (
+              <button key={b.id} onClick={()=>setSelected(b)}
+                style={{padding:"12px 8px",borderRadius:12,border:`2px solid ${selected?.id===b.id?b.color:BORDER}`,background:selected?.id===b.id?`${b.color}12`:"#fff",cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
+                <div style={{fontSize:28,lineHeight:1,marginBottom:5}}>{b.icon}</div>
+                <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:selected?.id===b.id?b.color:TEXT,lineHeight:1.2}}>{b.label}</div>
+              </button>
+            ))}
+          </div>
+          {/* Custom SVG upload */}
+          <div style={{borderTop:`1px solid ${BORDER}`,paddingTop:16,marginBottom:16}}>
+            <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Or upload custom badge</div>
+            <button onClick={()=>fileRef.current?.click()}
+              style={{width:"100%",padding:"12px",border:`1.5px dashed ${uploadErr?'#EF4444':BORDER}`,borderRadius:12,background:customFile?"#F0FDF4":SOFT,cursor:"pointer",fontSize:13,color:SUB,fontFamily:"Poppins,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              {customFile
+                ? <><img src={customFile} alt="custom" style={{width:28,height:28}}/><span style={{color:GREEN,fontWeight:600}}>SVG uploaded ✓</span></>
+                : <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>.svg only · max 10KB · 48×48px recommended</span></>
+              }
+            </button>
+            <input ref={fileRef} type="file" accept=".svg,image/svg+xml" style={{display:"none"}} onChange={handleSvgUpload}/>
+            {uploadErr && <div style={{fontSize:12,color:"#EF4444",marginTop:6,fontWeight:600}}>{uploadErr}</div>}
+            {uploading && <div style={{fontSize:12,color:SUB,marginTop:6}}>Reading file…</div>}
+          </div>
+          {/* Confirm */}
+          {selected && (
+            <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:14,padding:"14px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
+              {selected.svgData
+                ? <img src={selected.svgData} alt="" style={{width:36,height:36,flexShrink:0}}/>
+                : <span style={{fontSize:32,flexShrink:0}}>{selected.icon}</span>}
+              <div>
+                <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>{selected.label}</div>
+                <div style={{fontSize:12,color:SUB,marginTop:2}}>Will be awarded to {participant.name}</div>
+              </div>
+            </div>
+          )}
+          <button onClick={()=>selected&&onAward(selected)} disabled={!selected}
+            style={{width:"100%",padding:"14px 0",background:selected?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:selected?"#fff":SUB,cursor:selected?"pointer":"not-allowed",transition:"all .2s"}}>
+            Award Badge 🏅
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── BadgeClaimScreen — shown when visiting /claim/TOKEN ──
+function BadgeClaimScreen({ token, onDone }) {
+  const [claim, setClaim] = useState(null);
+  const [status, setStatus] = useState("loading"); // loading | valid | claimed | expired | error
+  const [showAuth, setShowAuth] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const doc = await fsGetSession("claim-" + token);
+        if (!doc) { setStatus("error"); return; }
+        if (doc.claimed) { setStatus("claimed"); setClaim(doc); return; }
+        const expiry = new Date(doc.createdAt).getTime() + 7*24*60*60*1000;
+        if (Date.now() > expiry) { setStatus("expired"); setClaim(doc); return; }
+        setClaim(doc); setStatus("valid");
+      } catch { setStatus("error"); }
+    }
+    load();
+  }, [token]);
+
+  async function handleClaimed(user) {
+    if (!claim) return;
+    const uid = user.uid;
+    const badge = { ...claim.badge, sessionCode: claim.sessionCode, sessionName: claim.sessionName, awardedAt: claim.createdAt, claimedAt: new Date().toISOString() };
+    // Save badge to user profile
+    const existing = await fsGet(uid, "badges") || [];
+    await fsSet(uid, "badges", [...existing, badge]);
+    // Mark claim as used
+    await fsSetSession("claim-" + token, { ...claim, claimed: true, claimedAt: new Date().toISOString(), claimedUid: uid });
+    setSuccess(true);
+  }
+
+  const card = (content) => (
+    <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 20px",fontFamily:"Poppins,sans-serif"}}>
+      <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,padding:"36px 28px",maxWidth:380,width:"100%",textAlign:"center"}}>
+        <Ham size={52}/>{content}
+      </div>
+    </div>
+  );
+
+  if (status==="loading") return card(<div style={{marginTop:16,color:SUB,fontSize:14}}>Loading your badge…</div>);
+  if (status==="error")   return card(<><div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginTop:12,marginBottom:8}}>Link not found</div><div style={{fontSize:14,color:SUB}}>This claim link is invalid or has already been used.</div><button onClick={onDone} style={{marginTop:20,padding:"12px 24px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>Go to Teticoin</button></>);
+  if (status==="claimed") return card(<><div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginTop:12,marginBottom:8}}>Already claimed!</div><div style={{fontSize:14,color:SUB}}>This badge was already saved to an account.</div><button onClick={onDone} style={{marginTop:20,padding:"12px 24px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>Go to Teticoin</button></>);
+  if (status==="expired") return card(<><div style={{fontSize:48,marginTop:8}}>⏰</div><div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginTop:10,marginBottom:8}}>Link expired</div><div style={{fontSize:14,color:SUB,lineHeight:1.6}}>This badge claim link expired on<br/><strong>{new Date(new Date(claim.createdAt).getTime()+7*24*60*60*1000).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}</strong></div><button onClick={onDone} style={{marginTop:20,padding:"12px 24px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>Go to Teticoin</button></>);
+
+  if (success) return (
+    <div style={{minHeight:"100vh",background:"#0D0008",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",fontFamily:"Poppins,sans-serif"}}>
+      <Confetti active/>
+      <div style={{fontSize:72,marginBottom:16}}>{claim.badge.svgData ? <img src={claim.badge.svgData} alt="" style={{width:72,height:72}}/> : claim.badge.icon}</div>
+      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:"#fff",marginBottom:8,textAlign:"center"}}>Badge claimed! 🎉</div>
+      <div style={{fontSize:15,color:"rgba(255,255,255,.6)",marginBottom:6,textAlign:"center"}}>{claim.badge.label}</div>
+      <div style={{fontSize:13,color:"rgba(255,255,255,.4)",marginBottom:32,textAlign:"center"}}>from {claim.sessionName}</div>
+      <div style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",borderRadius:14,padding:"14px 20px",marginBottom:32,textAlign:"center",maxWidth:320}}>
+        <div style={{fontSize:12,color:"rgba(255,255,255,.5)",marginBottom:4}}>This badge now appears next to your name</div>
+        <div style={{fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:600}}>in all future Teticoin sessions</div>
+      </div>
+      <button onClick={onDone} style={{padding:"14px 40px",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>Go to Dashboard →</button>
+    </div>
+  );
+
+  if (showAuth) return (
+    <div style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif"}}>
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 20px",height:56,display:"flex",alignItems:"center",gap:10}}>
+        <button onClick={()=>setShowAuth(false)} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:14}}>← Back</button>
+        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>Log in or register to claim</div>
+      </div>
+      <div style={{maxWidth:400,margin:"0 auto",padding:"24px 20px"}}>
+        <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:14,padding:"14px 16px",marginBottom:20,display:"flex",alignItems:"center",gap:12}}>
+          <span style={{fontSize:32}}>{claim.badge.svgData ? <img src={claim.badge.svgData} alt="" style={{width:32,height:32}}/> : claim.badge.icon}</span>
+          <div>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{claim.badge.label}</div>
+            <div style={{fontSize:12,color:SUB}}>from {claim.sessionName} · hosted by {claim.hostName}</div>
+          </div>
+        </div>
+        <Auth onDone={handleClaimed} claimContext="Log in or create an account to save your badge."/>
+      </div>
+    </div>
+  );
+
+  // Valid claim — show badge and options
+  return (
+    <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",fontFamily:"Poppins,sans-serif"}}>
+      <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:24,padding:"36px 28px",maxWidth:380,width:"100%",textAlign:"center"}}>
+        <div style={{fontSize:72,lineHeight:1,marginBottom:16}}>
+          {claim.badge.svgData ? <img src={claim.badge.svgData} alt="" style={{width:72,height:72,margin:"0 auto"}}/> : claim.badge.icon}
+        </div>
+        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,color:TEXT,marginBottom:6}}>{claim.badge.label}</div>
+        <div style={{fontSize:14,color:SUB,marginBottom:4}}>Awarded to <strong style={{color:TEXT}}>{claim.participantName}</strong></div>
+        <div style={{fontSize:13,color:SUB,marginBottom:28}}>at <strong style={{color:TEXT}}>{claim.sessionName}</strong> by {claim.hostName}</div>
+        <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:10,padding:"8px 14px",display:"inline-block",fontSize:12,color:SUB,marginBottom:24}}>
+          Expires {new Date(new Date(claim.createdAt).getTime()+7*24*60*60*1000).toLocaleDateString("en-GB",{day:"numeric",month:"long"})}
+        </div>
+        <button onClick={()=>setShowAuth(true)}
+          style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
+          Claim My Badge 🏅
+        </button>
+        <button onClick={onDone}
+          style={{width:"100%",padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
+          Maybe later
+        </button>
+        <div style={{fontSize:11,color:SUB,marginTop:12}}>Your badge will be saved to your Teticoin profile</div>
+      </div>
+    </div>
+  );
+}
+
 function CoinmasterJoinModal({ onJoin, onClose }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
@@ -3244,7 +3697,7 @@ export default function App() {
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState("free");
-  const [planExpiry, setPlanExpiry] = useState(null); // ISO date string or null
+  const [planExpiry, setPlanExpiry] = useState(null);
   const [showPricing, setShowPricing] = useState(false);
   const [showBilling, setShowBilling] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -3254,7 +3707,8 @@ export default function App() {
   const [showArchived, setShowArchived] = useState(false);
   const [showCMJoin, setShowCMJoin] = useState(false);
   const [cmSession, setCmSession] = useState(null);
-  const [paymentToast, setPaymentToast] = useState(null); // plan name string or null
+  const [paymentToast, setPaymentToast] = useState(null);
+  const [claimToken, setClaimToken] = useState(null); // badge claim token from /claim/TOKEN URL
 
   const isFree = plan === "free";
   const sessionLimit = isFree ? 3 : 999;
@@ -3284,9 +3738,20 @@ export default function App() {
     }
   }, [trainer]);
 
-  // ── Handle /join/CODE URLs from QR scans ──
+  // ── Handle /join/CODE and /claim/TOKEN URLs ──
   useEffect(() => {
     const path = window.location.pathname;
+
+    // Badge claim link
+    const claimMatch = path.match(/^\/claim\/([a-z0-9]+)$/i);
+    if (claimMatch) {
+      setClaimToken(claimMatch[1]);
+      setScreen("claimBadge");
+      setLoading(false);
+      return;
+    }
+
+    // Participant join link
     const match = path.match(/^\/join\/([A-Z0-9]+)$/i);
     if (match) {
       const code = match[1].toUpperCase();
@@ -3309,6 +3774,7 @@ export default function App() {
   useEffect(() => {
     const path = window.location.pathname;
     if (path.match(/^\/join\/[A-Z0-9]+$/i)) return; // skip for join URLs
+    if (path.match(/^\/claim\/[a-z0-9]+$/i)) return;  // skip for claim URLs
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -3397,6 +3863,7 @@ export default function App() {
   }
 
   if (loading) return <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center"}}><style>{CSS}</style><Ham size={60}/></div>;
+  if (screen==="claimBadge" && claimToken) return <><style>{CSS}</style><BadgeClaimScreen token={claimToken} onDone={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
   if (screen==="landing") return <LandingPage onGetStarted={()=>setScreen("auth")} onLogin={()=>setScreen("auth")}/>;
   if (screen==="auth") return <><style>{CSS}</style><Auth onDone={handleAuth}/></>;
   // participantJoin = loaded from /join/CODE URL — always show participant view, never host view

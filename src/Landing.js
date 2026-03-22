@@ -20,32 +20,40 @@ const EMAILJS_PUBLIC_KEY  = "xxxxxxxxxxxxxxx";    // ← paste your Public Key
 
 // ── Floating coin pop animation component ──
 const COIN_POP_DATA = [
-  { label:"+50 pts",  color:PINK,   icon:"🎯", x:"12%",  delay:0.8  },
-  { label:"+150 pts", color:PURPLE, icon:"⚡", x:"82%",  delay:1.8  },
-  { label:"+30 pts",  color:CYAN,   icon:"💡", x:"22%",  delay:3.2  },
-  { label:"+100 pts", color:PINK,   icon:"🏆", x:"76%",  delay:4.1  },
-  { label:"+200 pts", color:PURPLE, icon:"🌟", x:"58%",  delay:5.5  },
-  { label:"+50 pts",  color:"#00C896",icon:"🔥",x:"38%", delay:6.8  },
-  { label:"+30 pts",  color:PINK,   icon:"🎯", x:"68%",  delay:8.2  },
-  { label:"+100 pts", color:CYAN,   icon:"👑", x:"18%",  delay:9.0  },
+  // Name + points pops
+  { type:"name",  name:"Adam",     pts:"+50",  color:PINK,      x:"6%"  },
+  { type:"name",  name:"Sarah",    pts:"+150", color:PURPLE,    x:"78%" },
+  { type:"name",  name:"Daniel",   pts:"+30",  color:CYAN,      x:"4%"  },
+  { type:"name",  name:"Nur",      pts:"+100", color:PINK,      x:"80%" },
+  { type:"name",  name:"Marcus",   pts:"+200", color:PURPLE,    x:"8%"  },
+  { type:"name",  name:"Aisha",    pts:"+50",  color:"#00C896", x:"75%" },
+  { type:"name",  name:"James",    pts:"+30",  color:CYAN,      x:"5%"  },
+  { type:"name",  name:"Priya",    pts:"+100", color:PINK,      x:"79%" },
+  // Action pops (like Quick Coins)
+  { type:"action", label:"Correct Answer",  pts:"+50",  color:PURPLE,    x:"3%"  },
+  { type:"action", label:"Asked Question",  pts:"+30",  color:CYAN,      x:"76%" },
+  { type:"action", label:"Best Idea",       pts:"+100", color:PINK,      x:"7%"  },
+  { type:"action", label:"Most Active",     pts:"+50",  color:"#00C896", x:"77%" },
+  { type:"action", label:"Correct Answer",  pts:"+50",  color:PURPLE,    x:"5%"  },
+  { type:"action", label:"Chat Reply",      pts:"+10",  color:CYAN,      x:"80%" },
 ];
 
 function CoinPops() {
   const [pops, setPops] = useState([]);
-  const counterRef = useState(0);
 
   useEffect(() => {
     let idx = 0;
     function spawnNext() {
       const data = COIN_POP_DATA[idx % COIN_POP_DATA.length];
       const id = Date.now() + Math.random();
-      const yBase = 52 + Math.random() * 36; // % from top, within hero-screens area
-      setPops(prev => [...prev.slice(-6), { ...data, id, yBase }]);
+      // Float in the headline zone — between tag pill and buttons
+      const yBase = 12 + Math.random() * 44; // 12%–56% from section top
+      setPops(prev => [...prev.slice(-8), { ...data, id, yBase }]);
       idx++;
-      const nextDelay = 1400 + Math.random() * 1200;
+      const nextDelay = 1200 + Math.random() * 1000;
       setTimeout(spawnNext, nextDelay);
     }
-    const t = setTimeout(spawnNext, 1200);
+    const t = setTimeout(spawnNext, 900);
     return () => clearTimeout(t);
   }, []);
 
@@ -56,14 +64,34 @@ function CoinPops() {
           style={{
             left: p.x,
             top: `${p.yBase}%`,
-            color: p.color,
-            borderColor: `${p.color}35`,
+            borderColor: `${p.color}40`,
             animationDelay: "0s",
           }}>
-          <span style={{fontSize:14}}>{p.icon}</span>
-          <span style={{color:p.color}}>{p.label}</span>
+          {p.type === "name" ? (
+            <>
+              <div style={{
+                width:30,height:30,borderRadius:"50%",
+                background:`${p.color}20`,border:`1.5px solid ${p.color}40`,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:12,
+                color:p.color,flexShrink:0
+              }}>{p.name.slice(0,2).toUpperCase()}</div>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",gap:1}}>
+                <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:"#6B7280",lineHeight:1}}>{p.name}</span>
+                <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:p.color,lineHeight:1}}>{p.pts}</span>
+              </div>
+            </>
+          ) : (
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",gap:2}}>
+              <span style={{fontFamily:"DM Sans,sans-serif",fontWeight:600,fontSize:11,color:"#6B7280",lineHeight:1}}>{p.label}</span>
+              <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:p.color,lineHeight:1}}>{p.pts} pts</span>
+            </div>
+          )}
         </div>
       ))}
+    </>
+  );
+}
     </>
   );
 }
@@ -88,8 +116,8 @@ const CSS = `
 .lp-hero{min-height:96vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px;position:relative;overflow:hidden;background:radial-gradient(ellipse 70% 60% at 50% 0%,rgba(157,80,255,0.08) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(0,229,255,0.06) 0%,transparent 60%),#fff;}
 @keyframes lpHeroFadeUp{0%{opacity:0;transform:translateY(28px);}100%{opacity:1;transform:translateY(0);}}
 @keyframes lpHeroFadeIn{0%{opacity:0;}100%{opacity:1;}}
-@keyframes lpFloatPop{0%{opacity:0;transform:translateY(0) scale(0.7);}15%{opacity:1;transform:translateY(-10px) scale(1.05);}75%{opacity:1;transform:translateY(-44px) scale(1);}100%{opacity:0;transform:translateY(-72px) scale(0.9);}}
-.lp-coin-pop{position:absolute;pointer-events:none;display:flex;align-items:center;gap:5px;background:#fff;border:1.5px solid rgba(255,79,184,0.3);border-radius:10px;padding:6px 12px;font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;white-space:nowrap;animation:lpFloatPop 2.6s ease-out forwards;box-shadow:0 4px 16px rgba(0,0,0,0.1);z-index:5;}
+@keyframes lpFloatPop{0%{opacity:0;transform:translateY(0) scale(0.75);}12%{opacity:1;transform:translateY(-12px) scale(1.04);}72%{opacity:1;transform:translateY(-52px) scale(1);}100%{opacity:0;transform:translateY(-80px) scale(0.92);}}
+.lp-coin-pop{position:absolute;pointer-events:none;display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid rgba(255,79,184,0.3);border-radius:14px;padding:10px 16px;white-space:nowrap;animation:lpFloatPop 2.8s ease-out forwards;box-shadow:0 6px 24px rgba(0,0,0,0.1);z-index:5;}
 .lp-hero-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(157,80,255,0.08);border:1px solid rgba(157,80,255,0.25);border-radius:999px;padding:5px 14px;font-size:12px;font-weight:600;color:#9D50FF;margin-bottom:24px;letter-spacing:.3px;animation:lpHeroFadeUp .7s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.05s;}
 .lp-hero h1{font-size:clamp(40px,6vw,72px);line-height:1.04;color:#0A0A0F;max-width:760px;margin:0 auto 20px;letter-spacing:-1.5px;animation:lpHeroFadeUp .8s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.2s;}
 .lp-hero-sub{font-size:18px;color:#6B7280;line-height:1.7;max-width:540px;margin:0 auto 36px;animation:lpHeroFadeUp .8s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.35s;}
@@ -404,6 +432,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
 
       {/* HERO */}
       <section className="lp-hero">
+        <CoinPops/>
         <div className="lp-hero-tag">✦ Real-time participation gamification</div>
         <h1>Reward participation.<br/>Watch engagement <span style={{background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>skyrocket.</span></h1>
         <p className="lp-hero-sub">Award points to anyone in your group in real time — for great contributions, active participation, or any behaviour worth recognising. No app needed.</p>
@@ -412,8 +441,6 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           <button className="lp-btn-big lp-btn-big-outline" onClick={() => scrollTo("how")}>See how it works →</button>
         </div>
         <p className="lp-hero-note">Free plan available · No credit card required</p>
-
-        <CoinPops/>
 
         <div className="lp-hero-screens">
           {/* LEFT — Home screen */}
