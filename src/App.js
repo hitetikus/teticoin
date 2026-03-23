@@ -4348,7 +4348,7 @@ export default function App() {
             {isFree && <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>setShowPricing(true)}/>}
 
             {/* Hero card */}
-            <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
+            <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center",overflow:"hidden"}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,lineHeight:1.1,marginBottom:6}}>
                 Ready to reward<br/>your participants?
               </div>
