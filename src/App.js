@@ -26,6 +26,18 @@ const ACTS_DEFAULT = [
 ];
 const ACTS = ACTS_DEFAULT;
 
+// ── Feature Flags ─────────────────────────────────────
+// Set to true to enable, false to hide/disable
+const FEATURES = {
+  luckyDraw:  false, // Lucky draw modal
+  badges:     false, // Badge picker & awarding
+  coinmaster: true,  // Coinmaster role
+  groups:     true,  // Groups & teams
+  projector:  true,  // Projector/TV view
+  templates:  false, // Session templates (coming soon)
+  exportCsv:  false, // Export participant data
+};
+
 // ── Firebase storage wrappers (uid injected at call site) ──
 // These are set up in App component and passed down or called directly
 let _currentUid = null;
@@ -201,13 +213,13 @@ function Confetti({ active }) {
 // ── Float anim ──
 function FloatAnim({ x, y, text, color, onDone }) {
   useEffect(() => { const t = setTimeout(onDone, 900); return () => clearTimeout(t); }, []);
-  return <div style={{position:"fixed",left:x-20,top:y-20,pointerEvents:"none",zIndex:9999,fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color,animation:"floatUp .9s ease forwards"}}>{text}</div>;
+  return <div style={{position:"fixed",left:x-20,top:y-20,pointerEvents:"none",zIndex:9999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:28,color,animation:"floatUp .9s ease forwards"}}>{text}</div>;
 }
 
 // ── Avatar ──
 function Av({ s, color = PINK, size = 36 }) {
   return (
-    <div style={{width:size,height:size,borderRadius:size*.22,flexShrink:0,background:`linear-gradient(135deg,${color},${color}99)`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:size*.34,color:"#fff"}}>
+    <div style={{width:size,height:size,borderRadius:size*.22,flexShrink:0,background:`linear-gradient(135deg,${color},${color}99)`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:size*.34,color:"#fff"}}>
       {s}
     </div>
   );
@@ -236,7 +248,7 @@ function Inp({ placeholder, value, onChange, type="text", onKeyDown, autoFocus, 
 function PBtn({ children, onClick, disabled, full, style: sx = {} }) {
   return (
     <button onClick={onClick} disabled={disabled}
-      style={{background:disabled?BG:GRAD,border:"none",borderRadius:13,padding:"13px 22px",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:disabled?SUB:"#fff",cursor:disabled?"not-allowed":"pointer",opacity:disabled?.5:1,transition:"all .15s",width:full?"100%":"auto",...sx}}
+      style={{background:disabled?BG:GRAD,border:"none",borderRadius:13,padding:"13px 22px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:disabled?SUB:"#fff",cursor:disabled?"not-allowed":"pointer",opacity:disabled?.5:1,transition:"all .15s",width:full?"100%":"auto",...sx}}
       onMouseOver={e=>{ if(!disabled){ e.currentTarget.style.filter="brightness(1.08)"; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow=`0 4px 14px rgba(233,30,140,.35)`; }}}
       onMouseOut={e=>{ e.currentTarget.style.filter="none"; e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.boxShadow="none"; }}
       onMouseDown={e=>{ if(!disabled){ e.currentTarget.style.transform="translateY(1px)"; e.currentTarget.style.filter="brightness(.95)"; }}}
@@ -272,8 +284,8 @@ function Picker({ participants, groups, selId, onSelect, onClose }) {
   return (
     <div style={{position:"fixed",inset:0,zIndex:500,background:BG,display:"flex",flexDirection:"column",animation:"slideInRight .2s ease"}}>
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",height:54,display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:PINK,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14}}>Cancel</button>
-        <div style={{flex:1,textAlign:"center",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:TEXT}}>Select Participant</div>
+        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:PINK,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14}}>Cancel</button>
+        <div style={{flex:1,textAlign:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:TEXT}}>Select Participant</div>
         <div style={{width:56}}/>
       </div>
       <div style={{padding:"10px 16px",background:"#fff",borderBottom:`1px solid ${BORDER}`,flexShrink:0}}>
@@ -289,7 +301,7 @@ function Picker({ participants, groups, selId, onSelect, onClose }) {
           ? filt.map(p => <PRow key={p.id} p={p} groups={groups} sel={selId===p.id} onSelect={()=>{onSelect(p.id);onClose();}}/>)
           : letters.map(l => (
             <div key={l}>
-              <div style={{padding:"6px 16px 4px",background:BG,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:SUB,borderBottom:`1px solid ${BORDER}`}}>{l}</div>
+              <div style={{padding:"6px 16px 4px",background:BG,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,borderBottom:`1px solid ${BORDER}`}}>{l}</div>
               {grouped[l].map(p => <PRow key={p.id} p={p} groups={groups} sel={selId===p.id} onSelect={()=>{onSelect(p.id);onClose();}}/>)}
             </div>
           ))
@@ -306,9 +318,9 @@ function PRow({ p, groups, sel, onSelect }) {
     <button onClick={onSelect} style={{width:"100%",display:"flex",alignItems:"center",gap:14,padding:"13px 16px",border:"none",background:sel?SOFT:"#fff",borderBottom:`1px solid ${BORDER}`,cursor:"pointer",textAlign:"left",borderLeft:sel?`3px solid ${PINK}`:"3px solid transparent",transition:".1s"}}>
       <Av s={p.av} color={grp?.color||PINK} size={42}/>
       <div style={{flex:1}}>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:2}}>{p.name}</div>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:2}}>{p.name}</div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:11,color:SUB}}>{pNum(p.num)}</span>
+          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB}}>{pNum(p.num)}</span>
           {grp && <span style={{fontSize:11,background:`${grp.color}18`,border:`1px solid ${grp.color}35`,color:grp.color,padding:"1px 8px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
           <span style={{fontSize:11,color:PINK,fontWeight:700}}>{p.total} coins</span>
         </div>
@@ -406,7 +418,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
       <div style={{display:"flex",alignItems:"center",gap:12}}>
         <div style={{width:38,height:38,borderRadius:10,background:mode===id?GRAD:`${PINK}14`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
         <div>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:mode===id?PINK:TEXT}}>{title}</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:mode===id?PINK:TEXT}}>{title}</div>
           <div style={{fontSize:12,color:SUB,marginTop:1}}>{sub}</div>
         </div>
       </div>
@@ -420,7 +432,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Mass Give Coins</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Mass Give Coins</div>
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           <div style={{fontSize:13,color:SUB,marginBottom:16}}>Award the same amount to multiple participants.</div>
@@ -430,7 +442,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8}}>
             {TV_DEFAULT.map(v => (
               <button key={v} onClick={()=>{setAmt(v);setCAmt("");}}
-                style={{padding:"12px 8px",borderRadius:12,cursor:"pointer",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:17,background:amt===v?GRAD:"transparent",border:amt===v?"2px solid transparent":`1.5px solid ${BORDER}`,color:amt===v?"#fff":TEXT,transition:"all .12s"}}>
+                style={{padding:"12px 8px",borderRadius:12,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:17,background:amt===v?GRAD:"transparent",border:amt===v?"2px solid transparent":`1.5px solid ${BORDER}`,color:amt===v?"#fff":TEXT,transition:"all .12s"}}>
                 +{v}
               </button>
             ))}
@@ -447,7 +459,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
               "Give to Everyone", `All ${participants.length} participants get coins`
             )}
             {mode==="all" && ok && (
-              <button onClick={doAll} style={{width:"100%",padding:"12px 0",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
+              <button onClick={doAll} style={{width:"100%",padding:"12px 0",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
                 Give +{finalAmt} to All {participants.length}
               </button>
             )}
@@ -463,8 +475,8 @@ function MassGive({ participants, groups, onAward, onClose }) {
             {mode==="multi" && (
               <div onClick={e=>e.stopPropagation()}>
                 <div style={{display:"flex",gap:8,marginBottom:10}}>
-                  <button onClick={()=>setSel(new Set(participants.map(p=>p.id)))} style={{padding:"6px 12px",background:BG,border:`1px solid ${BORDER}`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:TEXT,cursor:"pointer"}}>Select All</button>
-                  <button onClick={()=>setSel(new Set())} style={{padding:"6px 12px",background:BG,border:`1px solid ${BORDER}`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:TEXT,cursor:"pointer"}}>Clear</button>
+                  <button onClick={()=>setSel(new Set(participants.map(p=>p.id)))} style={{padding:"6px 12px",background:BG,border:`1px solid ${BORDER}`,borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,cursor:"pointer"}}>Select All</button>
+                  <button onClick={()=>setSel(new Set())} style={{padding:"6px 12px",background:BG,border:`1px solid ${BORDER}`,borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,cursor:"pointer"}}>Clear</button>
                 </div>
                 <div style={{maxHeight:200,overflowY:"auto",borderRadius:12,border:`1px solid ${BORDER}`,overflow:"hidden",marginBottom:10}}>
                   {sorted.map(p => {
@@ -474,16 +486,16 @@ function MassGive({ participants, groups, onAward, onClose }) {
                         <div style={{width:20,height:20,borderRadius:6,flexShrink:0,border:`2px solid ${on?PINK:BORDER}`,background:on?PINK:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:".12s"}}>
                           {on && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>}
                         </div>
-                        <span style={{fontSize:11,fontFamily:"Nunito,sans-serif",fontWeight:700,color:SUB,minWidth:32}}>{pNum(p.num)}</span>
+                        <span style={{fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,color:SUB,minWidth:32}}>{pNum(p.num)}</span>
                         <Av s={p.av} color={grp?.color||PINK} size={28}/>
-                        <span style={{flex:1,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>{p.name}</span>
+                        <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>{p.name}</span>
                         <span style={{fontSize:11,color:PINK,fontWeight:700}}>{p.total}</span>
                       </button>
                     );
                   })}
                 </div>
                 {sel.size > 0 && ok && (
-                  <button onClick={doSel} style={{width:"100%",padding:"12px 0",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
+                  <button onClick={doSel} style={{width:"100%",padding:"12px 0",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
                     Give +{finalAmt} to {sel.size} Participant{sel.size>1?"s":""}
                   </button>
                 )}
@@ -502,7 +514,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
                 {!ok && <div style={{textAlign:"center",padding:"10px 0 12px",fontSize:13,color:SUB}}>Select an amount above first</div>}
                 {ok && !scanning && (
                   <button onClick={startScanner}
-                    style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                    style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                     Open Camera to Scan
                   </button>
@@ -525,7 +537,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
                       <div style={{fontSize:12,color:PINK,fontWeight:700}}>+{finalAmt} per scan</div>
                     </div>
                     <button onClick={stopScanner}
-                      style={{width:"100%",padding:"11px 0",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer",marginBottom:8}}>
+                      style={{width:"100%",padding:"11px 0",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer",marginBottom:8}}>
                       Stop Camera
                     </button>
                   </div>
@@ -535,7 +547,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
                 {/* Scan log */}
                 {scanLog.length > 0 && (
                   <div style={{borderRadius:12,border:`1px solid ${BORDER}`,overflow:"hidden"}}>
-                    <div style={{padding:"8px 12px",background:BG,fontSize:11,fontFamily:"Nunito,sans-serif",fontWeight:800,color:SUB,textTransform:"uppercase",letterSpacing:1,borderBottom:`1px solid ${BORDER}`}}>
+                    <div style={{padding:"8px 12px",background:BG,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,color:SUB,textTransform:"uppercase",letterSpacing:1,borderBottom:`1px solid ${BORDER}`}}>
                       Scanned ({scanLog.length})
                     </div>
                     {scanLog.map((p,i) => {
@@ -543,10 +555,10 @@ function MassGive({ participants, groups, onAward, onClose }) {
                       return (
                         <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff"}}>
                           <div style={{width:6,height:6,borderRadius:"50%",background:GREEN,flexShrink:0}}/>
-                          <span style={{fontSize:11,fontFamily:"Nunito,sans-serif",fontWeight:800,color:PINK,minWidth:36}}>{pNum(p.num)}</span>
+                          <span style={{fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,color:PINK,minWidth:36}}>{pNum(p.num)}</span>
                           <Av s={p.av} color={grp?.color||PINK} size={26}/>
-                          <span style={{flex:1,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>{p.name}</span>
-                          <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:13,color:GREEN}}>+{finalAmt}</span>
+                          <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>{p.name}</span>
+                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:GREEN}}>+{finalAmt}</span>
                           <span style={{fontSize:10,color:SUB}}>{p.t}</span>
                         </div>
                       );
@@ -604,12 +616,12 @@ function CoinCustomizer({ session, onSave, onClose }) {
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Customise Coins</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Customise Coins</div>
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
             {[["quick","Quick Coins"],["other","Give Coins"]].map(([id,l])=>(
-              <button key={id} onClick={()=>setTab(id)} style={{padding:"8px 16px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}</button>
+              <button key={id} onClick={()=>setTab(id)} style={{padding:"8px 16px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}</button>
             ))}
           </div>
         </div>
@@ -623,18 +635,18 @@ function CoinCustomizer({ session, onSave, onClose }) {
               return(
                 <div key={a.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:`1px solid ${BORDER}`}}>
                   <div style={{width:38,height:38,borderRadius:10,background:`${QCOLS[i]}14`,border:`1.5px solid ${QCOLS[i]}33`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:14,color:QCOLS[i]}}>Q{i+1}</span>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:QCOLS[i]}}>Q{i+1}</span>
                   </div>
                   <div style={{flex:1}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{a.label}</div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{a.label}</div>
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:6}}>
                     <button onClick={()=>setQuick(prev=>{const a=[...prev];a[i]=Math.max(-999,a[i]-5);return a;})}
-                      style={{width:30,height:30,borderRadius:9,border:`1px solid ${BORDER}`,background:BG,cursor:"pointer",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:18,color:SUB,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                      style={{width:30,height:30,borderRadius:9,border:`1px solid ${BORDER}`,background:BG,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:18,color:SUB,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
                     <input type="number" value={quick[i]} onChange={e=>setQuick(prev=>{const a=[...prev];a[i]=parseInt(e.target.value)||0;return a;})}
-                      style={{width:58,textAlign:"center",background:BG,border:`1.5px solid ${QCOLS[i]}55`,borderRadius:10,padding:"7px 4px",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:QCOLS[i],outline:"none"}}/>
+                      style={{width:58,textAlign:"center",background:BG,border:`1.5px solid ${QCOLS[i]}55`,borderRadius:10,padding:"7px 4px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:QCOLS[i],outline:"none"}}/>
                     <button onClick={()=>setQuick(prev=>{const a=[...prev];a[i]+=5;return a;})}
-                      style={{width:30,height:30,borderRadius:9,border:`1px solid ${BORDER}`,background:BG,cursor:"pointer",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:18,color:SUB,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+                      style={{width:30,height:30,borderRadius:9,border:`1px solid ${BORDER}`,background:BG,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:18,color:SUB,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
                   </div>
                 </div>
               );
@@ -656,10 +668,10 @@ function CoinCustomizer({ session, onSave, onClose }) {
                       onChange={e=>setEditVal(e.target.value)}
                       onKeyDown={e=>{if(e.key==="Enter")saveEdit(i);if(e.key==="Escape")setEditIdx(null);}}
                       onBlur={()=>saveEdit(i)}
-                      style={{width:"100%",textAlign:"center",background:"none",border:"none",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:v<0?"#EF4444":YELLOW,outline:"none",padding:"14px 4px"}}/>
+                      style={{width:"100%",textAlign:"center",background:"none",border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:v<0?"#EF4444":YELLOW,outline:"none",padding:"14px 4px"}}/>
                   ) : (
                     <button onClick={()=>{setEditIdx(i);setEditVal(String(v));}}
-                      style={{width:"100%",padding:"14px 4px",background:"none",border:"none",cursor:"pointer",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:v<0?"#EF4444":YELLOW}}>
+                      style={{width:"100%",padding:"14px 4px",background:"none",border:"none",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:v<0?"#EF4444":YELLOW}}>
                       {v>0?"+":""}{v}
                     </button>
                   )}
@@ -674,7 +686,7 @@ function CoinCustomizer({ session, onSave, onClose }) {
                 <div style={{borderRadius:12,border:`1.5px dashed ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"center",minHeight:50}}>
                   <input type="number" placeholder="+/−" value={newVal} onChange={e=>setNewVal(e.target.value)}
                     onKeyDown={e=>e.key==="Enter"&&addOther()}
-                    style={{width:"100%",textAlign:"center",background:"none",border:"none",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,color:PINK,outline:"none",padding:"14px 4px"}}/>
+                    style={{width:"100%",textAlign:"center",background:"none",border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:PINK,outline:"none",padding:"14px 4px"}}/>
                 </div>
               )}
             </div>
@@ -683,7 +695,7 @@ function CoinCustomizer({ session, onSave, onClose }) {
                 onChange={e=>setNewVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addOther()}
                 style={{flex:1,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
               <button onClick={addOther} disabled={other.length>=15||!newVal}
-                style={{padding:"0 16px",background:other.length>=15?BG:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:other.length>=15?SUB:"#fff",cursor:other.length>=15?"not-allowed":"pointer"}}>
+                style={{padding:"0 16px",background:other.length>=15?BG:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:other.length>=15?SUB:"#fff",cursor:other.length>=15?"not-allowed":"pointer"}}>
                 Add
               </button>
             </div>
@@ -694,7 +706,7 @@ function CoinCustomizer({ session, onSave, onClose }) {
           </>}
         </div>
         <div style={{padding:"0 20px 32px",flexShrink:0}}>
-          <button onClick={save} style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
+          <button onClick={save} style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
             Save Coin Settings
           </button>
         </div>
@@ -704,15 +716,11 @@ function CoinCustomizer({ session, onSave, onClose }) {
 }
 
 // ── Session Settings sheet (gear next to session name in session list) ──
-function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, onDuplicate, onArchive, onToggleCoinmaster, onClose }) {
+function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, onDuplicate, onArchive, onClose }) {
   const [editing, setEditing] = useState(false);
   const [nameVal, setNameVal] = useState(session.name); // eslint-disable-line
-  const [copied, setCopied] = useState(false);
-  const cmEnabled = !!session.coinmasterEnabled;
-  const cmCode = session.coinmasterCode || "";
 
   function saveName() { if (nameVal.trim() && nameVal !== session.name) { onRename(nameVal.trim()); } setEditing(false); }
-  function copyCode() { navigator.clipboard.writeText(cmCode); setCopied(true); setTimeout(()=>setCopied(false), 2000); }
 
   return (
     <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:500}}>
@@ -721,7 +729,7 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
         <div style={{padding:"14px 20px 0"}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 16px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Session Settings</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Session Settings</div>
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
         </div>
@@ -732,14 +740,14 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
             {editing ? (
               <div style={{display:"flex",gap:8}}>
                 <input value={nameVal} onChange={e=>setNameVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveName()} autoFocus
-                  style={{flex:1,background:"#fff",border:`1.5px solid ${PINK}`,borderRadius:10,padding:"10px 12px",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:15,color:TEXT,outline:"none"}}/>
-                <button onClick={saveName} style={{padding:"0 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Save</button>
-                <button onClick={()=>{setNameVal(session.name);setEditing(false);}} style={{padding:"0 12px",background:"none",border:`1px solid ${BORDER}`,borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>Cancel</button>
+                  style={{flex:1,background:"#fff",border:`1.5px solid ${PINK}`,borderRadius:10,padding:"10px 12px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:TEXT,outline:"none"}}/>
+                <button onClick={saveName} style={{padding:"0 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Save</button>
+                <button onClick={()=>{setNameVal(session.name);setEditing(false);}} style={{padding:"0 12px",background:"none",border:`1px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>Cancel</button>
               </div>
             ) : (
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:16,color:TEXT}}>{session.name}</div>
-                <button onClick={()=>setEditing(true)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"5px 12px",fontSize:12,color:SUB,cursor:"pointer",fontFamily:"Nunito,sans-serif",fontWeight:700}}>Edit</button>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:TEXT}}>{session.name}</div>
+                <button onClick={()=>setEditing(true)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"5px 12px",fontSize:12,color:SUB,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700}}>Edit</button>
               </div>
             )}
             <div style={{fontSize:11,color:SUB,marginTop:4}}>Code: {session.code} · {session.participants.length} participants</div>
@@ -749,7 +757,7 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
           <div onClick={onToggleLive}
             style={{background:session.live!==false?`${GREEN}10`:`#EF444410`,border:`1.5px solid ${session.live!==false?GREEN:"#EF4444"}`,borderRadius:14,padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .2s"}}>
             <div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:session.live!==false?GREEN:"#EF4444"}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:session.live!==false?GREEN:"#EF4444"}}>
                 {session.live!==false?"Session is Live":"Session is Offline"}
               </div>
               <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>
@@ -761,53 +769,19 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
             </div>
           </div>
 
-          {/* ── COINMASTER ── */}
-          <div style={{background:cmEnabled?`#FAF5FF`:`#F9FAFB`,border:`1.5px solid ${cmEnabled?"#DDD6FE":"#E5E7EB"}`,borderRadius:14,padding:"14px 16px"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:cmEnabled?12:0}}>
-              <div>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:cmEnabled?"#7C3AED":TEXT}}>Allow Coinmaster</div>
-                  {cmEnabled && <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#7C3AED",borderRadius:99,padding:"2px 8px",letterSpacing:.3}}>ON</span>}
-                </div>
-                <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>Let others award coins in this session</div>
-              </div>
-              <div onClick={onToggleCoinmaster}
-                style={{width:44,height:26,borderRadius:13,background:cmEnabled?"#7C3AED":"#E5E7EB",position:"relative",transition:"all .2s",flexShrink:0,marginLeft:12,cursor:"pointer"}}>
-                <div style={{position:"absolute",top:3,left:cmEnabled?21:3,width:20,height:20,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
-              </div>
-            </div>
-            {cmEnabled && cmCode && (
-              <div style={{background:"#fff",border:`1px solid #DDD6FE`,borderRadius:10,padding:"12px 14px"}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#7C3AED",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Coinmaster Code</div>
-                <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,letterSpacing:6,color:"#7C3AED",marginBottom:4}}>{cmCode}</div>
-                <div style={{fontSize:11,color:SUB,marginBottom:10}}>Share this code with your coinmasters. All coinmasters use the same code.</div>
-                <div style={{display:"flex",gap:8}}>
-                  <button onClick={copyCode}
-                    style={{flex:1,padding:"8px 0",background:copied?`#7C3AED10`:"#FAF5FF",border:`1px solid ${copied?"#7C3AED":"#DDD6FE"}`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:copied?"#7C3AED":"#7C3AED",cursor:"pointer",transition:"all .2s"}}>
-                    {copied?"Copied!":"Copy Code"}
-                  </button>
-                  <button onClick={()=>onToggleCoinmaster(true)}
-                    style={{padding:"8px 14px",background:"none",border:`1px solid #E5E7EB`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer"}}>
-                    Regenerate
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Export */}
-          <button onClick={onExport} style={{width:"100%",padding:"13px 0",background:`linear-gradient(135deg,${GREEN},#06B6D4)`,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>
+          <button onClick={onExport} style={{width:"100%",padding:"13px 0",background:`linear-gradient(135deg,${GREEN},#06B6D4)`,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>
             Export Results CSV
           </button>
 
           {/* Duplicate */}
           <button onClick={onDuplicate}
-            style={{width:"100%",padding:"13px 0",background:SOFT,border:`1.5px solid ${MID}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:PINK,cursor:"pointer"}}>
+            style={{width:"100%",padding:"13px 0",background:SOFT,border:`1.5px solid ${MID}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:PINK,cursor:"pointer"}}>
             Duplicate Session
           </button>
 
           {/* Reset */}
-          <button onClick={onReset} style={{width:"100%",padding:"13px 0",background:"#FEF2F2",border:"1.5px solid #EF444440",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#EF4444",cursor:"pointer"}}>
+          <button onClick={onReset} style={{width:"100%",padding:"13px 0",background:"#FEF2F2",border:"1.5px solid #EF444440",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#EF4444",cursor:"pointer"}}>
             Reset All Coins
           </button>
 
@@ -815,12 +789,12 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
 
           {/* Archive */}
           <div style={{background:"#F8F8FA",border:`1px solid ${BORDER}`,borderRadius:13,padding:"14px 16px"}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Archive Session</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Archive Session</div>
             <div style={{fontSize:12,color:SUB,marginBottom:12,lineHeight:1.6}}>
               Permanently closes the session. Participants can no longer join. Data is preserved as read-only history.
             </div>
             <button onClick={onArchive}
-              style={{width:"100%",padding:"11px 0",background:"#1A0A14",border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>
+              style={{width:"100%",padding:"11px 0",background:"#1A0A14",border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>
               Archive Session
             </button>
           </div>
@@ -845,12 +819,13 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
   function asgG(pid,gid) { onUpdate(s=>{const p=s.participants.find(x=>x.id===pid);if(p)p.gid=gid===""?null:Number(gid);return s;}); }
   function assignCM(uid) { onUpdate(s=>{ s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==uid),uid]; return s; }); }
   function removeCM(uid) { onUpdate(s=>{ s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==uid); return s; }); }
+  function toggleCoinmaster() { onUpdate(s=>{ s.coinmasterEnabled=!s.coinmasterEnabled; return s; }); }
   function saveName() { if (nameVal.trim()) { onRename(nameVal.trim()); setEditingName(false); } } // eslint-disable-line
 
   const cmEnabled = !!session.coinmasterEnabled;
 
   const tabBtn = (id, label, badge) => (
-    <button key={id} onClick={()=>setTab(id)} style={{padding:"8px 14px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4}}>
+    <button key={id} onClick={()=>setTab(id)} style={{padding:"8px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4}}>
       {label}{badge}
     </button>
   );
@@ -862,7 +837,7 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 12px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Participants</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Participants</div>
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
@@ -876,17 +851,17 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
           {tab==="people" && <>
             <div style={{display:"flex",gap:8,marginBottom:12}}>
               <Inp placeholder="Full name" value={np} onChange={e=>setNp(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addP()} style={{flex:1}}/>
-              <button onClick={addP} style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
+              <button onClick={addP} style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
             </div>
             {sorted.length===0 && <div style={{textAlign:"center",padding:24,color:SUB,fontSize:13}}>No participants yet</div>}
             {sorted.map(p => {
               const grp = session.groups.find(g=>g.id===p.gid);
               return (
                 <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${BORDER}`}}>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:36}}>{pNum(p.num)}</div>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:36}}>{pNum(p.num)}</div>
                   <Av s={p.av} color={grp?.color||PINK} size={34}/>
                   <div style={{flex:1}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{p.name}</div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{p.name}</div>
                     <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                   </div>
                   <select value={p.gid??""} onChange={e=>asgG(p.id,e.target.value)} style={{background:SOFT,border:`1px solid ${MID}`,color:TEXT,borderRadius:9,padding:"5px 8px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:90}}>
@@ -902,7 +877,7 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
           {tab==="groups" && <>
             <div style={{display:"flex",gap:8,marginBottom:10}}>
               <Inp placeholder="Group name" value={ng} onChange={e=>setNg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addG()} style={{flex:1}}/>
-              <button onClick={addG} style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
+              <button onClick={addG} style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
             </div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
               {GC.map(c => <div key={c} onClick={()=>setNgc(c)} style={{width:26,height:26,borderRadius:8,background:c,cursor:"pointer",transition:".12s",border:ngc===c?`3px solid ${TEXT}`:"3px solid transparent",transform:ngc===c?"scale(1.15)":"scale(1)"}}/>)}
@@ -910,7 +885,7 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
             {session.groups.map(g => (
               <div key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${BORDER}`}}>
                 <div style={{width:12,height:12,borderRadius:3,background:g.color,flexShrink:0}}/>
-                <div style={{flex:1,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:g.color}}>{g.name}</div>
+                <div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:g.color}}>{g.name}</div>
                 <div style={{fontSize:11,color:SUB}}>{session.participants.filter(p=>p.gid===g.id).length} members</div>
               </div>
             ))}
@@ -918,12 +893,25 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
 
           {tab==="coinmaster" && <>
             {!cmEnabled ? (
-              <div style={{textAlign:"center",padding:"36px 16px"}}>
-                <div style={{fontSize:36,marginBottom:10}}>🔒</div>
-                <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>Coinmaster not enabled</div>
-                <div style={{fontSize:13,color:SUB,lineHeight:1.7}}>Enable Coinmaster in Session Settings first, then come back here to assign participants.</div>
+              <div style={{textAlign:"center",padding:"36px 16px 24px"}}>
+                <div style={{width:56,height:56,borderRadius:16,background:"#F3F4F6",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>Coinmaster is off</div>
+                <div style={{fontSize:13,color:SUB,lineHeight:1.7,marginBottom:18}}>Enable it to assign participants as coinmasters who can award coins from their own device.</div>
+                <button onClick={toggleCoinmaster} style={{padding:"10px 24px",background:"#7C3AED",border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Enable Coinmaster</button>
               </div>
             ) : (<>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,background:"#FAF5FF",border:"1px solid #DDD6FE",borderRadius:10,padding:"10px 14px"}}>
+                <div style={{fontSize:12,color:"#7C3AED",fontWeight:700,display:"flex",alignItems:"center",gap:7}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                  Coinmaster enabled
+                </div>
+                <button onClick={toggleCoinmaster} style={{padding:"4px 10px",background:"none",border:"1px solid #DDD6FE",borderRadius:7,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,cursor:"pointer"}}>Disable</button>
+              </div>
               <div style={{fontSize:12,color:SUB,lineHeight:1.7,marginBottom:14,background:SOFT,border:`1px solid ${MID}`,borderRadius:10,padding:"10px 12px"}}>
                 Coinmasters can award coins from their own device. Only participants who are <strong>logged in</strong> are eligible.
               </div>
@@ -935,7 +923,7 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
                   <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 0",borderBottom:`1px solid ${BORDER}`}}>
                     <Av s={p.av} color={isCM?"#7C3AED":PINK} size={34}/>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
                       {isCM
                         ? <div style={{fontSize:11,color:"#7C3AED",fontWeight:700}}>Coinmaster ✓</div>
                         : canAssign
@@ -945,7 +933,7 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
                     </div>
                     {canAssign ? (
                       <button onClick={()=>isCM?removeCM(p.uid):assignCM(p.uid)}
-                        style={{padding:"5px 13px",background:isCM?"#FAF5FF":"#F0FDF4",border:`1px solid ${isCM?"#DDD6FE":"#BBF7D0"}`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:isCM?"#7C3AED":"#16A34A",cursor:"pointer",flexShrink:0}}>
+                        style={{padding:"5px 13px",background:isCM?"#FAF5FF":"#F0FDF4",border:`1px solid ${isCM?"#DDD6FE":"#BBF7D0"}`,borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:isCM?"#7C3AED":"#16A34A",cursor:"pointer",flexShrink:0}}>
                         {isCM?"Remove":"Assign"}
                       </button>
                     ) : (
@@ -1014,9 +1002,9 @@ function Auth({ onDone }) {
         <div style={{width:64,height:64,borderRadius:"50%",background:SOFT,border:`2px solid ${MID}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         </div>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:TEXT,marginBottom:8}}>Check your email</div>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,marginBottom:8}}>Check your email</div>
         <div style={{fontSize:13,color:SUB,marginBottom:24,lineHeight:1.7}}>Reset link sent to<br/><strong style={{color:TEXT}}>{email}</strong></div>
-        <button onClick={()=>setView("login")} style={{background:"none",border:"none",color:PINK,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>Back to sign in</button>
+        <button onClick={()=>setView("login")} style={{background:"none",border:"none",color:PINK,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,cursor:"pointer"}}>Back to sign in</button>
       </div>
     </div>
   );
@@ -1026,7 +1014,7 @@ function Auth({ onDone }) {
       <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,padding:"32px 28px",maxWidth:400,width:"100%"}}>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:24}}>
           <Ham size={68}/>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:26,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-1,marginTop:4,lineHeight:1.1}}>Teticoin</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-1,marginTop:4,lineHeight:1.1}}>Teticoin</div>
           <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:2}}>Gamifying Interactions</div>
         </div>
 
@@ -1034,7 +1022,7 @@ function Auth({ onDone }) {
           <div style={{display:"flex",background:BG,borderRadius:12,padding:4,marginBottom:20}}>
             {["login","register"].map(v => (
               <button key={v} onClick={()=>{setView(v);setErr("");}} 
-                style={{flex:1,padding:"9px 0",borderRadius:9,border:"none",background:view===v?"#fff":"transparent",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:view===v?TEXT:SUB,cursor:"pointer",boxShadow:view===v?"0 1px 6px rgba(0,0,0,.08)":"none",transition:"all .15s"}}
+                style={{flex:1,padding:"9px 0",borderRadius:9,border:"none",background:view===v?"#fff":"transparent",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:view===v?TEXT:SUB,cursor:"pointer",boxShadow:view===v?"0 1px 6px rgba(0,0,0,.08)":"none",transition:"all .15s"}}
                 onMouseOver={e=>{ if(view!==v) e.currentTarget.style.color=TEXT; }}
                 onMouseOut={e=>{ if(view!==v) e.currentTarget.style.color=SUB; }}>
                 {v==="login"?"Sign In":"Register"}
@@ -1046,7 +1034,7 @@ function Auth({ onDone }) {
         {view==="forgot" && (
           <div style={{marginBottom:20}}>
             <button onClick={()=>setView("login")} style={{background:"none",border:"none",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:4,padding:0,marginBottom:10}}><span style={{fontSize:18}}>‹</span>Back</button>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:4}}>Reset Password</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:4}}>Reset Password</div>
             <div style={{fontSize:13,color:SUB}}>We'll send a reset link to your email.</div>
           </div>
         )}
@@ -1077,7 +1065,7 @@ function Auth({ onDone }) {
               <div style={{flex:1,height:1,background:BORDER}}/><span style={{fontSize:12,color:SUB,fontWeight:600}}>or</span><div style={{flex:1,height:1,background:BORDER}}/>
             </div>
             <button onClick={googleSignIn} disabled={busy}
-              style={{width:"100%",padding:"12px 0",borderRadius:13,border:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,transition:"all .15s",opacity:busy?.6:1}}
+              style={{width:"100%",padding:"12px 0",borderRadius:13,border:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,transition:"all .15s",opacity:busy?.6:1}}
               onMouseOver={e=>{e.currentTarget.style.background=BG;e.currentTarget.style.borderColor=PINK;}}
               onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.borderColor=BORDER;}}>
               <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 32.3 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7 29 5 24 5 13.5 5 5 13.5 5 24s8.5 19 19 19c10 0 18.7-7.2 18.7-19 0-1.3-.1-2.7-.1-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16.1 19 13 24 13c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7 29 5 24 5c-7.2 0-13.4 4-16.7 9.7z"/><path fill="#4CAF50" d="M24 43c5.2 0 9.8-1.8 13.4-4.7l-6.2-5.2C29.3 34.3 26.8 35 24 35c-5.2 0-9.6-3.5-11.2-8.3l-6.5 5C9.8 39.2 16.4 43 24 43z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.6-2.7 4.8-5.1 6.1l6.2 5.2C40 35.8 44 30.4 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
@@ -1340,38 +1328,38 @@ function ParticipantView({ session: init, hostPlan="free" }) {
               <div style={{fontSize:64,lineHeight:1,marginBottom:12}}>
                 {badge.svgData ? <img src={badge.svgData} alt="" style={{width:64,height:64,margin:"0 auto"}}/> : badge.icon}
               </div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:TEXT,marginBottom:4}}>You've been awarded!</div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:18,color:badge.color||PINK,marginBottom:4}}>{badge.label}</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,marginBottom:4}}>You've been awarded!</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:18,color:badge.color||PINK,marginBottom:4}}>{badge.label}</div>
               <div style={{fontSize:13,color:SUB}}>at {live.name}</div>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               <button onClick={()=>setBadgeClaimStep("loginClaim")}
-                style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
+                style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
                 🏅 Log in / Register to claim
               </button>
               <button onClick={()=>setBadgeClaimStep("email")}
-                style={{width:"100%",padding:"13px 0",background:SOFT,border:`1.5px solid ${MID}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:PINK,cursor:"pointer"}}>
+                style={{width:"100%",padding:"13px 0",background:SOFT,border:`1.5px solid ${MID}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:PINK,cursor:"pointer"}}>
                 📧 Send claim link to my email
               </button>
               <button onClick={dismissBadge}
-                style={{width:"100%",padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
+                style={{width:"100%",padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
                 I don't want this badge
               </button>
             </div>
           </>)}
           {badgeClaimStep === "email" && (<>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT,marginBottom:6}}>Send to my email</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT,marginBottom:6}}>Send to my email</div>
             <div style={{fontSize:13,color:SUB,lineHeight:1.6,marginBottom:16}}>
               We'll send a claim link valid for <strong>7 days</strong>. Click it any time to register and save your badge.
             </div>
             <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:12,padding:"10px 14px",marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:24}}>{badge.svgData?<img src={badge.svgData} alt="" style={{width:24,height:24}}/>:badge.icon}</span>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{badge.label}</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{badge.label}</div>
             </div>
             <Inp type="email" placeholder="your@email.com" value={claimEmail} onChange={e=>{setClaimEmail(e.target.value);setClaimEmailErr("");}} style={{marginBottom:claimEmailErr?6:12}} onKeyDown={e=>e.key==="Enter"&&handleEmailClaim()}/>
             {claimEmailErr && <div style={{fontSize:12,color:"#EF4444",marginBottom:10,fontWeight:600}}>{claimEmailErr}</div>}
             <button onClick={handleEmailClaim} disabled={!claimEmail.trim()||claimEmailBusy}
-              style={{width:"100%",padding:"13px 0",background:claimEmail.trim()?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:claimEmail.trim()?"#fff":SUB,cursor:claimEmail.trim()?"pointer":"not-allowed",marginBottom:10,opacity:claimEmailBusy?.6:1}}>
+              style={{width:"100%",padding:"13px 0",background:claimEmail.trim()?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:claimEmail.trim()?"#fff":SUB,cursor:claimEmail.trim()?"pointer":"not-allowed",marginBottom:10,opacity:claimEmailBusy?.6:1}}>
               {claimEmailBusy?"Sending…":"Send Claim Link →"}
             </button>
             <button onClick={()=>setBadgeClaimStep("prompt")} style={{width:"100%",padding:"10px 0",background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>← Back</button>
@@ -1379,16 +1367,16 @@ function ParticipantView({ session: init, hostPlan="free" }) {
           {badgeClaimStep === "sent" && (<>
             <div style={{textAlign:"center"}}>
               <div style={{fontSize:56,marginBottom:14}}>📬</div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:8}}>Check your inbox!</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:8}}>Check your inbox!</div>
               <div style={{fontSize:14,color:SUB,lineHeight:1.65,marginBottom:6}}>We sent a claim link to<br/><strong style={{color:TEXT}}>{claimEmail}</strong></div>
               <div style={{fontSize:13,color:SUB,marginBottom:24}}>Link is valid for <strong>7 days</strong>. Click it to register and claim your badge.</div>
-              <button onClick={()=>setBadgeClaimStep("idle")} style={{padding:"12px 32px",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>Got it!</button>
+              <button onClick={()=>setBadgeClaimStep("idle")} style={{padding:"12px 32px",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>Got it!</button>
             </div>
           </>)}
           {badgeClaimStep === "loginClaim" && (<>
             <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:12,padding:"10px 14px",marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:28}}>{badge.svgData?<img src={badge.svgData} alt="" style={{width:28,height:28}}/>:badge.icon}</span>
-              <div><div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{badge.label}</div><div style={{fontSize:12,color:SUB}}>Log in or register to claim</div></div>
+              <div><div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{badge.label}</div><div style={{fontSize:12,color:SUB}}>Log in or register to claim</div></div>
             </div>
             <Auth onDone={async(user)=>{ await claimWithLogin(user); }} claimContext="Save your badge to your Teticoin profile."/>
             <button onClick={()=>setBadgeClaimStep("prompt")} style={{width:"100%",marginTop:10,padding:"10px 0",background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>← Back</button>
@@ -1408,24 +1396,24 @@ function ParticipantView({ session: init, hostPlan="free" }) {
             <div style={{width:56,height:56,borderRadius:16,background:`${GREEN}15`,border:`1.5px solid ${GREEN}40`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Account linked! 🎉</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Account linked! 🎉</div>
             <div style={{fontSize:14,color:SUB,lineHeight:1.6,marginBottom:20}}>
               You're now logged in as <strong style={{color:TEXT}}>{linkedName}</strong>.<br/>
               Your coins and badges will be saved to your account.
             </div>
-            <button onClick={()=>setLoginModal(false)} style={{width:"100%",padding:"13px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
+            <button onClick={()=>setLoginModal(false)} style={{width:"100%",padding:"13px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
               Done
             </button>
           </div>
         ) : (
           <>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:4}}>Save your progress 🏅</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:4}}>Save your progress 🏅</div>
             <div style={{fontSize:13,color:SUB,lineHeight:1.6,marginBottom:20}}>
               Log in to earn badges and keep your coins across sessions. Your participation here will be saved.
             </div>
             {/* Google */}
             <button onClick={(e)=>handleOptionalLogin(e,"google")} disabled={loginBusy}
-              style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"12px 0",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,cursor:loginBusy?"not-allowed":"pointer",marginBottom:10,opacity:loginBusy?.6:1}}>
+              style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"12px 0",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,cursor:loginBusy?"not-allowed":"pointer",marginBottom:10,opacity:loginBusy?.6:1}}>
               <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
               {loginBusy ? "Logging in…" : "Continue with Google"}
             </button>
@@ -1441,7 +1429,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
               onKeyDown={e=>e.key==="Enter"&&handleOptionalLogin(null,"email")}/>
             {loginErr && <div style={{fontSize:12,color:"#EF4444",fontWeight:600,marginBottom:10}}>{loginErr}</div>}
             <button onClick={(e)=>handleOptionalLogin(e,"email")} disabled={loginBusy||!loginEmail.trim()||!loginPass}
-              style={{width:"100%",padding:"13px 0",background:loginEmail.trim()&&loginPass?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:loginEmail.trim()&&loginPass?"#fff":SUB,cursor:loginEmail.trim()&&loginPass?"pointer":"not-allowed",marginBottom:10,opacity:loginBusy?.6:1}}>
+              style={{width:"100%",padding:"13px 0",background:loginEmail.trim()&&loginPass?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:loginEmail.trim()&&loginPass?"#fff":SUB,cursor:loginEmail.trim()&&loginPass?"pointer":"not-allowed",marginBottom:10,opacity:loginBusy?.6:1}}>
               {loginBusy ? "Logging in…" : "Log in"}
             </button>
             {loginErr && <div style={{fontSize:12,color:SUB,textAlign:"center"}}><a href="https://teticoin.tetikus.com.my" target="_blank" rel="noopener noreferrer" style={{color:PINK}}>Don't have an account? Sign up →</a></div>}
@@ -1459,7 +1447,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div style={{flex:1}}>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Logged in as {linkedName}</div>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Logged in as {linkedName}</div>
         <div style={{fontSize:11,color:SUB,marginTop:1}}>Your coins & badges are being saved</div>
       </div>
     </div>
@@ -1469,11 +1457,11 @@ function ParticipantView({ session: init, hostPlan="free" }) {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/><path d="M12 12v4"/><path d="M10 15h4"/></svg>
       </div>
       <div style={{flex:1,minWidth:0}}>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Earn badges &amp; save progress</div>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Earn badges &amp; save progress</div>
         <div style={{fontSize:11,color:SUB,marginTop:1}}>Log in to keep your coins across sessions</div>
       </div>
       <button onClick={()=>setLoginModal(true)}
-        style={{flexShrink:0,padding:"6px 14px",background:GRAD,border:"none",borderRadius:9,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
+        style={{flexShrink:0,padding:"6px 14px",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
         Log in
       </button>
       <button onClick={()=>setShowLoginBanner(false)} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:16,padding:2,flexShrink:0,lineHeight:1}}>×</button>
@@ -1509,7 +1497,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
             <button key={i} onClick={()=>{
               if (k==="\u232B") onChange(v=>v.slice(0,-1));
               else if (k!=="" && value.length<length) onChange(v=>v+String(k));
-            }} style={{padding:"16px 8px",borderRadius:12,border:`1px solid ${BORDER}`,background:k==="\u232B"?SOFT:"#fff",cursor:k===""?"default":"pointer",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:20,color:k==="\u232B"?PINK:TEXT,transition:"transform .08s"}}
+            }} style={{padding:"16px 8px",borderRadius:12,border:`1px solid ${BORDER}`,background:k==="\u232B"?SOFT:"#fff",cursor:k===""?"default":"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:20,color:k==="\u232B"?PINK:TEXT,transition:"transform .08s"}}
               onMouseDown={e=>e.currentTarget.style.transform="scale(0.92)"}
               onMouseUp={e=>e.currentTarget.style.transform="scale(1)"}
               onTouchStart={e=>{e.preventDefault();e.currentTarget.style.transform="scale(0.92)";}}
@@ -1534,10 +1522,10 @@ function ParticipantView({ session: init, hostPlan="free" }) {
 
   if (step === "name") return card(<>
     <Ham size={60}/>
-    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:6,marginBottom:4,lineHeight:1.1}}>Join Session</div>
+    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:6,marginBottom:4,lineHeight:1.1}}>Join Session</div>
     <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:10,padding:"6px 16px",margin:"10px auto 20px",display:"inline-block"}}>
       <div style={{fontSize:10,color:SUB,fontWeight:600}}>Session</div>
-      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,letterSpacing:4,color:PINK}}>{live?.code}</div>
+      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,letterSpacing:4,color:PINK}}>{live?.code}</div>
     </div>
     <Inp placeholder="Your full name" value={name} onChange={e=>setName(e.target.value)}
       onKeyDown={e=>e.key==="Enter"&&checkName()} style={{textAlign:"center",marginBottom:12}}/>
@@ -1551,31 +1539,31 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     <div style={{width:64,height:64,borderRadius:20,background:SOFT,border:`2px solid ${MID}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
       <Av s={returnMatch.av} color={PINK} size={44}/>
     </div>
-    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Welcome back!</div>
+    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Welcome back!</div>
     <div style={{fontSize:14,color:SUB,marginBottom:6,lineHeight:1.6}}>
       We found <strong style={{color:TEXT}}>{returnMatch.name}</strong> in this session.
     </div>
     <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:12,padding:"10px 16px",marginBottom:20,display:"inline-flex",alignItems:"center",gap:10}}>
-      <span style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:PINK}}>{pNum(returnMatch.num)}</span>
+      <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:PINK}}>{pNum(returnMatch.num)}</span>
       <span style={{fontSize:13,color:TEXT,fontWeight:600}}>{returnMatch.total} coins</span>
     </div>
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
       <PBtn full onClick={confirmReturn}>Yes, that's me →</PBtn>
-      <button onClick={notMe} style={{padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
+      <button onClick={notMe} style={{padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
         Not me — I'm someone else
       </button>
     </div>
   </>);
 
   if (step === "pinentry") return card(<>
-    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Enter your PIN</div>
+    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Enter your PIN</div>
     <div style={{fontSize:13,color:SUB,marginBottom:20,lineHeight:1.6}}>
       {returnMatch.name} has a PIN set.<br/>Enter it to rejoin.
     </div>
     <PinPad value={pinInput} onChange={setPinInput} length={4}/>
     {pinError && <div style={{marginTop:12,fontSize:13,color:"#EF4444",fontWeight:600}}>{pinError}</div>}
     <button onClick={verifyPin} disabled={pinInput.length<4}
-      style={{width:"100%",marginTop:16,padding:"13px 0",background:pinInput.length===4?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:pinInput.length===4?"#fff":SUB,cursor:pinInput.length===4?"pointer":"not-allowed"}}>
+      style={{width:"100%",marginTop:16,padding:"13px 0",background:pinInput.length===4?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:pinInput.length===4?"#fff":SUB,cursor:pinInput.length===4?"pointer":"not-allowed"}}>
       Confirm PIN
     </button>
     <button onClick={()=>setStep("name")} style={{marginTop:8,background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>\u2190 Back</button>
@@ -1585,13 +1573,13 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     <div style={{width:48,height:48,borderRadius:14,background:`${PURPLE}15`,border:`1.5px solid ${PURPLE}35`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
     </div>
-    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Set a PIN</div>
+    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Set a PIN</div>
     <div style={{fontSize:13,color:SUB,marginBottom:20,lineHeight:1.6}}>
       Create a 4-digit PIN so you can rejoin and keep your coins &amp; number.
     </div>
     <PinPad value={pin} onChange={setPin} length={4}/>
     <button onClick={setNewPin} disabled={pin.length<4}
-      style={{width:"100%",marginTop:16,padding:"13px 0",background:pin.length===4?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:pin.length===4?"#fff":SUB,cursor:pin.length===4?"pointer":"not-allowed"}}>
+      style={{width:"100%",marginTop:16,padding:"13px 0",background:pin.length===4?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:pin.length===4?"#fff":SUB,cursor:pin.length===4?"pointer":"not-allowed"}}>
       Set PIN &amp; Join
     </button>
     <button onClick={skipPin} style={{marginTop:10,background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif",textDecoration:"underline"}}>
@@ -1606,18 +1594,18 @@ function ParticipantView({ session: init, hostPlan="free" }) {
       <BadgeClaimPrompt/>
       <Confetti active/>
       <Ham size={56}/>
-      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:4,marginBottom:2,lineHeight:1.1}}>Leaderboard</div>
+      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:4,marginBottom:2,lineHeight:1.1}}>Leaderboard</div>
       <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:20}}>{live?.name}</div>
       <div style={{width:"100%",maxWidth:400,display:"flex",flexDirection:"column",gap:8}}>
         {sorted.map((p,i) => (
           <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 16px",background:p.id===myId?"rgba(233,30,140,.18)":"rgba(255,255,255,.05)",borderRadius:14,border:p.id===myId?`1.5px solid ${PINK}66`:"1.5px solid rgba(255,255,255,.07)"}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:rankColor(i),minWidth:22}}>{i+1}</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:rankColor(i),minWidth:22}}>{i+1}</div>
             <Av s={p.av} color={live.groups?.find(g=>g.id===p.gid)?.color||PINK} size={34}/>
             <div style={{flex:1}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14}}>{p.name}</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14}}>{p.name}</div>
               <div style={{fontSize:11,color:"rgba(255,255,255,.4)"}}>{pNum(p.num)}</div>
             </div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:p.id===myId?PINK:"#fff"}}>{p.total}</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:p.id===myId?PINK:"#fff"}}>{p.total}</div>
             {p.id===myId && <div style={{fontSize:10,background:PINK,color:"#fff",padding:"2px 8px",borderRadius:99,fontWeight:700}}>You</div>}
           </div>
         ))}
@@ -1633,15 +1621,15 @@ function ParticipantView({ session: init, hostPlan="free" }) {
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10,flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <Ham size={28}/>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <button onClick={()=>setShowMyQR(v=>!v)}
-            style={{display:"flex",alignItems:"center",gap:5,background:showMyQR?SOFT:"none",border:`1px solid ${showMyQR?PINK:BORDER}`,borderRadius:9,padding:"5px 10px",fontSize:12,fontFamily:"Nunito,sans-serif",fontWeight:700,color:showMyQR?PINK:SUB,cursor:"pointer"}}>
+            style={{display:"flex",alignItems:"center",gap:5,background:showMyQR?SOFT:"none",border:`1px solid ${showMyQR?PINK:BORDER}`,borderRadius:9,padding:"5px 10px",fontSize:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,color:showMyQR?PINK:SUB,cursor:"pointer"}}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
             My QR
           </button>
-          <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:8,padding:"3px 10px",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:PINK,letterSpacing:1}}>
+          <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:8,padding:"3px 10px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:PINK,letterSpacing:1}}>
             {me ? pNum(me.num) : "—"}
           </div>
         </div>
@@ -1665,7 +1653,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
                 })().map((on,i)=><div key={i} style={{borderRadius:1,background:on?PINK:"transparent"}}/>)}
               </div>
             </div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:10,letterSpacing:2}}>{pNum(me.num)}</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:10,letterSpacing:2}}>{pNum(me.num)}</div>
             <div style={{fontSize:12,color:SUB,marginTop:2}}>{me.name}</div>
             <div style={{fontSize:11,color:SUB,marginTop:6,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
           </div>
@@ -1673,17 +1661,17 @@ function ParticipantView({ session: init, hostPlan="free" }) {
 
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,width:"100%"}}>
           <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-            <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:12,padding:"6px 18px",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:PINK,letterSpacing:3,flexShrink:0}}>
+            <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:12,padding:"6px 18px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:PINK,letterSpacing:3,flexShrink:0}}>
               {me ? pNum(me.num) : "—"}
             </div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:18,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{me?.name||"—"}</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:18,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{me?.name||"—"}</div>
           </div>
           {linkedUid ? (
-            <button onClick={switchBackToGuestName} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:10,padding:"8px 10px",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",flexShrink:0}}>
+            <button onClick={switchBackToGuestName} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:10,padding:"8px 10px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",flexShrink:0}}>
               Use typed name
             </button>
           ) : (
-            <button onClick={()=>setLoginModal(true)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:10,padding:"8px 10px",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:PINK,cursor:"pointer",flexShrink:0}}>
+            <button onClick={()=>setLoginModal(true)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:10,padding:"8px 10px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:PINK,cursor:"pointer",flexShrink:0}}>
               Log in
             </button>
           )}
@@ -1696,14 +1684,14 @@ function ParticipantView({ session: init, hostPlan="free" }) {
 
         <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,padding:"28px 24px",textAlign:"center",boxShadow:`0 4px 24px ${PINK}10`}}>
           <div style={{fontSize:11,fontWeight:700,color:SUB,marginBottom:6,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:80,lineHeight:1,color:PINK,letterSpacing:-4}}>{me?.total||0}</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:80,lineHeight:1,color:PINK,letterSpacing:-4}}>{me?.total||0}</div>
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
         </div>
 
         <div style={{width:"100%",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
           {ACTS.map(a => (
             <div key={a.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"12px 8px",textAlign:"center"}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:a.col}}>{me?.bk?.[a.id]||0}</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:a.col}}>{me?.bk?.[a.id]||0}</div>
               <div style={{fontSize:10,color:SUB,fontWeight:600,lineHeight:1.3,marginTop:2}}>{a.label}</div>
             </div>
           ))}
@@ -1736,7 +1724,7 @@ function ParticipantBadges({ uid }) {
           <div key={i} title={`${b.label} · ${b.sessionName||""}`}
             style={{display:"flex",alignItems:"center",gap:5,background:`${b.color||PINK}12`,border:`1.5px solid ${b.color||PINK}30`,borderRadius:999,padding:"5px 12px"}}>
             {b.svgData?<img src={b.svgData} alt="" style={{width:16,height:16}}/>:<span style={{fontSize:14}}>{b.icon}</span>}
-            <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:b.color||PINK}}>{b.label}</span>
+            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:b.color||PINK}}>{b.label}</span>
           </div>
         ))}
       </div>
@@ -1754,24 +1742,24 @@ function Projector({ session, onBack }) {
         <div style={{display:"flex",alignItems:"center",gap:14}}>
           <Ham size={50}/>
           <div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:26,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
             <div style={{fontSize:11,color:"rgba(255,255,255,.3)",letterSpacing:2,textTransform:"uppercase",marginTop:2}}>{session.name} · {session.code}</div>
           </div>
         </div>
-        <button onClick={onBack} style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"8px 16px",color:"rgba(255,255,255,.6)",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>Back</button>
+        <button onClick={onBack} style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"8px 16px",color:"rgba(255,255,255,.6)",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,cursor:"pointer"}}>Back</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
         <div>
           <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,.3)",textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Individual</div>
           {sorted.map((p,i) => (
             <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:i===0?"rgba(233,30,140,.1)":"rgba(255,255,255,.04)",borderRadius:13,marginBottom:8,border:`1px solid ${i===0?"rgba(233,30,140,.2)":"rgba(255,255,255,.06)"}`}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:22,textAlign:"center"}}>{i+1}</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:22,textAlign:"center"}}>{i+1}</div>
               <Av s={p.av} color={session.groups.find(g=>g.id===p.gid)?.color||PINK} size={36}/>
               <div style={{flex:1}}>
-                <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff"}}>{p.name}</div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff"}}>{p.name}</div>
                 <div style={{fontSize:11,color:"rgba(255,255,255,.3)"}}>{pNum(p.num)}</div>
               </div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:"#fff"}}>{p.total}</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:"#fff"}}>{p.total}</div>
             </div>
           ))}
         </div>
@@ -1783,9 +1771,9 @@ function Projector({ session, onBack }) {
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <div style={{width:10,height:10,borderRadius:3,background:g.color}}/>
-                  <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:g.color}}>{g.name}</span>
+                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:g.color}}>{g.name}</span>
                 </div>
-                <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</span>
+                <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</span>
               </div>
               <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
                 {g.members.map(m => <span key={m.id} style={{fontSize:11,background:`${g.color}18`,border:`1px solid ${g.color}30`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{m.name}</span>)}
@@ -1843,7 +1831,7 @@ function QRModal({ session, onClose }) {
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 16px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Share Session</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Share Session</div>
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           <div style={{fontSize:13,color:SUB,marginBottom:20}}>Participants scan or open the link to join. No account needed.</div>
@@ -1854,16 +1842,16 @@ function QRModal({ session, onClose }) {
             <div style={{width:180,height:180,background:"#fff",borderRadius:14,padding:8,border:`1px solid ${BORDER}`,boxShadow:`0 4px 20px ${PINK}15`,marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
               <div ref={qrRef}/>
             </div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,letterSpacing:6,color:PINK,marginBottom:6}}>{session.code}</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,letterSpacing:6,color:PINK,marginBottom:6}}>{session.code}</div>
             <div style={{fontSize:11,color:SUB,fontWeight:500,marginBottom:8}}>{url}</div>
             <div style={{fontSize:12,color:PINK,fontWeight:600,background:SOFT,border:`1px solid ${MID}`,borderRadius:8,padding:"4px 12px"}}>Show this screen to participants to scan</div>
           </div>
           {/* Copy buttons */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            <button onClick={()=>copy(url,"link")} style={{padding:"13px 0",background:copied==="link"?`${GREEN}15`:SOFT,border:`1.5px solid ${copied==="link"?GREEN:MID}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:copied==="link"?GREEN:PINK,cursor:"pointer",transition:"all .2s"}}>
+            <button onClick={()=>copy(url,"link")} style={{padding:"13px 0",background:copied==="link"?`${GREEN}15`:SOFT,border:`1.5px solid ${copied==="link"?GREEN:MID}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:copied==="link"?GREEN:PINK,cursor:"pointer",transition:"all .2s"}}>
               {copied==="link"?"Copied!":"Copy Link"}
             </button>
-            <button onClick={()=>copy(session.code,"code")} style={{padding:"13px 0",background:copied==="code"?`${GREEN}15`:BG,border:`1.5px solid ${copied==="code"?GREEN:BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:copied==="code"?GREEN:TEXT,cursor:"pointer",transition:"all .2s"}}>
+            <button onClick={()=>copy(session.code,"code")} style={{padding:"13px 0",background:copied==="code"?`${GREEN}15`:BG,border:`1.5px solid ${copied==="code"?GREEN:BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:copied==="code"?GREEN:TEXT,cursor:"pointer",transition:"all .2s"}}>
               {copied==="code"?"Copied!":"Copy Code"}
             </button>
           </div>
@@ -1885,14 +1873,14 @@ function LeaderSheet({ session, onToggleBoard, onClose }) {
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Leaderboard</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Leaderboard</div>
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           {/* Board visibility toggle — lives here */}
           <div onClick={onToggleBoard}
             style={{background:session.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${session.boardVisible?GREEN:BORDER}`,borderRadius:13,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",marginBottom:12,transition:"all .2s"}}>
             <div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:session.boardVisible?GREEN:TEXT}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:session.boardVisible?GREEN:TEXT}}>
                 {session.boardVisible?"Leaderboard visible to participants":"Leaderboard hidden from participants"}
               </div>
               <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>
@@ -1914,15 +1902,15 @@ function LeaderSheet({ session, onToggleBoard, onClose }) {
               return (
                 <div key={p.id} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff"}}>
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
-                    <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
                     <Av s={p.av} color={grp?.color||PINK} size={34}/>
                     <div style={{flex:1}}>
-                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
                       {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
                     </div>
                     <div style={{textAlign:"right"}}>
-                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
                       <div style={{fontSize:10,color:SUB}}>coins</div>
                     </div>
                   </div>
@@ -1940,12 +1928,12 @@ function LeaderSheet({ session, onToggleBoard, onClose }) {
               <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
                     <div style={{width:11,height:11,borderRadius:3,background:g.color,flexShrink:0}}/>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:16,color:g.color}}>{g.name}</div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:g.color}}>{g.name}</div>
                     <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
                   </div>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</div>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</div>
                 </div>
                 <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
                   {g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)}
@@ -1981,7 +1969,7 @@ function QuickCoinBtn({ pts, label, pal, onAward }) {
         transform: pressed ? "scale(0.91)" : "scale(1)",
         display:"flex",flexDirection:"column",alignItems:"center",gap:4,
         userSelect:"none",WebkitUserSelect:"none"}}>
-      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:26,lineHeight:1,
+      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,lineHeight:1,
         color: pressed ? "#fff" : (pts<0?"#EF4444":pal.num),
         transition:"color .08s"}}>
         {pts>0?"+":""}{pts}
@@ -2025,7 +2013,7 @@ function InlineCoinBtn({ value, bg, border, col, disabled, onAward, onEdit, circ
         onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape"){setEditing(false);setVal(String(value));}}}
         onBlur={commit}
         style={{width:"100%",textAlign:"center",background:"none",border:"none",
-          fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,
+          fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,
           color:"#E91E8C",outline:"none",padding:"4px 0"}}/>
     </div>
   );
@@ -2040,7 +2028,7 @@ function InlineCoinBtn({ value, bg, border, col, disabled, onAward, onEdit, circ
         borderRadius:10,
         border:"1.5px solid #FECDE8",
         background: pressed ? "#E91E8C" : "#fff",
-        cursor:"pointer",fontFamily:"Nunito,sans-serif",fontWeight:900,
+        cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,
         fontSize:28,
         color: pressed ? "#fff" : "transparent",
         WebkitTextFillColor: pressed ? "#fff" : "transparent",
@@ -2131,11 +2119,11 @@ function CoinmasterView({ session: init, onBack }) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div style={{flex:1,overflow:"hidden",minWidth:0,display:"flex",alignItems:"center"}}>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ses.name}</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ses.name}</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:5,background:ses.live!==false?SOFT:"#FEF2F2",border:`1px solid ${ses.live!==false?MID:"#EF444455"}`,borderRadius:20,padding:"5px 10px",flexShrink:0}}>
           <div style={{width:7,height:7,borderRadius:"50%",background:ses.live!==false?GREEN:"#EF4444",animation:ses.live!==false?"pulse 2s infinite":"none"}}/>
-          <span style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:ses.live!==false?PINK:"#EF4444",letterSpacing:.5}}>{ses.live!==false?"LIVE":"OFFLINE"}</span>
+          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:ses.live!==false?PINK:"#EF4444",letterSpacing:.5}}>{ses.live!==false?"LIVE":"OFFLINE"}</span>
         </div>
         <button onClick={()=>setMass(true)} style={IB} title="Mass give coins">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -2152,14 +2140,14 @@ function CoinmasterView({ session: init, onBack }) {
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
         {[["award","Award"],["board","Board"],["log","Log"]].map(([id,l]) => (
           <button key={id} onClick={()=>setTab(id)}
-            style={{padding:"11px 16px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
+            style={{padding:"11px 16px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
               color:tab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
               borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
           </button>
         ))}
         <div style={{marginLeft:"auto",paddingRight:14,display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
+          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
         </div>
       </div>
 
@@ -2175,8 +2163,8 @@ function CoinmasterView({ session: init, onBack }) {
                     <Av s={selP.av} color={ses.groups.find(g=>g.id===selP.gid)?.color||PINK} size={36}/>
                     <div style={{flex:1}}>
                       <div style={{display:"flex",alignItems:"center",gap:6}}>
-                        <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:11,color:SUB}}>{pNum(selP.num)}</span>
-                        <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,color:TEXT}}>{selP.name}</span>
+                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB}}>{pNum(selP.num)}</span>
+                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:TEXT}}>{selP.name}</span>
                       </div>
                       <div style={{fontSize:11,color:PINK,fontWeight:700,marginTop:1}}>{selP.total} coins total</div>
                     </div>
@@ -2223,7 +2211,7 @@ function CoinmasterView({ session: init, onBack }) {
                   <input type="number" placeholder="Custom amount" value={cAmt} onChange={e=>setCAmt(e.target.value)}
                     style={{flex:1,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
                   <button onClick={e=>{if(!cAmt||isNaN(cAmt))return;awardGuarded("token",Number(cAmt),e);setCAmt("");}}
-                    style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>
+                    style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>
                     Award
                   </button>
                 </div>
@@ -2247,15 +2235,15 @@ function CoinmasterView({ session: init, onBack }) {
                 return (
                   <div key={p.id} onClick={()=>{setSelId(p.id);setTab("award");}} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,cursor:"pointer",background:i===0?SOFT:"#fff",transition:".1s"}}>
                     <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
-                      <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
+                      <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
                       <Av s={p.av} color={grp?.color||PINK} size={34}/>
                       <div style={{flex:1}}>
-                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
                         {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
                       </div>
                       <div style={{textAlign:"right"}}>
-                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
                         <div style={{fontSize:10,color:SUB}}>coins</div>
                       </div>
                     </div>
@@ -2284,9 +2272,9 @@ function CoinmasterView({ session: init, onBack }) {
                 return (
                   <div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderBottom:`1px solid ${BORDER}`}}>
                     <div style={{width:6,height:6,borderRadius:"50%",background:col,flexShrink:0}}/>
-                    <div style={{flex:1,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{item.name}</div>
+                    <div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{item.name}</div>
                     <div style={{fontSize:12,color:SUB,fontWeight:500}}>{item.type==="token"?"Token":a?.label}</div>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:14,color:col}}>+{item.pts}</div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:col}}>+{item.pts}</div>
                     <div style={{fontSize:11,color:SUB}}>{item.t}</div>
                   </div>
                 );
@@ -2412,18 +2400,10 @@ function Session({ session: init, onBack, onPView }) {
       {showSettings && <SessionSettings session={ses}
         onRename={renameSession}
         onToggleLive={toggleLive}
-        onToggleCoinmaster={(regenerate=false)=>{
-          const wasEnabled = !!ses.coinmasterEnabled;
-          const newEnabled = regenerate ? true : !wasEnabled;
-          const newCode = (!wasEnabled || regenerate) ? genCMCode() : ses.coinmasterCode;
-          mut(s=>{ s.coinmasterEnabled=newEnabled; s.coinmasterCode=newEnabled?newCode:""; });
-          if (newEnabled && newCode) { ssSession("cm-" + newCode, { sessionCode: ses.code }); }
-          notify(newEnabled ? "Coinmaster enabled" : "Coinmaster disabled");
-        }}
         onDuplicate={()=>{
           const code=genCode();
           const dup={...JSON.parse(JSON.stringify(ses)),code,name:`${ses.name} (Copy)`,
-            participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false,coinmasterCode:""};
+            participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false};
           ssSession(code, dup); notify("Session duplicated"); setShowSettings(false);
         }}
         onArchive={()=>{
@@ -2470,11 +2450,11 @@ function Session({ session: init, onBack, onPView }) {
         <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:800}}>
           <div className="tc-modal-sheet" style={{background:"#fff",padding:"24px 24px 36px",width:"100%"}}>
             <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 18px"}}/>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT,marginBottom:6}}>Go Offline?</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT,marginBottom:6}}>Go Offline?</div>
             <div style={{fontSize:14,color:SUB,lineHeight:1.7,marginBottom:20}}>Participants won't be able to join or earn coins.<br/>All data is saved — you can go live again anytime.</div>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              <button onClick={goOffline} style={{width:"100%",padding:"13px 0",background:"#1A0A14",border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>Go Offline</button>
-              <button onClick={()=>setConfirmOffline(false)} style={{width:"100%",padding:"13px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>Stay Live</button>
+              <button onClick={goOffline} style={{width:"100%",padding:"13px 0",background:"#1A0A14",border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>Go Offline</button>
+              <button onClick={()=>setConfirmOffline(false)} style={{width:"100%",padding:"13px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>Stay Live</button>
             </div>
           </div>
         </div>
@@ -2486,12 +2466,12 @@ function Session({ session: init, onBack, onPView }) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div style={{flex:1,overflow:"hidden",minWidth:0,display:"flex",alignItems:"center"}}>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ses.name}</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ses.name}</div>
         </div>
         <button onClick={toggleLive} title={isLive?"Go offline":"Go live"}
           style={{display:"flex",alignItems:"center",gap:5,background:isLive?SOFT:"#FEF2F2",border:`1px solid ${isLive?MID:"#EF444455"}`,borderRadius:20,padding:"5px 12px",cursor:"pointer",flexShrink:0}}>
           <div style={{width:7,height:7,borderRadius:"50%",background:isLive?GREEN:"#EF4444",animation:isLive?"pulse 2s infinite":"none"}}/>
-          <span style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:isLive?PINK:"#EF4444",letterSpacing:.5}}>{isLive?"LIVE":"OFFLINE"}</span>
+          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isLive?PINK:"#EF4444",letterSpacing:.5}}>{isLive?"LIVE":"OFFLINE"}</span>
         </button>
         <button onClick={()=>setShowQR(true)} style={IB} title="QR Code">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
@@ -2517,14 +2497,14 @@ function Session({ session: init, onBack, onPView }) {
             else if (id==="groups") setRightTab("groups");
             else if (id==="log") setRightTab("log");
           }}
-            style={{padding:"11px 12px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
+            style={{padding:"11px 12px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
               color:!isLive?`${SUB}55`:tab===id?PINK:SUB,cursor:isLive?"pointer":"default",flexShrink:0,
               borderBottom:tab===id&&isLive?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
           </button>
         ))}
         <div style={{marginLeft:"auto",paddingRight:12,display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
+          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
         </div>
       </div>
 
@@ -2539,9 +2519,9 @@ function Session({ session: init, onBack, onPView }) {
               <div style={{width:52,height:52,borderRadius:16,background:"#FEF2F2",border:`1.5px solid #EF444430`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
               </div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:"#EF4444",marginBottom:6}}>Session Offline</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:"#EF4444",marginBottom:6}}>Session Offline</div>
               <div style={{fontSize:13,color:SUB,marginBottom:20,lineHeight:1.6}}>Participants cannot join or earn coins.<br/>Go live to reactivate.</div>
-              <button onClick={toggleLive} style={{width:"100%",padding:"12px 0",background:"#EF4444",border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>Go Live</button>
+              <button onClick={toggleLive} style={{width:"100%",padding:"12px 0",background:"#EF4444",border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>Go Live</button>
             </div>
           </div>
         )}
@@ -2556,8 +2536,8 @@ function Session({ session: init, onBack, onPView }) {
                   <Av s={selP.av} color={ses.groups.find(g=>g.id===selP.gid)?.color||PINK} size={36}/>
                   <div style={{flex:1}}>
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:11,color:SUB}}>{pNum(selP.num)}</span>
-                      <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,color:TEXT}}>{selP.name}</span>
+                      <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB}}>{pNum(selP.num)}</span>
+                      <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:TEXT}}>{selP.name}</span>
                     </div>
                     <div style={{fontSize:11,color:PINK,fontWeight:700,marginTop:1}}>{selP.total} coins total</div>
                   </div>
@@ -2609,10 +2589,10 @@ function Session({ session: init, onBack, onPView }) {
                 <input type="number" placeholder="Custom amount" value={cAmt} onChange={e=>setCAmt(e.target.value)}
                   style={{flex:1,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
                 <button onClick={e=>{if(!cAmt||isNaN(cAmt))return;awardGuarded("token",Number(cAmt),e);setCAmt("");}}
-                  style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Award</button>
+                  style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Award</button>
               </div>
             </div>
-            <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+            <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               Mass Give Coins
             </button>
@@ -2626,14 +2606,14 @@ function Session({ session: init, onBack, onPView }) {
           <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0,display:"none"}}>
             {[["award_all","Award All"],["board","Board"],["groups","Groups"],["log","Log"]].map(([id,l]) => (
               <button key={id} onClick={()=>setRightTab(id)}
-                style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
+                style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
                   color:rightTab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
                   borderBottom:rightTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
               </button>
             ))}
             <div style={{marginLeft:"auto",paddingRight:12,display:"flex",alignItems:"center",gap:4}}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              <span style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
+              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
             </div>
           </div>
 
@@ -2653,7 +2633,7 @@ function Session({ session: init, onBack, onPView }) {
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3m0 4h4v-4m-4 0h4"/></svg>
                       </div>
                       <div>
-                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>Show QR Code</div>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>Show QR Code</div>
                         <div style={{fontSize:11,color:SUB,marginTop:1}}>Participants scan to join instantly</div>
                       </div>
                     </button>
@@ -2665,7 +2645,7 @@ function Session({ session: init, onBack, onPView }) {
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.2" strokeLinecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
                       </div>
                       <div>
-                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>Add Manually</div>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>Add Manually</div>
                         <div style={{fontSize:11,color:SUB,marginTop:1}}>Host adds participant by name</div>
                       </div>
                     </button>
@@ -2685,17 +2665,17 @@ function Session({ session: init, onBack, onPView }) {
                       <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:i<sorted.length-1?`1px solid ${BORDER}`:"none",transition:"background .1s"}}
                         onMouseOver={e=>e.currentTarget.style.background=SOFT}
                         onMouseOut={e=>e.currentTarget.style.background="transparent"}>
-                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:13,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
                         <Av s={p.av} color={grp?.color||PINK} size={28}/>
                         <div style={{width:130,flexShrink:0}}>
-                          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:TEXT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
                           <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
                         </div>
                         <div style={{display:"flex",gap:4,flexShrink:0,flexWrap:"nowrap"}}>
                           {coins.map((v,ci) => (
                             <button key={ci}
                               onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
-                              style={{width:v>=100?42:36,height:34,borderRadius:8,border:`1.5px solid ${MID}`,background:"#fff",cursor:"pointer",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:v>=100?10:11,color:PINK,transition:"all .1s",flexShrink:0,padding:0}}
+                              style={{width:v>=100?42:36,height:34,borderRadius:8,border:`1.5px solid ${MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:v>=100?10:11,color:PINK,transition:"all .1s",flexShrink:0,padding:0}}
                               onMouseOver={e=>{e.currentTarget.style.background=SOFT;e.currentTarget.style.transform="scale(1.08)";e.currentTarget.style.borderColor=PINK;}}
                               onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.transform="scale(1)";e.currentTarget.style.borderColor=MID;}}>
                               +{v}
@@ -2716,7 +2696,7 @@ function Session({ session: init, onBack, onPView }) {
               <div onClick={()=>mut(s=>{s.boardVisible=!s.boardVisible;})}
                 style={{background:ses.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .2s"}}>
                 <div>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?GREEN:TEXT}}>{ses.boardVisible?"Board is live on participant devices":"Board is hidden from participants"}</div>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?GREEN:TEXT}}>{ses.boardVisible?"Board is live on participant devices":"Board is hidden from participants"}</div>
                   <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>Tap to {ses.boardVisible?"hide":"show"} leaderboard on participant screens</div>
                 </div>
                 <div style={{width:44,height:26,borderRadius:13,background:ses.boardVisible?GREEN:BORDER,position:"relative",transition:"all .2s",flexShrink:0,marginLeft:12}}>
@@ -2726,7 +2706,7 @@ function Session({ session: init, onBack, onPView }) {
               {/* Lucky Draw button — only shown when board is live */}
               {ses.boardVisible && (
                 <button onClick={()=>setShowLuckyDraw(true)}
-                  style={{width:"100%",padding:"11px 0",background:"linear-gradient(135deg,#1A0A14,#2D0A22)",border:"1.5px solid rgba(255,79,184,.3)",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#FF4FB8",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .2s"}}
+                  style={{width:"100%",padding:"11px 0",background:"linear-gradient(135deg,#1A0A14,#2D0A22)",border:"1.5px solid rgba(255,79,184,.3)",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#FF4FB8",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .2s"}}
                   onMouseOver={e=>{e.currentTarget.style.borderColor="#FF4FB8";e.currentTarget.style.background="linear-gradient(135deg,#2D0A22,#3D0A30)";}}
                   onMouseOut={e=>{e.currentTarget.style.borderColor="rgba(255,79,184,.3)";e.currentTarget.style.background="linear-gradient(135deg,#1A0A14,#2D0A22)";}}>
                   🎡 <span>Lucky Draw Wheel</span>
@@ -2744,12 +2724,12 @@ function Session({ session: init, onBack, onPView }) {
                       onMouseOver={e=>e.currentTarget.style.background=SOFT}
                       onMouseOut={e=>e.currentTarget.style.background=i===0?SOFT:"#fff"}>
                       <div style={{display:"flex",alignItems:"center",gap:10}}>
-                        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
-                        <span style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
+                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
                         <Av s={p.av} color={grp?.color||PINK} size={34}/>
                         <div style={{flex:1}}>
                           <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
-                            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
+                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
                             {p.pendingBadge && <span title="Badge pending claim" style={{fontSize:13}}>{p.pendingBadge.svgData?<img src={p.pendingBadge.svgData} alt="" style={{width:13,height:13}}/>:p.pendingBadge.icon}</span>}
                           </div>
                           {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
@@ -2758,7 +2738,7 @@ function Session({ session: init, onBack, onPView }) {
                         <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0,width:ses.boardVisible&&i<5?196:64,justifyContent:"flex-end"}}>
                           {showBadgeBtn && (
                             <button onClick={e=>{e.stopPropagation();setBadgePickerTarget(p);setShowBadgePicker(true);}}
-                              style={{padding:"6px 14px",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:5,flexShrink:0,boxShadow:`0 2px 8px ${PURPLE}40`,whiteSpace:"nowrap"}}>
+                              style={{padding:"6px 14px",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:5,flexShrink:0,boxShadow:`0 2px 8px ${PURPLE}40`,whiteSpace:"nowrap"}}>
                               🏅 Award
                             </button>
                           )}
@@ -2768,7 +2748,7 @@ function Session({ session: init, onBack, onPView }) {
                             </div>
                           )}
                           <div style={{textAlign:"right",minWidth:56}}>
-                            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
+                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
                             <div style={{fontSize:10,color:SUB}}>coins</div>
                           </div>
                         </div>
@@ -2791,12 +2771,12 @@ function Session({ session: init, onBack, onPView }) {
                 <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
                       <div style={{width:11,height:11,borderRadius:3,background:g.color,flexShrink:0}}/>
-                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:16,color:g.color}}>{g.name}</div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:g.color}}>{g.name}</div>
                       <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
                     </div>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</div>
                   </div>
                   <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
                     {g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)}
@@ -2824,9 +2804,9 @@ function Session({ session: init, onBack, onPView }) {
                   return (
                     <div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderBottom:`1px solid ${BORDER}`}}>
                       <div style={{width:6,height:6,borderRadius:"50%",background:col,flexShrink:0}}/>
-                      <div style={{flex:1,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{item.name}</div>
+                      <div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{item.name}</div>
                       <div style={{fontSize:12,color:SUB,fontWeight:500}}>{item.type==="token"?"Token":a?.label}</div>
-                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:14,color:col}}>+{item.pts}</div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:col}}>+{item.pts}</div>
                       <div style={{fontSize:11,color:SUB}}>{item.t}</div>
                     </div>
                   );
@@ -2876,7 +2856,7 @@ function LuckyDraw({ participants, badgeAwarded, onClose }) {
       ctx.fillStyle = "#1A0A14";
       ctx.beginPath(); ctx.arc(cx,cy,r+8,0,Math.PI*2); ctx.fill();
       ctx.fillStyle = "rgba(255,255,255,.3)";
-      ctx.font = "bold 13px Nunito,sans-serif";
+      ctx.font = "bold 13px Plus Jakarta Sans,sans-serif";
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("No more eligible", cx, cy-10);
       ctx.fillText("participants", cx, cy+10);
@@ -2899,7 +2879,7 @@ function LuckyDraw({ participants, badgeAwarded, onClose }) {
       ctx.save(); ctx.translate(cx,cy); ctx.rotate(start+slice/2);
       ctx.textAlign="right"; ctx.fillStyle="#fff";
       const fs = Math.max(9, Math.min(13, 120/Math.max(eligible.length,1)));
-      ctx.font = `bold ${fs}px Nunito,sans-serif`;
+      ctx.font = `bold ${fs}px Plus Jakarta Sans,sans-serif`;
       ctx.shadowColor="rgba(0,0,0,.6)"; ctx.shadowBlur=3;
       ctx.fillText(p.name.split(" ")[0], r-10, 4);
       ctx.restore();
@@ -2971,7 +2951,7 @@ function LuckyDraw({ participants, badgeAwarded, onClose }) {
 
         {/* Header */}
         <div style={{padding:"16px 20px",borderBottom:"1px solid rgba(255,79,184,.15)",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:"#fff"}}>🎡 Lucky Draw</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:"#fff"}}>🎡 Lucky Draw</div>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div style={{fontSize:12,color:"rgba(255,255,255,.4)",fontWeight:600}}>{spinsLeft} spins left</div>
             <button onClick={onClose} style={{width:30,height:30,borderRadius:8,background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.12)",color:"rgba(255,255,255,.6)",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
@@ -3000,17 +2980,17 @@ function LuckyDraw({ participants, badgeAwarded, onClose }) {
                 <div style={{display:"flex",alignItems:"center",gap:12,justifyContent:"center",marginBottom:14}}>
                   <Av s={winner.av} color={PINK} size={40}/>
                   <div style={{textAlign:"left"}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:"#fff"}}>{winner.name}</div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:"#fff"}}>{winner.name}</div>
                     <div style={{fontSize:12,color:"rgba(255,255,255,.4)"}}>{winner.total} coins</div>
                   </div>
                 </div>
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={handleAward}
-                    style={{flex:1,padding:"11px 0",background:"linear-gradient(135deg,#FF4FB8,#9D50FF)",border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>
+                    style={{flex:1,padding:"11px 0",background:"linear-gradient(135deg,#FF4FB8,#9D50FF)",border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>
                     ✓ Award &amp; Continue
                   </button>
                   <button onClick={handleCancel}
-                    style={{flex:1,padding:"11px 0",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:"rgba(255,255,255,.6)",cursor:"pointer"}}>
+                    style={{flex:1,padding:"11px 0",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:"rgba(255,255,255,.6)",cursor:"pointer"}}>
                     ✕ Skip
                   </button>
                 </div>
@@ -3020,7 +3000,7 @@ function LuckyDraw({ participants, badgeAwarded, onClose }) {
             {/* Spin button */}
             {!winner && (
               <button onClick={spin} disabled={!canSpin}
-                style={{width:"100%",marginTop:14,padding:"14px 0",background:canSpin?"linear-gradient(135deg,#FF4FB8,#9D50FF)":"rgba(255,255,255,.06)",border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:canSpin?"#fff":"rgba(255,255,255,.3)",cursor:canSpin?"pointer":"not-allowed",transition:"all .2s",boxShadow:canSpin?"0 4px 24px rgba(255,79,184,.4)":"none"}}>
+                style={{width:"100%",marginTop:14,padding:"14px 0",background:canSpin?"linear-gradient(135deg,#FF4FB8,#9D50FF)":"rgba(255,255,255,.06)",border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:canSpin?"#fff":"rgba(255,255,255,.3)",cursor:canSpin?"pointer":"not-allowed",transition:"all .2s",boxShadow:canSpin?"0 4px 24px rgba(255,79,184,.4)":"none"}}>
                 {spinning ? "Spinning…" : eligible.length===0 ? "No participants left" : spinsLeft===0 ? "Spin limit reached" : "🎲 SPIN"}
               </button>
             )}
@@ -3034,7 +3014,7 @@ function LuckyDraw({ participants, badgeAwarded, onClose }) {
                 <div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:8,opacity:h.status==="skipped"?.5:1}}>
                   <Av s={h.av} color={PINK} size={24}/>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:11,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.name}</div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.name}</div>
                     <div style={{fontSize:9,color:h.status==="awarded"?"#00C48C":"rgba(255,255,255,.3)"}}>{h.status==="awarded"?"✓ Awarded":"✕ Skipped"}</div>
                   </div>
                 </div>
@@ -3051,30 +3031,16 @@ function LuckyDraw({ participants, badgeAwarded, onClose }) {
 
 function CreateModal({ onConfirm, onClose }) {
   const [n, setN] = useState("");
-  const [enableCM, setEnableCM] = useState(false);
   return (
     <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,background:"rgba(26,10,20,.5)",zIndex:600,backdropFilter:"blur(4px)"}}>
       <div className="tc-modal-sheet" style={{background:"#fff",padding:"28px 24px",width:"100%"}}>
         <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:4}}>New Session</div>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:4}}>New Session</div>
         <div style={{fontSize:13,color:SUB,marginBottom:16}}>Give your session a name so you can find it later.</div>
-        <Inp placeholder="e.g. Design Thinking Workshop" value={n} onChange={e=>setN(e.target.value)} autoFocus onKeyDown={e=>e.key==="Enter"&&n.trim()&&onConfirm(n.trim(),enableCM)} style={{marginBottom:14}}/>
-        <div onClick={()=>setEnableCM(v=>!v)} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:enableCM?`${PURPLE}08`:BG,border:`1.5px solid ${enableCM?PURPLE:BORDER}`,borderRadius:12,cursor:"pointer",marginBottom:16,transition:"all .2s"}}>
-          <div style={{width:36,height:36,borderRadius:10,background:enableCM?`${PURPLE}15`:"#F3F4F6",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={enableCM?PURPLE:SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-          </div>
-          <div style={{flex:1}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:enableCM?PURPLE:TEXT}}>Enable Coinmaster</div>
-            <div style={{fontSize:11,color:SUB,marginTop:1}}>Let an assistant award coins from their own device</div>
-          </div>
-          <div style={{width:40,height:24,borderRadius:12,background:enableCM?PURPLE:BORDER,position:"relative",transition:"all .2s",flexShrink:0}}>
-            <div style={{position:"absolute",top:3,left:enableCM?19:3,width:18,height:18,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
-          </div>
-        </div>
-        {enableCM && <div style={{background:`${PURPLE}08`,border:`1px solid ${PURPLE}20`,borderRadius:10,padding:"8px 12px",marginBottom:14,fontSize:12,color:PURPLE,fontWeight:600}}>A Coinmaster code will be generated in Session Settings</div>}
+        <Inp placeholder="e.g. Design Thinking Workshop" value={n} onChange={e=>setN(e.target.value)} autoFocus onKeyDown={e=>e.key==="Enter"&&n.trim()&&onConfirm(n.trim())} style={{marginBottom:20}}/>
         <div style={{display:"flex",gap:10}}>
-          <button onClick={onClose} style={{flex:1,padding:"13px 0",background:BG,border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:SUB,cursor:"pointer"}}>Cancel</button>
-          <PBtn onClick={()=>n.trim()&&onConfirm(n.trim(),enableCM)} disabled={!n.trim()} style={{flex:2,padding:"13px 22px"}}>Start Session</PBtn>
+          <button onClick={onClose} style={{flex:1,padding:"13px 0",background:BG,border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:SUB,cursor:"pointer"}}>Cancel</button>
+          <PBtn onClick={()=>n.trim()&&onConfirm(n.trim())} disabled={!n.trim()} style={{flex:2,padding:"13px 22px"}}>Start Session</PBtn>
         </div>
       </div>
     </div>
@@ -3188,7 +3154,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
 
       {/* Header */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Choose a Plan</div>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Choose a Plan</div>
         <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
       </div>
 
@@ -3198,7 +3164,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
 
           {/* Value prop + toggle */}
           <div style={{textAlign:"center",marginBottom:24}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,color:TEXT,lineHeight:1.2,marginBottom:6}}>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:TEXT,lineHeight:1.2,marginBottom:6}}>
               Reward participation,<br/>not just answers.
             </div>
             <div style={{fontSize:14,color:SUB,marginBottom:16}}>Kahoot scores quizzes. Teticoin rewards humans.</div>
@@ -3213,7 +3179,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                   <button key={b} onClick={()=>setBilling(b)}
                     style={{flex:1,padding:"10px 0",borderRadius:9,border:"none",
                       background:billing===b?GRAD:"transparent",
-                      fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,
+                      fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
                       color:billing===b?"#fff":SUB,cursor:"pointer",transition:"all .15s",
                       display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                     {label}
@@ -3236,19 +3202,19 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                   {isCurrent && <div style={{position:"absolute",top:-11,right:20,background:t.color,color:"#fff",fontSize:10,fontWeight:800,padding:"3px 12px",borderRadius:99}}>✓ Current Plan</div>}
 
                   <div style={{marginBottom:16}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:t.color}}>{t.name}</div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:t.color}}>{t.name}</div>
                     <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:2}}>{t.tagline}</div>
                   </div>
 
                   {/* Price */}
                   <div style={{marginBottom:16}}>
                     {!isPaid ? (
-                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:32,color:SUB}}>Free</div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:SUB}}>Free</div>
                     ) : billing === "yearly" ? (
                       <>
                         <div style={{display:"flex",alignItems:"baseline",gap:3}}>
                           <span style={{fontSize:12,fontWeight:600,color:t.color}}>RM</span>
-                          <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:32,color:t.color,lineHeight:1}}>{myrPerMonth(t.id)}</span>
+                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:t.color,lineHeight:1}}>{myrPerMonth(t.id)}</span>
                           <span style={{fontSize:13,color:SUB}}>/mo</span>
                         </div>
                         <div style={{fontSize:12,color:SUB,marginTop:3}}>RM {myr[t.id].yearly}/year</div>
@@ -3258,7 +3224,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                       <>
                         <div style={{display:"flex",alignItems:"baseline",gap:3}}>
                           <span style={{fontSize:12,fontWeight:600,color:t.color}}>RM</span>
-                          <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:32,color:t.color,lineHeight:1}}>{myr[t.id].monthly}</span>
+                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:t.color,lineHeight:1}}>{myr[t.id].monthly}</span>
                           <span style={{fontSize:13,color:SUB}}>/mo</span>
                         </div>
                         <div style={{fontSize:11,color:SUB,marginTop:3}}>≈ USD {usdEstimate(t.id)}/mo</div>
@@ -3279,18 +3245,18 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
 
                   {/* CTA */}
                   {isCurrent ? (
-                    <div style={{textAlign:"center",padding:"11px 0",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:t.color,background:`${t.color}10`,borderRadius:10}}>
+                    <div style={{textAlign:"center",padding:"11px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:t.color,background:`${t.color}10`,borderRadius:10}}>
                       ✓ Your current plan
                     </div>
                   ) : t.id==="free" ? (
                     currentPlan !== "free" ? (
-                      <button onClick={()=>onSelect(t.id,"monthly")} style={{width:"100%",padding:"11px 0",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>
+                      <button onClick={()=>onSelect(t.id,"monthly")} style={{width:"100%",padding:"11px 0",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>
                         Downgrade to Free
                       </button>
                     ) : null
                   ) : (
                     <button onClick={()=>handlePay(t.id)}
-                      style={{width:"100%",padding:"14px 0",background:t.id==="pro"?GRAD:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:t.id==="pro"?`0 4px 16px ${PINK}40`:`0 4px 16px ${PURPLE}40`}}>
+                      style={{width:"100%",padding:"14px 0",background:t.id==="pro"?GRAD:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:t.id==="pro"?`0 4px 16px ${PINK}40`:`0 4px 16px ${PURPLE}40`}}>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                       Get {t.name} {billing==="yearly"?"— Save 35%":""} · RM {myrPrice(t.id)}
                     </button>
@@ -3329,14 +3295,14 @@ function UpgradeBanner({ sessionCount, onUpgrade }) {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       </div>
       <div style={{flex:1}}>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#1E3A8A"}}>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#1E3A8A"}}>
           {atLimit?"Session limit reached":"You're using 2 of 3 free sessions"}
         </div>
         <div style={{fontSize:11,color:"#2563EB",marginTop:1,fontWeight:500}}>
           {atLimit?"Upgrade to Pro — unlimited from $4.99/mo":"Upgrade to Pro for unlimited sessions"}
         </div>
       </div>
-      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:"#fff",flexShrink:0,background:"#2563EB",borderRadius:8,padding:"4px 9px",whiteSpace:"nowrap"}}>Upgrade →</div>
+      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:"#fff",flexShrink:0,background:"#2563EB",borderRadius:8,padding:"4px 9px",whiteSpace:"nowrap"}}>Upgrade →</div>
     </div>
   );
 }
@@ -3373,16 +3339,16 @@ function LimitModal({ type, onUpgrade, onClose }) {
           {cfg.icon}
         </div>
         <div style={{textAlign:"center",marginBottom:20}}>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:8}}>{cfg.title}</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:8}}>{cfg.title}</div>
           <div style={{fontSize:14,color:SUB,lineHeight:1.7}}>{cfg.body}</div>
         </div>
         {/* Mini plan comparison */}
         <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:14,padding:"14px 16px",marginBottom:20}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>Feature</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>Feature</div>
             <div style={{display:"flex",gap:24}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:SUB,minWidth:40,textAlign:"center"}}>Free</div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:PINK,minWidth:40,textAlign:"center"}}>Pro</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,minWidth:40,textAlign:"center"}}>Free</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:PINK,minWidth:40,textAlign:"center"}}>Pro</div>
             </div>
           </div>
           {[
@@ -3401,10 +3367,10 @@ function LimitModal({ type, onUpgrade, onClose }) {
             </div>
           ))}
         </div>
-        <button onClick={onUpgrade} style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
+        <button onClick={onUpgrade} style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
           {cfg.cta} · from $4.99/mo
         </button>
-        <button onClick={onClose} style={{width:"100%",padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
+        <button onClick={onClose} style={{width:"100%",padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
           Maybe later
         </button>
       </div>
@@ -3472,7 +3438,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
         Back
       </button>
-      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>{title}</div>
+      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>{title}</div>
       <div style={{width:60}}/>
     </div>
   );
@@ -3485,7 +3451,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
 
         {/* Avatar */}
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:28}}>
-          <div style={{width:72,height:72,borderRadius:"50%",background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:"#fff",marginBottom:8}}>
+          <div style={{width:72,height:72,borderRadius:"50%",background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:28,color:"#fff",marginBottom:8}}>
             {(displayName||trainer?.name||"?").slice(0,2).toUpperCase()}
           </div>
           <div style={{fontSize:12,color:SUB,fontWeight:500}}>{trainer?.email}</div>
@@ -3501,7 +3467,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
           <div style={{display:"flex",gap:8}}>
             <Inp value={displayName} onChange={e=>setDisplayName(e.target.value)} placeholder="Your name" style={{flex:1,margin:0}}/>
             <button onClick={saveName} disabled={busy||displayName.trim()===trainer?.name}
-              style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",opacity:busy||displayName.trim()===trainer?.name?.6:1,flexShrink:0}}>
+              style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",opacity:busy||displayName.trim()===trainer?.name?.6:1,flexShrink:0}}>
               {busy?"Saving...":"Save"}
             </button>
           </div>
@@ -3516,17 +3482,17 @@ function ProfilePage({ trainer, onClose, onSaved }) {
 
         {/* Password reset */}
         <div style={{marginBottom:20,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"16px 18px"}}>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Password</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Password</div>
           <div style={{fontSize:12,color:SUB,marginBottom:12}}>Send a reset link to your email to change your password.</div>
           <button onClick={sendReset} disabled={resetSent}
-            style={{padding:"10px 18px",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:resetSent?SUB:TEXT,cursor:resetSent?"default":"pointer"}}>
+            style={{padding:"10px 18px",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:resetSent?SUB:TEXT,cursor:resetSent?"default":"pointer"}}>
             {resetSent?"Reset email sent ✓":"Send Password Reset Email"}
           </button>
         </div>
 
         {/* Link Google */}
         <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"16px 18px"}}>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Sign-in Methods</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Sign-in Methods</div>
           <div style={{fontSize:12,color:SUB,marginBottom:12}}>Link your Google account so you can sign in with either method.</div>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 32.3 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7 29 5 24 5 13.5 5 5 13.5 5 24s8.5 19 19 19c10 0 18.7-7.2 18.7-19 0-1.3-.1-2.7-.1-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16.1 19 13 24 13c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7 29 5 24 5c-7.2 0-13.4 4-16.7 9.7z"/><path fill="#4CAF50" d="M24 43c5.2 0 9.8-1.8 13.4-4.7l-6.2-5.2C29.3 34.3 26.8 35 24 35c-5.2 0-9.6-3.5-11.2-8.3l-6.5 5C9.8 39.2 16.4 43 24 43z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.6-2.7 4.8-5.1 6.1l6.2 5.2C40 35.8 44 30.4 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
@@ -3536,7 +3502,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
             </div>
             {!linked && (
               <button onClick={linkGoogle} disabled={linkBusy}
-                style={{padding:"8px 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",opacity:linkBusy?.6:1}}>
+                style={{padding:"8px 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",opacity:linkBusy?.6:1}}>
                 {linkBusy?"Linking...":"Link"}
               </button>
             )}
@@ -3582,7 +3548,7 @@ function SettingsPage({ onClose }) {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Settings</div>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Settings</div>
         <div style={{width:60}}/>
       </div>
       <div style={{flex:1,overflowY:"auto",padding:"24px 20px",maxWidth:520,width:"100%",margin:"0 auto"}}>
@@ -3635,7 +3601,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Billing &amp; Plan</div>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Billing &amp; Plan</div>
         <div style={{width:60}}/>
       </div>
 
@@ -3646,13 +3612,13 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
         <div style={{flex:"0 0 420px",borderRight:`1px solid ${BORDER}`,overflowY:"auto",padding:"28px 32px"}}>
 
           {/* Current plan card */}
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Current Plan</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Current Plan</div>
           <div style={{background:isFree?"#fff":pd.color===PINK?SOFT:"#FAF5FF",border:`2px solid ${pd.color}`,borderRadius:16,padding:"20px",marginBottom:20}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:pd.color}}>{pd.name}</div>
-              <div style={{background:`${pd.color}18`,border:`1.5px solid ${pd.color}44`,borderRadius:99,padding:"3px 12px",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:pd.color}}>Active</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:pd.color}}>{pd.name}</div>
+              <div style={{background:`${pd.color}18`,border:`1.5px solid ${pd.color}44`,borderRadius:99,padding:"3px 12px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:pd.color}}>Active</div>
             </div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:32,color:TEXT,marginBottom:4,lineHeight:1}}>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:TEXT,marginBottom:4,lineHeight:1}}>
               {pd.price}{!isFree&&<span style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</span>}
             </div>
             {pd.next && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>Access until {pd.next}</div>}
@@ -3662,7 +3628,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
           {/* Usage */}
           {isFree && (
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px",marginBottom:20}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:14}}>Usage</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:14}}>Usage</div>
               {[
                 {label:"Sessions", used:2, max:3, color:PINK},
                 {label:"Participants (last session)", used:18, max:30, color:BLUE},
@@ -3683,7 +3649,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
           {/* Upgrade CTA */}
           {isFree && (
             <button onClick={onUpgrade}
-              style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:16}}>
+              style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:16}}>
               Upgrade to Pro · RM 16/mo
             </button>
           )}
@@ -3692,16 +3658,16 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
           {!isFree && (
             cancelConfirm ? (
               <div style={{background:"#FEF2F2",border:"1.5px solid #EF444440",borderRadius:14,padding:"16px"}}>
-                <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#EF4444",marginBottom:6}}>Cancel subscription?</div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#EF4444",marginBottom:6}}>Cancel subscription?</div>
                 <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>You'll keep your plan features until the end of the billing period. Data preserved for 90 days after.</div>
                 <div style={{display:"flex",gap:8}}>
-                  <button onClick={()=>setCancelConfirm(false)} style={{flex:1,padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>Keep Plan</button>
-                  <button style={{flex:1,padding:"11px 0",background:"#EF4444",border:"none",borderRadius:10,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Yes, Cancel</button>
+                  <button onClick={()=>setCancelConfirm(false)} style={{flex:1,padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>Keep Plan</button>
+                  <button style={{flex:1,padding:"11px 0",background:"#EF4444",border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Yes, Cancel</button>
                 </div>
               </div>
             ) : (
               <button onClick={()=>setCancelConfirm(true)}
-                style={{width:"100%",padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
+                style={{width:"100%",padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
                 Cancel Subscription
               </button>
             )
@@ -3710,12 +3676,12 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
 
         {/* RIGHT: invoice history */}
         <div style={{flex:1,overflowY:"auto",padding:"28px 32px"}}>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Invoice History</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Invoice History</div>
 
           {invoices.length === 0 ? (
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"48px 24px",textAlign:"center"}}>
               <div style={{fontSize:32,marginBottom:10}}>🧾</div>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>No invoices yet</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>No invoices yet</div>
               <div style={{fontSize:13,color:SUB}}>Invoices will appear here after your first payment.</div>
             </div>
           ) : (
@@ -3723,10 +3689,10 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
               {invoices.map((inv,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none"}}>
                   <div style={{flex:1}}>
-                    <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{inv.date}</div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{inv.date}</div>
                     <div style={{fontSize:12,color:SUB,marginTop:1}}>{pd.name} Plan · {pd.renewal}</div>
                   </div>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:12}}>{inv.amount}</div>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:12}}>{inv.amount}</div>
                   <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN}}>{inv.status}</div>
                 </div>
               ))}
@@ -3735,7 +3701,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
 
           {/* Payment methods info */}
           <div style={{marginTop:20,background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px 18px"}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:TEXT,marginBottom:8}}>Payment Methods</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,marginBottom:8}}>Payment Methods</div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
               {["FPX","DuitNow QR","E-Wallet","Credit / Debit Card"].map(m=>(
                 <span key={m} style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:6,padding:"4px 10px",fontSize:12,fontWeight:600,color:SUB}}>{m}</span>
@@ -3772,10 +3738,10 @@ function JoinSessionField({ onJoin }) {
           onKeyDown={e=>e.key==="Enter"&&submit()}
           placeholder="Enter session code"
           maxLength={8}
-          style={{flex:1,padding:"10px 14px",border:`1.5px solid ${err?'#EF4444':BORDER}`,borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",letterSpacing:0}}
+          style={{flex:1,padding:"10px 14px",border:`1.5px solid ${err?'#EF4444':BORDER}`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",letterSpacing:0}}
         />
         <button onClick={submit} disabled={!code.trim()||busy}
-          style={{padding:"10px 18px",background:code.trim()?GRAD:BG,border:"none",borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:code.trim()?"#fff":SUB,cursor:code.trim()?"pointer":"not-allowed",flexShrink:0,transition:"all .15s"}}>
+          style={{padding:"10px 18px",background:code.trim()?GRAD:BG,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:code.trim()?"#fff":SUB,cursor:code.trim()?"pointer":"not-allowed",flexShrink:0,transition:"all .15s"}}>
           {busy ? "…" : "Join →"}
         </button>
       </div>
@@ -3815,7 +3781,7 @@ function BadgePickerModal({ participant, sessionName, hostName, onAward, onClose
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Award Badge</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Award Badge</div>
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           <div style={{fontSize:13,color:SUB,marginBottom:16}}>Awarding to <strong style={{color:TEXT}}>{participant.name}</strong></div>
@@ -3828,7 +3794,7 @@ function BadgePickerModal({ participant, sessionName, hostName, onAward, onClose
               <button key={b.id} onClick={()=>setSelected(b)}
                 style={{padding:"12px 8px",borderRadius:12,border:`2px solid ${selected?.id===b.id?b.color:BORDER}`,background:selected?.id===b.id?`${b.color}12`:"#fff",cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
                 <div style={{fontSize:28,lineHeight:1,marginBottom:5}}>{b.icon}</div>
-                <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:11,color:selected?.id===b.id?b.color:TEXT,lineHeight:1.2}}>{b.label}</div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:selected?.id===b.id?b.color:TEXT,lineHeight:1.2}}>{b.label}</div>
               </button>
             ))}
           </div>
@@ -3853,13 +3819,13 @@ function BadgePickerModal({ participant, sessionName, hostName, onAward, onClose
                 ? <img src={selected.svgData} alt="" style={{width:36,height:36,flexShrink:0}}/>
                 : <span style={{fontSize:32,flexShrink:0}}>{selected.icon}</span>}
               <div>
-                <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>{selected.label}</div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>{selected.label}</div>
                 <div style={{fontSize:12,color:SUB,marginTop:2}}>Will be awarded to {participant.name}</div>
               </div>
             </div>
           )}
           <button onClick={()=>selected&&onAward(selected)} disabled={!selected}
-            style={{width:"100%",padding:"14px 0",background:selected?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:selected?"#fff":SUB,cursor:selected?"pointer":"not-allowed",transition:"all .2s"}}>
+            style={{width:"100%",padding:"14px 0",background:selected?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:selected?"#fff":SUB,cursor:selected?"pointer":"not-allowed",transition:"all .2s"}}>
             Award Badge 🏅
           </button>
         </div>
@@ -3910,22 +3876,22 @@ function BadgeClaimScreen({ token, onDone }) {
   );
 
   if (status==="loading") return card(<div style={{marginTop:16,color:SUB,fontSize:14}}>Loading your badge…</div>);
-  if (status==="error")   return card(<><div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginTop:12,marginBottom:8}}>Link not found</div><div style={{fontSize:14,color:SUB}}>This claim link is invalid or has already been used.</div><button onClick={onDone} style={{marginTop:20,padding:"12px 24px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>Go to Teticoin</button></>);
-  if (status==="claimed") return card(<><div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginTop:12,marginBottom:8}}>Already claimed!</div><div style={{fontSize:14,color:SUB}}>This badge was already saved to an account.</div><button onClick={onDone} style={{marginTop:20,padding:"12px 24px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>Go to Teticoin</button></>);
-  if (status==="expired") return card(<><div style={{fontSize:48,marginTop:8}}>⏰</div><div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginTop:10,marginBottom:8}}>Link expired</div><div style={{fontSize:14,color:SUB,lineHeight:1.6}}>This badge claim link expired on<br/><strong>{new Date(new Date(claim.createdAt).getTime()+7*24*60*60*1000).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}</strong></div><button onClick={onDone} style={{marginTop:20,padding:"12px 24px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>Go to Teticoin</button></>);
+  if (status==="error")   return card(<><div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginTop:12,marginBottom:8}}>Link not found</div><div style={{fontSize:14,color:SUB}}>This claim link is invalid or has already been used.</div><button onClick={onDone} style={{marginTop:20,padding:"12px 24px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>Go to Teticoin</button></>);
+  if (status==="claimed") return card(<><div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginTop:12,marginBottom:8}}>Already claimed!</div><div style={{fontSize:14,color:SUB}}>This badge was already saved to an account.</div><button onClick={onDone} style={{marginTop:20,padding:"12px 24px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>Go to Teticoin</button></>);
+  if (status==="expired") return card(<><div style={{fontSize:48,marginTop:8}}>⏰</div><div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginTop:10,marginBottom:8}}>Link expired</div><div style={{fontSize:14,color:SUB,lineHeight:1.6}}>This badge claim link expired on<br/><strong>{new Date(new Date(claim.createdAt).getTime()+7*24*60*60*1000).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}</strong></div><button onClick={onDone} style={{marginTop:20,padding:"12px 24px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>Go to Teticoin</button></>);
 
   if (success) return (
     <div style={{minHeight:"100vh",background:"#0D0008",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",fontFamily:"Poppins,sans-serif"}}>
       <Confetti active/>
       <div style={{fontSize:72,marginBottom:16}}>{claim.badge.svgData ? <img src={claim.badge.svgData} alt="" style={{width:72,height:72}}/> : claim.badge.icon}</div>
-      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:28,color:"#fff",marginBottom:8,textAlign:"center"}}>Badge claimed! 🎉</div>
+      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:28,color:"#fff",marginBottom:8,textAlign:"center"}}>Badge claimed! 🎉</div>
       <div style={{fontSize:15,color:"rgba(255,255,255,.6)",marginBottom:6,textAlign:"center"}}>{claim.badge.label}</div>
       <div style={{fontSize:13,color:"rgba(255,255,255,.4)",marginBottom:32,textAlign:"center"}}>from {claim.sessionName}</div>
       <div style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",borderRadius:14,padding:"14px 20px",marginBottom:32,textAlign:"center",maxWidth:320}}>
         <div style={{fontSize:12,color:"rgba(255,255,255,.5)",marginBottom:4}}>This badge now appears next to your name</div>
         <div style={{fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:600}}>in all future Teticoin sessions</div>
       </div>
-      <button onClick={onDone} style={{padding:"14px 40px",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>Go to Dashboard →</button>
+      <button onClick={onDone} style={{padding:"14px 40px",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>Go to Dashboard →</button>
     </div>
   );
 
@@ -3933,13 +3899,13 @@ function BadgeClaimScreen({ token, onDone }) {
     <div style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif"}}>
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 20px",height:56,display:"flex",alignItems:"center",gap:10}}>
         <button onClick={()=>setShowAuth(false)} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:14}}>← Back</button>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>Log in or register to claim</div>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>Log in or register to claim</div>
       </div>
       <div style={{maxWidth:400,margin:"0 auto",padding:"24px 20px"}}>
         <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:14,padding:"14px 16px",marginBottom:20,display:"flex",alignItems:"center",gap:12}}>
           <span style={{fontSize:32}}>{claim.badge.svgData ? <img src={claim.badge.svgData} alt="" style={{width:32,height:32}}/> : claim.badge.icon}</span>
           <div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{claim.badge.label}</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{claim.badge.label}</div>
             <div style={{fontSize:12,color:SUB}}>from {claim.sessionName} · hosted by {claim.hostName}</div>
           </div>
         </div>
@@ -3955,18 +3921,18 @@ function BadgeClaimScreen({ token, onDone }) {
         <div style={{fontSize:72,lineHeight:1,marginBottom:16}}>
           {claim.badge.svgData ? <img src={claim.badge.svgData} alt="" style={{width:72,height:72,margin:"0 auto"}}/> : claim.badge.icon}
         </div>
-        <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,color:TEXT,marginBottom:6}}>{claim.badge.label}</div>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:TEXT,marginBottom:6}}>{claim.badge.label}</div>
         <div style={{fontSize:14,color:SUB,marginBottom:4}}>Awarded to <strong style={{color:TEXT}}>{claim.participantName}</strong></div>
         <div style={{fontSize:13,color:SUB,marginBottom:28}}>at <strong style={{color:TEXT}}>{claim.sessionName}</strong> by {claim.hostName}</div>
         <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:10,padding:"8px 14px",display:"inline-block",fontSize:12,color:SUB,marginBottom:24}}>
           Expires {new Date(new Date(claim.createdAt).getTime()+7*24*60*60*1000).toLocaleDateString("en-GB",{day:"numeric",month:"long"})}
         </div>
         <button onClick={()=>setShowAuth(true)}
-          style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
+          style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
           Claim My Badge 🏅
         </button>
         <button onClick={onDone}
-          style={{width:"100%",padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
+          style={{width:"100%",padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
           Maybe later
         </button>
         <div style={{fontSize:11,color:SUB,marginTop:12}}>Your badge will be saved to your Teticoin profile</div>
@@ -3996,7 +3962,7 @@ function CoinmasterJoinModal({ onJoin, onClose }) {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
           </div>
           <div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:"#1A0A14"}}></div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:"#1A0A14"}}></div>
             <div style={{fontSize:13,color:"#6B7280",marginTop:1}}>Enter the code from your host</div>
           </div>
         </div>
@@ -4008,7 +3974,7 @@ function CoinmasterJoinModal({ onJoin, onClose }) {
             placeholder="CM-XXXX"
             autoFocus
             maxLength={7}
-            style={{width:"100%",background:"#F9FAFB",border:"1.5px solid #DDD6FE",borderRadius:12,padding:"14px 16px",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:"#7C3AED",letterSpacing:6,textAlign:"center",outline:"none"}}
+            style={{width:"100%",background:"#F9FAFB",border:"1.5px solid #DDD6FE",borderRadius:12,padding:"14px 16px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:"#7C3AED",letterSpacing:6,textAlign:"center",outline:"none"}}
           />
         </div>
         {error && <div style={{fontSize:13,color:"#EF4444",fontWeight:600,marginBottom:8,textAlign:"center"}}>{error}</div>}
@@ -4017,10 +3983,10 @@ function CoinmasterJoinModal({ onJoin, onClose }) {
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <button onClick={handleJoin} disabled={code.trim().length < 4 || loading}
-            style={{width:"100%",padding:"14px 0",background:code.trim().length>=4?"linear-gradient(135deg,#7C3AED,#A855F7)":"#F3F4F6",border:"none",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:code.trim().length>=4?"#fff":"#9CA3AF",cursor:code.trim().length>=4?"pointer":"not-allowed"}}>
+            style={{width:"100%",padding:"14px 0",background:code.trim().length>=4?"linear-gradient(135deg,#7C3AED,#A855F7)":"#F3F4F6",border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:code.trim().length>=4?"#fff":"#9CA3AF",cursor:code.trim().length>=4?"pointer":"not-allowed"}}>
             {loading ? "Joining..." : "Join Session →"}
           </button>
-          <button onClick={onClose} style={{width:"100%",padding:"13px 0",background:"none",border:"1.5px solid #EDD8E8",borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:"#9A6080",cursor:"pointer"}}>
+          <button onClick={onClose} style={{width:"100%",padding:"13px 0",background:"none",border:"1.5px solid #EDD8E8",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:"#9A6080",cursor:"pointer"}}>
             Cancel
           </button>
         </div>
@@ -4189,13 +4155,11 @@ export default function App() {
     setCurrentUid(null);
     setScreen("auth"); 
   }
-  async function handleNew(name, enableCM=false) {
+  async function handleNew(name) {
     if (isFree && sessions.length >= sessionLimit) { setLimitModal("sessions"); return; }
     const code = genCode();
-    const cmCode = enableCM ? genCMCode() : "";
-    const s = {code, name, createdAt:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), boardVisible:false, participants:[], groups:[], log:[], coinmasterEnabled:!!enableCM, coinmasterCode:cmCode};
+    const s = {code, name, createdAt:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), boardVisible:false, participants:[], groups:[], log:[], coinmasterEnabled:false};
     await ssSession(code, s);
-    if (enableCM && cmCode) await ssSession("cm-" + cmCode, { sessionCode: code });
     const idx = [{code, name, date:s.createdAt, count:0}, ...sessions];
     setSessions(idx); await ss("sessions_index", idx);
     setCur(s); setCreating(false); setScreen("session");
@@ -4217,7 +4181,7 @@ export default function App() {
   // participantJoin = loaded from /join/CODE URL — always show participant view, never host view
   if (screen==="participantJoin") {
     if (cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
-    return <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}><style>{CSS}</style><Ham size={60}/><div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:PINK}}>Loading session…</div></div>;
+    return <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}><style>{CSS}</style><Ham size={60}/><div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:PINK}}>Loading session…</div></div>;
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
   if (false && screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
@@ -4231,18 +4195,7 @@ export default function App() {
         <SessionSettings session={cur}
           onRename={async(name)=>{ const s={...cur,name}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,name}:x); setSessions(idx); await ss("sessions_index",idx); }}
           onToggleLive={async()=>{ const s={...cur,live:cur.live===false?true:false}; await ssSession(s.code, s); setCur(s); }}
-          onToggleCoinmaster={async(regenerate=false)=>{
-            const wasEnabled = !!cur.coinmasterEnabled;
-            const newEnabled = regenerate ? true : !wasEnabled;
-            const newCode = (!wasEnabled || regenerate) ? genCMCode() : cur.coinmasterCode;
-            const s={...cur, coinmasterEnabled:newEnabled, coinmasterCode:newEnabled?newCode:""};
-            await ssSession(s.code, s); setCur(s);
-            // Store lookup so any user can find this session by CM code
-            if (newEnabled && newCode) {
-              await ssSession("cm-" + newCode, { sessionCode: s.code });
-            }
-          }}
-          onDuplicate={async()=>{ const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false,coinmasterCode:""}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
+          onDuplicate={async()=>{ const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onArchive={async()=>{ if(!window.confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onExport={()=>{ const rows=[["#","Name","Group","Total"]]; [...(cur.participants||[])].sort((a,b)=>b.total-a.total).forEach(p=>{const g=(cur.groups||[]).find(g=>g.id===p.gid);rows.push([pNum(p.num),p.name,g?.name||"",p.total]);}); const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(rows.map(r=>r.join(",")).join("\n"));a.download=`teticoin-${cur.code}.csv`;a.click(); }}
           onReset={async()=>{ if(!window.confirm("Reset all coins?")) return; const s={...cur,participants:(cur.participants||[]).map(p=>({...p,total:0,bk:{},hist:[]})),log:[]}; await ssSession(s.code, s); setCur(s); }}
@@ -4276,7 +4229,7 @@ export default function App() {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <div style={{flex:1}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,lineHeight:1.2}}>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,lineHeight:1.2}}>
               🎉 Welcome to {paymentToast === "pro" ? "Pro" : "Team"}!
             </div>
             <div style={{fontSize:12,opacity:.9,marginTop:3}}>
@@ -4321,7 +4274,7 @@ export default function App() {
           <div style={{position:"absolute",top:72,right:20,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"8px 0",minWidth:210,boxShadow:`0 8px 32px rgba(26,10,20,.15)`,animation:"slideUp .15s ease"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{padding:"10px 16px 12px",borderBottom:`1px solid ${BORDER}`}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{trainer?.name}</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{trainer?.name}</div>
               <div style={{fontSize:12,color:plan==="free"?SUB:PINK,marginTop:2,fontWeight:600}}>{planLabel}</div>
             </div>
             {[
@@ -4355,16 +4308,16 @@ export default function App() {
         <div className="tc-home-topnav" style={{display:"none",background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 32px",height:64,alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <Ham size={36}/>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
             <div style={{fontSize:11,color:SUB,fontWeight:500,marginLeft:2}}>by Tetikus</div>
           </div>
           <button onClick={()=>setProfileOpen(v=>!v)}
             style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 14px 7px 10px",cursor:"pointer",transition:"all .15s"}}>
-            <div style={{width:30,height:30,borderRadius:9,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
+            <div style={{width:30,height:30,borderRadius:9,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
               {(trainer?.name||"U").split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}
             </div>
             <div style={{textAlign:"left"}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:TEXT,lineHeight:1.2}}>{trainer?.name}</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,lineHeight:1.2}}>{trainer?.name}</div>
               <div style={{fontSize:11,color:plan==="free"?SUB:PINK,fontWeight:600}}>{planLabel}</div>
             </div>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round" style={{transform:profileOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform .2s"}}><polyline points="6 9 12 15 18 9"/></svg>
@@ -4379,13 +4332,13 @@ export default function App() {
               <div style={{display:"flex",alignItems:"center",gap:10}}>
                 <Ham size={40}/>
                 <div>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1}}>Teticoin</div>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1}}>Teticoin</div>
                   <div style={{fontSize:10,color:SUB,fontWeight:500}}>by Tetikus</div>
                 </div>
               </div>
               <button onClick={()=>setProfileOpen(v=>!v)}
                 style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 12px 7px 8px",cursor:"pointer",transition:"all .15s"}}>
-                <div style={{width:28,height:28,borderRadius:8,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
+                <div style={{width:28,height:28,borderRadius:8,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
                   {(trainer?.name||"U").split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}
                 </div>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round" style={{transform:profileOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform .2s"}}><polyline points="6 9 12 15 18 9"/></svg>
@@ -4396,7 +4349,7 @@ export default function App() {
 
             {/* Hero card */}
             <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
-              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:TEXT,lineHeight:1.1,marginBottom:6}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,lineHeight:1.1,marginBottom:6}}>
                 Ready to reward<br/>your participants?
               </div>
               <div style={{fontSize:13,color:SUB,marginBottom:18,lineHeight:1.6}}>
@@ -4430,7 +4383,7 @@ export default function App() {
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
                   {[{num:activeSessions.length,label:"Sessions"},{num:totalParticipants,label:"Participants"},{num:totalCoins,label:"Coins awarded"}].map(({num,label})=>(
                     <div key={label} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 10px",textAlign:"center"}}>
-                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,color:PINK,lineHeight:1}}>{num}</div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:PINK,lineHeight:1}}>{num}</div>
                       <div style={{fontSize:10,color:SUB,fontWeight:500,marginTop:4,lineHeight:1.3}}>{label}</div>
                     </div>
                   ))}
@@ -4477,7 +4430,7 @@ export default function App() {
                           </div>
                           <div style={{flex:1,textAlign:"left"}}>
                             <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:1}}>
-                              <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:s.archived?SUB:TEXT,lineHeight:1.2}}>{s.name}</div>
+                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:s.archived?SUB:TEXT,lineHeight:1.2}}>{s.name}</div>
                               {s.archived && <span style={{fontSize:9,fontWeight:700,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"2px 6px",flexShrink:0}}>ARCHIVED</span>}
                             </div>
                             <div style={{fontSize:11,color:SUB,fontWeight:400}}>{s.date} · {s.count} participants</div>
