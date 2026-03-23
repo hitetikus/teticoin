@@ -3714,9 +3714,9 @@ function JoinSessionField({ onJoin }) {
           value={code}
           onChange={e=>{ setCode(e.target.value.toUpperCase()); setErr(""); }}
           onKeyDown={e=>e.key==="Enter"&&submit()}
-          placeholder="enter session code"
+          placeholder="Enter session code"
           maxLength={8}
-          style={{flex:1,padding:"10px 14px",border:`1.5px solid ${err?'#EF4444':BORDER}`,borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",letterSpacing:2}}
+          style={{flex:1,padding:"10px 14px",border:`1.5px solid ${err?'#EF4444':BORDER}`,borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",letterSpacing:0}}
         />
         <button onClick={submit} disabled={!code.trim()||busy}
           style={{padding:"10px 18px",background:code.trim()?GRAD:BG,border:"none",borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:code.trim()?"#fff":SUB,cursor:code.trim()?"pointer":"not-allowed",flexShrink:0,transition:"all .15s"}}>
@@ -4343,7 +4343,7 @@ export default function App() {
               <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:22,color:TEXT,lineHeight:1.1,marginBottom:6}}>
                 Ready to reward<br/>your participants?
               </div>
-              <div style={{fontSize:13,color:SUB,marginBottom:20,lineHeight:1.6}}>
+              <div style={{fontSize:13,color:SUB,marginBottom:24,lineHeight:1.6}}>
                 Start a live session and award points<br/>in real time — no app needed.
               </div>
               <PBtn full onClick={()=>{
@@ -4352,7 +4352,7 @@ export default function App() {
               }}>+ Create New Session</PBtn>
 
               {/* Join a session as participant */}
-              <div style={{marginTop:14,borderTop:`1px solid ${BORDER}`,paddingTop:14}}>
+              <div style={{marginTop:20,borderTop:`1px solid ${BORDER}`,paddingTop:14}}>
                 <div style={{fontSize:11,color:SUB,fontWeight:600,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Join a session as participant</div>
                 <JoinSessionField onJoin={async(code)=>{
                   const s = await sgSession(code.toUpperCase().trim());
