@@ -4362,10 +4362,6 @@ export default function App() {
               </div>
 
               <div style={{marginTop:12,textAlign:"center"}}>
-                <button onClick={()=>setShowCMJoin(true)} style={{background:"none",border:"none",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#7C3AED",cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:5,fontWeight:600}}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
-                  
-                </button>
               </div>
             </div>
 
