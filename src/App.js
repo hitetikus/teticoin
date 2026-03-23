@@ -332,7 +332,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
   const sorted = [...participants].sort((a,b) => a.num - b.num);
 
   function toggleSel(id) { setSel(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; }); }
-  function doAll() { if (!ok) return; participants.forEach(p => onAward(p.id, "token", finalAmt)); onClose(); }
+  function doAll() { if (!ok) return; participants.forEach(p => if(p.role==="coinmaster") return; onAward(p.id, "token", finalAmt)); onClose(); }
   function doSel() { if (!ok || sel.size===0) return; sel.forEach(id => onAward(id, "token", finalAmt)); onClose(); }
 
   // Participant QR just encodes their number "001", "002" etc — no API needed
@@ -377,7 +377,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
           if (!p) return;
           if (scanLog.find(l => l.id === p.id)) return; // already scanned
           setScanLine(true); setTimeout(()=>setScanLine(false), 350);
-          onAward(p.id, "token", finalAmt);
+          if(p.role==="coinmaster") return; onAward(p.id, "token", finalAmt);
           setScanLog(prev => [{...p, t: new Date().toLocaleTimeString()}, ...prev]);
         },
         () => {} // ignore decode errors (normal while scanning)
@@ -704,7 +704,6 @@ function CoinCustomizer({ session, onSave, onClose }) {
 }
 
 // ── Session Settings sheet (gear next to session name in session list) ──
-function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, onDuplicate, onArchive, onToggleCoinmaster, onClose }) {
   const [editing, setEditing] = useState(false);
   const [nameVal, setNameVal] = useState(session.name); // eslint-disable-line
   const [copied, setCopied] = useState(false);
@@ -766,19 +765,16 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:cmEnabled?12:0}}>
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:cmEnabled?"#7C3AED":TEXT}}>Allow Coinmaster</div>
                   {cmEnabled && <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#7C3AED",borderRadius:99,padding:"2px 8px",letterSpacing:.3}}>ON</span>}
                 </div>
                 <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>Let others award coins in this session</div>
               </div>
-              <div onClick={onToggleCoinmaster}
                 style={{width:44,height:26,borderRadius:13,background:cmEnabled?"#7C3AED":"#E5E7EB",position:"relative",transition:"all .2s",flexShrink:0,marginLeft:12,cursor:"pointer"}}>
                 <div style={{position:"absolute",top:3,left:cmEnabled?21:3,width:20,height:20,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
               </div>
             </div>
             {cmEnabled && cmCode && (
               <div style={{background:"#fff",border:`1px solid #DDD6FE`,borderRadius:10,padding:"12px 14px"}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#7C3AED",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Coinmaster Code</div>
                 <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,letterSpacing:6,color:"#7C3AED",marginBottom:4}}>{cmCode}</div>
                 <div style={{fontSize:11,color:SUB,marginBottom:10}}>Share this code with your coinmasters. All coinmasters use the same code.</div>
                 <div style={{display:"flex",gap:8}}>
@@ -786,7 +782,6 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
                     style={{flex:1,padding:"8px 0",background:copied?`#7C3AED10`:"#FAF5FF",border:`1px solid ${copied?"#7C3AED":"#DDD6FE"}`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:copied?"#7C3AED":"#7C3AED",cursor:"pointer",transition:"all .2s"}}>
                     {copied?"Copied!":"Copy Code"}
                   </button>
-                  <button onClick={()=>onToggleCoinmaster(true)}
                     style={{padding:"8px 14px",background:"none",border:`1px solid #E5E7EB`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer"}}>
                     Regenerate
                   </button>
@@ -860,7 +855,7 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
-            {[["people","People"],["groups","Groups"]].map(([id,l]) => tabBtn(id,l))}
+            {[["people","People"],["groups","Groups"],["coinmaster","Coinmaster"]].map(([id,l]) => tabBtn(id,l))}
           </div>
         </div>
         <div style={{overflowY:"auto",flex:1,padding:"16px 20px 32px"}}>
@@ -892,6 +887,28 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
           </>}
 
           {tab==="groups" && <>
+{tab==="coinmaster" && <>
+  <div style={{fontSize:13,color:"#9A6080",marginBottom:12}}>Assign or remove coinmaster role</div>
+  {sorted.map(p => (
+    <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid #EDD8E8"}}>
+      <div style={{flex:1,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14}}>{p.name}</div>
+      <button onClick={()=>{
+        onUpdate(s=>{
+          const px = s.participants.find(x=>x.id===p.id);
+          if(px){
+            px.role = px.role==="coinmaster" ? "participant" : "coinmaster";
+            if(px.role==="coinmaster") px.total = 0;
+          }
+          return s;
+        });
+      }} style={{padding:"6px 10px",borderRadius:8,border:"1px solid #EDD8E8",background:"#FFF0F7",cursor:"pointer"}}>
+        {p.role==="coinmaster"?"Remove Coinmaster":"Assign Coinmaster"}
+      </button>
+    </div>
+  ))}
+</>
+}
+
             <div style={{display:"flex",gap:8,marginBottom:10}}>
               <Inp placeholder="Group name" value={ng} onChange={e=>setNg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addG()} style={{flex:1}}/>
               <button onClick={addG} style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
@@ -2000,9 +2017,7 @@ function InlineCoinBtn({ value, bg, border, col, disabled, onAward, onEdit, circ
   );
 }
 
-// ── Coinmaster View ──
 // Same award UI as host but read-only for settings/live/coin values
-function CoinmasterView({ session: init, onBack }) {
   const [ses, setSes] = useState(init);
   const [tab, setTab] = useState("award");
   const [selId, setSelId] = useState(null);
@@ -2356,13 +2371,11 @@ function Session({ session: init, onBack, onPView }) {
       {showSettings && <SessionSettings session={ses}
         onRename={renameSession}
         onToggleLive={toggleLive}
-        onToggleCoinmaster={(regenerate=false)=>{
           const wasEnabled = !!ses.coinmasterEnabled;
           const newEnabled = regenerate ? true : !wasEnabled;
           const newCode = (!wasEnabled || regenerate) ? genCMCode() : ses.coinmasterCode;
           mut(s=>{ s.coinmasterEnabled=newEnabled; s.coinmasterCode=newEnabled?newCode:""; });
           if (newEnabled && newCode) { ssSession("cm-" + newCode, { sessionCode: ses.code }); }
-          notify(newEnabled ? "Coinmaster enabled" : "Coinmaster disabled");
         }}
         onDuplicate={()=>{
           const code=genCode();
@@ -3008,14 +3021,12 @@ function CreateModal({ onConfirm, onClose }) {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={enableCM?PURPLE:SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
           </div>
           <div style={{flex:1}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:enableCM?PURPLE:TEXT}}>Enable Coinmaster</div>
             <div style={{fontSize:11,color:SUB,marginTop:1}}>Let an assistant award coins from their own device</div>
           </div>
           <div style={{width:40,height:24,borderRadius:12,background:enableCM?PURPLE:BORDER,position:"relative",transition:"all .2s",flexShrink:0}}>
             <div style={{position:"absolute",top:3,left:enableCM?19:3,width:18,height:18,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
           </div>
         </div>
-        {enableCM && <div style={{background:`${PURPLE}08`,border:`1px solid ${PURPLE}20`,borderRadius:10,padding:"8px 12px",marginBottom:14,fontSize:12,color:PURPLE,fontWeight:600}}>A Coinmaster code will be generated in Session Settings</div>}
         <div style={{display:"flex",gap:10}}>
           <button onClick={onClose} style={{flex:1,padding:"13px 0",background:BG,border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:SUB,cursor:"pointer"}}>Cancel</button>
           <PBtn onClick={()=>n.trim()&&onConfirm(n.trim(),enableCM)} disabled={!n.trim()} style={{flex:2,padding:"13px 22px"}}>Start Session</PBtn>
@@ -3693,7 +3704,6 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
   );
 }
 
-// ── Coinmaster Join Modal ──
 // ── JoinSessionField — compact code entry used on home screen ──
 function JoinSessionField({ onJoin }) {
   const [code, setCode] = useState("");
@@ -3714,7 +3724,7 @@ function JoinSessionField({ onJoin }) {
           value={code}
           onChange={e=>{ setCode(e.target.value.toUpperCase()); setErr(""); }}
           onKeyDown={e=>e.key==="Enter"&&submit()}
-          placeholder="Enter session code"
+          placeholder="enter session code"
           maxLength={8}
           style={{flex:1,padding:"10px 14px",border:`1.5px solid ${err?'#EF4444':BORDER}`,borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",letterSpacing:2}}
         />
@@ -3919,7 +3929,6 @@ function BadgeClaimScreen({ token, onDone }) {
   );
 }
 
-function CoinmasterJoinModal({ onJoin, onClose }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -3940,7 +3949,6 @@ function CoinmasterJoinModal({ onJoin, onClose }) {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
           </div>
           <div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:"#1A0A14"}}></div>
             <div style={{fontSize:13,color:"#6B7280",marginTop:1}}>Enter the code from your host</div>
           </div>
         </div>
@@ -3957,7 +3965,6 @@ function CoinmasterJoinModal({ onJoin, onClose }) {
         </div>
         {error && <div style={{fontSize:13,color:"#EF4444",fontWeight:600,marginBottom:8,textAlign:"center"}}>{error}</div>}
         <div style={{fontSize:12,color:"#9CA3AF",textAlign:"center",marginBottom:20,lineHeight:1.6}}>
-          The host shares this code from their Session Settings.<br/>You must be logged in to join as Coinmaster.
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <button onClick={handleJoin} disabled={code.trim().length < 4 || loading}
@@ -4164,7 +4171,6 @@ export default function App() {
     return <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}><style>{CSS}</style><Ham size={60}/><div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:PINK}}>Loading session…</div></div>;
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
-  if (false && screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
   if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} onBack={()=>setScreen("home")} onPView={()=>setScreen("participant")}/></>;
 
   // Session settings from home list gear icon
@@ -4175,7 +4181,6 @@ export default function App() {
         <SessionSettings session={cur}
           onRename={async(name)=>{ const s={...cur,name}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,name}:x); setSessions(idx); await ss("sessions_index",idx); }}
           onToggleLive={async()=>{ const s={...cur,live:cur.live===false?true:false}; await ssSession(s.code, s); setCur(s); }}
-          onToggleCoinmaster={async(regenerate=false)=>{
             const wasEnabled = !!cur.coinmasterEnabled;
             const newEnabled = regenerate ? true : !wasEnabled;
             const newCode = (!wasEnabled || regenerate) ? genCMCode() : cur.coinmasterCode;
@@ -4232,7 +4237,6 @@ export default function App() {
       )}
 
       {/* ── COINMASTER JOIN MODAL ── */}
-      {false && showCMJoin && <CoinmasterJoinModal onJoin={async(code)=>{
         let upperCode = code.toUpperCase().trim();
         if (!upperCode.startsWith("CM-") && upperCode.length === 4) upperCode = "CM-" + upperCode;
         // Strategy: we store a lookup doc in sessions collection keyed "cm-{code}"
@@ -4364,7 +4368,6 @@ export default function App() {
               <div style={{marginTop:12,textAlign:"center"}}>
                 <button onClick={()=>setShowCMJoin(true)} style={{background:"none",border:"none",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#7C3AED",cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:5,fontWeight:600}}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
-                  
                 </button>
               </div>
             </div>
