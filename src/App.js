@@ -843,10 +843,16 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
   function addG() { if (!ng.trim()) return; onUpdate(s=>{s.groups.push({id:Date.now(),name:ng.trim(),color:ngc});return s;}); setNg(""); }
   function remP(pid) { onUpdate(s=>{s.participants=s.participants.filter(x=>x.id!==pid);return s;}); }
   function asgG(pid,gid) { onUpdate(s=>{const p=s.participants.find(x=>x.id===pid);if(p)p.gid=gid===""?null:Number(gid);return s;}); }
+  function assignCM(uid) { onUpdate(s=>{ s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==uid),uid]; return s; }); }
+  function removeCM(uid) { onUpdate(s=>{ s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==uid); return s; }); }
   function saveName() { if (nameVal.trim()) { onRename(nameVal.trim()); setEditingName(false); } } // eslint-disable-line
 
-  const tabBtn = (id, label) => (
-    <button key={id} onClick={()=>setTab(id)} style={{padding:"8px 14px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s",whiteSpace:"nowrap"}}>{label}</button>
+  const cmEnabled = !!session.coinmasterEnabled;
+
+  const tabBtn = (id, label, badge) => (
+    <button key={id} onClick={()=>setTab(id)} style={{padding:"8px 14px",border:"none",background:"none",fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:4}}>
+      {label}{badge}
+    </button>
   );
 
   return (
@@ -860,7 +866,9 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
-            {[["people","People"],["groups","Groups"]].map(([id,l]) => tabBtn(id,l))}
+            {tabBtn("people","People")}
+            {tabBtn("groups","Groups")}
+            {tabBtn("coinmaster","Coinmaster", !cmEnabled && <span style={{fontSize:9,background:"#E5E7EB",color:SUB,borderRadius:99,padding:"1px 6px",fontWeight:700,lineHeight:1.5}}>OFF</span>)}
           </div>
         </div>
         <div style={{overflowY:"auto",flex:1,padding:"16px 20px 32px"}}>
@@ -906,6 +914,47 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
                 <div style={{fontSize:11,color:SUB}}>{session.participants.filter(p=>p.gid===g.id).length} members</div>
               </div>
             ))}
+          </>}
+
+          {tab==="coinmaster" && <>
+            {!cmEnabled ? (
+              <div style={{textAlign:"center",padding:"36px 16px"}}>
+                <div style={{fontSize:36,marginBottom:10}}>🔒</div>
+                <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>Coinmaster not enabled</div>
+                <div style={{fontSize:13,color:SUB,lineHeight:1.7}}>Enable Coinmaster in Session Settings first, then come back here to assign participants.</div>
+              </div>
+            ) : (<>
+              <div style={{fontSize:12,color:SUB,lineHeight:1.7,marginBottom:14,background:SOFT,border:`1px solid ${MID}`,borderRadius:10,padding:"10px 12px"}}>
+                Coinmasters can award coins from their own device. Only participants who are <strong>logged in</strong> are eligible.
+              </div>
+              {sorted.length===0 && <div style={{textAlign:"center",padding:24,color:SUB,fontSize:13}}>No participants yet</div>}
+              {sorted.map(p => {
+                const isCM = (session.coinmasterUids||[]).includes(p.uid);
+                const canAssign = !!p.uid;
+                return (
+                  <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 0",borderBottom:`1px solid ${BORDER}`}}>
+                    <Av s={p.av} color={isCM?"#7C3AED":PINK} size={34}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                      {isCM
+                        ? <div style={{fontSize:11,color:"#7C3AED",fontWeight:700}}>Coinmaster ✓</div>
+                        : canAssign
+                          ? <div style={{fontSize:11,color:GREEN,fontWeight:600}}>Logged in · eligible</div>
+                          : <div style={{fontSize:11,color:SUB}}>Not logged in · ineligible</div>
+                      }
+                    </div>
+                    {canAssign ? (
+                      <button onClick={()=>isCM?removeCM(p.uid):assignCM(p.uid)}
+                        style={{padding:"5px 13px",background:isCM?"#FAF5FF":"#F0FDF4",border:`1px solid ${isCM?"#DDD6FE":"#BBF7D0"}`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:isCM?"#7C3AED":"#16A34A",cursor:"pointer",flexShrink:0}}>
+                        {isCM?"Remove":"Assign"}
+                      </button>
+                    ) : (
+                      <span style={{fontSize:11,color:SUB,padding:"5px 8px",flexShrink:0}}>—</span>
+                    )}
+                  </div>
+                );
+              })}
+            </>)}
           </>}
         </div>
       </div>
@@ -1439,6 +1488,13 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   const me = live?.participants?.find(p => p.id === myId);
   const sorted = [...(live?.participants||[])].sort((a,b) => b.total - a.total);
   const myRank = sorted.findIndex(p => p.id === myId) + 1;
+  const myUid = linkedUid || auth.currentUser?.uid || null;
+  const isMeAssignedCM = myUid && (live?.coinmasterUids||[]).includes(myUid);
+
+  // If assigned as coinmaster, show CoinmasterView instead of normal participant view
+  if (step === "joined" && isMeAssignedCM) {
+    return <CoinmasterView session={live} onBack={()=>{ setMyId(null); setStep("name"); }}/>;
+  }
 
   function PinPad({ value, onChange, length=4 }) {
     return (
@@ -4446,7 +4502,7 @@ export default function App() {
 }
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:Poppins,sans-serif; -webkit-font-smoothing:antialiased; background:${BG}; user-select:none; -webkit-user-select:none; cursor:default; }
   @keyframes floatUp { 0%{transform:translateY(0);opacity:1} 100%{transform:translateY(-80px);opacity:0} }
