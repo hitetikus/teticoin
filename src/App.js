@@ -704,7 +704,7 @@ function CoinCustomizer({ session, onSave, onClose }) {
 }
 
 // ── Session Settings sheet (gear next to session name in session list) ──
-function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, onDuplicate, onArchive, onToggle, onClose }) {
+function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, onDuplicate, onArchive, onToggleCoinmaster, onClose }) {
   const [editing, setEditing] = useState(false);
   const [nameVal, setNameVal] = useState(session.name); // eslint-disable-line
   const [copied, setCopied] = useState(false);
@@ -766,19 +766,19 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:cmEnabled?12:0}}>
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:cmEnabled?"#7C3AED":TEXT}}>Allow </div>
+                  <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:cmEnabled?"#7C3AED":TEXT}}>Allow Coinmaster</div>
                   {cmEnabled && <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#7C3AED",borderRadius:99,padding:"2px 8px",letterSpacing:.3}}>ON</span>}
                 </div>
                 <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>Let others award coins in this session</div>
               </div>
-              <div onClick={onToggle}
+              <div onClick={onToggleCoinmaster}
                 style={{width:44,height:26,borderRadius:13,background:cmEnabled?"#7C3AED":"#E5E7EB",position:"relative",transition:"all .2s",flexShrink:0,marginLeft:12,cursor:"pointer"}}>
                 <div style={{position:"absolute",top:3,left:cmEnabled?21:3,width:20,height:20,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
               </div>
             </div>
             {cmEnabled && cmCode && (
               <div style={{background:"#fff",border:`1px solid #DDD6FE`,borderRadius:10,padding:"12px 14px"}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#7C3AED",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}> Code</div>
+                <div style={{fontSize:10,fontWeight:700,color:"#7C3AED",textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Coinmaster Code</div>
                 <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:24,letterSpacing:6,color:"#7C3AED",marginBottom:4}}>{cmCode}</div>
                 <div style={{fontSize:11,color:SUB,marginBottom:10}}>Share this code with your coinmasters. All coinmasters use the same code.</div>
                 <div style={{display:"flex",gap:8}}>
@@ -786,7 +786,7 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
                     style={{flex:1,padding:"8px 0",background:copied?`#7C3AED10`:"#FAF5FF",border:`1px solid ${copied?"#7C3AED":"#DDD6FE"}`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:12,color:copied?"#7C3AED":"#7C3AED",cursor:"pointer",transition:"all .2s"}}>
                     {copied?"Copied!":"Copy Code"}
                   </button>
-                  <button onClick={()=>onToggle(true)}
+                  <button onClick={()=>onToggleCoinmaster(true)}
                     style={{padding:"8px 14px",background:"none",border:`1px solid #E5E7EB`,borderRadius:8,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer"}}>
                     Regenerate
                   </button>
@@ -1054,6 +1054,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   const [returnMatch, setReturnMatch] = useState(null);
   const [linkedUid, setLinkedUid] = useState(null);       // set after optional login
   const [linkedName, setLinkedName] = useState(null);     // display name from linked account
+  const [guestName, setGuestName] = useState("");         // original typed name before optional login
   const [showLoginBanner, setShowLoginBanner] = useState(true); // can be dismissed
   const [loginModal, setLoginModal] = useState(false);    // optional login modal open
   const [loginEmail, setLoginEmail] = useState("");
@@ -1085,7 +1086,9 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   function directJoin(overrideName) {
     const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const joinName = overrideName || name.trim();
-    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,uid:null};
+    const baseGuestName = name.trim() || joinName;
+    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,uid:(auth.currentUser?.uid || linkedUid || null),guestName:baseGuestName};
+    setGuestName(baseGuestName);
     setMyId(np.id);
     const u = {...live,participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
@@ -1101,7 +1104,10 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   function setNewPin() {
     if (pin.length !== 4) return;
     const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
-    const np = {id:Date.now(),name:name.trim(),av:mkAv(name),total:0,bk:{},gid:null,num:n,pin,uid:null};
+    const joinName = linkedName || name.trim();
+    const baseGuestName = name.trim() || joinName;
+    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,pin,uid:(auth.currentUser?.uid || linkedUid || null),guestName:baseGuestName};
+    setGuestName(baseGuestName);
     setMyId(np.id);
     const u = {...live,participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
@@ -1131,13 +1137,24 @@ function ParticipantView({ session: init, hostPlan="free" }) {
       const displayName = cred.displayName || cred.email.split("@")[0];
       setLinkedUid(uid);
       setLinkedName(displayName);
-      // Patch participant record in Firestore with uid
+
+      // If they log in before joining, use the logged-in name for the first join
+      if (!myId) {
+        if (!name.trim()) setName(displayName);
+        setLoginModal(false);
+        setShowLoginBanner(false);
+        directJoin(displayName);
+        setLoginBusy(false);
+        return;
+      }
+
+      // Patch participant record in Firestore with uid and switch visible name to logged-in account
       const fresh = await sgSession(init.code);
       if (fresh) {
         const updated = {
           ...fresh,
           participants: (fresh.participants||[]).map(p =>
-            p.id === myId ? {...p, uid, name: p.name} : p
+            p.id === myId ? {...p, uid, guestName: p.guestName || guestName || p.name, name: displayName, av: mkAv(displayName)} : p
           )
         };
         setLive(updated);
@@ -1154,6 +1171,25 @@ function ParticipantView({ session: init, hostPlan="free" }) {
       setLoginErr(msg);
     }
     setLoginBusy(false);
+  }
+
+  async function switchBackToGuestName() {
+    if (!myId) return;
+    const fallbackName = guestName || name.trim() || "Guest";
+    const fresh = await sgSession(init.code);
+    if (fresh) {
+      const updated = {
+        ...fresh,
+        participants: (fresh.participants||[]).map(p =>
+          p.id === myId ? {...p, uid:null, name:fallbackName, av:mkAv(fallbackName), guestName:fallbackName} : p
+        )
+      };
+      setLive(updated);
+      await ssSession(init.code, updated);
+    }
+    setLinkedUid(null);
+    setLinkedName(null);
+    setShowLoginBanner(true);
   }
 
   // Badge claim prompt — appears when host awards a badge (detected via polling)
@@ -1432,6 +1468,8 @@ function ParticipantView({ session: init, hostPlan="free" }) {
 
   const card = (content) => (
     <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 20px",fontFamily:"Poppins,sans-serif"}}>
+      {loginModal && <OptionalLoginModal/>}
+      <BadgeClaimPrompt/>
       <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,padding:"32px 24px",maxWidth:380,width:"100%",textAlign:"center"}}>
         {content}
       </div>
@@ -1448,7 +1486,9 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     <Inp placeholder="Your full name" value={name} onChange={e=>setName(e.target.value)}
       onKeyDown={e=>e.key==="Enter"&&checkName()} style={{textAlign:"center",marginBottom:12}}/>
     <PBtn full onClick={checkName} disabled={!name.trim()}>Continue</PBtn>
-    <div style={{marginTop:12,fontSize:12,color:SUB}}>No account needed</div>
+    <button onClick={()=>setLoginModal(true)} style={{marginTop:12,background:"none",border:"none",fontSize:12,color:PINK,cursor:"pointer",fontFamily:"Poppins,sans-serif",fontWeight:600,textDecoration:"underline",textUnderlineOffset:3}}>
+      Log in / Register to save progress
+    </button>
   </>);
 
   if (step === "returning") return card(<>
@@ -1575,11 +1615,22 @@ function ParticipantView({ session: init, hostPlan="free" }) {
           </div>
         )}
 
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:12,padding:"6px 18px",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:PINK,letterSpacing:3}}>
-            {me ? pNum(me.num) : "—"}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,width:"100%"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+            <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:12,padding:"6px 18px",fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:16,color:PINK,letterSpacing:3,flexShrink:0}}>
+              {me ? pNum(me.num) : "—"}
+            </div>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:18,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{me?.name||"—"}</div>
           </div>
-          <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:18,color:TEXT}}>{me?.name||"—"}</div>
+          {linkedUid ? (
+            <button onClick={switchBackToGuestName} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:10,padding:"8px 10px",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",flexShrink:0}}>
+              Use typed name
+            </button>
+          ) : (
+            <button onClick={()=>setLoginModal(true)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:10,padding:"8px 10px",fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:12,color:PINK,cursor:"pointer",flexShrink:0}}>
+              Log in
+            </button>
+          )}
         </div>
 
         <LoginBanner/>
@@ -1601,13 +1652,6 @@ function ParticipantView({ session: init, hostPlan="free" }) {
             </div>
           ))}
         </div>
-
-        {false && myRank > 0 && sorted.length > 1 && (
-          <div style={{width:"100%",background:SOFT,border:`1.5px solid ${MID}`,borderRadius:14,padding:"12px 18px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div style={{fontSize:13,color:SUB,fontWeight:600}}>Your rank</div>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:20,color:PINK}}>#{myRank} <span style={{fontSize:13,color:SUB,fontWeight:600}}>of {sorted.length}</span></div>
-          </div>
-        )}
 
         <div style={{fontSize:12,color:SUB,textAlign:"center",lineHeight:1.8,marginTop:4}}>
           {sorted.length <= 1 ? "Waiting for others to join..." : "Leaderboard will appear when host shares it"}
@@ -1956,9 +2000,9 @@ function InlineCoinBtn({ value, bg, border, col, disabled, onAward, onEdit, circ
   );
 }
 
-// ──  View ──
+// ── Coinmaster View ──
 // Same award UI as host but read-only for settings/live/coin values
-function View({ session: init, onBack }) {
+function CoinmasterView({ session: init, onBack }) {
   const [ses, setSes] = useState(init);
   const [tab, setTab] = useState("award");
   const [selId, setSelId] = useState(null);
@@ -2312,13 +2356,13 @@ function Session({ session: init, onBack, onPView }) {
       {showSettings && <SessionSettings session={ses}
         onRename={renameSession}
         onToggleLive={toggleLive}
-        onToggle={(regenerate=false)=>{
+        onToggleCoinmaster={(regenerate=false)=>{
           const wasEnabled = !!ses.coinmasterEnabled;
           const newEnabled = regenerate ? true : !wasEnabled;
           const newCode = (!wasEnabled || regenerate) ? genCMCode() : ses.coinmasterCode;
           mut(s=>{ s.coinmasterEnabled=newEnabled; s.coinmasterCode=newEnabled?newCode:""; });
           if (newEnabled && newCode) { ssSession("cm-" + newCode, { sessionCode: ses.code }); }
-          notify(newEnabled ? " enabled" : " disabled");
+          notify(newEnabled ? "Coinmaster enabled" : "Coinmaster disabled");
         }}
         onDuplicate={()=>{
           const code=genCode();
@@ -2964,14 +3008,14 @@ function CreateModal({ onConfirm, onClose }) {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={enableCM?PURPLE:SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
           </div>
           <div style={{flex:1}}>
-            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:enableCM?PURPLE:TEXT}}>Enable </div>
+            <div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:enableCM?PURPLE:TEXT}}>Enable Coinmaster</div>
             <div style={{fontSize:11,color:SUB,marginTop:1}}>Let an assistant award coins from their own device</div>
           </div>
           <div style={{width:40,height:24,borderRadius:12,background:enableCM?PURPLE:BORDER,position:"relative",transition:"all .2s",flexShrink:0}}>
             <div style={{position:"absolute",top:3,left:enableCM?19:3,width:18,height:18,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
           </div>
         </div>
-        {enableCM && <div style={{background:`${PURPLE}08`,border:`1px solid ${PURPLE}20`,borderRadius:10,padding:"8px 12px",marginBottom:14,fontSize:12,color:PURPLE,fontWeight:600}}>A  code will be generated in Session Settings</div>}
+        {enableCM && <div style={{background:`${PURPLE}08`,border:`1px solid ${PURPLE}20`,borderRadius:10,padding:"8px 12px",marginBottom:14,fontSize:12,color:PURPLE,fontWeight:600}}>A Coinmaster code will be generated in Session Settings</div>}
         <div style={{display:"flex",gap:10}}>
           <button onClick={onClose} style={{flex:1,padding:"13px 0",background:BG,border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:SUB,cursor:"pointer"}}>Cancel</button>
           <PBtn onClick={()=>n.trim()&&onConfirm(n.trim(),enableCM)} disabled={!n.trim()} style={{flex:2,padding:"13px 22px"}}>Start Session</PBtn>
@@ -3649,7 +3693,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
   );
 }
 
-// ──  Join Modal ──
+// ── Coinmaster Join Modal ──
 // ── JoinSessionField — compact code entry used on home screen ──
 function JoinSessionField({ onJoin }) {
   const [code, setCode] = useState("");
@@ -3670,9 +3714,9 @@ function JoinSessionField({ onJoin }) {
           value={code}
           onChange={e=>{ setCode(e.target.value.toUpperCase()); setErr(""); }}
           onKeyDown={e=>e.key==="Enter"&&submit()}
-          placeholder="Enter session code"
+          placeholder="enter session code"
           maxLength={8}
-          style={{flex:1,padding:"10px 14px",border:`1.5px solid ${err?'#EF4444':BORDER}`,borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",letterSpacing:2,textTransform:"uppercase"}}
+          style={{flex:1,padding:"10px 14px",border:`1.5px solid ${err?'#EF4444':BORDER}`,borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",letterSpacing:2}}
         />
         <button onClick={submit} disabled={!code.trim()||busy}
           style={{padding:"10px 18px",background:code.trim()?GRAD:BG,border:"none",borderRadius:11,fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:14,color:code.trim()?"#fff":SUB,cursor:code.trim()?"pointer":"not-allowed",flexShrink:0,transition:"all .15s"}}>
@@ -3875,7 +3919,7 @@ function BadgeClaimScreen({ token, onDone }) {
   );
 }
 
-function JoinModal({ onJoin, onClose }) {
+function CoinmasterJoinModal({ onJoin, onClose }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -3913,7 +3957,7 @@ function JoinModal({ onJoin, onClose }) {
         </div>
         {error && <div style={{fontSize:13,color:"#EF4444",fontWeight:600,marginBottom:8,textAlign:"center"}}>{error}</div>}
         <div style={{fontSize:12,color:"#9CA3AF",textAlign:"center",marginBottom:20,lineHeight:1.6}}>
-          The host shares this code from their Session Settings.<br/>You must be logged in to join as .
+          The host shares this code from their Session Settings.<br/>You must be logged in to join as Coinmaster.
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           <button onClick={handleJoin} disabled={code.trim().length < 4 || loading}
@@ -4120,7 +4164,7 @@ export default function App() {
     return <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}><style>{CSS}</style><Ham size={60}/><div style={{fontFamily:"Nunito,sans-serif",fontWeight:800,fontSize:15,color:PINK}}>Loading session…</div></div>;
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
-  if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><View session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
+  if (false && screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
   if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} onBack={()=>setScreen("home")} onPView={()=>setScreen("participant")}/></>;
 
   // Session settings from home list gear icon
@@ -4131,7 +4175,7 @@ export default function App() {
         <SessionSettings session={cur}
           onRename={async(name)=>{ const s={...cur,name}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,name}:x); setSessions(idx); await ss("sessions_index",idx); }}
           onToggleLive={async()=>{ const s={...cur,live:cur.live===false?true:false}; await ssSession(s.code, s); setCur(s); }}
-          onToggle={async(regenerate=false)=>{
+          onToggleCoinmaster={async(regenerate=false)=>{
             const wasEnabled = !!cur.coinmasterEnabled;
             const newEnabled = regenerate ? true : !wasEnabled;
             const newCode = (!wasEnabled || regenerate) ? genCMCode() : cur.coinmasterCode;
@@ -4188,8 +4232,9 @@ export default function App() {
       )}
 
       {/* ── COINMASTER JOIN MODAL ── */}
-      {showCMJoin && <JoinModal onJoin={async(code)=>{
-        const upperCode = code.toUpperCase().trim();
+      {false && showCMJoin && <CoinmasterJoinModal onJoin={async(code)=>{
+        let upperCode = code.toUpperCase().trim();
+        if (!upperCode.startsWith("CM-") && upperCode.length === 4) upperCode = "CM-" + upperCode;
         // Strategy: we store a lookup doc in sessions collection keyed "cm-{code}"
         // that contains {sessionCode: "XXXXX"}. This works cross-user.
         try {
@@ -4305,14 +4350,6 @@ export default function App() {
                 if (isFree && sessions.filter(s=>!s.archived).length >= sessionLimit) { setLimitModal("sessions"); return; }
                 setCreating(true);
               }}>+ Create New Session</PBtn>
-              <div style={{marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:16}}>
-                <button onClick={()=>handleOpen("DEMO")} style={{background:"none",border:"none",fontFamily:"Poppins,sans-serif",fontSize:13,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3}}>Load demo session</button>
-                <span style={{color:BORDER}}>·</span>
-                <button onClick={()=>setShowCMJoin(true)} style={{background:"none",border:"none",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#7C3AED",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontWeight:600}}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
-                  
-                </button>
-              </div>
 
               {/* Join a session as participant */}
               <div style={{marginTop:14,borderTop:`1px solid ${BORDER}`,paddingTop:14}}>
@@ -4322,6 +4359,13 @@ export default function App() {
                   if (s) { setCur(s); setScreen("participant"); return null; }
                   return "Session not found. Check the code and try again.";
                 }}/> 
+              </div>
+
+              <div style={{marginTop:12,textAlign:"center"}}>
+                <button onClick={()=>setShowCMJoin(true)} style={{background:"none",border:"none",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#7C3AED",cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",gap:5,fontWeight:600}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
+                  
+                </button>
               </div>
             </div>
 
@@ -4353,13 +4397,15 @@ export default function App() {
               const archived = sessions.filter(s=>s.archived);
               return (
                 <>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                    <div/>
-                    {archived.length > 0 && (
-                      <button onClick={()=>setShowArchived(v=>!v)} style={{background:"none",border:"none",fontSize:11,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:2,fontFamily:"Poppins,sans-serif"}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:8,flexWrap:"wrap"}}>
+                    <button onClick={()=>handleOpen("DEMO")} style={{background:"none",border:"none",fontSize:11,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:2,fontFamily:"Poppins,sans-serif",padding:0}}>
+                      Load demo session
+                    </button>
+                    {archived.length > 0 ? (
+                      <button onClick={()=>setShowArchived(v=>!v)} style={{background:"none",border:"none",fontSize:11,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:2,fontFamily:"Poppins,sans-serif",padding:0}}>
                         {showArchived ? "Hide archived" : `View archived (${archived.length})`}
                       </button>
-                    )}
+                    ) : <div />}
                   </div>
 
                   {active.length === 0 && !showArchived && (
