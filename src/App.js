@@ -977,7 +977,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
 }
 
 // ── Auth ──
-function Auth({ onDone }) {
+function Auth({ onDone, onBack }) {
   const [view, setView] = useState("login");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
@@ -1039,7 +1039,16 @@ function Auth({ onDone }) {
   );
 
   return (
-    <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 20px",fontFamily:"Poppins,sans-serif"}}>
+    <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",fontFamily:"Poppins,sans-serif"}}>
+      {/* Back to home */}
+      {onBack && (
+        <div style={{position:"fixed",top:0,left:0,right:0,padding:"12px 20px",display:"flex",alignItems:"center",zIndex:10}}>
+          <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:`1px solid ${BORDER}`,borderRadius:10,padding:"7px 14px",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to home
+          </button>
+        </div>
+      )}
       <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,padding:"32px 28px",maxWidth:400,width:"100%"}}>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:24}}>
           <Ham size={68}/>
@@ -3972,6 +3981,31 @@ function SuperAdminDashboard({ onClose }) {
     } catch(e) { setActionMsg("❌ Error: " + e.message); }
   }
 
+  async function resendReset(email) {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setActionMsg(`✅ Password reset email sent to ${email}`);
+      setTimeout(() => setActionMsg(null), 4000);
+    } catch(e) {
+      setActionMsg("❌ Could not send reset email: " + (e.code === "auth/user-not-found" ? "User not found in Auth." : e.message));
+      setTimeout(() => setActionMsg(null), 5000);
+    }
+  }
+
+  async function deleteUserAccount(uid, email) {
+    if (!window.confirm(`Delete all Firestore data for ${email}?\n\nNote: Their Firebase Auth account must be deleted separately from the Firebase Console (Authentication → Users).`)) return;
+    try {
+      const { getFirestore, collection, getDocs, doc, deleteDoc } = await import("firebase/firestore");
+      const db = getFirestore();
+      // Delete all docs in users/{uid}/data subcollection
+      const dataSnap = await getDocs(collection(db, "users", uid, "data"));
+      await Promise.all(dataSnap.docs.map(d => deleteDoc(d.ref)));
+      setUsers(u => u.filter(x => x.uid !== uid));
+      setActionMsg(`✅ Firestore data deleted for ${email}. Remove from Firebase Auth console too.`);
+      setTimeout(() => setActionMsg(null), 6000);
+    } catch(e) { setActionMsg("❌ Error: " + e.message); }
+  }
+
   async function assignBetaByEmail() {
     if (!betaEmail.trim()) return;
     const found = users.find(u => u.email.toLowerCase() === betaEmail.trim().toLowerCase());
@@ -4074,7 +4108,7 @@ function SuperAdminDashboard({ onClose }) {
                       <div style={{fontSize:12,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</div>
                       {expiryStr && <div style={{fontSize:11,color:SUB,marginTop:1}}>Expires {expiryStr}</div>}
                     </div>
-                    <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,flexWrap:"wrap",justifyContent:"flex-end"}}>
                       <span style={{background:`${planColor}15`,border:`1px solid ${planColor}40`,color:planColor,borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}>{planLabel}</span>
                       {!isSA && u.plan !== "beta" && (
                         <button onClick={()=>assignBeta(u.uid, u.email)}
@@ -4086,6 +4120,20 @@ function SuperAdminDashboard({ onClose }) {
                         <button onClick={()=>revokePlan(u.uid, u.email)}
                           style={{padding:"4px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:700,color:"#EF4444",cursor:"pointer"}}>
                           Revoke
+                        </button>
+                      )}
+                      {u.email !== "—" && (
+                        <button onClick={()=>resendReset(u.email)}
+                          title="Send password reset email"
+                          style={{padding:"4px 10px",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:8,fontSize:11,fontWeight:700,color:"#2563EB",cursor:"pointer"}}>
+                          Reset pw
+                        </button>
+                      )}
+                      {!isSA && (
+                        <button onClick={()=>deleteUserAccount(u.uid, u.email)}
+                          title="Delete Firestore data"
+                          style={{padding:"4px 8px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                         </button>
                       )}
                     </div>
@@ -4485,9 +4533,16 @@ export default function App() {
     }
   }, [trainer]);
 
-  // ── Handle /join/CODE and /claim/TOKEN URLs ──
+  // ── Handle /join/CODE, /claim/TOKEN, /login URLs ──
   useEffect(() => {
     const path = window.location.pathname;
+
+    // /login permalink
+    if (path === "/login") {
+      setScreen("auth");
+      setLoading(false);
+      return;
+    }
 
     // Badge claim link
     const claimMatch = path.match(/^\/claim\/([a-z0-9]+)$/i);
@@ -4522,6 +4577,7 @@ export default function App() {
     const path = window.location.pathname;
     if (path.match(/^\/join\/[A-Z0-9]+$/i)) return; // skip entirely for join URLs
     if (path.match(/^\/claim\/[a-z0-9]+$/i)) return;  // skip entirely for claim URLs
+    if (path === "/login") return; // skip for login permalink — already handled above
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       // Double-check path inside callback — async timing means URL could have changed
@@ -4602,13 +4658,15 @@ export default function App() {
     await ss("email", t.email);
     await ss("name", t.name);
     let p = await sg("plan"); if (!p) { await ss("plan", "free"); }
+    window.history.replaceState({}, "", "/home");
     setScreen("home"); 
   }
   async function handleLogout() { 
     try { await signOut(auth); } catch {}
     setTrainer(null); 
     setCurrentUid(null);
-    setScreen("auth"); 
+    window.history.replaceState({}, "", "/");
+    setScreen("landing"); 
   }
   async function handleNew(name) {
     if (isFree && sessions.length >= sessionLimit) { setLimitModal("sessions"); return; }
@@ -4617,11 +4675,13 @@ export default function App() {
     await ssSession(code, s);
     const idx = [{code, name, date:s.createdAt, count:0}, ...sessions];
     setSessions(idx); await ss("sessions_index", idx);
-    setCur(s); setCreating(false); setScreen("session");
+    setCur(s); setCreating(false);
+    window.history.pushState({}, "", `/session/${code}`);
+    setScreen("session");
   }
   async function handleOpen(code) {
-    if (code==="DEMO") { setCur(JSON.parse(JSON.stringify(DEMO))); setScreen("session"); return; }
-    const s = await sgSession(code); if (s) { setCur(s); setScreen("session"); }
+    if (code==="DEMO") { setCur(JSON.parse(JSON.stringify(DEMO))); window.history.pushState({}, "", `/session/DEMO`); setScreen("session"); return; }
+    const s = await sgSession(code); if (s) { setCur(s); window.history.pushState({}, "", `/session/${code}`); setScreen("session"); }
   }
   async function handleSelectPlan(id, billing) {
     const newPlan = id==="pro" && billing==="yearly" ? "proY" : id;
@@ -4631,8 +4691,8 @@ export default function App() {
 
   if (loading) return <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center"}}><style>{CSS}</style><Ham size={60}/></div>;
   if (screen==="claimBadge" && claimToken) return <><style>{CSS}</style><BadgeClaimScreen token={claimToken} onDone={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
-  if (screen==="landing") return <LandingPage onGetStarted={()=>setScreen("auth")} onLogin={()=>setScreen("auth")}/>;
-  if (screen==="auth") return <><style>{CSS}</style><Auth onDone={handleAuth}/></>;
+  if (screen==="landing") return <LandingPage onGetStarted={()=>{ window.history.replaceState({},"","/login"); setScreen("auth"); }} onLogin={()=>{ window.history.replaceState({},"","/login"); setScreen("auth"); }}/>;
+  if (screen==="auth") return <><style>{CSS}</style><Auth onDone={handleAuth} onBack={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
   // participantJoin = loaded from /join/CODE URL — always show participant view, never host view
   if (screen==="participantJoin") {
     if (cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
@@ -4640,7 +4700,7 @@ export default function App() {
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
   if (false && screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
-  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onBack={()=>setScreen("home")} onPView={()=>setScreen("participant")}/></>;
+  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onBack={()=>{ window.history.replaceState({},"","/home"); setScreen("home"); }} onPView={()=>setScreen("participant")}/></>;
 
   // Session settings from home list gear icon
   if (screen==="sessionSettings" && cur) return (

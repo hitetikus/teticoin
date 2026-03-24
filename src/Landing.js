@@ -532,7 +532,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
         <div className="lp-section-inner">
           <div className="lp-label lp-fade-up" style={{color:PINK}}>How it works</div>
           <div className="lp-section-title lp-fade-up lp-fade-up-d1">Start engaging your audience<br/>in under a minute</div>
-          <p className="lp-section-sub lp-fade-up lp-fade-up-d2">No setup, no complexity. Just create a session and start interacting.</p>
+          <p className="lp-section-sub lp-fade-up lp-fade-up-d2" style={{margin:"0 0 0 0",textAlign:"left",maxWidth:"100%"}}>No setup, no complexity. Just create a session and start interacting.</p>
           <div className="lp-steps">
             {[
               {num:"01",col:PINK,bg:"rgba(255,79,184,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>,title:"Create a session",body:"Set up your session in seconds and go live instantly."},
@@ -615,7 +615,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
         <div className="lp-section-inner">
           <div className="lp-label lp-fade-up" style={{color:PURPLE}}>Everything included</div>
           <div className="lp-section-title lp-fade-up lp-fade-up-d1">Simple to use.<br/>Powerful when it matters.</div>
-          <p className="lp-section-sub lp-fade-up lp-fade-up-d2">No learning curve. No complicated setup. Just start and go.</p>
+          <p className="lp-section-sub lp-fade-up lp-fade-up-d2" style={{margin:"0 0 0 0",textAlign:"left",maxWidth:"100%"}}>No learning curve. No complicated setup. Just start and go.</p>
           <div className="lp-bento-grid">
 
             <div className="lp-bento-card span2">
@@ -775,10 +775,16 @@ export default function LandingPage({ onGetStarted, onLogin }) {
             {/* FREE */}
             <div className="lp-plan-card">
               <div className="lp-plan-label" style={{color:NEUT}}>Free</div>
-              <div style={{display:"flex",alignItems:"baseline",gap:4,margin:"8px 0 2px"}}>
-                <div className="lp-plan-price" style={{color:TEXT,margin:0}}>RM 0</div>
+              {/* Price block — fixed height so all 3 cards align */}
+              <div style={{minHeight:80,display:"flex",flexDirection:"column",justifyContent:"flex-end",margin:"8px 0 0"}}>
+                <div style={{display:"flex",alignItems:"baseline",gap:4}}>
+                  <div className="lp-plan-price" style={{color:TEXT,margin:0}}>RM 0</div>
+                </div>
               </div>
-              <div className="lp-plan-period">No time limit. No card required.</div>
+              {/* Subtitle row — fixed height */}
+              <div style={{height:36,display:"flex",alignItems:"center"}}>
+                <div className="lp-plan-period">No time limit. No card required.</div>
+              </div>
               <div className="lp-plan-divider"/>
               <ul className="lp-plan-features">
                 {["1 session","Up to 30 participants","Live leaderboard","QR join — no app needed","Basic features"].map(f => (
@@ -792,22 +798,33 @@ export default function LandingPage({ onGetStarted, onLogin }) {
             <div className="lp-plan-card popular">
               <div className="lp-plan-badge">POPULAR</div>
               <div className="lp-plan-label" style={{color:PINK}}>Pro</div>
-              {billing === "monthly" ? (
-                <div style={{display:"flex",alignItems:"baseline",gap:4,margin:"8px 0 2px"}}>
-                  <div className="lp-plan-price" style={{color:PINK,margin:0}}>RM {proMonthly}</div>
-                  <div style={{fontSize:15,fontWeight:600,color:PINK}}>/mo</div>
-                </div>
-              ) : (
-                <div style={{margin:"8px 0 2px"}}>
+              {/* Price block — fixed height */}
+              <div style={{minHeight:80,display:"flex",flexDirection:"column",justifyContent:"flex-end",margin:"8px 0 0"}}>
+                {billing === "monthly" ? (
                   <div style={{display:"flex",alignItems:"baseline",gap:4}}>
-                    <div className="lp-plan-price" style={{color:PINK,margin:0}}>RM {proYearly}</div>
-                    <div style={{fontSize:15,fontWeight:600,color:PINK}}>/yr</div>
+                    <div className="lp-plan-price" style={{color:PINK,margin:0}}>RM {proMonthly}</div>
+                    <div style={{fontSize:15,fontWeight:600,color:PINK}}>/mo</div>
                   </div>
-                  <div style={{fontSize:13,fontWeight:700,color:PINK,marginTop:2}}>RM {proPerMonth}/mo</div>
-                  <div style={{fontSize:12,fontWeight:700,color:"#16A34A",marginTop:3,background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:99,display:"inline-block",padding:"2px 10px"}}>Save RM {proSaving}</div>
-                </div>
-              )}
-              {billing === "monthly" && <div className="lp-plan-period" style={{marginTop:4}}>Early access price</div>}
+                ) : (
+                  <div>
+                    <div style={{display:"flex",alignItems:"baseline",gap:4}}>
+                      <div className="lp-plan-price" style={{color:PINK,margin:0}}>RM {proYearly}</div>
+                      <div style={{fontSize:15,fontWeight:600,color:PINK}}>/yr</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* Subtitle row — fixed height, inline badge for yearly */}
+              <div style={{height:36,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                {billing === "monthly" ? (
+                  <div className="lp-plan-period">Charged once · valid for 1 month</div>
+                ) : (
+                  <>
+                    <div className="lp-plan-period">RM {proPerMonth}/mo</div>
+                    <div style={{fontSize:11,fontWeight:700,color:"#16A34A",background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:99,padding:"2px 8px",whiteSpace:"nowrap"}}>Save RM {proSaving}</div>
+                  </>
+                )}
+              </div>
               <div className="lp-plan-divider" style={{background:"#FECDE8"}}/>
               <ul className="lp-plan-features">
                 {["Unlimited sessions","Up to 200 participants","Groups & team scoring","Custom coin labels","Coinmaster co-host mode","Projector / TV mode","Export CSV"].map(f => (
@@ -823,10 +840,14 @@ export default function LandingPage({ onGetStarted, onLogin }) {
             {/* ENTERPRISE */}
             <div className="lp-plan-card">
               <div className="lp-plan-label" style={{color:PURPLE}}>Enterprise</div>
-              <div style={{margin:"8px 0 2px"}}>
-                <div className="lp-plan-price" style={{fontSize:28,color:PURPLE,margin:0}}>Contact us</div>
+              {/* Price block — fixed height */}
+              <div style={{minHeight:80,display:"flex",flexDirection:"column",justifyContent:"flex-end",margin:"8px 0 0"}}>
+                <div className="lp-plan-price" style={{fontSize:32,color:PURPLE,margin:0}}>Contact us</div>
               </div>
-              <div className="lp-plan-period">For teams and organisations</div>
+              {/* Subtitle row — fixed height */}
+              <div style={{height:36,display:"flex",alignItems:"center"}}>
+                <div className="lp-plan-period">For teams and organisations</div>
+              </div>
               <div className="lp-plan-divider" style={{background:"#DDD6FE"}}/>
               <ul className="lp-plan-features">
                 {["Multiple hosts","Shared sessions","Flexible setup","Dedicated support"].map(f => (
