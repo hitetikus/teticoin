@@ -4216,6 +4216,22 @@ function SuperAdminDashboard({ onClose }) {
   const [betaEmail, setBetaEmail] = useState("");
   const [betaMsg, setBetaMsg] = useState(null);
   const [actionMsg, setActionMsg] = useState(null);
+  const [editingExpiry, setEditingExpiry] = useState(null); // uid being edited
+  const [editExpiryVal, setEditExpiryVal] = useState(""); // ISO date string "YYYY-MM-DD"
+
+  async function saveExpiry(uid, email) {
+    if (!editExpiryVal) return;
+    try {
+      const { getFirestore, doc, setDoc } = await import("firebase/firestore");
+      const db = getFirestore();
+      const newExpiry = new Date(editExpiryVal + "T23:59:59").toISOString();
+      await setDoc(doc(db, "users", uid, "data", "planExpiry"), { value: newExpiry, updatedAt: Date.now() });
+      setUsers(u => u.map(x => x.uid === uid ? {...x, planExpiry: newExpiry} : x));
+      setEditingExpiry(null);
+      setActionMsg(`✅ Expiry updated for ${email}`);
+      setTimeout(() => setActionMsg(null), 3000);
+    } catch(e) { setActionMsg("❌ Error: " + e.message); }
+  }
 
   // Load all users — data is stored under users/{uid}/data/{key} subcollection
   useEffect(() => {
@@ -4412,7 +4428,9 @@ function SuperAdminDashboard({ onClose }) {
                 const planColor = PLAN_COLORS[u.plan] || SUB;
                 const planLabel = PLAN_LABELS[u.plan] || u.plan;
                 const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : null;
+                const expiryExpired = u.planExpiry && new Date(u.planExpiry) < new Date();
                 const isSA = u.plan === "superadmin";
+                const isEditingThis = editingExpiry === u.uid;
                 return (
                   <div key={u.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 18px",borderBottom:i<filtered.length-1?`1px solid ${BORDER}`:"none",flexWrap:"wrap"}}>
                     <div style={{width:36,height:36,borderRadius:10,background:`${planColor}18`,border:`1.5px solid ${planColor}30`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:planColor}}>
@@ -4421,7 +4439,31 @@ function SuperAdminDashboard({ onClose }) {
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{u.name}</div>
                       <div style={{fontSize:12,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</div>
-                      {expiryStr && <div style={{fontSize:11,color:SUB,marginTop:1}}>Expires {expiryStr}</div>}
+                      {/* Expiry row — show for beta/pro plans */}
+                      {expiryStr && !isEditingThis && (
+                        <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2}}>
+                          <span style={{fontSize:11,color:expiryExpired?"#EF4444":SUB}}>
+                            {expiryExpired ? "⚠ Expired" : "Expires"} {expiryStr}
+                          </span>
+                          {u.plan === "beta" && (
+                            <button onClick={()=>{
+                              setEditingExpiry(u.uid);
+                              // pre-fill with current expiry date in YYYY-MM-DD
+                              setEditExpiryVal(new Date(u.planExpiry).toISOString().slice(0,10));
+                            }} style={{background:"none",border:"none",cursor:"pointer",fontSize:10,color:PINK,fontWeight:700,padding:0,textDecoration:"underline",textUnderlineOffset:2}}>edit</button>
+                          )}
+                        </div>
+                      )}
+                      {isEditingThis && (
+                        <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
+                          <input type="date" value={editExpiryVal} onChange={e=>setEditExpiryVal(e.target.value)}
+                            style={{fontSize:11,border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 7px",fontFamily:"Poppins,sans-serif",color:TEXT,outline:"none"}}/>
+                          <button onClick={()=>saveExpiry(u.uid, u.email)}
+                            style={{padding:"3px 10px",background:GRAD,border:"none",borderRadius:7,fontSize:11,fontWeight:700,color:"#fff",cursor:"pointer"}}>Save</button>
+                          <button onClick={()=>setEditingExpiry(null)}
+                            style={{padding:"3px 8px",background:"none",border:`1px solid ${BORDER}`,borderRadius:7,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer"}}>✕</button>
+                        </div>
+                      )}
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,flexWrap:"wrap",justifyContent:"flex-end"}}>
                       <span style={{background:`${planColor}15`,border:`1px solid ${planColor}40`,color:planColor,borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}>{planLabel}</span>
@@ -4491,12 +4533,33 @@ function SuperAdminDashboard({ onClose }) {
               ) : users.filter(u=>u.plan==="beta").map(u => {
                 const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
                 const expired = u.planExpiry && new Date(u.planExpiry) < new Date();
+                const daysLeft = u.planExpiry ? Math.ceil((new Date(u.planExpiry) - new Date()) / (1000*60*60*24)) : null;
+                const isEditingThis = editingExpiry === u.uid;
                 return (
                   <div key={u.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,marginBottom:8}}>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</div>
                       <div style={{fontSize:12,color:SUB}}>{u.email}</div>
-                      <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:600,marginTop:2}}>{expired?"Expired":"Active"} · until {expiryStr}</div>
+                      {!isEditingThis ? (
+                        <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2}}>
+                          <span style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:600}}>
+                            {expired ? "Expired" : `Active · ${daysLeft}d left`} · until {expiryStr}
+                          </span>
+                          <button onClick={()=>{
+                            setEditingExpiry(u.uid);
+                            setEditExpiryVal(u.planExpiry ? new Date(u.planExpiry).toISOString().slice(0,10) : "");
+                          }} style={{background:"none",border:"none",cursor:"pointer",fontSize:10,color:PINK,fontWeight:700,padding:0,textDecoration:"underline",textUnderlineOffset:2}}>edit</button>
+                        </div>
+                      ) : (
+                        <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
+                          <input type="date" value={editExpiryVal} onChange={e=>setEditExpiryVal(e.target.value)}
+                            style={{fontSize:11,border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 7px",fontFamily:"Poppins,sans-serif",color:TEXT,outline:"none"}}/>
+                          <button onClick={()=>saveExpiry(u.uid, u.email)}
+                            style={{padding:"3px 10px",background:GRAD,border:"none",borderRadius:7,fontSize:11,fontWeight:700,color:"#fff",cursor:"pointer"}}>Save</button>
+                          <button onClick={()=>setEditingExpiry(null)}
+                            style={{padding:"3px 8px",background:"none",border:`1px solid ${BORDER}`,borderRadius:7,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer"}}>✕</button>
+                        </div>
+                      )}
                     </div>
                     <button onClick={()=>revokePlan(u.uid, u.email)}
                       style={{padding:"5px 12px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:12,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
@@ -4509,6 +4572,33 @@ function SuperAdminDashboard({ onClose }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Beta Expiry Banner ─────────────────────────────────────────────
+function BetaExpiryBanner({ planExpiry, onClose }) {
+  if (!planExpiry) return null;
+  const expDate = new Date(planExpiry);
+  const now = new Date();
+  const daysLeft = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
+  if (daysLeft <= 0) return null; // already expired — plan already reverted to free on login
+
+  const soon = daysLeft <= 14;
+  const expiryStr = expDate.toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" });
+  const bg    = soon ? "#FFF7ED" : "#F0FDF4";
+  const bdr   = soon ? "#FED7AA" : "#BBF7D0";
+  const col   = soon ? "#EA580C" : "#16A34A";
+  const icon  = soon ? "⏳" : "⚡";
+  const msg   = soon
+    ? `Your Beta Pro access expires in ${daysLeft} day${daysLeft===1?"":"s"} (${expiryStr}). Upgrade to keep Pro features.`
+    : `Beta Pro active · expires ${expiryStr} (${daysLeft} days left)`;
+
+  return (
+    <div style={{background:bg,border:`1.5px solid ${bdr}`,borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+      <span style={{fontSize:16,flexShrink:0}}>{icon}</span>
+      <div style={{flex:1,fontSize:12,color:col,fontWeight:600,lineHeight:1.5}}>{msg}</div>
+      <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:col,opacity:.6,padding:"0 2px",fontSize:16,lineHeight:1,flexShrink:0}}>×</button>
     </div>
   );
 }
@@ -4952,6 +5042,7 @@ export default function App() {
   const [cmSession, setCmSession] = useState(null);
   const [paymentToast, setPaymentToast] = useState(null);
   const [claimToken, setClaimToken] = useState(null); // badge claim token from /claim/TOKEN URL
+  const [showBetaBanner, setShowBetaBanner] = useState(true);
 
   const isSuperadmin = plan === "superadmin";
   const isBeta = plan === "beta";
@@ -5347,6 +5438,7 @@ export default function App() {
             </div>
 
             {isFree && <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>setShowPricing(true)}/>}
+            {isBeta && showBetaBanner && <BetaExpiryBanner planExpiry={planExpiry} onClose={()=>setShowBetaBanner(false)}/>}
 
             {/* Hero card */}
             <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
