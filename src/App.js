@@ -804,7 +804,9 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
   );
 }
 
-function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onToggleLive }) {
+function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClose, onExport, onReset, onRename, onToggleLive }) {
+  const isManagePro = plan !== "free";
+  const [showUpgradeHint, setShowUpgradeHint] = useState(null);
   const [tab, setTab] = useState("people");
   const [np, setNp] = useState("");
   const [ng, setNg] = useState("");
@@ -875,6 +877,18 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
           </>}
 
           {tab==="groups" && <>
+            {!isManagePro ? (
+              <div style={{textAlign:"center",padding:"32px 16px 24px"}}>
+                <div style={{fontSize:32,marginBottom:10}}>👑</div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:8}}>Groups is a Pro feature</div>
+                <div style={{fontSize:13,color:SUB,lineHeight:1.7,marginBottom:18}}>Organise participants into teams and track group scores. Upgrade to unlock groups, coinmaster, custom labels and more.</div>
+                <button onClick={()=>setShowUpgradeHint("groups")} style={{padding:"10px 24px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Upgrade to Pro →</button>
+                <div style={{marginTop:20,opacity:0.3,pointerEvents:"none",filter:"blur(1.5px)"}}>
+                  <div style={{display:"flex",gap:8,marginBottom:10}}><div style={{flex:1,height:36,background:BORDER,borderRadius:10}}/><div style={{width:64,height:36,background:MID,borderRadius:10}}/></div>
+                  {["Team Alpha","Team Bravo"].map((g,i)=>(<div key={g} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${BORDER}`}}><div style={{width:12,height:12,borderRadius:3,background:GC[i]}}/><div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:GC[i]}}>{g}</div><div style={{fontSize:11,color:SUB}}>0 members</div></div>))}
+                </div>
+              </div>
+            ) : <>
             <div style={{display:"flex",gap:8,marginBottom:10}}>
               <Inp placeholder="Group name" value={ng} onChange={e=>setNg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addG()} style={{flex:1}}/>
               <button onClick={addG} style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
@@ -889,10 +903,22 @@ function Manage({ session, onUpdate, onClose, onExport, onReset, onRename, onTog
                 <div style={{fontSize:11,color:SUB}}>{session.participants.filter(p=>p.gid===g.id).length} members</div>
               </div>
             ))}
+            </>}
           </>}
 
           {tab==="coinmaster" && <>
-            {!cmEnabled ? (
+            {!isManagePro ? (
+              <div style={{textAlign:"center",padding:"32px 16px 24px"}}>
+                <div style={{fontSize:32,marginBottom:10}}>👑</div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:8}}>Coinmaster is a Pro feature</div>
+                <div style={{fontSize:13,color:SUB,lineHeight:1.7,marginBottom:18}}>Let co-hosts award coins from their own device. Upgrade to unlock coinmaster, groups, custom labels and more.</div>
+                <button onClick={()=>setShowUpgradeHint("coinmaster")} style={{padding:"10px 24px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Upgrade to Pro →</button>
+                <div style={{marginTop:20,opacity:0.3,pointerEvents:"none",filter:"blur(1.5px)"}}>
+                  <div style={{height:40,background:"#FAF5FF",border:"1px solid #DDD6FE",borderRadius:10,marginBottom:10}}/>
+                  <div style={{height:32,background:BORDER,borderRadius:8,marginBottom:8}}/><div style={{height:32,background:BORDER,borderRadius:8}}/>
+                </div>
+              </div>
+            ) : !cmEnabled ? (
               <div style={{textAlign:"center",padding:"36px 16px 24px"}}>
                 <div style={{width:56,height:56,borderRadius:16,background:"#F3F4F6",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
                   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -1121,6 +1147,9 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   }
 
   function directJoin(overrideName) {
+    const currentPax = (live.participants||[]).length;
+    const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
+    if (currentPax >= limit) { setStep("full"); return; }
     const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const joinName = overrideName || name.trim();
     const baseGuestName = name.trim() || joinName;
@@ -1140,6 +1169,9 @@ function ParticipantView({ session: init, hostPlan="free" }) {
 
   function setNewPin() {
     if (pin.length !== 4) return;
+    const currentPax = (live.participants||[]).length;
+    const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
+    if (currentPax >= limit) { setStep("full"); return; }
     const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const joinName = linkedName || name.trim();
     const baseGuestName = name.trim() || joinName;
@@ -1533,6 +1565,14 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     <button onClick={()=>setLoginModal(true)} style={{marginTop:12,background:"none",border:"none",fontSize:12,color:PINK,cursor:"pointer",fontFamily:"Poppins,sans-serif",fontWeight:600,textDecoration:"underline",textUnderlineOffset:3}}>
       Log in / Register to save progress
     </button>
+  </>);
+
+  if (step === "full") return card(<>
+    <div style={{width:64,height:64,borderRadius:20,background:"#FEF2F2",border:"2px solid #EF444430",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+    </div>
+    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT,textAlign:"center",marginBottom:8}}>Session is full</div>
+    <div style={{fontSize:13,color:SUB,textAlign:"center",lineHeight:1.7}}>This session has reached its participant limit. Please ask the host to upgrade to Pro for more spots.</div>
   </>);
 
   if (step === "returning") return card(<>
@@ -2288,7 +2328,11 @@ function CoinmasterView({ session: init, onBack }) {
 }
 
 // ── Session screen ──
-function Session({ session: init, onBack, onPView }) {
+function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, onPView }) {
+  const isSesAdmin = plan === "superadmin";
+  const isSuperadmin = plan === "superadmin";
+  const isBeta = plan === "beta";
+  const isPro = plan !== "free" || isSesAdmin; // superadmin + beta + paid = pro features
   const [ses, setSes] = useState(init);
   const [tab, setTab] = useState("award");       // mobile left panel tabs
   const [rightTab, setRightTab] = useState("award_all"); // desktop right panel tabs
@@ -2316,6 +2360,7 @@ function Session({ session: init, onBack, onPView }) {
   const [showBadgePicker, setShowBadgePicker] = useState(false);
   const [badgePickerTarget, setBadgePickerTarget] = useState(null);
   const [showLuckyDraw, setShowLuckyDraw] = useState(false);
+  const [proGateHint, setProGateHint] = useState(null); // "customlabels" | "groups" | "coinmaster"
 
   // ── Live poll: pull participant updates from Firebase every 3s ──
   useEffect(() => {
@@ -2391,10 +2436,44 @@ function Session({ session: init, onBack, onPView }) {
         </div>
       )}
       {picker && <Picker participants={sorted} groups={ses.groups} selId={selId} onSelect={setSelId} onClose={()=>setPicker(false)}/>}
-      {manage && <Manage session={ses} onUpdate={fn=>mut(fn)} onClose={()=>setManage(false)} onExport={()=>{}} onReset={()=>{}} onRename={renameSession} onToggleLive={toggleLive}/>}
+      {manage && <Manage session={ses} plan={plan} paxLimit={paxLimit} onUpdate={fn=>mut(fn)} onClose={()=>setManage(false)} onExport={()=>{}} onReset={()=>{}} onRename={renameSession} onToggleLive={toggleLive}/>}
       {showCoinCustomizer && <CoinCustomizer session={ses}
         onSave={cfg=>mut(s=>{s.quickCoins=cfg.quickCoins;s.otherCoins=cfg.otherCoins;})}
         onClose={()=>setShowCoinCustomizer(false)}/>}
+      {proGateHint && (
+        <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:800,backdropFilter:"blur(4px)",background:"rgba(26,10,20,.4)"}} onClick={()=>setProGateHint(null)}>
+          <div className="tc-modal-sheet" style={{background:"#fff",padding:"28px 24px 32px",width:"100%"}} onClick={e=>e.stopPropagation()}>
+            <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>
+            <div style={{textAlign:"center",marginBottom:20}}>
+              <div style={{fontSize:36,marginBottom:10}}>👑</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:8}}>
+                {proGateHint==="customlabels"?"Custom Coin Labels":proGateHint==="groups"?"Groups & Team Scoring":"Coinmaster Mode"} is Pro
+              </div>
+              <div style={{fontSize:14,color:SUB,lineHeight:1.7}}>
+                {proGateHint==="customlabels"
+                  ? "Rename award buttons to match your activity — Correct Answer, Participation, Teamwork and more."
+                  : proGateHint==="groups"
+                    ? "Organise participants into teams, assign groups, and track team scores on the leaderboard."
+                    : "Let a co-host award coins from their own device without giving them full host access."
+                }
+              </div>
+            </div>
+            <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:12,padding:"12px 16px",marginBottom:20}}>
+              {[["Custom coin labels","✗","✓"],["Groups & teams","✗","✓"],["Coinmaster co-host","✗","✓"],["Unlimited participants","30","200"],["Unlimited sessions","1","∞"]].map(([f,free,pro])=>(
+                <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${BORDER}`}}>
+                  <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
+                  <div style={{display:"flex",gap:24}}>
+                    <div style={{fontSize:13,color:free==="✗"?"#EF4444":SUB,fontWeight:700,minWidth:36,textAlign:"center"}}>{free}</div>
+                    <div style={{fontSize:13,color:PINK,fontWeight:700,minWidth:36,textAlign:"center"}}>{pro}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={()=>setProGateHint(null)} style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>Upgrade to Pro · RM 29/mo</button>
+            <button onClick={()=>setProGateHint(null)} style={{width:"100%",padding:"10px 0",background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer"}}>Maybe later</button>
+          </div>
+        </div>
+      )}
       {showQR && <QRModal session={ses} onClose={()=>setShowQR(false)}/>}
       {showLeader && <LeaderSheet session={ses} onToggle={()=>mut(s=>{s.boardVisible=!s.boardVisible;})} onClose={()=>setShowLeader(false)}/>}
       {showSettings && <SessionSettings session={ses}
@@ -2560,9 +2639,13 @@ function Session({ session: init, onBack, onPView }) {
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                 <SL style={{marginBottom:0}}>Give Coins</SL>
-                <button onClick={()=>setShowCoinCustomizer(true)}
-                  style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:28,height:28,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",gap:2,flexShrink:0}}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+                <button onClick={()=>{ if(!isPro){setProGateHint("customlabels");return;} setShowCoinCustomizer(true);}}
+                  title={isPro?"Customise coin labels":"Pro feature: Custom labels"}
+                  style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:28,height:28,cursor:"pointer",color:isPro?SUB:YELLOW,display:"flex",alignItems:"center",justifyContent:"center",gap:2,flexShrink:0,position:"relative"}}>
+                  {isPro
+                    ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+                    : <span style={{fontSize:12}}>👑</span>
+                  }
                 </button>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
@@ -3050,10 +3133,17 @@ function CreateModal({ onConfirm, onClose }) {
 // ─────────────────────────────────────────────
 // PLAN CONSTANTS
 // ─────────────────────────────────────────────
+const SUPERADMIN_EMAIL = "hi.tetikus@gmail.com";
+const FREE_SESSION_LIMIT = 1;
+const FREE_PAX_LIMIT = 30;
+const PRO_PAX_LIMIT = 200;
+
 const PLANS = {
-  free:    { name:"Free",     price:0,   year:0,   color:SUB,   sessions:1,  participants:20  },
-  oneTime: { name:"One Time", price:29,  year:0,   color:BLUE,  sessions:999,participants:999 },
-  pro:     { name:"Pro",      price:29,  year:269, color:PINK,  sessions:999,participants:999 },
+  free:        { name:"Free",          price:0,   year:0,   color:SUB,   sessions:FREE_SESSION_LIMIT, participants:FREE_PAX_LIMIT },
+  beta:        { name:"Beta Tester",   price:0,   year:0,   color:GREEN, sessions:999, participants:PRO_PAX_LIMIT },
+  superadmin:  { name:"Superadmin",    price:0,   year:0,   color:PINK,  sessions:999, participants:999 },
+  oneTime:     { name:"One Time",      price:29,  year:0,   color:BLUE,  sessions:999, participants:PRO_PAX_LIMIT },
+  pro:         { name:"Pro",           price:29,  year:269, color:PINK,  sessions:999, participants:PRO_PAX_LIMIT },
 };
 
 // ── 1. Pricing Page ──────────────────────────
@@ -3632,7 +3722,71 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
               {pd.price}{!isFree&&<span style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</span>}
             </div>
             {pd.next && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>Access until {pd.next}</div>}
-            {isFree && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>1 session · 20 participants · Basic features</div>}
+            {isFree && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>No time limit · No card required</div>}
+          </div>
+
+          {/* Feature list */}
+          <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"16px 18px",marginBottom:20}}>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,marginBottom:12}}>
+              {isFree ? "What's included" : "Everything in your plan"}
+            </div>
+            {isFree ? (
+              <>
+                {[
+                  {label:"1 active session",ok:true},
+                  {label:"Up to 30 participants per session",ok:true},
+                  {label:"Award coins in real time",ok:true},
+                  {label:"Live leaderboard",ok:true},
+                  {label:"QR / link join — no app needed",ok:true},
+                  {label:"Mass give coins",ok:true},
+                  {label:"Session log",ok:true},
+                  {label:"Projector / TV mode",ok:true},
+                  {label:"Export CSV",ok:true},
+                ].map(f=>(
+                  <div key={f.label} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${BORDER}`}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f.label}</div>
+                  </div>
+                ))}
+                <div style={{marginTop:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,marginBottom:8}}>🔒 Unlock with Pro</div>
+                {[
+                  "Unlimited sessions",
+                  "Up to 200 participants",
+                  "Groups & team scoring",
+                  "Custom coin labels",
+                  "Coinmaster co-host mode",
+                ].map(f=>(
+                  <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${BORDER}`,opacity:0.5}}>
+                    <span style={{fontSize:12}}>👑</span>
+                    <div style={{fontSize:13,color:SUB,fontWeight:500}}>{f}</div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <>
+                {[
+                  "Unlimited sessions",
+                  "Up to 200 participants",
+                  "Award coins in real time",
+                  "Live leaderboard",
+                  "QR / link join — no app needed",
+                  "Mass give coins",
+                  "Session log",
+                  "Projector / TV mode",
+                  "Export CSV",
+                  "Groups & team scoring",
+                  "Custom coin labels",
+                  "Coinmaster co-host mode",
+                  "PIN rejoin for returning participants",
+                  "Priority support",
+                ].map(f=>(
+                  <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${BORDER}`}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
 
           {/* Usage */}
@@ -3640,8 +3794,8 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px",marginBottom:20}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:14}}>Usage</div>
               {[
-                {label:"Sessions", used:1, max:1, color:PINK},
-                {label:"Participants (last session)", used:18, max:20, color:BLUE},
+                {label:"Sessions", used:1, max:FREE_SESSION_LIMIT, color:PINK},
+                {label:"Participants / session", used:0, max:FREE_PAX_LIMIT, color:BLUE},
               ].map(u=>(
                 <div key={u.label} style={{marginBottom:14}}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
@@ -3649,7 +3803,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
                     <div style={{fontSize:13,color:u.color,fontWeight:700}}>{u.used} / {u.max}</div>
                   </div>
                   <div style={{height:6,background:BORDER,borderRadius:4,overflow:"hidden"}}>
-                    <div style={{height:6,background:u.used/u.max>0.8?`linear-gradient(90deg,${u.color},#EF4444)`:u.color,width:`${(u.used/u.max)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
+                    <div style={{height:6,background:u.used/u.max>0.8?`linear-gradient(90deg,${u.color},#EF4444)`:u.color,width:`${Math.max(2,(u.used/u.max)*100)}%`,borderRadius:4,transition:"width .5s ease"}}/>
                   </div>
                 </div>
               ))}
@@ -3660,7 +3814,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
           {isFree && (
             <button onClick={onUpgrade}
               style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:16}}>
-              Upgrade to Pro · RM 16/mo
+              Upgrade to Pro · RM 29/mo
             </button>
           )}
 
@@ -3720,6 +3874,248 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
             <div style={{fontSize:12,color:SUB,marginTop:10}}>Payments processed securely by <span style={{color:"#6C47FF",fontWeight:700}}>Chip</span> · International cards accepted</div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Superadmin Dashboard ──────────────────────────────────────────
+function SuperAdminDashboard({ onClose }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [tab, setTab] = useState("users"); // users | beta
+  const [betaEmail, setBetaEmail] = useState("");
+  const [betaMsg, setBetaMsg] = useState(null);
+  const [actionMsg, setActionMsg] = useState(null);
+
+  // Load all users from Firestore top-level users collection
+  useEffect(() => {
+    async function load() {
+      try {
+        const { getFirestore, collection, getDocs } = await import("firebase/firestore");
+        const db = getFirestore();
+        const snap = await getDocs(collection(db, "users"));
+        const list = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          list.push({
+            uid: doc.id,
+            email: d.email || "—",
+            name: d.name || "—",
+            plan: d.plan || "free",
+            planExpiry: d.planExpiry || null,
+            sessionsCount: Array.isArray(d.sessions_index) ? d.sessions_index.length : 0,
+          });
+        });
+        list.sort((a,b) => {
+          const order = {superadmin:0, beta:1, pro:2, proY:2, oneTime:2, free:3};
+          return (order[a.plan]||3) - (order[b.plan]||3);
+        });
+        setUsers(list);
+      } catch(e) { console.error(e); }
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  async function assignBeta(uid, email) {
+    try {
+      const { getFirestore, doc, setDoc } = await import("firebase/firestore");
+      const db = getFirestore();
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + 90);
+      await setDoc(doc(db, "users", uid), { plan: "beta", planExpiry: expiry.toISOString() }, { merge: true });
+      setUsers(u => u.map(x => x.uid === uid ? {...x, plan:"beta", planExpiry:expiry.toISOString()} : x));
+      setActionMsg(`✅ Beta assigned to ${email} for 90 days`);
+      setTimeout(() => setActionMsg(null), 3000);
+    } catch(e) { setActionMsg("❌ Error: " + e.message); }
+  }
+
+  async function revokePlan(uid, email) {
+    try {
+      const { getFirestore, doc, setDoc } = await import("firebase/firestore");
+      const db = getFirestore();
+      await setDoc(doc(db, "users", uid), { plan: "free", planExpiry: null }, { merge: true });
+      setUsers(u => u.map(x => x.uid === uid ? {...x, plan:"free", planExpiry:null} : x));
+      setActionMsg(`✅ Plan reset to Free for ${email}`);
+      setTimeout(() => setActionMsg(null), 3000);
+    } catch(e) { setActionMsg("❌ Error: " + e.message); }
+  }
+
+  async function assignBetaByEmail() {
+    if (!betaEmail.trim()) return;
+    const found = users.find(u => u.email.toLowerCase() === betaEmail.trim().toLowerCase());
+    if (!found) { setBetaMsg("User not found. They must have logged in at least once."); return; }
+    await assignBeta(found.uid, found.email);
+    setBetaEmail("");
+    setBetaMsg(null);
+  }
+
+  const PLAN_COLORS = { free: SUB, beta: GREEN, pro: PINK, proY: PINK, oneTime: BLUE, superadmin: "#FF6B00" };
+  const PLAN_LABELS = { free:"Free", beta:"Beta", pro:"Pro", proY:"Pro Yearly", oneTime:"One-Time", superadmin:"Superadmin" };
+
+  const filtered = users.filter(u =>
+    u.email.toLowerCase().includes(search.toLowerCase()) ||
+    u.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const stats = {
+    total: users.length,
+    pro: users.filter(u => u.plan === "pro" || u.plan === "proY" || u.plan === "oneTime").length,
+    beta: users.filter(u => u.plan === "beta").length,
+    free: users.filter(u => u.plan === "free").length,
+  };
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:900,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <style>{CSS}</style>
+
+      {/* Header */}
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:16}}>🛡️</span>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Superadmin</div>
+        </div>
+        <div style={{width:60}}/>
+      </div>
+
+      {/* Stats bar */}
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",gap:16,flexShrink:0,overflowX:"auto"}}>
+        {[
+          {label:"Total Users", val:stats.total, color:TEXT},
+          {label:"Pro / Paid", val:stats.pro, color:PINK},
+          {label:"Beta Testers", val:stats.beta, color:GREEN},
+          {label:"Free", val:stats.free, color:SUB},
+        ].map(s => (
+          <div key={s.label} style={{background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 18px",flexShrink:0,minWidth:100,textAlign:"center"}}>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:s.color}}>{loading ? "…" : s.val}</div>
+            <div style={{fontSize:11,color:SUB,fontWeight:600,marginTop:2}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",flexShrink:0}}>
+        {[["users","👥 Users"],["beta","⚡ Assign Beta"]].map(([id,l]) => (
+          <button key={id} onClick={()=>setTab(id)}
+            style={{padding:"11px 20px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent"}}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {/* Toast */}
+      {actionMsg && (
+        <div style={{position:"fixed",top:70,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:TEXT,color:"#fff",borderRadius:10,padding:"10px 20px",fontSize:13,fontWeight:600,whiteSpace:"nowrap",boxShadow:"0 4px 20px rgba(0,0,0,.2)"}}>
+          {actionMsg}
+        </div>
+      )}
+
+      <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
+
+        {tab === "users" && <>
+          {/* Search */}
+          <div style={{marginBottom:16}}>
+            <Inp placeholder="Search by name or email…" value={search} onChange={e=>setSearch(e.target.value)} style={{width:"100%",maxWidth:480}}/>
+          </div>
+
+          {loading ? (
+            <div style={{textAlign:"center",padding:48,color:SUB,fontSize:14}}>Loading users…</div>
+          ) : (
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,overflow:"hidden"}}>
+              {filtered.length === 0 ? (
+                <div style={{padding:32,textAlign:"center",color:SUB,fontSize:13}}>No users found</div>
+              ) : filtered.map((u,i) => {
+                const planColor = PLAN_COLORS[u.plan] || SUB;
+                const planLabel = PLAN_LABELS[u.plan] || u.plan;
+                const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : null;
+                const isSA = u.plan === "superadmin";
+                return (
+                  <div key={u.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 18px",borderBottom:i<filtered.length-1?`1px solid ${BORDER}`:"none",flexWrap:"wrap"}}>
+                    <div style={{width:36,height:36,borderRadius:10,background:`${planColor}18`,border:`1.5px solid ${planColor}30`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:planColor}}>
+                      {(u.name||"?")[0].toUpperCase()}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{u.name}</div>
+                      <div style={{fontSize:12,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</div>
+                      {expiryStr && <div style={{fontSize:11,color:SUB,marginTop:1}}>Expires {expiryStr}</div>}
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+                      <span style={{background:`${planColor}15`,border:`1px solid ${planColor}40`,color:planColor,borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}>{planLabel}</span>
+                      {!isSA && u.plan !== "beta" && (
+                        <button onClick={()=>assignBeta(u.uid, u.email)}
+                          style={{padding:"4px 10px",background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:8,fontSize:11,fontWeight:700,color:"#16A34A",cursor:"pointer"}}>
+                          + Beta
+                        </button>
+                      )}
+                      {!isSA && u.plan !== "free" && (
+                        <button onClick={()=>revokePlan(u.uid, u.email)}
+                          style={{padding:"4px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:700,color:"#EF4444",cursor:"pointer"}}>
+                          Revoke
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>}
+
+        {tab === "beta" && (
+          <div style={{maxWidth:480}}>
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"24px"}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:TEXT,marginBottom:6}}>Assign Beta Tester</div>
+              <div style={{fontSize:13,color:SUB,marginBottom:18,lineHeight:1.6}}>Beta testers get full Pro access for 90 days. After 90 days their account automatically reverts to Free.</div>
+              <div style={{display:"flex",gap:10,marginBottom:12}}>
+                <Inp placeholder="User email address" value={betaEmail} onChange={e=>setBetaEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&assignBetaByEmail()} style={{flex:1}}/>
+                <button onClick={assignBetaByEmail}
+                  style={{padding:"0 20px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
+                  Assign
+                </button>
+              </div>
+              {betaMsg && <div style={{fontSize:13,color:"#EF4444",marginTop:4}}>{betaMsg}</div>}
+              <div style={{marginTop:20,padding:"12px 14px",background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:10}}>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#16A34A",marginBottom:6}}>Beta plan includes</div>
+                {["Full Pro feature access","Groups & team scoring","Coinmaster co-host","Custom coin labels","Up to 200 participants","Automatic revert after 90 days"].map(f=>(
+                  <div key={f} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0"}}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <div style={{fontSize:12,color:"#166534",fontWeight:500}}>{f}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Current beta users */}
+            <div style={{marginTop:20}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Current Beta Testers ({users.filter(u=>u.plan==="beta").length})</div>
+              {users.filter(u=>u.plan==="beta").length === 0 ? (
+                <div style={{fontSize:13,color:SUB,padding:"16px 0"}}>No beta testers yet.</div>
+              ) : users.filter(u=>u.plan==="beta").map(u => {
+                const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
+                const expired = u.planExpiry && new Date(u.planExpiry) < new Date();
+                return (
+                  <div key={u.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,marginBottom:8}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</div>
+                      <div style={{fontSize:12,color:SUB}}>{u.email}</div>
+                      <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:600,marginTop:2}}>{expired?"Expired":"Active"} · until {expiryStr}</div>
+                    </div>
+                    <button onClick={()=>revokePlan(u.uid, u.email)}
+                      style={{padding:"5px 12px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:12,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
+                      Revoke
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -4019,6 +4415,7 @@ export default function App() {
   const [showBilling, setShowBilling] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSuperAdmin, setShowSuperAdmin] = useState(false);
   const [limitModal, setLimitModal] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -4027,8 +4424,13 @@ export default function App() {
   const [paymentToast, setPaymentToast] = useState(null);
   const [claimToken, setClaimToken] = useState(null); // badge claim token from /claim/TOKEN URL
 
-  const isFree = plan === "free";
-  const sessionLimit = isFree ? 1 : 999;
+  const isSuperadmin = plan === "superadmin";
+  const isBeta = plan === "beta";
+  const isPaidPro = plan === "pro" || plan === "proY" || plan === "oneTime";
+  const isPro = isPaidPro || isBeta || isSuperadmin; // beta + superadmin get full pro access
+  const isFree = !isPro;
+  const sessionLimit = isFree ? FREE_SESSION_LIMIT : 999;
+  const paxLimit = isFree ? FREE_PAX_LIMIT : PRO_PAX_LIMIT;
 
   // ── Handle payment return from Chip ──
   useEffect(() => {
@@ -4109,13 +4511,28 @@ export default function App() {
           await ss("name", t.name);
           let p = await sg("plan"); 
           let exp = await sg("planExpiry");
-          // ── Check if existing plan has expired → downgrade to free ──
-          if (p && p !== "free" && exp) {
-            if (new Date(exp) < new Date()) {
-              // Expired — reset to free
-              p = "free"; exp = null;
-              await ss("plan", "free");
-              await sd("planExpiry");
+
+          // ── Superadmin override ──
+          if (user.email === SUPERADMIN_EMAIL) {
+            p = "superadmin"; exp = null;
+            await ss("plan", "superadmin");
+            await sd("planExpiry");
+          } else {
+            // ── Check if existing plan has expired → downgrade to free ──
+            if (p && p !== "free" && p !== "beta" && exp) {
+              if (new Date(exp) < new Date()) {
+                p = "free"; exp = null;
+                await ss("plan", "free");
+                await sd("planExpiry");
+              }
+            }
+            // ── Check if beta has expired (90 days) ──
+            if (p === "beta" && exp) {
+              if (new Date(exp) < new Date()) {
+                p = "free"; exp = null;
+                await ss("plan", "free");
+                await sd("planExpiry");
+              }
             }
           }
           if (p) setPlan(p);
@@ -4194,7 +4611,7 @@ export default function App() {
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
   if (false && screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
-  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} onBack={()=>setScreen("home")} onPView={()=>setScreen("participant")}/></>;
+  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onBack={()=>setScreen("home")} onPView={()=>setScreen("participant")}/></>;
 
   // Session settings from home list gear icon
   if (screen==="sessionSettings" && cur) return (
@@ -4223,6 +4640,7 @@ export default function App() {
       {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>setShowPricing(false)}/>}
       {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>setShowBilling(false)}/>}
       {showProfile && <ProfilePage trainer={trainer} onClose={()=>setShowProfile(false)} onSaved={(newName)=>setTrainer(t=>({...t,name:newName}))}/>}
+      {showSuperAdmin && <SuperAdminDashboard onClose={()=>setShowSuperAdmin(false)}/>}
       {showSettings && <SettingsPage onClose={()=>setShowSettings(false)}/>}
       {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);setShowPricing(true);}} onClose={()=>setLimitModal(null)}/>}
       {creating && <CreateModal onConfirm={handleNew} onClose={()=>setCreating(false)}/>}
@@ -4290,6 +4708,7 @@ export default function App() {
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, label:"Profile", fn:()=>{setShowProfile(true);}},
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, label:"Billing & Plan", fn:()=>{setShowBilling(true);}},
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>, label:"Settings", fn:()=>{setShowSettings(true);}},
+              ...(isSuperadmin ? [{icon:<span style={{fontSize:14}}>🛡️</span>, label:"Superadmin Dashboard", fn:()=>{setShowSuperAdmin(true);}}] : []),
             ].map(item => (
               <button key={item.label} onClick={()=>{setProfileOpen(false);item.fn();}}
                 style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,fontWeight:600,color:TEXT}}

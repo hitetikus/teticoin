@@ -116,7 +116,7 @@ const CSS = `
 @keyframes lpFloatPop{0%{opacity:0;transform:translateY(0) scale(0.75);}12%{opacity:1;transform:translateY(-12px) scale(1.04);}72%{opacity:1;transform:translateY(-52px) scale(1);}100%{opacity:0;transform:translateY(-80px) scale(0.92);}}
 .lp-coin-pop{position:absolute;pointer-events:none;display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid rgba(255,79,184,0.3);border-radius:14px;padding:10px 16px;white-space:nowrap;animation:lpFloatPop 2.8s ease-out forwards;box-shadow:0 6px 24px rgba(0,0,0,0.1);z-index:5;}
 .lp-hero-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(157,80,255,0.08);border:1px solid rgba(157,80,255,0.25);border-radius:999px;padding:5px 14px;font-size:12px;font-weight:600;color:#9D50FF;margin-bottom:24px;letter-spacing:.3px;animation:lpHeroFadeUp .7s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.05s;}
-.lp-hero h1{font-size:clamp(40px,6vw,72px);line-height:1.04;color:#0A0A0F;max-width:760px;margin:0 auto 20px;letter-spacing:-1.5px;animation:lpHeroFadeUp .8s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.2s;}
+.lp-hero h1{font-size:clamp(32px,4.5vw,60px);line-height:1.08;color:#0A0A0F;max-width:700px;margin:0 auto 18px;letter-spacing:-1.5px;animation:lpHeroFadeUp .8s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.2s;}
 .lp-hero-sub{font-size:18px;color:#6B7280;line-height:1.7;max-width:540px;margin:0 auto 36px;animation:lpHeroFadeUp .8s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.35s;}
 .lp-hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;animation:lpHeroFadeUp .8s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.48s;}
 .lp-btn-big{padding:14px 32px;border-radius:999px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;}
@@ -128,8 +128,7 @@ const CSS = `
 .lp-screen-main{width:280px;border-radius:24px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.18),0 0 0 1px rgba(0,0,0,0.06);flex-shrink:0;}
 .lp-screen-side{width:220px;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.14),0 0 0 1px rgba(0,0,0,0.05);flex-shrink:0;}
 .lp-screen-glow{position:absolute;bottom:-40px;left:50%;transform:translateX(-50%);width:60%;height:120px;background:radial-gradient(ellipse,rgba(255,79,184,0.18) 0%,transparent 70%);pointer-events:none;}
-.lp-logos{border-top:1px solid #F3F4F6;border-bottom:1px solid #F3F4F6;padding:28px 48px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}
-.lp-logos-label{font-size:11px;font-weight:700;color:#9CA3AF;letter-spacing:1.5px;text-transform:uppercase;margin-right:8px;}
+
 .lp-logo-pill{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:7px 18px;font-size:13px;font-weight:600;color:#6B7280;}
 .lp-section{padding:96px 24px;}
 .lp-section-inner{max-width:960px;margin:0 auto;}
@@ -166,8 +165,8 @@ const CSS = `
 .lp-feat-screen-glow{position:absolute;inset:-30px;background:radial-gradient(circle at center,rgba(157,80,255,0.2) 0%,transparent 70%);pointer-events:none;z-index:0;}
 .lp-bento{background:#FAFAFA;padding:96px 24px;}
 .lp-bento-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:56px;}
-.lp-bento-card{background:#fff;border:1px solid #F0F0F0;border-radius:20px;padding:32px;overflow:hidden;position:relative;transition:box-shadow .2s;}
-.lp-bento-card:hover{box-shadow:0 8px 32px rgba(0,0,0,0.07);}
+.lp-bento-card{background:#fff;border:1.5px solid #D1D5DB;border-radius:20px;padding:32px;overflow:hidden;position:relative;transition:box-shadow .2s,border-color .2s;}
+.lp-bento-card:hover{box-shadow:0 8px 32px rgba(233,30,140,0.1);border-color:#E91E8C;}
 .lp-bento-card.span2{grid-column:span 2;}
 .lp-bento-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;}
 .lp-bento-card h4{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:17px;color:#0A0A0F;margin-bottom:8px;}
@@ -237,7 +236,6 @@ const CSS = `
   .lp-pricing-grid{grid-template-columns:1fr;}
   .lp-footer-inner{flex-direction:column;gap:20px;text-align:center;}
   .lp-footer-links{flex-wrap:wrap;justify-content:center;}
-  .lp-logos{padding:20px 16px;}
   .lp-section{padding:64px 20px;}
   .lp-cta-card{padding:48px 24px;}
 }
@@ -387,9 +385,10 @@ export default function LandingPage({ onGetStarted, onLogin }) {
     return () => observer.disconnect();
   }, []);
 
-  const proPrice  = billing === "monthly" ? "RM 29" : "RM 22";
-  const proPeriod = billing === "monthly" ? "/mo · Early access price" : "/mo · Billed RM 269/year · Save RM 79";
-  const proBtn    = billing === "monthly" ? "Upgrade to Pro — RM 29/mo" : "Upgrade to Pro — RM 269/year";
+  const proMonthly = 29;
+  const proYearly  = 269;
+  const proPerMonth = Math.round(proYearly / 12); // 22
+  const proSaving  = proMonthly * 12 - proYearly;  // 79
   const proLink   = billing === "monthly" ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL" : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl";
 
   const N = {fontFamily:"Nunito,sans-serif"};
@@ -427,8 +426,8 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       <section className="lp-hero">
         <CoinPops/>
         <div className="lp-hero-tag">✦ Real-time engagement for training & events</div>
-        <h1>Make your sessions interactive.<br/>Keep everyone <span style={{background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>engaged.</span></h1>
-        <p className="lp-hero-sub">Run live sessions where participants earn points, stay involved, and actually enjoy the experience — no app needed.</p>
+        <h1>Make every session<br/>more interactive.<br/><span style={{background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Engage everyone.</span></h1>
+        <p className="lp-hero-sub">Award points live, show leaderboards, and keep participants hooked — no app needed.</p>
         <div className="lp-hero-btns">
           <button className="lp-btn-big lp-btn-big-fill" onClick={onGetStarted}>Get Started Free</button>
           <button className="lp-btn-big lp-btn-big-outline" onClick={() => scrollTo("how")}>See how it works →</button>
@@ -527,14 +526,6 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           <div className="lp-screen-glow"/>
         </div>
       </section>
-
-      {/* LOGOS */}
-      <div className="lp-logos">
-        <span className="lp-logos-label">Trusted by</span>
-        {["Petronas","Maybank","TalentCorp","Universiti Malaya","MDEC"].map(n => (
-          <div key={n} className="lp-logo-pill">{n}</div>
-        ))}
-      </div>
 
       {/* HOW IT WORKS */}
       <section className="lp-section" id="how" style={{background:"#FAFAFA"}}>
@@ -746,7 +737,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
         <div className="lp-who-inner">
           <div className="lp-label lp-fade-up" style={{color:PINK}}>Who it's for</div>
           <div className="lp-section-title lp-fade-up lp-fade-up-d1">Built for anyone running sessions.</div>
-          <p className="lp-section-sub lp-fade-up lp-fade-up-d2">From classrooms to corporate training — if you run a session, Teticoin keeps everyone engaged.</p>
+          <p className="lp-section-sub lp-fade-up lp-fade-up-d2" style={{textAlign:"left",margin:"0 0 0 0",maxWidth:"100%"}}>From classrooms to corporate training — if you run a session, Teticoin keeps everyone engaged.</p>
         </div>
         <div className="lp-carousel-wrap">
           <div className="lp-carousel-track">
@@ -781,35 +772,60 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           </div>
           </div>
           <div className="lp-pricing-grid lp-fade-up lp-fade-up-d4" style={{margin:"32px auto 0"}}>
+            {/* FREE */}
             <div className="lp-plan-card">
               <div className="lp-plan-label" style={{color:NEUT}}>Free</div>
-              <div className="lp-plan-price" style={{color:TEXT}}>RM 0</div>
+              <div style={{display:"flex",alignItems:"baseline",gap:4,margin:"8px 0 2px"}}>
+                <div className="lp-plan-price" style={{color:TEXT,margin:0}}>RM 0</div>
+              </div>
               <div className="lp-plan-period">No time limit. No card required.</div>
               <div className="lp-plan-divider"/>
               <ul className="lp-plan-features">
-                {["1 session","Up to 20 participants","Basic features","Live leaderboard","QR join — no app needed"].map(f => (
+                {["1 session","Up to 30 participants","Live leaderboard","QR join — no app needed","Basic features"].map(f => (
                   <li key={f}><Check color={NEUT}/>{f}</li>
                 ))}
               </ul>
               <button className="lp-plan-btn outline" onClick={onGetStarted}>Get Started Free</button>
             </div>
+
+            {/* PRO */}
             <div className="lp-plan-card popular">
               <div className="lp-plan-badge">POPULAR</div>
               <div className="lp-plan-label" style={{color:PINK}}>Pro</div>
-              <div className="lp-plan-price" style={{color:PINK}}>{proPrice}</div>
-              <div className="lp-plan-period">{proPeriod}</div>
+              {billing === "monthly" ? (
+                <div style={{display:"flex",alignItems:"baseline",gap:4,margin:"8px 0 2px"}}>
+                  <div className="lp-plan-price" style={{color:PINK,margin:0}}>RM {proMonthly}</div>
+                  <div style={{fontSize:15,fontWeight:600,color:PINK}}>/mo</div>
+                </div>
+              ) : (
+                <div style={{margin:"8px 0 2px"}}>
+                  <div style={{display:"flex",alignItems:"baseline",gap:4}}>
+                    <div className="lp-plan-price" style={{color:PINK,margin:0}}>RM {proYearly}</div>
+                    <div style={{fontSize:15,fontWeight:600,color:PINK}}>/yr</div>
+                  </div>
+                  <div style={{fontSize:13,fontWeight:700,color:PINK,marginTop:2}}>RM {proPerMonth}/mo</div>
+                  <div style={{fontSize:12,fontWeight:700,color:"#16A34A",marginTop:3,background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:99,display:"inline-block",padding:"2px 10px"}}>Save RM {proSaving}</div>
+                </div>
+              )}
+              {billing === "monthly" && <div className="lp-plan-period" style={{marginTop:4}}>Early access price</div>}
               <div className="lp-plan-divider" style={{background:"#FECDE8"}}/>
               <ul className="lp-plan-features">
-                {["Unlimited sessions","Up to 100 participants","Full features","Priority updates","Coinmaster co-host mode"].map(f => (
+                {["Unlimited sessions","Up to 200 participants","Groups & team scoring","Custom coin labels","Coinmaster co-host mode","Projector / TV mode","Export CSV"].map(f => (
                   <li key={f}><Check/>{f}</li>
                 ))}
               </ul>
-              <button className="lp-plan-btn primary" onClick={() => window.location.href = proLink}>{proBtn}</button>
+              <button className="lp-plan-btn primary" onClick={() => window.location.href = proLink}>
+                {billing === "monthly" ? `Upgrade to Pro — RM ${proMonthly}/mo` : `Upgrade to Pro — RM ${proYearly}/yr`}
+              </button>
               <div style={{textAlign:"center",fontSize:11,color:NEUT,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>
             </div>
+
+            {/* ENTERPRISE */}
             <div className="lp-plan-card">
               <div className="lp-plan-label" style={{color:PURPLE}}>Enterprise</div>
-              <div className="lp-plan-price" style={{fontSize:28,color:PURPLE}}>Contact us</div>
+              <div style={{margin:"8px 0 2px"}}>
+                <div className="lp-plan-price" style={{fontSize:28,color:PURPLE,margin:0}}>Contact us</div>
+              </div>
               <div className="lp-plan-period">For teams and organisations</div>
               <div className="lp-plan-divider" style={{background:"#DDD6FE"}}/>
               <ul className="lp-plan-features">
