@@ -1172,6 +1172,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   const [live, setLive] = useState(init);
   const [showMyQR, setShowMyQR] = useState(false);
   const [showEarnings, setShowEarnings] = useState(false);
+  const [showLoginPw, setShowLoginPw] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editNameVal, setEditNameVal] = useState("");
   const [returnMatch, setReturnMatch] = useState(null);
@@ -1488,9 +1489,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   };
 
   // Optional login modal
-  const OptionalLoginModal = useCallback(() => {
-    const [showPw, setShowPw] = React.useState(false);
-    return (
+  const OptionalLoginModal = () => (
     <div style={{position:"fixed",inset:0,zIndex:600,display:"flex",alignItems:"flex-end",justifyContent:"center",background:"rgba(26,10,20,.5)",backdropFilter:"blur(4px)"}}>
       <div style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:420,padding:"24px 24px 40px",animation:"slideUp .25s ease"}}>
         <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>
@@ -1525,12 +1524,12 @@ function ParticipantView({ session: init, hostPlan="free" }) {
               style={{background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"11px 14px",fontFamily:"Poppins,sans-serif",fontSize:14,color:TEXT,outline:"none",width:"100%",boxSizing:"border-box",marginBottom:8}}/>
             <div style={{position:"relative",marginBottom:loginErr?8:12}}>
               <input placeholder="Password" value={loginPass} onChange={e=>setLoginPass(e.target.value)}
-                type={showPw?"text":"password"} autoComplete="current-password"
+                type={showLoginPw?"text":"password"} autoComplete="current-password"
                 onKeyDown={e=>e.key==="Enter"&&handleOptionalLogin(null,"email")}
                 style={{background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"11px 44px 11px 14px",fontFamily:"Poppins,sans-serif",fontSize:14,color:TEXT,outline:"none",width:"100%",boxSizing:"border-box"}}/>
-              <button type="button" onMouseDown={e=>{e.preventDefault();setShowPw(v=>!v);}}
+              <button type="button" onMouseDown={e=>{e.preventDefault();setShowLoginPw(v=>!v);}}
                 style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:SUB,padding:4,display:"flex",alignItems:"center"}}>
-                {showPw
+                {showLoginPw
                   ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                   : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 }
@@ -1547,9 +1546,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
         )}
       </div>
     </div>
-  );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [linkedUid, linkedName, loginEmail, loginPass, loginBusy, loginErr]);
+  )
 
   // Login banner shown in joined view
   const LoginBanner = () => linkedUid ? (
