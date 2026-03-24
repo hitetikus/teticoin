@@ -1171,6 +1171,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   const [myId, setMyId] = useState(null);
   const [live, setLive] = useState(init);
   const [showMyQR, setShowMyQR] = useState(false);
+  const [showEarnings, setShowEarnings] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editNameVal, setEditNameVal] = useState("");
   const [returnMatch, setReturnMatch] = useState(null);
@@ -1744,6 +1745,9 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   if (step === "joined") return (
     <div style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
       {loginModal && <OptionalLoginModal/>}
+      {showEarnings && linkedUid && (
+        <EarningsPage uid={linkedUid} name={me?.name||"You"} onClose={()=>setShowEarnings(false)}/>
+      )}
       <BadgeClaimPrompt/>
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10,flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -1751,6 +1755,16 @@ function ParticipantView({ session: init, hostPlan="free" }) {
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
+          {/* Earnings snippet — only shown when logged in */}
+          {linkedUid && (
+            <button onClick={()=>setShowEarnings(true)}
+              title="My total earnings across all sessions"
+              style={{display:"flex",alignItems:"center",gap:4,background:"none",border:`1px solid ${BORDER}`,borderRadius:9,padding:"5px 10px",cursor:"pointer",position:"relative",gap:6}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:PINK}}>{me?.total||0}</span>
+              <span style={{fontSize:10,color:SUB,fontWeight:600}}>coins</span>
+            </button>
+          )}
           <button onClick={()=>setShowMyQR(v=>!v)}
             style={{display:"flex",alignItems:"center",gap:5,background:showMyQR?SOFT:"none",border:`1px solid ${showMyQR?PINK:BORDER}`,borderRadius:9,padding:"5px 10px",fontSize:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,color:showMyQR?PINK:SUB,cursor:"pointer"}}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
@@ -2572,6 +2586,26 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       p.total += pts; p.bk[type] = (p.bk[type]||0)+1;
       p.hist = [{type,pts,t:new Date().toLocaleTimeString()}, ...(p.hist||[]).slice(0,29)];
       s.log = [{id:Date.now(),name:p.name,type,pts,t:new Date().toLocaleTimeString()}, ...(s.log||[]).slice(0,99)];
+      // Record earning to participant's personal Firestore earnings history
+      if (p.uid) {
+        const now = Date.now();
+        import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
+          const db = getFirestore();
+          const ref = doc(db,"users",p.uid,"data","earnings");
+          getDoc(ref).then(snap=>{
+            const prev = snap.exists() ? (snap.data().value||[]) : [];
+            // Find or create entry for this session
+            const idx = prev.findIndex(e=>e.code===ses.code);
+            let updated;
+            if (idx>=0) {
+              updated = prev.map((e,i)=>i===idx?{...e,coins:e.coins+pts,lastUpdated:now}:e);
+            } else {
+              updated = [{code:ses.code,name:ses.name,coins:pts,joinedAt:now,lastUpdated:now},...prev];
+            }
+            setDoc(ref,{value:updated,updatedAt:now});
+          }).catch(()=>{});
+        }).catch(()=>{});
+      }
     });
     const col = type==="token" ? YELLOW : ACTS.find(x=>x.id===type)?.col||YELLOW;
     setAnims(a => [...a, {id:aid.current++,x:mx,y:my,text:`+${pts}`,color:col}]);
@@ -4450,6 +4484,128 @@ function SuperAdminDashboard({ onClose }) {
 }
 
 // ── Coinmaster Join Modal ──
+// ── Earnings Page — participant's personal coin history ──────────
+function EarningsPage({ uid, name, onClose }) {
+  const [earnings, setEarnings] = useState(null); // null = loading
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const { getFirestore, doc, getDoc } = await import("firebase/firestore");
+        const db = getFirestore();
+        const snap = await getDoc(doc(db, "users", uid, "data", "earnings"));
+        setEarnings(snap.exists() ? (snap.data().value || []) : []);
+      } catch { setEarnings([]); }
+    }
+    if (uid) load();
+    else setEarnings([]);
+  }, [uid]);
+
+  const totalCoins = (earnings||[]).reduce((s,e)=>s+e.coins,0);
+  const totalSessions = (earnings||[]).length;
+
+  function shareText() {
+    return `I've earned ${totalCoins} coins across ${totalSessions} session${totalSessions!==1?"s":""} on Teticoin! 🏆 https://teticoin.tetikus.com.my`;
+  }
+
+  const shareLinks = [
+    {name:"WhatsApp", color:"#25D366", url:`https://wa.me/?text=${encodeURIComponent(shareText())}`},
+    {name:"Facebook", color:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.tetikus.com.my")}&quote=${encodeURIComponent(shareText())}`},
+    {name:"Threads",  color:"#000",    url:`https://www.threads.net/intent/post?text=${encodeURIComponent(shareText())}`},
+  ];
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:800,background:BG,display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:"Poppins,sans-serif"}}>
+      <style>{CSS}</style>
+
+      {/* Header */}
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,fontWeight:600,padding:0}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:17,color:TEXT}}>My Earnings</div>
+        <div style={{width:48}}/>
+      </div>
+
+      <div style={{flex:1,overflowY:"auto",padding:"20px 16px",maxWidth:480,margin:"0 auto",width:"100%"}}>
+
+        {/* Name + summary */}
+        <div style={{background:GRAD,borderRadius:20,padding:"24px 20px",marginBottom:20,color:"#fff",textAlign:"center"}}>
+          <div style={{width:52,height:52,borderRadius:16,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22}}>
+            {(name||"?")[0].toUpperCase()}
+          </div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,marginBottom:16}}>{name}</div>
+          <div style={{display:"flex",justifyContent:"center",gap:24}}>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:40,lineHeight:1}}>{earnings===null?"…":totalCoins}</div>
+              <div style={{fontSize:12,opacity:.75,marginTop:4}}>total coins</div>
+            </div>
+            <div style={{width:1,background:"rgba(255,255,255,.3)",borderRadius:1}}/>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:40,lineHeight:1}}>{earnings===null?"…":totalSessions}</div>
+              <div style={{fontSize:12,opacity:.75,marginTop:4}}>{totalSessions===1?"session":"sessions"}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Session history */}
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Session history</div>
+
+        {earnings === null ? (
+          <div style={{textAlign:"center",padding:32,color:SUB,fontSize:13}}>Loading…</div>
+        ) : earnings.length === 0 ? (
+          <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"36px 20px",textAlign:"center"}}>
+            <Ham size={52}/>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginTop:12,marginBottom:6}}>No earnings yet</div>
+            <div style={{fontSize:13,color:SUB}}>Join a session and earn coins to see your history here.</div>
+          </div>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {[...earnings].sort((a,b)=>b.lastUpdated-a.lastUpdated).map((e,i) => (
+              <div key={e.code} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}>
+                <div style={{width:40,height:40,borderRadius:12,background:SOFT,border:`1.5px solid ${MID}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:PINK}}>
+                  {i+1}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{e.name}</div>
+                  <div style={{fontSize:11,color:SUB,marginTop:2}}>
+                    {e.joinedAt ? new Date(e.joinedAt).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—"}
+                  </div>
+                </div>
+                <div style={{textAlign:"right",flexShrink:0}}>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:PINK}}>{e.coins}</div>
+                  <div style={{fontSize:10,color:SUB}}>coins</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Share */}
+        {totalCoins > 0 && (
+          <div style={{marginTop:24}}>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Share your achievement</div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              {shareLinks.map(s=>(
+                <button key={s.name} onClick={()=>window.open(s.url,"_blank")}
+                  style={{display:"flex",alignItems:"center",gap:6,padding:"9px 14px",background:`${s.color}15`,border:`1px solid ${s.color}40`,borderRadius:10,color:s.color,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12}}>
+                  {s.name}
+                </button>
+              ))}
+              <button onClick={()=>{navigator.clipboard?.writeText(shareText());setCopied(true);setTimeout(()=>setCopied(false),2000);}}
+                style={{display:"flex",alignItems:"center",gap:6,padding:"9px 14px",background:copied?"#F0FDF4":"#F3F4F6",border:`1px solid ${copied?"#BBF7D0":"#D1D5DB"}`,borderRadius:10,color:copied?"#16A34A":"#6B7280",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12}}>
+                {copied?"Copied!":"Copy text"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── JoinSessionField — compact code entry used on home screen ──
 function JoinSessionField({ onJoin }) {
   const [code, setCode] = useState("");
