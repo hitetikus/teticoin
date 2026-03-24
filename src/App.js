@@ -844,7 +844,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
           </div>
           <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
             {tabBtn("people","Participants")}
-            {tabBtn("groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="11" height="9" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg></span>)}
+            {tabBtn("groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></span>)}
             {/* Coinmaster tab hidden — phase 2 feature */}
           </div>
         </div>
@@ -910,7 +910,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                 {/* Frosted overlay with upgrade prompt */}
                 <div style={{position:"absolute",inset:0,backdropFilter:"blur(3px)",WebkitBackdropFilter:"blur(3px)",background:"rgba(255,255,255,0.55)",borderRadius:12,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 16px",textAlign:"center"}}>
                   <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
-                    <svg width="32" height="26" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg>
+                    <svg width="36" height="30" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
                   </div>
                   <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>Groups is a Pro feature</div>
                   <div style={{fontSize:13,color:SUB,lineHeight:1.6,marginBottom:16}}>Organise participants into teams and track group scores. Upgrade to unlock.</div>
@@ -938,7 +938,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
           {tab==="coinmaster" && <>
             {!isManagePro ? (
               <div style={{textAlign:"center",padding:"32px 16px 24px"}}>
-                <div style={{display:"flex",justifyContent:"center",marginBottom:10}}><svg width="36" height="28" viewBox="0 0 40 32" fill="none"><path d="M2 28L5 8L14 18L20 4L26 18L35 8L38 28H2Z" fill="#F5A623" stroke="#F5A623" strokeWidth="1.5" strokeLinejoin="round"/><rect x="2" y="28" width="36" height="4" rx="2" fill="#F5A623"/></svg></div>
+                <div style={{display:"flex",justifyContent:"center",marginBottom:10}}><svg width="36" height="30" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></div>
                 <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:8}}>Coinmaster is a Pro feature</div>
                 <div style={{fontSize:13,color:SUB,lineHeight:1.7,marginBottom:18}}>Let co-hosts award coins from their own device. Upgrade to unlock coinmaster, groups, custom labels and more.</div>
                 <button onClick={()=>setShowUpgradeHint("coinmaster")} style={{padding:"10px 24px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Upgrade to Pro →</button>
@@ -2541,7 +2541,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>
             <div style={{textAlign:"center",marginBottom:20}}>
               <div style={{marginBottom:12,display:"flex",justifyContent:"center"}}>
-                <svg width="40" height="32" viewBox="0 0 40 32" fill="none"><path d="M2 28L5 8L14 18L20 4L26 18L35 8L38 28H2Z" fill={YELLOW} stroke={YELLOW} strokeWidth="1.5" strokeLinejoin="round"/><rect x="2" y="28" width="36" height="4" rx="2" fill={YELLOW}/></svg>
+                <svg width="40" height="34" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
               </div>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:8}}>
                 {proGateHint==="customlabels"?"Custom Coin Labels":proGateHint==="groups"?"Groups & Team Scoring":proGateHint==="massgive"?"Mass Give Coins":"Coinmaster Mode"} is Pro
@@ -2552,24 +2552,26 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   : proGateHint==="groups"
                     ? "Organise participants into teams, assign groups, and track team scores on the scoreboard."
                     : proGateHint==="massgive"
-                      ? <div>
+                      ? <div style={{width:"100%"}}>
                           <div style={{marginBottom:12}}>Give coins to multiple participants at once. Three ways to use it:</div>
-                          {[
-                            {icon:"👥","text":"Give to everyone — all participants get coins in one tap"},
-                            {icon:"🏷️","text":"Select by group — reward a whole team at once"},
-                            {icon:"📱","text":"QR select — participants scan to self-select for a reward"},
-                          ].map(f=>(
-                            <div key={f.text} style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:8,textAlign:"left"}}>
-                              <span style={{fontSize:15,flexShrink:0}}>{f.icon}</span>
-                              <span style={{fontSize:13,color:SUB,lineHeight:1.5}}>{f.text}</span>
-                            </div>
-                          ))}
+                          <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden",marginBottom:0}}>
+                            {[
+                              ["Give to everyone","All participants get coins in one tap"],
+                              ["Select by group","Reward a whole team at once"],
+                              ["QR select","Participants scan to self-select for a reward"],
+                            ].map(([label,desc],i,arr)=>(
+                              <div key={label} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
+                                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,minWidth:110,flexShrink:0}}>{label}</div>
+                                <div style={{fontSize:12,color:SUB,lineHeight:1.5}}>{desc}</div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       : "Let a co-host award coins from their own device without giving them full host access."
                 }
               </div>
             </div>
-            <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:12,padding:"12px 16px",marginBottom:20}}>
+            <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,padding:"12px 16px",marginBottom:20}}>
               {[["Custom coin labels","✗","✓"],["Groups & teams","✗","✓"],["Mass give coins","✗","✓"],["Participants","30","200"],["Sessions","1","∞"]].map(([f,free,pro])=>(
                 <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${BORDER}`}}>
                   <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
@@ -2676,7 +2678,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
       {/* ── MOBILE TABS (hidden on desktop) ── */}
       <div className="tc-tab-bar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
-        {[["people","Participants"],["award","Award"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg></span>],["log","Log"]].map(([id,l]) => (
+        {[["people","Participants"],["award","Award"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></span>],["log","Log"]].map(([id,l]) => (
           <button key={id} onClick={()=>{
             if (!isLive) return;
             setTab(id);
@@ -2786,7 +2788,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               <button onClick={()=>setProGateHint("massgive")} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PINK},${PINK2})`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span>Mass Give Coins</span>
-                <svg width="14" height="12" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#FFD166"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#F5A623"/></svg>
+                <svg width="14" height="12" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
               </button>
             )}
           </div>
@@ -2797,7 +2799,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
           {/* Desktop right-panel tabs */}
           <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0,display:"none"}}>
-            {[["people","Participants"],["award_all","Award All"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg></span>],["log","Log"]].map(([id,l]) => (
+            {[["people","Participants"],["award_all","Award All"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></span>],["log","Log"]].map(([id,l]) => (
               <button key={id} onClick={()=>setRightTab(id)}
                 style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
                   color:rightTab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
@@ -3027,7 +3029,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                   {/* Frosted upgrade overlay */}
                   <div style={{position:"absolute",inset:0,backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",background:"rgba(255,255,255,0.6)",borderRadius:12,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 16px",textAlign:"center"}}>
-                    <svg width="32" height="26" viewBox="0 0 20 16" fill="none" style={{marginBottom:10}}><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg>
+                    <div style={{display:"flex",justifyContent:"center",marginBottom:10}}><svg width="36" height="30" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></div>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>Groups is a Pro feature</div>
                     <div style={{fontSize:13,color:SUB,lineHeight:1.6,marginBottom:16}}>See team scores on the scoreboard. Upgrade to unlock.</div>
                     <button onClick={()=>setProGateHint("groups")} style={{padding:"10px 24px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Upgrade to Pro →</button>
@@ -3630,7 +3632,7 @@ function LimitModal({ type, onUpgrade, onClose }) {
           <div style={{fontSize:14,color:SUB,lineHeight:1.7}}>{cfg.body}</div>
         </div>
         {/* Mini plan comparison */}
-        <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:14,padding:"14px 16px",marginBottom:20}}>
+        <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",marginBottom:20}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>Feature</div>
             <div style={{display:"flex",gap:24}}>
@@ -3942,7 +3944,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
                   "Mass give coins",
                 ].map(f=>(
                   <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${BORDER}`,opacity:0.5}}>
-                    <svg width="13" height="11" viewBox="0 0 20 16" fill="none" style={{flexShrink:0}}><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg>
+                    <svg width="13" height="11" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
                     <div style={{fontSize:13,color:SUB,fontWeight:500}}>{f}</div>
                   </div>
                 ))}
