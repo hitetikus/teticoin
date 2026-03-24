@@ -54,6 +54,14 @@ async function sd(k) {
   if (!_currentUid) return;
   await fsDel(_currentUid, k); 
 }
+// Write a sentinel doc at users/{uid} so admin getDocs("users") can list all users
+async function ssParent(uid, email, name) {
+  try {
+    const { getFirestore, doc, setDoc } = await import("firebase/firestore");
+    const db = getFirestore();
+    await setDoc(doc(db, "users", uid), { email, name, createdAt: Date.now() }, { merge: true });
+  } catch(e) { console.error("ssParent error", e); }
+}
 
 // Session storage (shared, by session code)
 async function sgSession(code) { return await fsGetSession(code); }
@@ -881,7 +889,15 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                       {session.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
                     </select>
                   )}
-                  <button onClick={()=>remP(p.id)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"4px 9px",fontSize:11,color:SUB,cursor:"pointer"}}>✕</button>
+                  {(p.total === 0 && !p.uid) ? (
+                    <button onClick={()=>remP(p.id)} title="Remove participant"
+                      style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"4px 9px",fontSize:11,color:SUB,cursor:"pointer"}}>✕</button>
+                  ) : (
+                    <div title="Cannot remove — participant has joined or earned coins"
+                      style={{width:28,height:26,display:"flex",alignItems:"center",justifyContent:"center",color:`${SUB}44`,fontSize:13,flexShrink:0}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -1155,6 +1171,8 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   const [myId, setMyId] = useState(null);
   const [live, setLive] = useState(init);
   const [showMyQR, setShowMyQR] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [editNameVal, setEditNameVal] = useState("");
   const [returnMatch, setReturnMatch] = useState(null);
   const [linkedUid, setLinkedUid] = useState(null);       // set after optional login
   const [linkedName, setLinkedName] = useState(null);     // display name from linked account
@@ -1531,8 +1549,8 @@ function ParticipantView({ session: init, hostPlan="free" }) {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/><path d="M12 12v4"/><path d="M10 15h4"/></svg>
       </div>
       <div style={{flex:1,minWidth:0}}>
-        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Earn badges &amp; save progress</div>
-        <div style={{fontSize:11,color:SUB,marginTop:1}}>Log in to keep your coins across sessions</div>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Save your progress</div>
+        <div style={{fontSize:11,color:SUB,marginTop:1}}>Log in to keep your coins &amp; number across sessions</div>
       </div>
       <button onClick={()=>setLoginModal(true)}
         style={{flexShrink:0,padding:"6px 14px",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
@@ -1692,6 +1710,33 @@ function ParticipantView({ session: init, hostPlan="free" }) {
           </div>
         ))}
       </div>
+      {/* Share button */}
+      {me && (
+        <div style={{marginTop:24,width:"100%",maxWidth:400}}>
+          <div style={{fontSize:12,color:"rgba(255,255,255,.4)",textAlign:"center",marginBottom:10}}>Share your result</div>
+          <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+            {[
+              {name:"WhatsApp",color:"#25D366",icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>,
+               url:`https://wa.me/?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.tetikus.com.my`)}`},
+              {name:"Facebook",color:"#1877F2",icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>,
+               url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.tetikus.com.my")}&quote=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉`)}`},
+              {name:"Threads",color:"#000",icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 1.427-.01 2.703-.228 3.786-.65 1.307-.505 2.278-1.282 2.886-2.31.696-1.179 1.058-2.762 1.077-4.707v-.062h-6.291v-2.131h8.441l.004.104c.065 2.929-.469 5.327-1.587 7.127-1.494 2.404-3.927 3.602-7.241 3.639h-.036z"/></svg>,
+               url:`https://www.threads.net/intent/post?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.tetikus.com.my`)}`},
+              {name:"Copy link",color:"#6B7280",icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+               url:null},
+            ].map(s => (
+              <button key={s.name}
+                onClick={()=>{
+                  if(s.url) window.open(s.url,"_blank");
+                  else { navigator.clipboard?.writeText(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.tetikus.com.my`); }
+                }}
+                style={{display:"flex",alignItems:"center",gap:6,padding:"9px 14px",background:`${s.color}22`,border:`1px solid ${s.color}44`,borderRadius:10,color:s.name==="Threads"?"#fff":s.color,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,whiteSpace:"nowrap"}}>
+                {s.icon}{s.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -1742,13 +1787,42 @@ function ParticipantView({ session: init, hostPlan="free" }) {
         )}
 
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,width:"100%"}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,flex:1,minWidth:0}}>
             <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:12,padding:"6px 18px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:PINK,letterSpacing:3,flexShrink:0}}>
               {me ? pNum(me.num) : "—"}
             </div>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:18,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{me?.name||"—"}</div>
+            {editingName ? (
+              <div style={{display:"flex",gap:6,flex:1,minWidth:0}}>
+                <input autoFocus value={editNameVal} onChange={e=>setEditNameVal(e.target.value)}
+                  onKeyDown={e=>{
+                    if(e.key==="Enter"&&editNameVal.trim()){
+                      const newName=editNameVal.trim();
+                      const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
+                      setLive(u); ssSession(init.code,u); setEditingName(false);
+                    }
+                    if(e.key==="Escape") setEditingName(false);
+                  }}
+                  style={{flex:1,minWidth:0,padding:"6px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:TEXT,outline:"none"}}/>
+                <button onClick={()=>{
+                  if(!editNameVal.trim()){setEditingName(false);return;}
+                  const newName=editNameVal.trim();
+                  const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
+                  setLive(u); ssSession(init.code,u); setEditingName(false);
+                }} style={{padding:"0 12px",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>Save</button>
+                <button onClick={()=>setEditingName(false)} style={{padding:"0 10px",background:"none",border:`1px solid ${BORDER}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
+              </div>
+            ) : (
+              <div style={{display:"flex",alignItems:"center",gap:6,flex:1,minWidth:0}}>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:18,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{me?.name||"—"}</div>
+                <button onClick={()=>{setEditNameVal(me?.name||"");setEditingName(true);}}
+                  title="Edit name"
+                  style={{background:"none",border:"none",cursor:"pointer",color:SUB,padding:"2px 4px",flexShrink:0,lineHeight:1}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+              </div>
+            )}
           </div>
-          {linkedUid ? (
+          {!editingName && (linkedUid ? (
             <button onClick={switchBackToGuestName} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:10,padding:"8px 10px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",flexShrink:0}}>
               Use typed name
             </button>
@@ -1756,7 +1830,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
             <button onClick={()=>setLoginModal(true)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:10,padding:"8px 10px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:PINK,cursor:"pointer",flexShrink:0}}>
               Log in
             </button>
-          )}
+          ))}
         </div>
 
         <LoginBanner/>
@@ -2278,7 +2352,11 @@ function CoinmasterView({ session: init, onBack }) {
                           </select>
                         )}
                         <button onClick={()=>mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;})}
-                          style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
+                          style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:p.total===0&&!p.uid?SUB:`${SUB}33`,cursor:p.total===0&&!p.uid?"pointer":"default",flexShrink:0}}
+                          title={p.total===0&&!p.uid?"Remove":"Cannot remove — participant has joined"}
+                          disabled={!(p.total===0&&!p.uid)}>
+                          {p.total===0&&!p.uid?"✕":<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+                        </button>
                       </div>
                     );
                   })}
@@ -2854,16 +2932,16 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                         </select>
                       )}
                       <button onClick={()=>mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;})}
-                        style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
+                        style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:p.total===0&&!p.uid?SUB:`${SUB}33`,cursor:p.total===0&&!p.uid?"pointer":"default",flexShrink:0}}
+                        title={p.total===0&&!p.uid?"Remove":"Cannot remove — participant has joined"}
+                        disabled={!(p.total===0&&!p.uid)}>
+                        {p.total===0&&!p.uid?"✕":<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+                      </button>
                     </div>
                   );
                 })}
               </div>
-              {/* Manage modal link for full options */}
-              <button onClick={()=>setManage(true)}
-                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:10,padding:"9px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",width:"100%"}}>
-                Open full participant manager →
-              </button>
+              {/* Open manage for more options */}
             </div>
           )}
 
@@ -4767,6 +4845,8 @@ export default function App() {
           // Write email + name to Firestore so they're visible in Firebase console
           await ss("email", user.email);
           await ss("name", t.name);
+          // Write sentinel doc at users/{uid} so admin dashboard can list this user
+          await ssParent(user.uid, user.email, t.name);
           let p = await sg("plan"); 
           let exp = await sg("planExpiry");
 
@@ -4830,6 +4910,7 @@ export default function App() {
     await sd("trainer"); // clean up old field if present
     await ss("email", t.email);
     await ss("name", t.name);
+    await ssParent(t.uid, t.email, t.name); // register in top-level users collection
     let p = await sg("plan"); if (!p) { await ss("plan", "free"); }
     window.history.replaceState({}, "", "/app");
     setScreen("home"); 
