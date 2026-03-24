@@ -879,7 +879,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
           {tab==="groups" && <>
             {!isManagePro ? (
               <div style={{textAlign:"center",padding:"32px 16px 24px"}}>
-                <div style={{fontSize:32,marginBottom:10}}>👑</div>
+                <div style={{display:"flex",justifyContent:"center",marginBottom:10}}><svg width="36" height="28" viewBox="0 0 40 32" fill="none"><path d="M2 28L5 8L14 18L20 4L26 18L35 8L38 28H2Z" fill="#F5A623" stroke="#F5A623" strokeWidth="1.5" strokeLinejoin="round"/><rect x="2" y="28" width="36" height="4" rx="2" fill="#F5A623"/></svg></div>
                 <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:8}}>Groups is a Pro feature</div>
                 <div style={{fontSize:13,color:SUB,lineHeight:1.7,marginBottom:18}}>Organise participants into teams and track group scores. Upgrade to unlock groups, coinmaster, custom labels and more.</div>
                 <button onClick={()=>setShowUpgradeHint("groups")} style={{padding:"10px 24px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Upgrade to Pro →</button>
@@ -909,7 +909,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
           {tab==="coinmaster" && <>
             {!isManagePro ? (
               <div style={{textAlign:"center",padding:"32px 16px 24px"}}>
-                <div style={{fontSize:32,marginBottom:10}}>👑</div>
+                <div style={{display:"flex",justifyContent:"center",marginBottom:10}}><svg width="36" height="28" viewBox="0 0 40 32" fill="none"><path d="M2 28L5 8L14 18L20 4L26 18L35 8L38 28H2Z" fill="#F5A623" stroke="#F5A623" strokeWidth="1.5" strokeLinejoin="round"/><rect x="2" y="28" width="36" height="4" rx="2" fill="#F5A623"/></svg></div>
                 <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:8}}>Coinmaster is a Pro feature</div>
                 <div style={{fontSize:13,color:SUB,lineHeight:1.7,marginBottom:18}}>Let co-hosts award coins from their own device. Upgrade to unlock coinmaster, groups, custom labels and more.</div>
                 <button onClick={()=>setShowUpgradeHint("coinmaster")} style={{padding:"10px 24px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Upgrade to Pro →</button>
@@ -2373,7 +2373,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   const [showBadgePicker, setShowBadgePicker] = useState(false);
   const [badgePickerTarget, setBadgePickerTarget] = useState(null);
   const [showLuckyDraw, setShowLuckyDraw] = useState(false);
-  const [proGateHint, setProGateHint] = useState(null); // "customlabels" | "groups" | "coinmaster"
+              const [proGateHint, setProGateHint] = useState(null); // "customlabels" | "groups" | "coinmaster" | "massgive"
 
   // ── Live poll: pull participant updates from Firebase every 3s ──
   useEffect(() => {
@@ -2458,16 +2458,20 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           <div className="tc-modal-sheet" style={{background:"#fff",padding:"28px 24px 32px",width:"100%"}} onClick={e=>e.stopPropagation()}>
             <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>
             <div style={{textAlign:"center",marginBottom:20}}>
-              <div style={{fontSize:36,marginBottom:10}}>👑</div>
+              <div style={{marginBottom:12,display:"flex",justifyContent:"center"}}>
+                <svg width="40" height="32" viewBox="0 0 40 32" fill="none"><path d="M2 28L5 8L14 18L20 4L26 18L35 8L38 28H2Z" fill={YELLOW} stroke={YELLOW} strokeWidth="1.5" strokeLinejoin="round"/><rect x="2" y="28" width="36" height="4" rx="2" fill={YELLOW}/></svg>
+              </div>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:8}}>
-                {proGateHint==="customlabels"?"Custom Coin Labels":proGateHint==="groups"?"Groups & Team Scoring":"Coinmaster Mode"} is Pro
+                {proGateHint==="customlabels"?"Custom Coin Labels":proGateHint==="groups"?"Groups & Team Scoring":proGateHint==="massgive"?"Mass Give Coins":"Coinmaster Mode"} is Pro
               </div>
               <div style={{fontSize:14,color:SUB,lineHeight:1.7}}>
                 {proGateHint==="customlabels"
                   ? "Rename award buttons to match your activity — Correct Answer, Participation, Teamwork and more."
                   : proGateHint==="groups"
                     ? "Organise participants into teams, assign groups, and track team scores on the leaderboard."
-                    : "Let a co-host award coins from their own device without giving them full host access."
+                    : proGateHint==="massgive"
+                      ? "Award coins to all participants at once — or filter by group. Perfect for rewarding the whole room."
+                      : "Let a co-host award coins from their own device without giving them full host access."
                 }
               </div>
             </div>
@@ -2519,8 +2523,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         }}
         onClose={()=>setShowSettings(false)}/>}
       {mass && <MassGive participants={ses.participants} groups={ses.groups} onAward={award} onClose={()=>setMass(false)}/>}
-      {showLuckyDraw && <LuckyDraw participants={ses.participants} onClose={()=>setShowLuckyDraw(false)}/>}
-      {showBadgePicker && badgePickerTarget && (
+      {false && showLuckyDraw && <LuckyDraw participants={ses.participants} onClose={()=>setShowLuckyDraw(false)}/>}
+      {false && showBadgePicker && badgePickerTarget && (
         <BadgePickerModal
           participant={badgePickerTarget}
           sessionName={ses.name}
@@ -2657,7 +2661,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:28,height:28,cursor:"pointer",color:isPro?SUB:YELLOW,display:"flex",alignItems:"center",justifyContent:"center",gap:2,flexShrink:0,position:"relative"}}>
                   {isPro
                     ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
-                    : <span style={{fontSize:12}}>👑</span>
+                    : <svg width="13" height="11" viewBox="0 0 40 32" fill="none" style={{flexShrink:0}}><path d="M2 28L5 8L14 18L20 4L26 18L35 8L38 28H2Z" fill="#F5A623"/><rect x="2" y="28" width="36" height="4" rx="2" fill="#F5A623"/></svg>
                   }
                 </button>
               </div>
@@ -2688,10 +2692,18 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Award</button>
               </div>
             </div>
-            <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              Mass Give Coins
-            </button>
+            {isPro ? (
+              <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Mass Give Coins
+              </button>
+            ) : (
+              <button onClick={()=>setProGateHint("massgive")} style={{width:"100%",padding:"14px 0",background:BG,border:`1.5px solid ${BORDER}`,borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={YELLOW} strokeWidth="2.2" strokeLinecap="round"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
+                <span>Mass Give Coins</span>
+                <span style={{fontSize:11,background:`${YELLOW}20`,border:`1px solid ${YELLOW}40`,color:YELLOW,borderRadius:99,padding:"2px 8px",fontWeight:700}}>Pro</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -2799,8 +2811,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   <div style={{position:"absolute",top:3,left:ses.boardVisible?21:3,width:20,height:20,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
                 </div>
               </div>
-              {/* Lucky Draw button — only shown when board is live */}
-              {ses.boardVisible && (
+              {/* Lucky Draw button — disabled, phase 2 feature */}
+              {false && ses.boardVisible && (
                 <button onClick={()=>setShowLuckyDraw(true)}
                   style={{width:"100%",padding:"11px 0",background:"linear-gradient(135deg,#1A0A14,#2D0A22)",border:"1.5px solid rgba(255,79,184,.3)",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#FF4FB8",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .2s"}}
                   onMouseOver={e=>{e.currentTarget.style.borderColor="#FF4FB8";e.currentTarget.style.background="linear-gradient(135deg,#2D0A22,#3D0A30)";}}
@@ -2812,8 +2824,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
                 {sorted.map((p,i) => {
                   const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
-                  const showBadgeBtn = ses.boardVisible && i < 5 && !p.pendingBadge;
-                  const showPending  = ses.boardVisible && p.pendingBadge;
+                  const showBadgeBtn = false; // phase 2 — badge award deactivated
+                  const showPending  = false; // phase 2
                   return (
                     <div key={p.id} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff",cursor:"pointer",transition:"background .1s"}}
                       onClick={()=>{setSelId(p.id);setTab("award");}}
@@ -2826,23 +2838,10 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                         <div style={{flex:1}}>
                           <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
                             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
-                            {p.pendingBadge && <span title="Badge pending claim" style={{fontSize:13}}>{p.pendingBadge.svgData?<img src={p.pendingBadge.svgData} alt="" style={{width:13,height:13}}/>:p.pendingBadge.icon}</span>}
                           </div>
                           {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
                         </div>
-                        {/* Score + badge button inline, right-aligned to same limit */}
-                        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0,width:ses.boardVisible&&i<5?196:64,justifyContent:"flex-end"}}>
-                          {showBadgeBtn && (
-                            <button onClick={e=>{e.stopPropagation();setBadgePickerTarget(p);setShowBadgePicker(true);}}
-                              style={{padding:"6px 14px",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:5,flexShrink:0,boxShadow:`0 2px 8px ${PURPLE}40`,whiteSpace:"nowrap"}}>
-                              🏅 Award
-                            </button>
-                          )}
-                          {showPending && (
-                            <div style={{fontSize:11,color:PURPLE,fontWeight:700,display:"flex",alignItems:"center",gap:4,flexShrink:0}} onClick={e=>e.stopPropagation()}>
-                              {p.pendingBadge.icon}<span>Pending</span>
-                            </div>
-                          )}
+                        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0,justifyContent:"flex-end"}}>
                           <div style={{textAlign:"right",minWidth:56}}>
                             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
                             <div style={{fontSize:10,color:SUB}}>coins</div>
@@ -2862,6 +2861,16 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           {/* Groups */}
           {rightTab==="groups" && (
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+              {!isPro ? (
+                <div style={{textAlign:"center",padding:"32px 16px"}}>
+                  <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
+                    <svg width="36" height="28" viewBox="0 0 40 32" fill="none"><path d="M2 28L5 8L14 18L20 4L26 18L35 8L38 28H2Z" fill="#F5A623" stroke="#F5A623" strokeWidth="1.5" strokeLinejoin="round"/><rect x="2" y="28" width="36" height="4" rx="2" fill="#F5A623"/></svg>
+                  </div>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:8}}>Groups is a Pro feature</div>
+                  <div style={{fontSize:13,color:SUB,lineHeight:1.7,marginBottom:18}}>Organise participants into teams and track group scores on the leaderboard.</div>
+                  <button onClick={()=>setProGateHint("groups")} style={{padding:"10px 24px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Upgrade to Pro →</button>
+                </div>
+              ) : <>
               {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:32,textAlign:"center",fontSize:13,color:SUB}}>Create groups via the people icon in the top bar</div>}
               {gs.map((g,i) => (
                 <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
@@ -2882,6 +2891,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                 </div>
               ))}
+              </>}
             </div>
           )}
 
@@ -3770,7 +3780,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
                   "Coinmaster co-host mode",
                 ].map(f=>(
                   <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${BORDER}`,opacity:0.5}}>
-                    <span style={{fontSize:12}}>👑</span>
+                    <svg width="13" height="11" viewBox="0 0 40 32" fill="none" style={{flexShrink:0}}><path d="M2 28L5 8L14 18L20 4L26 18L35 8L38 28H2Z" fill="#F5A623"/><rect x="2" y="28" width="36" height="4" rx="2" fill="#F5A623"/></svg>
                     <div style={{fontSize:13,color:SUB,fontWeight:500}}>{f}</div>
                   </div>
                 ))}
@@ -4213,18 +4223,18 @@ function JoinSessionField({ onJoin }) {
   }
 
   return (
-    <div>
-      <div style={{display:"flex",gap:8}}>
+    <div style={{width:"100%"}}>
+      <div style={{display:"flex",gap:8,width:"100%"}}>
         <input
           value={code}
           onChange={e=>{ setCode(e.target.value.toUpperCase()); setErr(""); }}
           onKeyDown={e=>e.key==="Enter"&&submit()}
           placeholder="Enter session code"
           maxLength={8}
-          style={{flex:1,padding:"11px 14px",border:`1.5px solid ${err?'#EF4444':BORDER}`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",letterSpacing:0}}
+          style={{flex:1,minWidth:0,padding:"11px 14px",border:`1.5px solid ${err?'#EF4444':BORDER}`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",letterSpacing:0,boxSizing:"border-box"}}
         />
         <button onClick={submit} disabled={!code.trim()||busy}
-          style={{padding:"11px 18px",background:code.trim()?GRAD:BG,border:`1.5px solid ${code.trim()?'transparent':BORDER}`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:code.trim()?"#fff":SUB,cursor:code.trim()?"pointer":"not-allowed",flexShrink:0,transition:"all .15s",whiteSpace:"nowrap"}}>
+          style={{padding:"11px 16px",background:code.trim()?GRAD:BG,border:`1.5px solid ${code.trim()?'transparent':BORDER}`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:code.trim()?"#fff":SUB,cursor:code.trim()?"pointer":"not-allowed",flexShrink:0,transition:"all .15s",whiteSpace:"nowrap"}}>
           {busy ? "…" : "Join →"}
         </button>
       </div>
@@ -4865,7 +4875,7 @@ export default function App() {
             {isFree && <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>setShowPricing(true)}/>}
 
             {/* Hero card */}
-            <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center",overflow:"hidden"}}>
+            <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,lineHeight:1.1,marginBottom:6}}>
                 Ready to reward<br/>your participants?
               </div>
