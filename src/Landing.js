@@ -192,6 +192,7 @@ const CSS = `
 .lp-pricing-toggle{display:inline-flex;background:#F3F4F6;border:1.5px solid #D1D5DB;border-radius:999px;padding:4px;gap:2px;margin-top:28px;}
 .lp-pricing-toggle button{border:none;border-radius:999px;padding:9px 22px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;white-space:nowrap;background:transparent;color:#6B7280;}
 .lp-pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px;max-width:860px;margin-left:auto;margin-right:auto;}
+@media(max-width:780px){.lp-pricing-grid{grid-template-columns:1fr;max-width:400px;}}
 .lp-plan-card{background:#fff;border:1px solid #E5E7EB;border-radius:20px;padding:36px 28px;position:relative;}
 .lp-plan-card.popular{border-color:#FF4FB8;box-shadow:0 0 0 1px #FF4FB8,0 8px 40px rgba(255,79,184,0.12);overflow:hidden;}
 .lp-plan-badge{position:absolute;top:18px;right:-28px;background:linear-gradient(135deg,#FF4FB8,#9D50FF);color:#fff;font-size:9px;font-weight:800;padding:5px 36px;letter-spacing:.8px;transform:rotate(35deg);pointer-events:none;}
@@ -788,7 +789,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               </div>
               <div className="lp-plan-divider"/>
               <ul className="lp-plan-features">
-                {["1 active session","Up to 30 participants","Award coins in real time","Live scoreboard","QR / link join — no app needed","Session log","Projector / TV mode","Export CSV"].map(f => (
+                {["3 active sessions","Up to 30 participants","Award coins in real time","Live scoreboard","QR / link join — no app needed","Session log","Projector / TV mode","Export CSV"].map(f => (
                   <li key={f}><Check color={NEUT}/>{f}</li>
                 ))}
               </ul>

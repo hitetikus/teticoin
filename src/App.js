@@ -1546,7 +1546,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
         )}
       </div>
     </div>
-  )
+  );
 
   // Login banner shown in joined view
   const LoginBanner = () => linkedUid ? (
@@ -2705,7 +2705,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </div>
             </div>
             <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,padding:"12px 16px",marginBottom:20}}>
-              {[["Custom coin labels","✗","✓"],["Groups & teams","✗","✓"],["Mass give coins","✗","✓"],["Participants","30","200"],["Sessions","1","∞"]].map(([f,free,pro])=>(
+              {[["Custom coin labels","✗","✓"],["Groups & teams","✗","✓"],["Mass give coins","✗","✓"],["Participants","30","200"],["Sessions","3","∞"]].map(([f,free,pro])=>(
                 <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${BORDER}`}}>
                   <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
                   <div style={{display:"flex",gap:24}}>
@@ -3455,7 +3455,7 @@ function CreateModal({ onConfirm, onClose }) {
 // PLAN CONSTANTS
 // ─────────────────────────────────────────────
 const SUPERADMIN_EMAIL = "hi.tetikus@gmail.com";
-const FREE_SESSION_LIMIT = 1;
+const FREE_SESSION_LIMIT = 3;
 const FREE_PAX_LIMIT = 30;
 const PRO_PAX_LIMIT = 200;
 
@@ -3545,7 +3545,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
       id:"free", name:"Free",
       color:SUB, borderColor:BORDER, bg:"#fff",
       tagline:"Try it out, no card needed",
-      features:["1 session","Up to 20 participants","Live scoreboard","QR join — no app needed","Basic features"],
+      features:["3 sessions","Up to 20 participants","Live scoreboard","QR join — no app needed","Basic features"],
     },
     {
       id:"oneTime", name:"One Time",
@@ -3735,7 +3735,7 @@ function LimitModal({ type, onUpgrade, onClose }) {
     sessions: {
       icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
       title:"Session limit reached",
-      body:"Free plan allows 1 session. Upgrade to Pro for unlimited sessions, participants, and more.",
+      body:"Free plan allows 3 sessions. Upgrade to Pro for unlimited sessions, participants, and more.",
       cta:"Unlock Unlimited Sessions",
     },
     participants: {
@@ -3774,7 +3774,7 @@ function LimitModal({ type, onUpgrade, onClose }) {
             </div>
           </div>
           {[
-            ["Sessions","1","∞"],
+            ["Sessions","3","∞"],
             ["Participants","30","200"],
             ["Groups & teams","✗","✓"],
             ["Custom labels","✗","✓"],
@@ -4054,7 +4054,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
             {isFree ? (
               <>
                 {[
-                  {label:"1 active session",ok:true},
+                  {label:"3 active sessions",ok:true},
                   {label:"Up to 30 participants per session",ok:true},
                   {label:"Award coins in real time",ok:true},
                   {label:"Live scoreboard",ok:true},
