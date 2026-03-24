@@ -4616,17 +4616,30 @@ function EarningsPage({ uid, name, onClose }) {
         {/* Share */}
         {totalCoins > 0 && (
           <div style={{marginTop:24}}>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Share your achievement</div>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              {shareLinks.map(s=>(
-                <button key={s.name} onClick={()=>window.open(s.url,"_blank")}
-                  style={{display:"flex",alignItems:"center",gap:6,padding:"9px 14px",background:`${s.color}15`,border:`1px solid ${s.color}40`,borderRadius:10,color:s.color,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12}}>
-                  {s.name}
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Share your achievement</div>
+            <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+              {[
+                {name:"WhatsApp", bg:"#25D366", url:`https://wa.me/?text=${encodeURIComponent(shareText())}`,
+                 icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>},
+                {name:"Facebook", bg:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.tetikus.com.my")}&quote=${encodeURIComponent(shareText())}`,
+                 icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>},
+                {name:"X", bg:"#000", url:`https://x.com/intent/tweet?text=${encodeURIComponent(shareText())}`,
+                 icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L2.146 2.25H8.32l4.273 5.647L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>},
+                {name:"Telegram", bg:"#229ED9", url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.tetikus.com.my")}&text=${encodeURIComponent(shareText())}`,
+                 icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>},
+              ].map(s=>(
+                <button key={s.name} onClick={()=>window.open(s.url,"_blank")} title={s.name}
+                  style={{width:48,height:48,borderRadius:"50%",background:s.bg,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 2px 8px ${s.bg}66`,flexShrink:0}}>
+                  {s.icon}
                 </button>
               ))}
               <button onClick={()=>{navigator.clipboard?.writeText(shareText());setCopied(true);setTimeout(()=>setCopied(false),2000);}}
-                style={{display:"flex",alignItems:"center",gap:6,padding:"9px 14px",background:copied?"#F0FDF4":"#F3F4F6",border:`1px solid ${copied?"#BBF7D0":"#D1D5DB"}`,borderRadius:10,color:copied?"#16A34A":"#6B7280",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12}}>
-                {copied?"Copied!":"Copy text"}
+                title="Copy text"
+                style={{width:48,height:48,borderRadius:"50%",background:copied?"#22c55e":"#374151",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,.2)",flexShrink:0,transition:"background .2s"}}>
+                {copied
+                  ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                }
               </button>
             </div>
           </div>
@@ -4931,6 +4944,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSuperAdmin, setShowSuperAdmin] = useState(false);
   const [showHostEarnings, setShowHostEarnings] = useState(false);
+  const [homeEarnings, setHomeEarnings] = useState(null); // {totalCoins, totalSessions}
   const [limitModal, setLimitModal] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -5034,6 +5048,7 @@ export default function App() {
           await ss("name", t.name);
           // Write sentinel doc at users/{uid} so admin dashboard can list this user
           await ssParent(user.uid, user.email, t.name);
+          loadHomeEarnings(user.uid);
           let p = await sg("plan"); 
           let exp = await sg("planExpiry");
 
@@ -5091,6 +5106,16 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  async function loadHomeEarnings(uid) {
+    try {
+      const { getFirestore, doc, getDoc } = await import("firebase/firestore");
+      const db = getFirestore();
+      const snap = await getDoc(doc(db, "users", uid, "data", "earnings"));
+      const list = snap.exists() ? (snap.data().value || []) : [];
+      setHomeEarnings({ totalCoins: list.reduce((s,e)=>s+e.coins,0), totalSessions: list.length });
+    } catch { setHomeEarnings({ totalCoins:0, totalSessions:0 }); }
+  }
+
   async function handleAuth(t) { 
     setCurrentUid(t.uid);
     setTrainer(t);
@@ -5099,6 +5124,7 @@ export default function App() {
     await ss("name", t.name);
     await ssParent(t.uid, t.email, t.name); // register in top-level users collection
     let p = await sg("plan"); if (!p) { await ss("plan", "free"); }
+    loadHomeEarnings(t.uid);
     window.history.replaceState({}, "", "/app");
     setScreen("home"); 
   }
@@ -5280,6 +5306,21 @@ export default function App() {
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,lineHeight:1.2}}>{trainer?.name}</div>
               <div style={{fontSize:11,color:plan==="free"?SUB:PINK,fontWeight:600}}>{planLabel}</div>
             </div>
+            {homeEarnings && (
+              <>
+                <div style={{width:1,height:28,background:BORDER,marginLeft:4,flexShrink:0}}/>
+                <div style={{display:"flex",gap:10,marginLeft:2}}>
+                  <div style={{textAlign:"center"}} title="Total coins earned">
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:PINK,lineHeight:1}}>{homeEarnings.totalCoins}</div>
+                    <div style={{fontSize:9,color:SUB,fontWeight:600,lineHeight:1.4}}>coins</div>
+                  </div>
+                  <div style={{textAlign:"center"}} title="Sessions joined">
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:PURPLE,lineHeight:1}}>{homeEarnings.totalSessions}</div>
+                    <div style={{fontSize:9,color:SUB,fontWeight:600,lineHeight:1.4}}>sessions</div>
+                  </div>
+                </div>
+              </>
+            )}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round" style={{transform:profileOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform .2s"}}><polyline points="6 9 12 15 18 9"/></svg>
           </button>
         </div>
