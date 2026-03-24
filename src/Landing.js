@@ -427,7 +427,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
         <CoinPops/>
         <div className="lp-hero-tag">✦ Real-time engagement for training & events</div>
         <h1>Make every session<br/>more interactive.<br/><span style={{background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Engage everyone.</span></h1>
-        <p className="lp-hero-sub">Award points live, show leaderboards, and keep participants hooked — no app needed.</p>
+        <p className="lp-hero-sub">Award points live, show scoreboards, and keep participants hooked — no app needed.</p>
         <div className="lp-hero-btns">
           <button className="lp-btn-big lp-btn-big-fill" onClick={onGetStarted}>Get Started Free</button>
           <button className="lp-btn-big lp-btn-big-outline" onClick={() => scrollTo("how")}>See how it works →</button>
@@ -498,7 +498,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
             </div>
           </div>
 
-          {/* RIGHT — Leaderboard */}
+          {/* RIGHT — Scoreboard */}
           <div className="lp-screen-side" style={{transform:"translateY(32px) rotate(3deg)"}}>
             <div style={{background:"#0A0A0F",borderRadius:20,padding:20,minHeight:380}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
@@ -538,7 +538,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               {num:"01",col:PINK,bg:"rgba(255,79,184,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>,title:"Create a session",body:"Set up your session in seconds and go live instantly."},
               {num:"02",col:CYAN,bg:"rgba(0,229,255,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={CYAN} strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>,title:"Participants join",body:"Share a QR or link — they join instantly, no download needed."},
               {num:"03",col:PURPLE,bg:"rgba(157,80,255,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,title:"Reward participation",body:"Give points for answers, ideas, or engagement in real time."},
-              {num:"04",col:"#00C896",bg:"rgba(0,200,150,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00C896" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,title:"Show leaderboard",body:"Display rankings live and keep energy high throughout."},
+              {num:"04",col:"#00C896",bg:"rgba(0,200,150,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00C896" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,title:"Show scoreboard",body:"Display rankings live and keep energy high throughout."},
             ].map((s,i) => (
               <div key={s.num} className={`lp-step lp-fade-up lp-fade-up-d${i+1}`}>
                 <div className="lp-step-num" style={{color:s.col}}>{s.num}</div>
@@ -557,7 +557,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           <div className="lp-label lp-fade-up" style={{color:CYAN,textShadow:`0 0 12px rgba(0,229,255,0.4)`}}>Features</div>
           <div className="lp-section-title lp-fade-up lp-fade-up-d1" style={{color:"#fff"}}>Everything you need to run<br/><span style={{background:GRAD2,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>an engaging session.</span></div>
           <div className="lp-feat-tabs">
-            {["Award Screen","Live Leaderboard","Groups & Teams","QR Join","Coinmaster"].map((t,i) => (
+            {["Award Screen","Live Scoreboard","Groups & Teams","QR Join","Custom Labels"].map((t,i) => (
               <button key={t} className={`lp-feat-tab${activeTab===i?" active":""}`} onClick={() => setActiveTab(i)}>{t}</button>
             ))}
           </div>
@@ -639,7 +639,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
 
             <div className="lp-bento-card">
               <div className="lp-bento-icon" style={{background:"rgba(0,229,255,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={CYAN} strokeWidth="2.2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-              <h4>Live leaderboard</h4>
+              <h4>Live scoreboard</h4>
               <p>Show rankings anytime to boost excitement and participation throughout your session.</p>
               <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:6}}>
                 {[{n:"1",c:"#F5A623",name:"Haziq Ibrahim",pts:"210",pc:PINK},{n:"2",c:NEUT,name:"Ahmad Faris",pts:"180",pc:TEXT},{n:"3",c:NEUT,name:"Nurul Ain",pts:"140",pc:TEXT}].map(r => (
@@ -673,10 +673,11 @@ export default function LandingPage({ onGetStarted, onLogin }) {
             <div className="lp-bento-card">
               <div className="lp-bento-icon" style={{background:"rgba(0,229,255,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={CYAN} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></div>
               <h4>Flexible usage</h4>
-              <p>Works for training, workshops, classrooms, and events — online or in-person.</p>
-              <div style={{marginTop:14,background:"rgba(0,229,255,0.06)",border:"1px solid rgba(0,229,255,0.15)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10}}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={CYAN} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-                <div><div style={{fontSize:11,fontWeight:700,color:CYAN}}>CM-4X8K</div><div style={{fontSize:10,color:NEUT}}>Active coinmaster code</div></div>
+              <p>Works for training, workshops, classrooms, and events — online or in-person, any group size.</p>
+              <div style={{marginTop:14,display:"flex",gap:8,flexWrap:"wrap"}}>
+                {["Corporate training","Workshops","Classrooms","Team meetings","Events"].map(tag=>(
+                  <div key={tag} style={{background:"rgba(0,229,255,0.07)",border:"1px solid rgba(0,229,255,0.18)",borderRadius:99,padding:"4px 10px",fontSize:11,fontWeight:700,color:CYAN}}>{tag}</div>
+                ))}
               </div>
             </div>
 
@@ -787,7 +788,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               </div>
               <div className="lp-plan-divider"/>
               <ul className="lp-plan-features">
-                {["1 session","Up to 30 participants","Live leaderboard","QR join — no app needed","Basic features"].map(f => (
+                {["1 active session","Up to 30 participants","Award coins in real time","Live scoreboard","QR / link join — no app needed","Session log","Projector / TV mode","Export CSV"].map(f => (
                   <li key={f}><Check color={NEUT}/>{f}</li>
                 ))}
               </ul>
@@ -827,7 +828,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               </div>
               <div className="lp-plan-divider" style={{background:"#FECDE8"}}/>
               <ul className="lp-plan-features">
-                {["Unlimited sessions","Up to 200 participants","Groups & team scoring","Custom coin labels","Coinmaster co-host mode","Projector / TV mode","Export CSV"].map(f => (
+                {["Everything in Free","Unlimited sessions","Up to 200 participants","Groups & team scoring","Custom coin labels","Mass give coins to everyone","Projector / TV mode","Export CSV","Priority support"].map(f => (
                   <li key={f}><Check/>{f}</li>
                 ))}
               </ul>

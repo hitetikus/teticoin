@@ -701,7 +701,7 @@ function CoinCustomizer({ session, onSave, onClose }) {
             </div>
             <div style={{fontSize:11,color:SUB,fontWeight:600}}>{other.length}/15 values · Tap any value to edit · × to remove</div>
             <div style={{background:`${PINK}10`,border:`1px solid ${PINK}25`,borderRadius:10,padding:"10px 12px",marginTop:10,fontSize:12,color:PINK,fontWeight:600}}>
-              Negative values (e.g. −50) will subtract coins — participants can go below zero on the leaderboard.
+              Negative values (e.g. −50) will subtract coins — participants can go below zero on the scoreboard.
             </div>
           </>}
         </div>
@@ -844,8 +844,8 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
           </div>
           <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
             {tabBtn("people","People")}
-            {tabBtn("groups","Groups")}
-            {tabBtn("coinmaster","Coinmaster", !cmEnabled && <span style={{fontSize:9,background:"#E5E7EB",color:SUB,borderRadius:99,padding:"1px 6px",fontWeight:700,lineHeight:1.5}}>OFF</span>)}
+            {tabBtn("groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="11" height="9" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg></span>)}
+            {/* Coinmaster tab hidden — phase 2 feature */}
           </div>
         </div>
         <div style={{overflowY:"auto",flex:1,padding:"16px 20px 32px"}}>
@@ -878,14 +878,32 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
 
           {tab==="groups" && <>
             {!isManagePro ? (
-              <div style={{textAlign:"center",padding:"32px 16px 24px"}}>
-                <div style={{display:"flex",justifyContent:"center",marginBottom:10}}><svg width="36" height="28" viewBox="0 0 40 32" fill="none"><path d="M2 28L5 8L14 18L20 4L26 18L35 8L38 28H2Z" fill="#F5A623" stroke="#F5A623" strokeWidth="1.5" strokeLinejoin="round"/><rect x="2" y="28" width="36" height="4" rx="2" fill="#F5A623"/></svg></div>
-                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:8}}>Groups is a Pro feature</div>
-                <div style={{fontSize:13,color:SUB,lineHeight:1.7,marginBottom:18}}>Organise participants into teams and track group scores. Upgrade to unlock groups, coinmaster, custom labels and more.</div>
-                <button onClick={()=>setShowUpgradeHint("groups")} style={{padding:"10px 24px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Upgrade to Pro →</button>
-                <div style={{marginTop:20,opacity:0.3,pointerEvents:"none",filter:"blur(1.5px)"}}>
-                  <div style={{display:"flex",gap:8,marginBottom:10}}><div style={{flex:1,height:36,background:BORDER,borderRadius:10}}/><div style={{width:64,height:36,background:MID,borderRadius:10}}/></div>
-                  {["Team Alpha","Team Bravo"].map((g,i)=>(<div key={g} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${BORDER}`}}><div style={{width:12,height:12,borderRadius:3,background:GC[i]}}/><div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:GC[i]}}>{g}</div><div style={{fontSize:11,color:SUB}}>0 members</div></div>))}
+              <div style={{position:"relative"}}>
+                {/* Dummy group content as teaser — visible behind overlay */}
+                <div style={{pointerEvents:"none",userSelect:"none"}}>
+                  <div style={{display:"flex",gap:8,marginBottom:10}}>
+                    <div style={{flex:1,height:38,background:BORDER,borderRadius:10,opacity:0.5}}/>
+                    <div style={{width:64,height:38,background:MID,borderRadius:10,opacity:0.5}}/>
+                  </div>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+                    {GC.slice(0,4).map(c=><div key={c} style={{width:22,height:22,borderRadius:6,background:c,opacity:0.6}}/>)}
+                  </div>
+                  {[{name:"Team Alpha",color:GC[0],count:3},{name:"Team Bravo",color:GC[1],count:2},{name:"Team Charlie",color:GC[2],count:4}].map((g,i)=>(
+                    <div key={g.name} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${BORDER}`,opacity:0.6}}>
+                      <div style={{width:12,height:12,borderRadius:3,background:g.color,flexShrink:0}}/>
+                      <div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:g.color}}>{g.name}</div>
+                      <div style={{fontSize:11,color:SUB}}>{g.count} members</div>
+                    </div>
+                  ))}
+                </div>
+                {/* Frosted overlay with upgrade prompt */}
+                <div style={{position:"absolute",inset:0,backdropFilter:"blur(3px)",WebkitBackdropFilter:"blur(3px)",background:"rgba(255,255,255,0.55)",borderRadius:12,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 16px",textAlign:"center"}}>
+                  <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
+                    <svg width="32" height="26" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg>
+                  </div>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>Groups is a Pro feature</div>
+                  <div style={{fontSize:13,color:SUB,lineHeight:1.6,marginBottom:16}}>Organise participants into teams and track group scores. Upgrade to unlock.</div>
+                  <button onClick={()=>setShowUpgradeHint("groups")} style={{padding:"10px 24px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Upgrade to Pro →</button>
                 </div>
               </div>
             ) : <>
@@ -1640,14 +1658,14 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     </button>
   </>);
 
-  // Leaderboard view — host pushed boardVisible=true
+  // Scoreboard view — host pushed boardVisible=true
   if (step === "joined" && live?.boardVisible) return (
     <div style={{minHeight:"100vh",background:"#0D0008",fontFamily:"Poppins,sans-serif",color:"#fff",padding:"24px 20px",display:"flex",flexDirection:"column",alignItems:"center"}}>
       {loginModal && <OptionalLoginModal/>}
       <BadgeClaimPrompt/>
       <Confetti active/>
       <Ham size={56}/>
-      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:4,marginBottom:2,lineHeight:1.1}}>Leaderboard</div>
+      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:4,marginBottom:2,lineHeight:1.1}}>Scoreboard</div>
       <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:20}}>{live?.name}</div>
       <div style={{width:"100%",maxWidth:400,display:"flex",flexDirection:"column",gap:8}}>
         {sorted.map((p,i) => (
@@ -1751,7 +1769,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
         </div>
 
         <div style={{fontSize:12,color:SUB,textAlign:"center",lineHeight:1.8,marginTop:4}}>
-          {sorted.length <= 1 ? "Waiting for others to join..." : "Leaderboard will appear when host shares it"}
+          {sorted.length <= 1 ? "Waiting for others to join..." : "Scoreboard will appear when host shares it"}
         </div>
       </div>
     </div>
@@ -1914,7 +1932,7 @@ function QRModal({ session, onClose }) {
   );
 }
 
-// ── Leaderboard sheet ──
+// ── Scoreboard sheet ──
 function LeaderSheet({ session, onToggleBoard, onClose }) {
   const sorted = [...session.participants].sort((a,b)=>b.total-a.total);
   const gs = session.groups.map(g=>({...g,total:session.participants.filter(p=>p.gid===g.id).reduce((s,p)=>s+p.total,0),members:session.participants.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
@@ -1926,7 +1944,7 @@ function LeaderSheet({ session, onToggleBoard, onClose }) {
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Leaderboard</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Scoreboard</div>
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           {/* Board visibility toggle — lives here */}
@@ -1934,7 +1952,7 @@ function LeaderSheet({ session, onToggleBoard, onClose }) {
             style={{background:session.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${session.boardVisible?GREEN:BORDER}`,borderRadius:13,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",marginBottom:12,transition:"all .2s"}}>
             <div>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:session.boardVisible?GREEN:TEXT}}>
-                {session.boardVisible?"Leaderboard visible to participants":"Leaderboard hidden from participants"}
+                {session.boardVisible?"Scoreboard visible to participants":"Scoreboard hidden from participants"}
               </div>
               <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>
                 {session.boardVisible?"Participants can see the board now":"Tap to show board on participant devices"}
@@ -2468,7 +2486,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 {proGateHint==="customlabels"
                   ? "Rename award buttons to match your activity — Correct Answer, Participation, Teamwork and more."
                   : proGateHint==="groups"
-                    ? "Organise participants into teams, assign groups, and track team scores on the leaderboard."
+                    ? "Organise participants into teams, assign groups, and track team scores on the scoreboard."
                     : proGateHint==="massgive"
                       ? "Award coins to all participants at once — or filter by group. Perfect for rewarding the whole room."
                       : "Let a co-host award coins from their own device without giving them full host access."
@@ -2476,7 +2494,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </div>
             </div>
             <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:12,padding:"12px 16px",marginBottom:20}}>
-              {[["Custom coin labels","✗","✓"],["Groups & teams","✗","✓"],["Coinmaster co-host","✗","✓"],["Unlimited participants","30","200"],["Unlimited sessions","1","∞"]].map(([f,free,pro])=>(
+              {[["Custom coin labels","✗","✓"],["Groups & teams","✗","✓"],["Mass give coins","✗","✓"],["Participants","30","200"],["Sessions","1","∞"]].map(([f,free,pro])=>(
                 <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${BORDER}`}}>
                   <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
                   <div style={{display:"flex",gap:24}}>
@@ -2585,7 +2603,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
       {/* ── MOBILE TABS (hidden on desktop) ── */}
       <div className="tc-tab-bar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
-        {[["award","Award"],["board","Board"],["groups","Groups"],["log","Log"]].map(([id,l]) => (
+        {[["award","Award"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg></span>],["log","Log"]].map(([id,l]) => (
           <button key={id} onClick={()=>{
             if (!isLive) return;
             setTab(id);
@@ -2656,14 +2674,13 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                 <SL style={{marginBottom:0}}>Give Coins</SL>
-                <button onClick={()=>{ if(!isPro){setProGateHint("customlabels");return;} setShowCoinCustomizer(true);}}
-                  title={isPro?"Customise coin labels":"Pro feature: Custom labels"}
-                  style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:28,height:28,cursor:"pointer",color:isPro?SUB:YELLOW,display:"flex",alignItems:"center",justifyContent:"center",gap:2,flexShrink:0,position:"relative"}}>
-                  {isPro
-                    ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
-                    : <svg width="13" height="11" viewBox="0 0 40 32" fill="none" style={{flexShrink:0}}><path d="M2 28L5 8L14 18L20 4L26 18L35 8L38 28H2Z" fill="#F5A623"/><rect x="2" y="28" width="36" height="4" rx="2" fill="#F5A623"/></svg>
-                  }
-                </button>
+                {isPro && (
+                  <button onClick={()=>setShowCoinCustomizer(true)}
+                    title="Customise coin labels"
+                    style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:28,height:28,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+                  </button>
+                )}
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
                 {(ses.otherCoins||TV_DEFAULT).map((v,i) => (
@@ -2698,10 +2715,10 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 Mass Give Coins
               </button>
             ) : (
-              <button onClick={()=>setProGateHint("massgive")} style={{width:"100%",padding:"14px 0",background:BG,border:`1.5px solid ${BORDER}`,borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={YELLOW} strokeWidth="2.2" strokeLinecap="round"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
+              <button onClick={()=>setProGateHint("massgive")} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PINK},${PINK2})`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span>Mass Give Coins</span>
-                <span style={{fontSize:11,background:`${YELLOW}20`,border:`1px solid ${YELLOW}40`,color:YELLOW,borderRadius:99,padding:"2px 8px",fontWeight:700}}>Pro</span>
+                <svg width="14" height="12" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#FFD166"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#F5A623"/></svg>
               </button>
             )}
           </div>
@@ -2712,7 +2729,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
           {/* Desktop right-panel tabs */}
           <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0,display:"none"}}>
-            {[["award_all","Award All"],["board","Board"],["groups","Groups"],["log","Log"]].map(([id,l]) => (
+            {[["award_all","Award All"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg></span>],["log","Log"]].map(([id,l]) => (
               <button key={id} onClick={()=>setRightTab(id)}
                 style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
                   color:rightTab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
@@ -2805,7 +2822,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 style={{background:ses.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .2s"}}>
                 <div>
                   <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?GREEN:TEXT}}>{ses.boardVisible?"Board is live on participant devices":"Board is hidden from participants"}</div>
-                  <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>Tap to {ses.boardVisible?"hide":"show"} leaderboard on participant screens</div>
+                  <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>Tap to {ses.boardVisible?"hide":"show"} scoreboard on participant screens</div>
                 </div>
                 <div style={{width:44,height:26,borderRadius:13,background:ses.boardVisible?GREEN:BORDER,position:"relative",transition:"all .2s",flexShrink:0,marginLeft:12}}>
                   <div style={{position:"absolute",top:3,left:ses.boardVisible?21:3,width:20,height:20,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
@@ -2862,13 +2879,36 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           {rightTab==="groups" && (
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
               {!isPro ? (
-                <div style={{textAlign:"center",padding:"32px 16px"}}>
-                  <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
-                    <svg width="36" height="28" viewBox="0 0 40 32" fill="none"><path d="M2 28L5 8L14 18L20 4L26 18L35 8L38 28H2Z" fill="#F5A623" stroke="#F5A623" strokeWidth="1.5" strokeLinejoin="round"/><rect x="2" y="28" width="36" height="4" rx="2" fill="#F5A623"/></svg>
+                <div style={{position:"relative",minHeight:300}}>
+                  {/* Teaser dummy content */}
+                  <div style={{pointerEvents:"none",userSelect:"none",display:"flex",flexDirection:"column",gap:10}}>
+                    {[{name:"Team Alpha",color:GC[0],total:380,members:["Ahmad Faris","Nurul Ain"]},{name:"Team Bravo",color:GC[1],total:310,members:["Haziq Ibrahim","Siti Khadijah"]},{name:"Team Charlie",color:GC[2],total:180,members:["Darwisyah","Luqman"]}].map((g,i)=>(
+                      <div key={g.name} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",opacity:0.7}}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8}}>
+                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
+                            <div style={{width:11,height:11,borderRadius:3,background:g.color,flexShrink:0}}/>
+                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:g.color}}>{g.name}</div>
+                            <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
+                          </div>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:g.color}}>{g.total}</div>
+                        </div>
+                        <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+                          {g.members.map(m=><span key={m} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{m}</span>)}
+                        </div>
+                        <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                          <div style={{height:4,background:g.color,width:`${Math.round((g.total/380)*100)}%`,borderRadius:4}}/>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:8}}>Groups is a Pro feature</div>
-                  <div style={{fontSize:13,color:SUB,lineHeight:1.7,marginBottom:18}}>Organise participants into teams and track group scores on the leaderboard.</div>
-                  <button onClick={()=>setProGateHint("groups")} style={{padding:"10px 24px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Upgrade to Pro →</button>
+                  {/* Frosted upgrade overlay */}
+                  <div style={{position:"absolute",inset:0,backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",background:"rgba(255,255,255,0.6)",borderRadius:12,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 16px",textAlign:"center"}}>
+                    <svg width="32" height="26" viewBox="0 0 20 16" fill="none" style={{marginBottom:10}}><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>Groups is a Pro feature</div>
+                    <div style={{fontSize:13,color:SUB,lineHeight:1.6,marginBottom:16}}>See team scores on the scoreboard. Upgrade to unlock.</div>
+                    <button onClick={()=>setProGateHint("groups")} style={{padding:"10px 24px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Upgrade to Pro →</button>
+                  </div>
                 </div>
               ) : <>
               {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:32,textAlign:"center",fontSize:13,color:SUB}}>Create groups via the people icon in the top bar</div>}
@@ -3247,7 +3287,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
       id:"free", name:"Free",
       color:SUB, borderColor:BORDER, bg:"#fff",
       tagline:"Try it out, no card needed",
-      features:["1 session","Up to 20 participants","Live leaderboard","QR join — no app needed","Basic features"],
+      features:["1 session","Up to 20 participants","Live scoreboard","QR join — no app needed","Basic features"],
     },
     {
       id:"oneTime", name:"One Time",
@@ -3260,7 +3300,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
       color:PINK, borderColor:PINK, bg:SOFT,
       tagline:"For active facilitators",
       badge:"⭐ Best value",
-      features:["Unlimited sessions","Up to 100 participants","Full features","Priority updates","Coinmaster co-host mode"],
+      features:["Unlimited sessions","Up to 200 participants","Groups & team scoring","Custom coin labels","Mass give coins","Priority support"],
     },
   ];
 
@@ -3476,11 +3516,11 @@ function LimitModal({ type, onUpgrade, onClose }) {
             </div>
           </div>
           {[
-            ["Sessions","3","∞"],
-            ["Participants","30","∞"],
+            ["Sessions","1","∞"],
+            ["Participants","30","200"],
+            ["Groups & teams","✗","✓"],
             ["Custom labels","✗","✓"],
-            ["Remove branding","✗","✓"],
-            ["Templates","✗","✓"],
+            ["Mass give coins","✗","✓"],
           ].map(([f,free,pro]) => (
             <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderTop:`1px solid ${BORDER}`}}>
               <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
@@ -3759,9 +3799,8 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
                   {label:"1 active session",ok:true},
                   {label:"Up to 30 participants per session",ok:true},
                   {label:"Award coins in real time",ok:true},
-                  {label:"Live leaderboard",ok:true},
+                  {label:"Live scoreboard",ok:true},
                   {label:"QR / link join — no app needed",ok:true},
-                  {label:"Mass give coins",ok:true},
                   {label:"Session log",ok:true},
                   {label:"Projector / TV mode",ok:true},
                   {label:"Export CSV",ok:true},
@@ -3777,10 +3816,10 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
                   "Up to 200 participants",
                   "Groups & team scoring",
                   "Custom coin labels",
-                  "Coinmaster co-host mode",
+                  "Mass give coins",
                 ].map(f=>(
                   <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${BORDER}`,opacity:0.5}}>
-                    <svg width="13" height="11" viewBox="0 0 40 32" fill="none" style={{flexShrink:0}}><path d="M2 28L5 8L14 18L20 4L26 18L35 8L38 28H2Z" fill="#F5A623"/><rect x="2" y="28" width="36" height="4" rx="2" fill="#F5A623"/></svg>
+                    <svg width="13" height="11" viewBox="0 0 20 16" fill="none" style={{flexShrink:0}}><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg>
                     <div style={{fontSize:13,color:SUB,fontWeight:500}}>{f}</div>
                   </div>
                 ))}
@@ -3791,7 +3830,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
                   "Unlimited sessions",
                   "Up to 200 participants",
                   "Award coins in real time",
-                  "Live leaderboard",
+                  "Live scoreboard",
                   "QR / link join — no app needed",
                   "Mass give coins",
                   "Session log",
@@ -3799,7 +3838,6 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
                   "Export CSV",
                   "Groups & team scoring",
                   "Custom coin labels",
-                  "Coinmaster co-host mode",
                   "PIN rejoin for returning participants",
                   "Priority support",
                 ].map(f=>(
@@ -4668,7 +4706,7 @@ export default function App() {
     await ss("email", t.email);
     await ss("name", t.name);
     let p = await sg("plan"); if (!p) { await ss("plan", "free"); }
-    window.history.replaceState({}, "", "/home");
+    window.history.replaceState({}, "", "/app");
     setScreen("home"); 
   }
   async function handleLogout() { 
@@ -4710,7 +4748,7 @@ export default function App() {
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
   if (false && screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
-  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onBack={()=>{ window.history.replaceState({},"","/home"); setScreen("home"); }} onPView={()=>setScreen("participant")}/></>;
+  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onBack={()=>{ window.history.replaceState({},"","/app"); setScreen("home"); }} onPView={()=>setScreen("participant")}/></>;
 
   // Session settings from home list gear icon
   if (screen==="sessionSettings" && cur) return (
