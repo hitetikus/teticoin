@@ -637,7 +637,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
                   <div style={{fontSize:10,fontWeight:700,color:PINK}}>LB24</div>
                 </div>
                 <div>
-                  <div style={{fontSize:12,fontWeight:600,color:TEXT,marginBottom:4}}>teticoin.tetikus.com.my/join/LB24</div>
+                  <div style={{fontSize:12,fontWeight:600,color:TEXT,marginBottom:4}}>teticoin.com/join/LB24</div>
                   <div style={{fontSize:11,color:NEUT}}>Shareable link — works on any browser</div>
                 </div>
               </div>

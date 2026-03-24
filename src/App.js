@@ -1540,7 +1540,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
               style={{width:"100%",padding:"13px 0",background:loginEmail.trim()&&loginPass?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:loginEmail.trim()&&loginPass?"#fff":SUB,cursor:loginEmail.trim()&&loginPass?"pointer":"not-allowed",marginBottom:10,opacity:loginBusy?.6:1}}>
               {loginBusy ? "Logging in…" : "Log in"}
             </button>
-            {loginErr && <div style={{fontSize:12,color:SUB,textAlign:"center"}}><a href="https://teticoin.tetikus.com.my" target="_blank" rel="noopener noreferrer" style={{color:PINK}}>Don't have an account? Sign up →</a></div>}
+            {loginErr && <div style={{fontSize:12,color:SUB,textAlign:"center"}}><a href="https://teticoin.com" target="_blank" rel="noopener noreferrer" style={{color:PINK}}>Don't have an account? Sign up →</a></div>}
             <button onClick={()=>setLoginModal(false)} style={{width:"100%",marginTop:6,padding:"10px 0",background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>Skip for now</button>
           </>
         )}
@@ -1742,16 +1742,16 @@ function ParticipantView({ session: init, hostPlan="free" }) {
             {[
               {name:"WhatsApp", color:"#25D366", bg:"#25D366",
                icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>,
-               url:`https://wa.me/?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.tetikus.com.my`)}`},
+               url:`https://wa.me/?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.com`)}`},
               {name:"Facebook", color:"#1877F2", bg:"#1877F2",
                icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>,
-               url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.tetikus.com.my")}&quote=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉`)}`},
+               url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.com")}&quote=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉`)}`},
               {name:"X", color:"#000", bg:"#000",
                icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L2.146 2.25H8.32l4.273 5.647L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>,
-               url:`https://x.com/intent/tweet?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.tetikus.com.my`)}`},
+               url:`https://x.com/intent/tweet?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.com`)}`},
               {name:"Telegram", color:"#229ED9", bg:"#229ED9",
                icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>,
-               url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.tetikus.com.my")}&text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉`)}`},
+               url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.com")}&text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉`)}`},
               {name:"Copy", color:"#6B7280", bg:"#374151",
                icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
                url:null},
@@ -1759,7 +1759,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
               <button key={s.name} title={s.name}
                 onClick={()=>{
                   if(s.url) window.open(s.url,"_blank");
-                  else { navigator.clipboard?.writeText(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.tetikus.com.my`); }
+                  else { navigator.clipboard?.writeText(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.com`); }
                 }}
                 style={{width:48,height:48,borderRadius:"50%",background:s.bg,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:`0 2px 8px ${s.bg}66`}}>
                 {s.icon}
@@ -4216,22 +4216,6 @@ function SuperAdminDashboard({ onClose }) {
   const [betaEmail, setBetaEmail] = useState("");
   const [betaMsg, setBetaMsg] = useState(null);
   const [actionMsg, setActionMsg] = useState(null);
-  const [editingExpiry, setEditingExpiry] = useState(null); // uid being edited
-  const [editExpiryVal, setEditExpiryVal] = useState(""); // ISO date string "YYYY-MM-DD"
-
-  async function saveExpiry(uid, email) {
-    if (!editExpiryVal) return;
-    try {
-      const { getFirestore, doc, setDoc } = await import("firebase/firestore");
-      const db = getFirestore();
-      const newExpiry = new Date(editExpiryVal + "T23:59:59").toISOString();
-      await setDoc(doc(db, "users", uid, "data", "planExpiry"), { value: newExpiry, updatedAt: Date.now() });
-      setUsers(u => u.map(x => x.uid === uid ? {...x, planExpiry: newExpiry} : x));
-      setEditingExpiry(null);
-      setActionMsg(`✅ Expiry updated for ${email}`);
-      setTimeout(() => setActionMsg(null), 3000);
-    } catch(e) { setActionMsg("❌ Error: " + e.message); }
-  }
 
   // Load all users — data is stored under users/{uid}/data/{key} subcollection
   useEffect(() => {
@@ -4428,9 +4412,7 @@ function SuperAdminDashboard({ onClose }) {
                 const planColor = PLAN_COLORS[u.plan] || SUB;
                 const planLabel = PLAN_LABELS[u.plan] || u.plan;
                 const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : null;
-                const expiryExpired = u.planExpiry && new Date(u.planExpiry) < new Date();
                 const isSA = u.plan === "superadmin";
-                const isEditingThis = editingExpiry === u.uid;
                 return (
                   <div key={u.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 18px",borderBottom:i<filtered.length-1?`1px solid ${BORDER}`:"none",flexWrap:"wrap"}}>
                     <div style={{width:36,height:36,borderRadius:10,background:`${planColor}18`,border:`1.5px solid ${planColor}30`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:planColor}}>
@@ -4439,31 +4421,7 @@ function SuperAdminDashboard({ onClose }) {
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{u.name}</div>
                       <div style={{fontSize:12,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</div>
-                      {/* Expiry row — show for beta/pro plans */}
-                      {expiryStr && !isEditingThis && (
-                        <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2}}>
-                          <span style={{fontSize:11,color:expiryExpired?"#EF4444":SUB}}>
-                            {expiryExpired ? "⚠ Expired" : "Expires"} {expiryStr}
-                          </span>
-                          {u.plan === "beta" && (
-                            <button onClick={()=>{
-                              setEditingExpiry(u.uid);
-                              // pre-fill with current expiry date in YYYY-MM-DD
-                              setEditExpiryVal(new Date(u.planExpiry).toISOString().slice(0,10));
-                            }} style={{background:"none",border:"none",cursor:"pointer",fontSize:10,color:PINK,fontWeight:700,padding:0,textDecoration:"underline",textUnderlineOffset:2}}>edit</button>
-                          )}
-                        </div>
-                      )}
-                      {isEditingThis && (
-                        <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
-                          <input type="date" value={editExpiryVal} onChange={e=>setEditExpiryVal(e.target.value)}
-                            style={{fontSize:11,border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 7px",fontFamily:"Poppins,sans-serif",color:TEXT,outline:"none"}}/>
-                          <button onClick={()=>saveExpiry(u.uid, u.email)}
-                            style={{padding:"3px 10px",background:GRAD,border:"none",borderRadius:7,fontSize:11,fontWeight:700,color:"#fff",cursor:"pointer"}}>Save</button>
-                          <button onClick={()=>setEditingExpiry(null)}
-                            style={{padding:"3px 8px",background:"none",border:`1px solid ${BORDER}`,borderRadius:7,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer"}}>✕</button>
-                        </div>
-                      )}
+                      {expiryStr && <div style={{fontSize:11,color:SUB,marginTop:1}}>Expires {expiryStr}</div>}
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,flexWrap:"wrap",justifyContent:"flex-end"}}>
                       <span style={{background:`${planColor}15`,border:`1px solid ${planColor}40`,color:planColor,borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}>{planLabel}</span>
@@ -4533,33 +4491,12 @@ function SuperAdminDashboard({ onClose }) {
               ) : users.filter(u=>u.plan==="beta").map(u => {
                 const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
                 const expired = u.planExpiry && new Date(u.planExpiry) < new Date();
-                const daysLeft = u.planExpiry ? Math.ceil((new Date(u.planExpiry) - new Date()) / (1000*60*60*24)) : null;
-                const isEditingThis = editingExpiry === u.uid;
                 return (
                   <div key={u.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,marginBottom:8}}>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</div>
                       <div style={{fontSize:12,color:SUB}}>{u.email}</div>
-                      {!isEditingThis ? (
-                        <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2}}>
-                          <span style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:600}}>
-                            {expired ? "Expired" : `Active · ${daysLeft}d left`} · until {expiryStr}
-                          </span>
-                          <button onClick={()=>{
-                            setEditingExpiry(u.uid);
-                            setEditExpiryVal(u.planExpiry ? new Date(u.planExpiry).toISOString().slice(0,10) : "");
-                          }} style={{background:"none",border:"none",cursor:"pointer",fontSize:10,color:PINK,fontWeight:700,padding:0,textDecoration:"underline",textUnderlineOffset:2}}>edit</button>
-                        </div>
-                      ) : (
-                        <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
-                          <input type="date" value={editExpiryVal} onChange={e=>setEditExpiryVal(e.target.value)}
-                            style={{fontSize:11,border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 7px",fontFamily:"Poppins,sans-serif",color:TEXT,outline:"none"}}/>
-                          <button onClick={()=>saveExpiry(u.uid, u.email)}
-                            style={{padding:"3px 10px",background:GRAD,border:"none",borderRadius:7,fontSize:11,fontWeight:700,color:"#fff",cursor:"pointer"}}>Save</button>
-                          <button onClick={()=>setEditingExpiry(null)}
-                            style={{padding:"3px 8px",background:"none",border:`1px solid ${BORDER}`,borderRadius:7,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer"}}>✕</button>
-                        </div>
-                      )}
+                      <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:600,marginTop:2}}>{expired?"Expired":"Active"} · until {expiryStr}</div>
                     </div>
                     <button onClick={()=>revokePlan(u.uid, u.email)}
                       style={{padding:"5px 12px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:12,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
@@ -4572,33 +4509,6 @@ function SuperAdminDashboard({ onClose }) {
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-// ── Beta Expiry Banner ─────────────────────────────────────────────
-function BetaExpiryBanner({ planExpiry, onClose }) {
-  if (!planExpiry) return null;
-  const expDate = new Date(planExpiry);
-  const now = new Date();
-  const daysLeft = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
-  if (daysLeft <= 0) return null; // already expired — plan already reverted to free on login
-
-  const soon = daysLeft <= 14;
-  const expiryStr = expDate.toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" });
-  const bg    = soon ? "#FFF7ED" : "#F0FDF4";
-  const bdr   = soon ? "#FED7AA" : "#BBF7D0";
-  const col   = soon ? "#EA580C" : "#16A34A";
-  const icon  = soon ? "⏳" : "⚡";
-  const msg   = soon
-    ? `Your Beta Pro access expires in ${daysLeft} day${daysLeft===1?"":"s"} (${expiryStr}). Upgrade to keep Pro features.`
-    : `Beta Pro active · expires ${expiryStr} (${daysLeft} days left)`;
-
-  return (
-    <div style={{background:bg,border:`1.5px solid ${bdr}`,borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-      <span style={{fontSize:16,flexShrink:0}}>{icon}</span>
-      <div style={{flex:1,fontSize:12,color:col,fontWeight:600,lineHeight:1.5}}>{msg}</div>
-      <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:col,opacity:.6,padding:"0 2px",fontSize:16,lineHeight:1,flexShrink:0}}>×</button>
     </div>
   );
 }
@@ -4626,12 +4536,12 @@ function EarningsPage({ uid, name, onClose }) {
   const totalSessions = (earnings||[]).length;
 
   function shareText() {
-    return `I've earned ${totalCoins} coins across ${totalSessions} session${totalSessions!==1?"s":""} on Teticoin! 🏆 https://teticoin.tetikus.com.my`;
+    return `I've earned ${totalCoins} coins across ${totalSessions} session${totalSessions!==1?"s":""} on Teticoin! 🏆 https://teticoin.com`;
   }
 
   const shareLinks = [
     {name:"WhatsApp", color:"#25D366", url:`https://wa.me/?text=${encodeURIComponent(shareText())}`},
-    {name:"Facebook", color:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.tetikus.com.my")}&quote=${encodeURIComponent(shareText())}`},
+    {name:"Facebook", color:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.com")}&quote=${encodeURIComponent(shareText())}`},
     {name:"Threads",  color:"#000",    url:`https://www.threads.net/intent/post?text=${encodeURIComponent(shareText())}`},
   ];
 
@@ -4711,11 +4621,11 @@ function EarningsPage({ uid, name, onClose }) {
               {[
                 {name:"WhatsApp", bg:"#25D366", url:`https://wa.me/?text=${encodeURIComponent(shareText())}`,
                  icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>},
-                {name:"Facebook", bg:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.tetikus.com.my")}&quote=${encodeURIComponent(shareText())}`,
+                {name:"Facebook", bg:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.com")}&quote=${encodeURIComponent(shareText())}`,
                  icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>},
                 {name:"X", bg:"#000", url:`https://x.com/intent/tweet?text=${encodeURIComponent(shareText())}`,
                  icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L2.146 2.25H8.32l4.273 5.647L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>},
-                {name:"Telegram", bg:"#229ED9", url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.tetikus.com.my")}&text=${encodeURIComponent(shareText())}`,
+                {name:"Telegram", bg:"#229ED9", url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.com")}&text=${encodeURIComponent(shareText())}`,
                  icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>},
               ].map(s=>(
                 <button key={s.name} onClick={()=>window.open(s.url,"_blank")} title={s.name}
@@ -5042,7 +4952,6 @@ export default function App() {
   const [cmSession, setCmSession] = useState(null);
   const [paymentToast, setPaymentToast] = useState(null);
   const [claimToken, setClaimToken] = useState(null); // badge claim token from /claim/TOKEN URL
-  const [showBetaBanner, setShowBetaBanner] = useState(true);
 
   const isSuperadmin = plan === "superadmin";
   const isBeta = plan === "beta";
@@ -5438,7 +5347,6 @@ export default function App() {
             </div>
 
             {isFree && <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>setShowPricing(true)}/>}
-            {isBeta && showBetaBanner && <BetaExpiryBanner planExpiry={planExpiry} onClose={()=>setShowBetaBanner(false)}/>}
 
             {/* Hero card */}
             <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
