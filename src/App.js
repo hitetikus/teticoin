@@ -852,7 +852,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
           </div>
           <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
             {tabBtn("people","Participants")}
-            {tabBtn("groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></span>)}
+            {tabBtn("groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill={isManagePro?"#C0C0C0":"#ffb743"}/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill={isManagePro?"#C0C0C0":"#ffb743"}/></svg></span>)}
             {/* Coinmaster tab hidden — phase 2 feature */}
           </div>
         </div>
@@ -1540,7 +1540,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
               style={{width:"100%",padding:"13px 0",background:loginEmail.trim()&&loginPass?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:loginEmail.trim()&&loginPass?"#fff":SUB,cursor:loginEmail.trim()&&loginPass?"pointer":"not-allowed",marginBottom:10,opacity:loginBusy?.6:1}}>
               {loginBusy ? "Logging in…" : "Log in"}
             </button>
-            {loginErr && <div style={{fontSize:12,color:SUB,textAlign:"center"}}><a href="https://teticoin.com" target="_blank" rel="noopener noreferrer" style={{color:PINK}}>Don't have an account? Sign up →</a></div>}
+            {loginErr && <div style={{fontSize:12,color:SUB,textAlign:"center"}}><a href="https://teticoin.tetikus.com.my" target="_blank" rel="noopener noreferrer" style={{color:PINK}}>Don't have an account? Sign up →</a></div>}
             <button onClick={()=>setLoginModal(false)} style={{width:"100%",marginTop:6,padding:"10px 0",background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>Skip for now</button>
           </>
         )}
@@ -1742,16 +1742,16 @@ function ParticipantView({ session: init, hostPlan="free" }) {
             {[
               {name:"WhatsApp", color:"#25D366", bg:"#25D366",
                icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>,
-               url:`https://wa.me/?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.com`)}`},
+               url:`https://wa.me/?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.tetikus.com.my`)}`},
               {name:"Facebook", color:"#1877F2", bg:"#1877F2",
                icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>,
-               url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.com")}&quote=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉`)}`},
+               url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.tetikus.com.my")}&quote=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉`)}`},
               {name:"X", color:"#000", bg:"#000",
                icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L2.146 2.25H8.32l4.273 5.647L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>,
-               url:`https://x.com/intent/tweet?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.com`)}`},
+               url:`https://x.com/intent/tweet?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.tetikus.com.my`)}`},
               {name:"Telegram", color:"#229ED9", bg:"#229ED9",
                icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>,
-               url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.com")}&text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉`)}`},
+               url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.tetikus.com.my")}&text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉`)}`},
               {name:"Copy", color:"#6B7280", bg:"#374151",
                icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
                url:null},
@@ -1759,7 +1759,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
               <button key={s.name} title={s.name}
                 onClick={()=>{
                   if(s.url) window.open(s.url,"_blank");
-                  else { navigator.clipboard?.writeText(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.com`); }
+                  else { navigator.clipboard?.writeText(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.tetikus.com.my`); }
                 }}
                 style={{width:48,height:48,borderRadius:"50%",background:s.bg,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:`0 2px 8px ${s.bg}66`}}>
                 {s.icon}
@@ -2819,21 +2819,29 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       </div>
 
       {/* ── MOBILE TABS (hidden on desktop) ── */}
-      <div className="tc-tab-bar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
-        {[["people","Participants"],["award","Award"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></span>],["log","Log"]].map(([id,l]) => (
+      <div className="tc-tab-bar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none"}}>
+        <style>{`.tc-tab-bar::-webkit-scrollbar{display:none}`}</style>
+        {[
+          ["people","Participants"],
+          ["award","Award"],
+          ["award_all","Award All"],
+          ["board","Scoreboard"],
+          ["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill={isPro?"#C0C0C0":"#ffb743"}/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill={isPro?"#C0C0C0":"#ffb743"}/></svg></span>],
+          ["log","Log"]
+        ].map(([id,l]) => (
           <button key={id} onClick={()=>{
             if (!isLive) return;
             setTab(id);
             if (id==="board") setRightTab("board");
             else if (id==="groups") setRightTab("groups");
             else if (id==="log") setRightTab("log");
+            else if (id==="award_all") setRightTab("award_all");
           }}
-            style={{padding:"11px 12px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
+            style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
               color:!isLive?`${SUB}55`:tab===id?PINK:SUB,cursor:isLive?"pointer":"default",flexShrink:0,
-              borderBottom:tab===id&&isLive?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
+              borderBottom:tab===id&&isLive?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s",whiteSpace:"nowrap"}}>{l}
           </button>
         ))}
-        <div style={{marginLeft:"auto",paddingRight:8,flexShrink:0}}/>
       </div>
 
       {/* ── BODY: two columns on desktop, single column on mobile ── */}
@@ -2937,11 +2945,11 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         </div>
 
         {/* ── RIGHT PANEL: Award All / Board / Groups / Log ── */}
-        <div className="tc-session-right" style={{display: tab==="award" ? "none" : "flex", flexDirection:"column", overflow:"hidden"}}>
+        <div className="tc-session-right" style={{display: (tab==="award") ? "none" : "flex", flexDirection:"column", overflow:"hidden"}}>
 
           {/* Desktop right-panel tabs */}
           <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0,display:"none"}}>
-            {[["people","Participants"],["award_all","Award All"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></span>],["log","Log"]].map(([id,l]) => (
+            {[["people","Participants"],["award_all","Award All"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill={isPro?"#C0C0C0":"#ffb743"}/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill={isPro?"#C0C0C0":"#ffb743"}/></svg></span>],["log","Log"]].map(([id,l]) => (
               <button key={id} onClick={()=>setRightTab(id)}
                 style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
                   color:rightTab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
@@ -3178,7 +3186,21 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                 </div>
               ) : <>
-              {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:32,textAlign:"center",fontSize:13,color:SUB}}>Create groups via the people icon in the top bar</div>}
+              {/* Inline group creation */}
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
+                <SL style={{marginBottom:10}}>Create Group</SL>
+                <div style={{display:"flex",gap:8,marginBottom:10}}>
+                  <input placeholder="Group name" value={ses._newGroupName||""} onChange={e=>mut(s=>{s._newGroupName=e.target.value;})}
+                    onKeyDown={e=>{if(e.key==="Enter"){const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";});}}
+                    style={{flex:1,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"8px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
+                  <button onClick={()=>{const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";});}}
+                    style={{padding:"0 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
+                </div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {GC.map(c=><div key={c} onClick={()=>mut(s=>{s._newGroupColor=c;})} style={{width:22,height:22,borderRadius:6,background:c,cursor:"pointer",border:(ses._newGroupColor||GC[0])===c?`3px solid ${TEXT}`:"3px solid transparent",transform:(ses._newGroupColor||GC[0])===c?"scale(1.15)":"scale(1)",transition:".12s"}}/>)}
+                </div>
+              </div>
+              {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:32,textAlign:"center",fontSize:13,color:SUB}}>No groups yet. Add one above!</div>}
               {gs.map((g,i) => (
                 <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
@@ -4536,12 +4558,12 @@ function EarningsPage({ uid, name, onClose }) {
   const totalSessions = (earnings||[]).length;
 
   function shareText() {
-    return `I've earned ${totalCoins} coins across ${totalSessions} session${totalSessions!==1?"s":""} on Teticoin! 🏆 https://teticoin.com`;
+    return `I've earned ${totalCoins} coins across ${totalSessions} session${totalSessions!==1?"s":""} on Teticoin! 🏆 https://teticoin.tetikus.com.my`;
   }
 
   const shareLinks = [
     {name:"WhatsApp", color:"#25D366", url:`https://wa.me/?text=${encodeURIComponent(shareText())}`},
-    {name:"Facebook", color:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.com")}&quote=${encodeURIComponent(shareText())}`},
+    {name:"Facebook", color:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.tetikus.com.my")}&quote=${encodeURIComponent(shareText())}`},
     {name:"Threads",  color:"#000",    url:`https://www.threads.net/intent/post?text=${encodeURIComponent(shareText())}`},
   ];
 
@@ -4621,11 +4643,11 @@ function EarningsPage({ uid, name, onClose }) {
               {[
                 {name:"WhatsApp", bg:"#25D366", url:`https://wa.me/?text=${encodeURIComponent(shareText())}`,
                  icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>},
-                {name:"Facebook", bg:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.com")}&quote=${encodeURIComponent(shareText())}`,
+                {name:"Facebook", bg:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.tetikus.com.my")}&quote=${encodeURIComponent(shareText())}`,
                  icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>},
                 {name:"X", bg:"#000", url:`https://x.com/intent/tweet?text=${encodeURIComponent(shareText())}`,
                  icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L2.146 2.25H8.32l4.273 5.647L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>},
-                {name:"Telegram", bg:"#229ED9", url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.com")}&text=${encodeURIComponent(shareText())}`,
+                {name:"Telegram", bg:"#229ED9", url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.tetikus.com.my")}&text=${encodeURIComponent(shareText())}`,
                  icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>},
               ].map(s=>(
                 <button key={s.name} onClick={()=>window.open(s.url,"_blank")} title={s.name}
