@@ -1001,11 +1001,14 @@ function Auth({ onDone }) {
         onDone({ name: name||email.split("@")[0], email, uid: c.user.uid });
       }
     } catch(e) {
-      const msg = e.code==="auth/user-not-found"||e.code==="auth/wrong-password" ? "Incorrect email or password."
+      const msg = e.code==="auth/invalid-credential"||e.code==="auth/user-not-found"||e.code==="auth/wrong-password" ? "Incorrect email or password. Please try again."
         : e.code==="auth/email-already-in-use" ? "An account with this email already exists."
         : e.code==="auth/weak-password" ? "Password must be at least 6 characters."
         : e.code==="auth/invalid-email" ? "Please enter a valid email address."
-        : e.message;
+        : e.code==="auth/too-many-requests" ? "Too many failed attempts. Please wait a moment and try again."
+        : e.code==="auth/user-disabled" ? "This account has been disabled. Contact support."
+        : e.code==="auth/network-request-failed" ? "Network error. Check your connection and try again."
+        : "Something went wrong. Please try again.";
       setErr(msg);
     }
     setBusy(false);
@@ -1232,10 +1235,11 @@ function ParticipantView({ session: init, hostPlan="free" }) {
       setLoginModal(false);
       setShowLoginBanner(false);
     } catch(err) {
-      const msg = err.code === "auth/wrong-password" || err.code === "auth/user-not-found"
-        ? "Incorrect email or password."
+      const msg = err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found"
+        ? "Incorrect email or password. Please try again."
         : err.code === "auth/invalid-email" ? "Invalid email address."
         : err.code === "auth/too-many-requests" ? "Too many attempts. Try again later."
+        : err.code === "auth/network-request-failed" ? "Network error. Check your connection."
         : "Something went wrong. Please try again.";
       setLoginErr(msg);
     }
@@ -3879,7 +3883,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
   );
 }
 
-// ── Superadmin Dashboard ──────────────────────────────────────────
+// ── Admin Dashboard ──────────────────────────────────────────
 function SuperAdminDashboard({ onClose }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -3889,31 +3893,48 @@ function SuperAdminDashboard({ onClose }) {
   const [betaMsg, setBetaMsg] = useState(null);
   const [actionMsg, setActionMsg] = useState(null);
 
-  // Load all users from Firestore top-level users collection
+  // Load all users — data is stored under users/{uid}/data/{key} subcollection
   useEffect(() => {
     async function load() {
       try {
-        const { getFirestore, collection, getDocs } = await import("firebase/firestore");
+        const { getFirestore, collection, getDocs, doc, getDoc } = await import("firebase/firestore");
         const db = getFirestore();
-        const snap = await getDocs(collection(db, "users"));
+        // Get all user UIDs from top-level users collection
+        const usersSnap = await getDocs(collection(db, "users"));
         const list = [];
-        snap.forEach(doc => {
-          const d = doc.data();
-          list.push({
-            uid: doc.id,
-            email: d.email || "—",
-            name: d.name || "—",
-            plan: d.plan || "free",
-            planExpiry: d.planExpiry || null,
-            sessionsCount: Array.isArray(d.sessions_index) ? d.sessions_index.length : 0,
-          });
-        });
+        // For each user, read their data subcollection keys we care about
+        await Promise.all(usersSnap.docs.map(async userDoc => {
+          const uid = userDoc.id;
+          try {
+            const [emailDoc, nameDoc, planDoc, planExpiryDoc, sessionsDoc] = await Promise.all([
+              getDoc(doc(db, "users", uid, "data", "email")),
+              getDoc(doc(db, "users", uid, "data", "name")),
+              getDoc(doc(db, "users", uid, "data", "plan")),
+              getDoc(doc(db, "users", uid, "data", "planExpiry")),
+              getDoc(doc(db, "users", uid, "data", "sessions_index")),
+            ]);
+            const plan = planDoc.exists() ? planDoc.data().value : "free";
+            const planExpiry = planExpiryDoc.exists() ? planExpiryDoc.data().value : null;
+            const sessionsVal = sessionsDoc.exists() ? sessionsDoc.data().value : [];
+            list.push({
+              uid,
+              email: emailDoc.exists() ? emailDoc.data().value : "—",
+              name:  nameDoc.exists()  ? nameDoc.data().value  : "—",
+              plan:  plan || "free",
+              planExpiry,
+              sessionsCount: Array.isArray(sessionsVal) ? sessionsVal.length : 0,
+            });
+          } catch(e) {
+            // user exists but has no data subcollection yet — still list them
+            list.push({ uid, email:"—", name:"—", plan:"free", planExpiry:null, sessionsCount:0 });
+          }
+        }));
         list.sort((a,b) => {
           const order = {superadmin:0, beta:1, pro:2, proY:2, oneTime:2, free:3};
           return (order[a.plan]||3) - (order[b.plan]||3);
         });
         setUsers(list);
-      } catch(e) { console.error(e); }
+      } catch(e) { console.error("Dashboard load error:", e); }
       setLoading(false);
     }
     load();
@@ -3925,18 +3946,26 @@ function SuperAdminDashboard({ onClose }) {
       const db = getFirestore();
       const expiry = new Date();
       expiry.setDate(expiry.getDate() + 90);
-      await setDoc(doc(db, "users", uid), { plan: "beta", planExpiry: expiry.toISOString() }, { merge: true });
+      // Write to data subcollection (matching fsSet pattern)
+      await Promise.all([
+        setDoc(doc(db, "users", uid, "data", "plan"),       { value: "beta",                   updatedAt: Date.now() }),
+        setDoc(doc(db, "users", uid, "data", "planExpiry"), { value: expiry.toISOString(),      updatedAt: Date.now() }),
+      ]);
       setUsers(u => u.map(x => x.uid === uid ? {...x, plan:"beta", planExpiry:expiry.toISOString()} : x));
-      setActionMsg(`✅ Beta assigned to ${email} for 90 days`);
+      setActionMsg(`✅ Beta Pro assigned to ${email} for 90 days`);
       setTimeout(() => setActionMsg(null), 3000);
     } catch(e) { setActionMsg("❌ Error: " + e.message); }
   }
 
   async function revokePlan(uid, email) {
     try {
-      const { getFirestore, doc, setDoc } = await import("firebase/firestore");
+      const { getFirestore, doc, setDoc, deleteDoc } = await import("firebase/firestore");
       const db = getFirestore();
-      await setDoc(doc(db, "users", uid), { plan: "free", planExpiry: null }, { merge: true });
+      // Reset plan to free, remove expiry
+      await Promise.all([
+        setDoc(doc(db, "users", uid, "data", "plan"),       { value: "free", updatedAt: Date.now() }),
+        deleteDoc(doc(db, "users", uid, "data", "planExpiry")),
+      ]);
       setUsers(u => u.map(x => x.uid === uid ? {...x, plan:"free", planExpiry:null} : x));
       setActionMsg(`✅ Plan reset to Free for ${email}`);
       setTimeout(() => setActionMsg(null), 3000);
@@ -3953,7 +3982,7 @@ function SuperAdminDashboard({ onClose }) {
   }
 
   const PLAN_COLORS = { free: SUB, beta: GREEN, pro: PINK, proY: PINK, oneTime: BLUE, superadmin: "#FF6B00" };
-  const PLAN_LABELS = { free:"Free", beta:"Beta", pro:"Pro", proY:"Pro Yearly", oneTime:"One-Time", superadmin:"Superadmin" };
+  const PLAN_LABELS = { free:"Free", beta:"Beta Pro", pro:"Pro", proY:"Pro Yearly", oneTime:"One-Time", superadmin:"Superadmin" };
 
   const filtered = users.filter(u =>
     u.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -3978,8 +4007,8 @@ function SuperAdminDashboard({ onClose }) {
           Back
         </button>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:16}}>🛡️</span>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Superadmin</div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Admin Dashboard</div>
         </div>
         <div style={{width:60}}/>
       </div>
@@ -4144,10 +4173,10 @@ function JoinSessionField({ onJoin }) {
           onKeyDown={e=>e.key==="Enter"&&submit()}
           placeholder="Enter session code"
           maxLength={8}
-          style={{flex:1,padding:"10px 14px",border:`1.5px solid ${err?'#EF4444':BORDER}`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",letterSpacing:0}}
+          style={{flex:1,padding:"11px 14px",border:`1.5px solid ${err?'#EF4444':BORDER}`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",letterSpacing:0}}
         />
         <button onClick={submit} disabled={!code.trim()||busy}
-          style={{padding:"10px 18px",background:code.trim()?GRAD:BG,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:code.trim()?"#fff":SUB,cursor:code.trim()?"pointer":"not-allowed",flexShrink:0,transition:"all .15s"}}>
+          style={{padding:"11px 18px",background:code.trim()?GRAD:BG,border:`1.5px solid ${code.trim()?'transparent':BORDER}`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:code.trim()?"#fff":SUB,cursor:code.trim()?"pointer":"not-allowed",flexShrink:0,transition:"all .15s",whiteSpace:"nowrap"}}>
           {busy ? "…" : "Join →"}
         </button>
       </div>
@@ -4631,7 +4660,7 @@ export default function App() {
     </>
   );
 
-  const planLabel = plan==="free"?"Free Plan":plan.startsWith("pro")?"Pro Plan":"Team Plan";
+  const planLabel = plan==="superadmin"?"Superadmin":plan==="beta"?"Beta Pro":plan==="free"?"Free Plan":plan.startsWith("pro")?"Pro Plan":"Team Plan";
 
   return (
     <div className="tc-app-shell" style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
@@ -4708,7 +4737,7 @@ export default function App() {
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, label:"Profile", fn:()=>{setShowProfile(true);}},
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, label:"Billing & Plan", fn:()=>{setShowBilling(true);}},
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>, label:"Settings", fn:()=>{setShowSettings(true);}},
-              ...(isSuperadmin ? [{icon:<span style={{fontSize:14}}>🛡️</span>, label:"Superadmin Dashboard", fn:()=>{setShowSuperAdmin(true);}}] : []),
+              ...(isSuperadmin ? [{icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label:"Admin Dashboard", fn:()=>{setShowSuperAdmin(true);}}] : []),
             ].map(item => (
               <button key={item.label} onClick={()=>{setProfileOpen(false);item.fn();}}
                 style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,fontWeight:600,color:TEXT}}
