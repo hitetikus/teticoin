@@ -930,7 +930,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
                       🐹
                     </div>
                     <div>
-                      <div style={{fontSize:11,color:"#6B7280",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600"}}>Teticoin Support</div>
+                      <div style={{fontSize:11,color:"#6B7280",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600}}>Teticoin Support</div>
                       <div style={{fontSize:14,color:"#111827",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800}}>Cointosser</div>
                       <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
                         <div style={{width:8,height:8,borderRadius:"50%",background:"#22c55e"}}/>
