@@ -804,7 +804,7 @@ function SessionSettings({ session, onRename, onToggleLive, onExport, onReset, o
   );
 }
 
-function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClose, onExport, onReset, onRename, onToggleLive }) {
+function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClose, onShowQR, onExport, onReset, onRename, onToggleLive }) {
   const isManagePro = plan !== "free";
   const [showUpgradeHint, setShowUpgradeHint] = useState(null);
   const [tab, setTab] = useState("people");
@@ -843,7 +843,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
-            {tabBtn("people","People")}
+            {tabBtn("people","Participants")}
             {tabBtn("groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="11" height="9" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg></span>)}
             {/* Coinmaster tab hidden — phase 2 feature */}
           </div>
@@ -851,9 +851,18 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
         <div style={{overflowY:"auto",flex:1,padding:"16px 20px 32px"}}>
 
           {tab==="people" && <>
-            <div style={{display:"flex",gap:8,marginBottom:12}}>
-              <Inp placeholder="Full name" value={np} onChange={e=>setNp(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addP()} style={{flex:1}}/>
-              <button onClick={addP} style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
+            {/* Two-column: Add name input + Show QR button */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,marginBottom:12,alignItems:"center"}}>
+              <Inp placeholder="Participant Name" value={np} onChange={e=>setNp(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addP()} style={{flex:1,margin:0}}/>
+              <button onClick={addP}
+                style={{padding:"0 16px",height:42,background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
+                Add
+              </button>
+              <button onClick={()=>{ onClose(); if(onShowQR) onShowQR(); }}
+                style={{padding:"0 12px",height:42,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
+                Show QR
+              </button>
             </div>
             {sorted.length===0 && <div style={{textAlign:"center",padding:24,color:SUB,fontSize:13}}>No participants yet</div>}
             {sorted.map(p => {
@@ -866,10 +875,12 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{p.name}</div>
                     <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                   </div>
-                  <select value={p.gid??""} onChange={e=>asgG(p.id,e.target.value)} style={{background:SOFT,border:`1px solid ${MID}`,color:TEXT,borderRadius:9,padding:"5px 8px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:90}}>
-                    <option value="">No group</option>
-                    {session.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
-                  </select>
+                  {isManagePro && (
+                    <select value={p.gid??""} onChange={e=>asgG(p.id,e.target.value)} style={{background:SOFT,border:`1px solid ${MID}`,color:TEXT,borderRadius:9,padding:"5px 8px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:90}}>
+                      <option value="">No group</option>
+                      {session.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
+                    </select>
+                  )}
                   <button onClick={()=>remP(p.id)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"4px 9px",fontSize:11,color:SUB,cursor:"pointer"}}>✕</button>
                 </div>
               );
@@ -2224,6 +2235,59 @@ function CoinmasterView({ session: init, onBack }) {
 
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
+        {/* PEOPLE TAB (mobile) */}
+        {tab==="people" && (
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+            {/* Two-column add row */}
+            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
+              <Inp placeholder="Participant Name" value={""} onChange={()=>{}}
+                style={{flex:1,margin:0,pointerEvents:"none",opacity:0.5}}/>
+              <button onClick={()=>setManage(true)}
+                style={{padding:"0 14px",height:40,background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
+                + Add
+              </button>
+              <button onClick={()=>setShowQR(true)}
+                style={{padding:"0 12px",height:40,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:11,display:"flex",alignItems:"center",gap:5,cursor:"pointer",flexShrink:0}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
+                <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap"}}>QR</span>
+              </button>
+            </div>
+            {/* Participant list */}
+            <div style={{flex:1,overflowY:"auto",padding:"10px 14px"}}>
+              {sorted.length===0 ? (
+                <div style={{textAlign:"center",padding:"32px 16px",color:SUB,fontSize:13}}>
+                  <Ham size={48}/><div style={{marginTop:10}}>No participants yet</div>
+                </div>
+              ) : (
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                  {sorted.map(p => {
+                    const grp = ses.groups.find(g=>g.id===p.gid);
+                    return (
+                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:`1px solid ${BORDER}`}}>
+                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
+                        <Av s={p.av} color={grp?.color||PINK} size={32}/>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                          <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
+                        </div>
+                        {isPro && (
+                          <select value={p.gid??""} onChange={e=>mut(s=>{const px=s.participants.find(x=>x.id===p.id);if(px)px.gid=e.target.value===""?null:Number(e.target.value);return s;})}
+                            style={{background:SOFT,border:`1px solid ${MID}`,color:TEXT,borderRadius:8,padding:"4px 6px",fontSize:10,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:72,flexShrink:0}}>
+                            <option value="">No group</option>
+                            {ses.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
+                          </select>
+                        )}
+                        <button onClick={()=>mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;})}
+                          style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* AWARD TAB */}
         {tab==="award" && (
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -2467,7 +2531,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         </div>
       )}
       {picker && <Picker participants={sorted} groups={ses.groups} selId={selId} onSelect={setSelId} onClose={()=>setPicker(false)}/>}
-      {manage && <Manage session={ses} plan={plan} paxLimit={paxLimit} onUpdate={fn=>mut(fn)} onClose={()=>setManage(false)} onExport={()=>{}} onReset={()=>{}} onRename={renameSession} onToggleLive={toggleLive}/>}
+      {manage && <Manage session={ses} plan={plan} paxLimit={paxLimit} onUpdate={fn=>mut(fn)} onClose={()=>setManage(false)} onShowQR={()=>{setManage(false);setShowQR(true);}} onExport={()=>{}} onReset={()=>{}} onRename={renameSession} onToggleLive={toggleLive}/>}
       {showCoinCustomizer && <CoinCustomizer session={ses}
         onSave={cfg=>mut(s=>{s.quickCoins=cfg.quickCoins;s.otherCoins=cfg.otherCoins;})}
         onClose={()=>setShowCoinCustomizer(false)}/>}
@@ -2488,7 +2552,19 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   : proGateHint==="groups"
                     ? "Organise participants into teams, assign groups, and track team scores on the scoreboard."
                     : proGateHint==="massgive"
-                      ? "Award coins to all participants at once — or filter by group. Perfect for rewarding the whole room."
+                      ? <div>
+                          <div style={{marginBottom:12}}>Give coins to multiple participants at once. Three ways to use it:</div>
+                          {[
+                            {icon:"👥","text":"Give to everyone — all participants get coins in one tap"},
+                            {icon:"🏷️","text":"Select by group — reward a whole team at once"},
+                            {icon:"📱","text":"QR select — participants scan to self-select for a reward"},
+                          ].map(f=>(
+                            <div key={f.text} style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:8,textAlign:"left"}}>
+                              <span style={{fontSize:15,flexShrink:0}}>{f.icon}</span>
+                              <span style={{fontSize:13,color:SUB,lineHeight:1.5}}>{f.text}</span>
+                            </div>
+                          ))}
+                        </div>
                       : "Let a co-host award coins from their own device without giving them full host access."
                 }
               </div>
@@ -2590,9 +2666,6 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         <button onClick={()=>setShowQR(true)} style={IB} title="QR Code">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
         </button>
-        <button onClick={()=>setManage(true)} style={IB} title="Participants">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </button>
         <button onClick={()=>setProj(true)} style={IB} title="Projector view">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         </button>
@@ -2603,7 +2676,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
       {/* ── MOBILE TABS (hidden on desktop) ── */}
       <div className="tc-tab-bar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
-        {[["award","Award"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg></span>],["log","Log"]].map(([id,l]) => (
+        {[["people","Participants"],["award","Award"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg></span>],["log","Log"]].map(([id,l]) => (
           <button key={id} onClick={()=>{
             if (!isLive) return;
             setTab(id);
@@ -2616,10 +2689,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               borderBottom:tab===id&&isLive?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
           </button>
         ))}
-        <div style={{marginLeft:"auto",paddingRight:12,display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
-        </div>
+        <div style={{marginLeft:"auto",paddingRight:8,flexShrink:0}}/>
       </div>
 
       {/* ── BODY: two columns on desktop, single column on mobile ── */}
@@ -2674,13 +2744,11 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                 <SL style={{marginBottom:0}}>Give Coins</SL>
-                {isPro && (
-                  <button onClick={()=>setShowCoinCustomizer(true)}
-                    title="Customise coin labels"
-                    style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:28,height:28,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
-                  </button>
-                )}
+                <button onClick={()=>{ if(!isPro){setProGateHint("customlabels");return;} setShowCoinCustomizer(true);}}
+                  title={isPro?"Customise coin labels":"Customise coin labels (Pro)"}
+                  style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:28,height:28,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+                </button>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
                 {(ses.otherCoins||TV_DEFAULT).map((v,i) => (
@@ -2729,7 +2797,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
           {/* Desktop right-panel tabs */}
           <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0,display:"none"}}>
-            {[["award_all","Award All"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg></span>],["log","Log"]].map(([id,l]) => (
+            {[["people","Participants"],["award_all","Award All"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 20 16" fill="none"><path d="M1 14L3 4L8 9L10 2L12 9L17 4L19 14H1Z" fill="#F5A623"/><rect x="1" y="14" width="18" height="2" rx="1" fill="#E8950A"/></svg></span>],["log","Log"]].map(([id,l]) => (
               <button key={id} onClick={()=>setRightTab(id)}
                 style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
                   color:rightTab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
@@ -2741,6 +2809,61 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
             </div>
           </div>
+
+          {/* ── PEOPLE TAB (desktop) ── */}
+          {rightTab==="people" && (
+            <div style={{flex:1,overflowY:"auto",padding:"14px 16px",display:"flex",flexDirection:"column",gap:12}}>
+              {/* Two-column add row */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"center"}}>
+                <Inp placeholder="Participant Name" value={""} onChange={()=>{}}
+                  style={{margin:0,pointerEvents:"none",opacity:0.5}}/>
+                <button onClick={()=>setManage(true)}
+                  style={{padding:"0 16px",height:42,background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
+                  + Add
+                </button>
+                <button onClick={()=>setShowQR(true)}
+                  style={{padding:"0 14px",height:42,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
+                  Show QR
+                </button>
+              </div>
+              {/* Participant list */}
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                {sorted.length===0 && (
+                  <div style={{padding:"32px 16px",textAlign:"center",color:SUB,fontSize:13}}>
+                    <Ham size={48}/><div style={{marginTop:10}}>No participants yet</div>
+                  </div>
+                )}
+                {sorted.map(p => {
+                  const grp = ses.groups.find(g=>g.id===p.gid);
+                  return (
+                    <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:`1px solid ${BORDER}`}}>
+                      <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:36,flexShrink:0}}>{pNum(p.num)}</span>
+                      <Av s={p.av} color={grp?.color||PINK} size={32}/>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                        <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
+                      </div>
+                      {isPro && (
+                        <select value={p.gid??""} onChange={e=>mut(s=>{const px=s.participants.find(x=>x.id===p.id);if(px)px.gid=e.target.value===""?null:Number(e.target.value);return s;})}
+                          style={{background:SOFT,border:`1px solid ${MID}`,color:TEXT,borderRadius:8,padding:"4px 6px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:80,flexShrink:0}}>
+                          <option value="">No group</option>
+                          {ses.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
+                        </select>
+                      )}
+                      <button onClick={()=>mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;})}
+                        style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Manage modal link for full options */}
+              <button onClick={()=>setManage(true)}
+                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:10,padding:"9px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",width:"100%"}}>
+                Open full participant manager →
+              </button>
+            </div>
+          )}
 
           {/* ── AWARD ALL TAB (desktop default) ── */}
           {rightTab==="award_all" && (
