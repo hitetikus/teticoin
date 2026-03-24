@@ -5382,7 +5382,7 @@ export default function App() {
               const totalCoins = activeSessions.reduce((sum,s)=>sum+(s.totalCoins||0),0);
               return (
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
-                  {[{num:activeSessions.length,label:"Sessions"},{num:totalParticipants,label:"Participants"},{num:totalCoins,label:"Coins awarded"}].map(({num,label})=>(
+                  {[{num:activeSessions.length,label:"Sessions Created"},{num:totalParticipants,label:"Participants Joined"},{num:totalCoins,label:"Coins Given"}].map(({num,label})=>(
                     <div key={label} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 10px",textAlign:"center"}}>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:PINK,lineHeight:1}}>{num}</div>
                       <div style={{fontSize:10,color:SUB,fontWeight:500,marginTop:4,lineHeight:1.3}}>{label}</div>
