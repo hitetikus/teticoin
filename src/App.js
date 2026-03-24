@@ -1650,6 +1650,8 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT,textAlign:"center",marginBottom:8}}>You're the host</div>
     <div style={{fontSize:13,color:SUB,textAlign:"center",lineHeight:1.7}}>You created this session. Hosts can't join as participants in their own session.</div>
   </>);
+
+  if (step === "full") return card(<>
     <div style={{width:64,height:64,borderRadius:20,background:"#FEF2F2",border:"2px solid #EF444430",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
     </div>
