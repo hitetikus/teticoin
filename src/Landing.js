@@ -123,6 +123,8 @@ const CSS = `
 .lp-btn-big-fill{background:linear-gradient(135deg,#FF4FB8,#9D50FF);color:#fff;border:none;box-shadow:0 8px 32px rgba(255,79,184,0.3);}
 .lp-btn-big-outline{background:#fff;color:#0A0A0F;border:1.5px solid #E5E7EB;}
 .lp-btn-big-outline:hover{border-color:#9D50FF;color:#9D50FF;}
+.lp-login-icon-btn{display:none;}
+.lp-hide-mobile{display:inline-flex;}
 .lp-hero-note{font-size:12px;color:#9CA3AF;margin-top:8px;animation:lpHeroFadeIn .9s ease both;animation-delay:.62s;}
 .lp-hero-screens{position:relative;width:100%;max-width:960px;margin:52px auto 0;display:flex;align-items:flex-end;justify-content:center;gap:16px;padding:0 24px;animation:lpHeroFadeUp .9s cubic-bezier(0.22,1,0.36,1) both;animation-delay:.55s;}
 .lp-screen-main{width:280px;border-radius:24px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.18),0 0 0 1px rgba(0,0,0,0.06);flex-shrink:0;}
@@ -224,6 +226,8 @@ const CSS = `
 .lp-footer-bottom{max-width:1120px;margin:16px auto 0;border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;font-size:12px;text-align:center;color:rgba(255,255,255,0.2);}
 @media(max-width:900px){
   .lp-nav-links,.lp-nav .lp-btn-ghost{display:none;}
+  .lp-login-icon-btn{display:flex !important;}
+  .lp-hide-mobile{display:none !important;}
   .lp-nav{padding:0 20px;}
   .lp-hero{padding:64px 20px 40px;}
   .lp-hero-screens{flex-direction:column;align-items:center;}
@@ -432,7 +436,11 @@ export default function LandingPage({ onGetStarted, onLogin }) {
         <p className="lp-hero-sub">Award points live, show scoreboards, and keep participants hooked — no app needed.</p>
         <div className="lp-hero-btns">
           <button className="lp-btn-big lp-btn-big-fill" onClick={onGetStarted}>Get Started Free</button>
-          <button className="lp-btn-big lp-btn-big-outline" onClick={() => scrollTo("how")}>See how it works →</button>
+          <button className="lp-btn-big lp-btn-big-outline lp-login-icon-btn" onClick={onLogin} title="Log in"
+            style={{padding:"14px 18px",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          </button>
+          <button className="lp-btn-big lp-btn-big-outline lp-hide-mobile" onClick={() => scrollTo("how")}>See how it works →</button>
         </div>
         <p className="lp-hero-note">Free plan available · No credit card required</p>
 
