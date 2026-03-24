@@ -3051,9 +3051,9 @@ function CreateModal({ onConfirm, onClose }) {
 // PLAN CONSTANTS
 // ─────────────────────────────────────────────
 const PLANS = {
-  free:  { name:"Free",  price:0,    year:0,    color:SUB,   sessions:3,  participants:30  },
-  pro:   { name:"Pro",   price:4.99, year:39,   color:PINK,  sessions:999,participants:999 },
-  team:  { name:"Team",  price:14.99,year:119,  color:PURPLE,sessions:999,participants:999 },
+  free:    { name:"Free",     price:0,   year:0,   color:SUB,   sessions:1,  participants:20  },
+  oneTime: { name:"One Time", price:29,  year:0,   color:BLUE,  sessions:999,participants:999 },
+  pro:     { name:"Pro",      price:29,  year:269, color:PINK,  sessions:999,participants:999 },
 };
 
 // ── 1. Pricing Page ──────────────────────────
@@ -3062,19 +3062,18 @@ const PLANS = {
 const PAYMENT_CONFIG = {
   fxRate: 4.70, // rough MYR→USD estimate for display only
   chip: {
-    pro:  { monthly: "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL", yearly: "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl" },
-    team: { monthly: "https://pay.chip-in.asia/4PzNZvVfRlvVVl2N1Y", yearly: "https://pay.chip-in.asia/X4yoJ2E6269tJoE6xt" },
+    pro:     { monthly: "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL", yearly: "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl" },
+    oneTime: { oneTime: "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL" }, // update with real one-time link
   },
   myr: {
-    pro:  { monthly: 16,  yearly: 169, monthlyNote: "Launch price — was RM 22" },
-    team: { monthly: 32,  yearly: 320 },
+    pro:     { monthly: 29, yearly: 269, monthlyNote: "Early access price" },
+    oneTime: { oneTime: 29 },
   },
   // Plan IDs used in return URL ?plan=
   planMap: {
-    pro_monthly:  { plan:"pro",  billing:"monthly" },
-    pro_yearly:   { plan:"pro",  billing:"yearly"  },
-    team_monthly: { plan:"team", billing:"monthly" },
-    team_yearly:  { plan:"team", billing:"yearly"  },
+    pro_monthly:  { plan:"pro",     billing:"monthly"  },
+    pro_yearly:   { plan:"pro",     billing:"yearly"   },
+    one_time:     { plan:"oneTime", billing:"oneTime"  },
   },
 };
 
@@ -3106,12 +3105,11 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
   const { fxRate, chip, myr } = PAYMENT_CONFIG;
 
   function myrPrice(planId) {
+    if (planId === "oneTime") return myr.oneTime.oneTime;
     return billing === "yearly" ? myr[planId].yearly : myr[planId].monthly;
   }
-  function usdEstimate(planId) {
-    return (myrPrice(planId) / fxRate).toFixed(2);
-  }
   function myrPerMonth(planId) {
+    if (planId === "oneTime") return myr.oneTime.oneTime;
     return billing === "yearly"
       ? (myr[planId].yearly / 12).toFixed(0)
       : myr[planId].monthly;
@@ -3122,6 +3120,11 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
   }
 
   function handlePay(planId) {
+    if (planId === "oneTime") {
+      const url = chip.oneTime?.oneTime;
+      if (url) window.location.href = url;
+      return;
+    }
     const url = chip[planId]?.[billing];
     if (url) window.location.href = url;
   }
@@ -3131,20 +3134,20 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
       id:"free", name:"Free",
       color:SUB, borderColor:BORDER, bg:"#fff",
       tagline:"Try it out, no card needed",
-      features:["3 sessions","30 participants / session","1 group per session","Live leaderboard","QR join — no app needed"],
+      features:["1 session","Up to 20 participants","Live leaderboard","QR join — no app needed","Basic features"],
+    },
+    {
+      id:"oneTime", name:"One Time",
+      color:BLUE, borderColor:BLUE, bg:"#EFF6FF",
+      tagline:"Pay once, use forever",
+      features:["Unlimited sessions","Unlimited participants","Full features","No subscription needed","All future basic updates"],
     },
     {
       id:"pro", name:"Pro",
       color:PINK, borderColor:PINK, bg:SOFT,
       tagline:"For active facilitators",
-      badge:"⭐ Most popular",
-      features:["Unlimited sessions","Unlimited participants","Up to 10 groups","Custom award labels","PIN rejoin for returning participants","Full session history","Priority support"],
-    },
-    {
-      id:"team", name:"Team",
-      color:PURPLE, borderColor:PURPLE, bg:"#FAF5FF",
-      tagline:"For organisations & L&D teams",
-      features:["Everything in Pro","5 host accounts","Shared session library","Admin dashboard","Bulk participant import (CSV)","Custom subdomain"],
+      badge:"⭐ Best value",
+      features:["Unlimited sessions","Up to 100 participants","Full features","Priority updates","Coinmaster co-host mode"],
     },
   ];
 
@@ -3210,6 +3213,15 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                   <div style={{marginBottom:16}}>
                     {!isPaid ? (
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:SUB}}>Free</div>
+                    ) : t.id === "oneTime" ? (
+                      <>
+                        <div style={{display:"flex",alignItems:"baseline",gap:3}}>
+                          <span style={{fontSize:12,fontWeight:600,color:t.color}}>RM</span>
+                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:t.color,lineHeight:1}}>29</span>
+                        </div>
+                        <div style={{fontSize:12,color:SUB,marginTop:3}}>One-time payment</div>
+                        <div style={{fontSize:11,background:`${BLUE}15`,color:BLUE,fontWeight:700,borderRadius:6,padding:"2px 8px",marginTop:4,display:"inline-block"}}>No subscription</div>
+                      </>
                     ) : billing === "yearly" ? (
                       <>
                         <div style={{display:"flex",alignItems:"baseline",gap:3}}>
@@ -3227,7 +3239,6 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                           <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:t.color,lineHeight:1}}>{myr[t.id].monthly}</span>
                           <span style={{fontSize:13,color:SUB}}>/mo</span>
                         </div>
-                        <div style={{fontSize:11,color:SUB,marginTop:3}}>≈ USD {usdEstimate(t.id)}/mo</div>
                         {monthlyNote && <div style={{fontSize:11,background:`${PINK}12`,color:PINK,fontWeight:700,borderRadius:6,padding:"2px 8px",marginTop:4,display:"inline-block"}}>🎉 {monthlyNote}</div>}
                       </>
                     )}
@@ -3256,9 +3267,9 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                     ) : null
                   ) : (
                     <button onClick={()=>handlePay(t.id)}
-                      style={{width:"100%",padding:"14px 0",background:t.id==="pro"?GRAD:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:t.id==="pro"?`0 4px 16px ${PINK}40`:`0 4px 16px ${PURPLE}40`}}>
+                      style={{width:"100%",padding:"14px 0",background:t.id==="pro"?GRAD:t.id==="oneTime"?`linear-gradient(135deg,${BLUE},#2563EB)`:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:t.id==="pro"?`0 4px 16px ${PINK}40`:t.id==="oneTime"?`0 4px 16px ${BLUE}40`:`0 4px 16px ${PURPLE}40`}}>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                      Get {t.name} {billing==="yearly"?"— Save 35%":""} · RM {myrPrice(t.id)}
+                      {t.id==="oneTime" ? "Get One Time · RM 29" : `Get ${t.name} ${billing==="yearly"?"— Save RM 79":""} · RM ${myrPrice(t.id)}`}
                     </button>
                   )}
                 </div>
@@ -3285,8 +3296,8 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
 
 // ── 2. Upgrade Banner (home screen) ──────────
 function UpgradeBanner({ sessionCount, onUpgrade }) {
-  const nearLimit = sessionCount >= 2;
-  const atLimit   = sessionCount >= 3;
+  const nearLimit = sessionCount >= 1;
+  const atLimit   = sessionCount >= 1;
   if (!nearLimit) return null;
   return (
     <div onClick={onUpgrade}
@@ -3296,10 +3307,10 @@ function UpgradeBanner({ sessionCount, onUpgrade }) {
       </div>
       <div style={{flex:1}}>
         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#1E3A8A"}}>
-          {atLimit?"Session limit reached":"You're using 2 of 3 free sessions"}
+          {atLimit?"Session limit reached — upgrade to create more":"You're on the free plan"}
         </div>
         <div style={{fontSize:11,color:"#2563EB",marginTop:1,fontWeight:500}}>
-          {atLimit?"Upgrade to Pro — unlimited from $4.99/mo":"Upgrade to Pro for unlimited sessions"}
+          {atLimit?"Upgrade to Pro — unlimited sessions from RM 29/mo":"Upgrade for unlimited sessions"}
         </div>
       </div>
       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:"#fff",flexShrink:0,background:"#2563EB",borderRadius:8,padding:"4px 9px",whiteSpace:"nowrap"}}>Upgrade →</div>
@@ -3313,13 +3324,13 @@ function LimitModal({ type, onUpgrade, onClose }) {
     sessions: {
       icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
       title:"Session limit reached",
-      body:"Free plan allows 3 sessions. Upgrade to Pro for unlimited sessions, participants, and more.",
+      body:"Free plan allows 1 session. Upgrade to Pro for unlimited sessions, participants, and more.",
       cta:"Unlock Unlimited Sessions",
     },
     participants: {
       icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
       title:"Participant limit reached",
-      body:"Free plan allows 30 participants per session. Upgrade to Pro for unlimited participants.",
+      body:"Free plan allows 20 participants per session. Upgrade to Pro for unlimited participants.",
       cta:"Unlock Unlimited Participants",
     },
     branding: {
@@ -3368,7 +3379,7 @@ function LimitModal({ type, onUpgrade, onClose }) {
           ))}
         </div>
         <button onClick={onUpgrade} style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
-          {cfg.cta} · from $4.99/mo
+          {cfg.cta} · from RM 29/mo
         </button>
         <button onClick={onClose} style={{width:"100%",padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
           Maybe later
@@ -3574,18 +3585,17 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
     : null;
 
   const planData = {
-    free:  {name:"Free",   price:"RM 0",    renewal:null,      color:SUB,    next:null},
-    pro:   {name:"Pro",    price:"RM 16",   renewal:"monthly", color:PINK,   next:expiryLabel},
-    proY:  {name:"Pro",    price:"RM 169",  renewal:"yearly",  color:PINK,   next:expiryLabel},
-    team:  {name:"Team",   price:"RM 32",   renewal:"monthly", color:PURPLE, next:expiryLabel},
-    teamY: {name:"Team",   price:"RM 320",  renewal:"yearly",  color:PURPLE, next:expiryLabel},
+    free:    {name:"Free",     price:"RM 0",    renewal:null,       color:SUB,  next:null},
+    oneTime: {name:"One Time", price:"RM 29",   renewal:"one-time", color:BLUE, next:null},
+    pro:     {name:"Pro",      price:"RM 29",   renewal:"monthly",  color:PINK, next:expiryLabel},
+    proY:    {name:"Pro",      price:"RM 269",  renewal:"yearly",   color:PINK, next:expiryLabel},
   };
   const pd = planData[plan] || planData.free;
   const isFree = plan==="free";
   // Build a single real invoice from the expiry date (payment date = expiry minus billing period)
   const invoices = plan!=="free" && planExpiry ? (() => {
     const expDate = new Date(planExpiry);
-    const isYearly = plan === "proY" || plan === "teamY";
+    const isYearly = plan === "proY";
     const payDate = new Date(expDate);
     payDate.setDate(payDate.getDate() - (isYearly ? 366 : 31));
     return [{ date: payDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid" }];
@@ -3622,7 +3632,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
               {pd.price}{!isFree&&<span style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</span>}
             </div>
             {pd.next && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>Access until {pd.next}</div>}
-            {isFree && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>3 sessions · 30 participants · Basic features</div>}
+            {isFree && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>1 session · 20 participants · Basic features</div>}
           </div>
 
           {/* Usage */}
@@ -3630,8 +3640,8 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px",marginBottom:20}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:14}}>Usage</div>
               {[
-                {label:"Sessions", used:2, max:3, color:PINK},
-                {label:"Participants (last session)", used:18, max:30, color:BLUE},
+                {label:"Sessions", used:1, max:1, color:PINK},
+                {label:"Participants (last session)", used:18, max:20, color:BLUE},
               ].map(u=>(
                 <div key={u.label} style={{marginBottom:14}}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
@@ -4018,7 +4028,7 @@ export default function App() {
   const [claimToken, setClaimToken] = useState(null); // badge claim token from /claim/TOKEN URL
 
   const isFree = plan === "free";
-  const sessionLimit = isFree ? 3 : 999;
+  const sessionLimit = isFree ? 1 : 999;
 
   // ── Handle payment return from Chip ──
   useEffect(() => {
@@ -4030,8 +4040,7 @@ export default function App() {
       const planMap = {
         pro_monthly:  "pro",
         pro_yearly:   "proY",
-        team_monthly: "team",
-        team_yearly:  "teamY",
+        one_time:     "oneTime",
       };
       const newPlan = planMap[planParam];
       if (newPlan) {

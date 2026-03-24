@@ -387,26 +387,22 @@ export default function LandingPage({ onGetStarted, onLogin }) {
     return () => observer.disconnect();
   }, []);
 
-  const proPrice  = billing === "monthly" ? "RM 16" : "RM 14";
-  const proPeriod = billing === "monthly" ? "/mo · Was RM 22/mo" : "/mo · Billed RM 169/year · Save RM 23";
-  const proBtn    = billing === "monthly" ? "Get Pro — RM 16/mo" : "Get Pro — RM 169/year";
-  const teamPrice = billing === "monthly" ? "RM 32" : "RM 27";
-  const teamPeriod= billing === "monthly" ? "/mo · up to 5 hosts" : "/mo · Billed RM 320/year · Save RM 64";
-  const teamBtn   = billing === "monthly" ? "Get Team — RM 32/mo" : "Get Team — RM 320/year";
+  const proPrice  = billing === "monthly" ? "RM 29" : "RM 22";
+  const proPeriod = billing === "monthly" ? "/mo · Early access price" : "/mo · Billed RM 269/year · Save RM 79";
+  const proBtn    = billing === "monthly" ? "Upgrade to Pro — RM 29/mo" : "Upgrade to Pro — RM 269/year";
   const proLink   = billing === "monthly" ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL" : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl";
-  const teamLink  = billing === "monthly" ? "https://pay.chip-in.asia/4PzNZvVfRlvVVl2N1Y" : "https://pay.chip-in.asia/X4yoJ2E6269tJoE6xt";
 
   const N = {fontFamily:"Nunito,sans-serif"};
 
   const whoCards = [
-    {img:"https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=480&q=80&fit=crop",title:"Corporate Trainers",sub:"Award points for great ideas and active participation in L&D sessions."},
-    {img:"https://images.unsplash.com/photo-1509062522246-3755977927d7?w=480&q=80&fit=crop",title:"Teachers & Lecturers",sub:"Gamify classroom participation and boost student engagement instantly."},
-    {img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=480&q=80&fit=crop",title:"Workshop Facilitators",sub:"Keep energy high in half-day and full-day sessions."},
-    {img:"https://images.unsplash.com/photo-1556761175-4b46a572b786?w=480&q=80&fit=crop",title:"Team Leaders",sub:"Run engaging team meetings where every contribution gets recognised."},
-    {img:"https://images.unsplash.com/photo-1515169067868-5387ec356754?w=480&q=80&fit=crop",title:"Event Hosts",sub:"Add a competitive leaderboard element to any live event."},
-    {img:"https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=480&q=80&fit=crop",title:"HR & L&D Teams",sub:"Build a culture of recognition across onboarding and training days."},
-    {img:"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=480&q=80&fit=crop",title:"Coaches & Mentors",sub:"Turn group coaching sessions into high-energy rewarding experiences."},
-    {img:"https://images.unsplash.com/photo-1491895200222-0fc4a4c35e18?w=480&q=80&fit=crop",title:"Online Class Hosts",sub:"Bring real-time interaction to Zoom, Meet, or any virtual class."},
+    {img:"https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=480&q=80&fit=crop",title:"Corporate Trainers",sub:"Make your sessions more engaging and impactful."},
+    {img:"https://images.unsplash.com/photo-1509062522246-3755977927d7?w=480&q=80&fit=crop",title:"Teachers & Lecturers",sub:"Encourage students to participate actively."},
+    {img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=480&q=80&fit=crop",title:"Workshop Facilitators",sub:"Keep energy high throughout your sessions."},
+    {img:"https://images.unsplash.com/photo-1556761175-4b46a572b786?w=480&q=80&fit=crop",title:"Team Leaders",sub:"Run more interactive and productive meetings."},
+    {img:"https://images.unsplash.com/photo-1515169067868-5387ec356754?w=480&q=80&fit=crop",title:"Event Hosts",sub:"Turn passive audiences into active participants."},
+    {img:"https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=480&q=80&fit=crop",title:"HR & L&D Teams",sub:"Create more engaging internal training sessions."},
+    {img:"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=480&q=80&fit=crop",title:"Coaches & Mentors",sub:"Make group sessions more dynamic and rewarding."},
+    {img:"https://images.unsplash.com/photo-1491895200222-0fc4a4c35e18?w=480&q=80&fit=crop",title:"Online Class Hosts",sub:"Add real-time interaction to virtual sessions."},
   ];
 
   return (
@@ -430,11 +426,11 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       {/* HERO */}
       <section className="lp-hero">
         <CoinPops/>
-        <div className="lp-hero-tag">✦ Real-time participation gamification</div>
-        <h1>Reward participation.<br/>Watch engagement <span style={{background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>skyrocket.</span></h1>
-        <p className="lp-hero-sub">Award points to anyone in your group in real time — for great contributions, active participation, or any behaviour worth recognising. No app needed.</p>
+        <div className="lp-hero-tag">✦ Real-time engagement for training & events</div>
+        <h1>Make your sessions interactive.<br/>Keep everyone <span style={{background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>engaged.</span></h1>
+        <p className="lp-hero-sub">Run live sessions where participants earn points, stay involved, and actually enjoy the experience — no app needed.</p>
         <div className="lp-hero-btns">
-          <button className="lp-btn-big lp-btn-big-fill" onClick={onGetStarted}>Start for free</button>
+          <button className="lp-btn-big lp-btn-big-fill" onClick={onGetStarted}>Get Started Free</button>
           <button className="lp-btn-big lp-btn-big-outline" onClick={() => scrollTo("how")}>See how it works →</button>
         </div>
         <p className="lp-hero-note">Free plan available · No credit card required</p>
@@ -544,14 +540,14 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       <section className="lp-section" id="how" style={{background:"#FAFAFA"}}>
         <div className="lp-section-inner">
           <div className="lp-label lp-fade-up" style={{color:PINK}}>How it works</div>
-          <div className="lp-section-title lp-fade-up lp-fade-up-d1">Start rewarding<br/>in 30 seconds.</div>
-          <p className="lp-section-sub lp-fade-up lp-fade-up-d2">No setup headaches, no IT approval needed. Just create a session and start recognising great participation.</p>
+          <div className="lp-section-title lp-fade-up lp-fade-up-d1">Start engaging your audience<br/>in under a minute</div>
+          <p className="lp-section-sub lp-fade-up lp-fade-up-d2">No setup, no complexity. Just create a session and start interacting.</p>
           <div className="lp-steps">
             {[
-              {num:"01",col:PINK,bg:"rgba(255,79,184,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>,title:"Create a session",body:"Give your session a name and go live. Share a QR code or link — everyone joins instantly from any device."},
-              {num:"02",col:CYAN,bg:"rgba(0,229,255,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={CYAN} strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>,title:"Invite participants",body:"Share a QR code or link. Participants enter their name and join instantly — no app or account needed."},
-              {num:"03",col:PURPLE,bg:"rgba(157,80,255,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,title:"Award points in real time",body:"Tap to award coins for great answers, active participation, or any behaviour worth recognising."},
-              {num:"04",col:"#00C896",bg:"rgba(0,200,150,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00C896" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,title:"Reveal the leaderboard",body:"Push the live leaderboard to everyone's screen with one tap. Watch energy spike as rankings appear."},
+              {num:"01",col:PINK,bg:"rgba(255,79,184,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>,title:"Create a session",body:"Set up your session in seconds and go live instantly."},
+              {num:"02",col:CYAN,bg:"rgba(0,229,255,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={CYAN} strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>,title:"Participants join",body:"Share a QR or link — they join instantly, no download needed."},
+              {num:"03",col:PURPLE,bg:"rgba(157,80,255,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,title:"Reward participation",body:"Give points for answers, ideas, or engagement in real time."},
+              {num:"04",col:"#00C896",bg:"rgba(0,200,150,0.1)",icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00C896" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,title:"Show leaderboard",body:"Display rankings live and keep energy high throughout."},
             ].map((s,i) => (
               <div key={s.num} className={`lp-step lp-fade-up lp-fade-up-d${i+1}`}>
                 <div className="lp-step-num" style={{color:s.col}}>{s.num}</div>
@@ -568,7 +564,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       <section className="lp-feat-dark" id="features">
         <div className="lp-section-inner">
           <div className="lp-label lp-fade-up" style={{color:CYAN,textShadow:`0 0 12px rgba(0,229,255,0.4)`}}>Features</div>
-          <div className="lp-section-title lp-fade-up lp-fade-up-d1" style={{color:"#fff"}}>Built to recognise participation<br/><span style={{background:GRAD2,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>online &amp; offline.</span></div>
+          <div className="lp-section-title lp-fade-up lp-fade-up-d1" style={{color:"#fff"}}>Everything you need to run<br/><span style={{background:GRAD2,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>an engaging session.</span></div>
           <div className="lp-feat-tabs">
             {["Award Screen","Live Leaderboard","Groups & Teams","QR Join","Coinmaster"].map((t,i) => (
               <button key={t} className={`lp-feat-tab${activeTab===i?" active":""}`} onClick={() => setActiveTab(i)}>{t}</button>
@@ -576,14 +572,14 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           </div>
           <div className="lp-feat-content lp-fade-up lp-fade-up-d2">
             <div className="lp-feat-text">
-              <h3>Award points<br/>in one tap.</h3>
-              <p>Select a participant, tap a coin value, and the points land instantly. Customise every button label — "Correct Answer", "Great Idea", "Most Energetic" — whatever fits your session.</p>
+              <h3>Award points<br/>instantly.</h3>
+              <p>Give points with a single tap during your session. Encourage participation, reward contributions, and keep everyone involved.</p>
               <ul className="lp-feat-list">
-                <li>6-button coin grid with fully custom values</li>
-                <li>Named Quick Coins for recurring behaviours</li>
-                <li>Custom amount field for any value</li>
-                <li>Mass Give — award coins to everyone at once</li>
-                <li>Negative coins for fun penalties</li>
+                <li>Flexible point system for any type of session</li>
+                <li>Custom labels (e.g. "Good Answer", "Best Idea")</li>
+                <li>Reward individuals or groups instantly</li>
+                <li>Control everything in real-time</li>
+                <li>Works for both online and physical sessions</li>
               </ul>
             </div>
             <div className="lp-feat-screen">
@@ -627,14 +623,14 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       <section className="lp-bento">
         <div className="lp-section-inner">
           <div className="lp-label lp-fade-up" style={{color:PURPLE}}>Everything included</div>
-          <div className="lp-section-title lp-fade-up lp-fade-up-d1">More features.<br/>Zero complexity.</div>
-          <p className="lp-section-sub lp-fade-up lp-fade-up-d2">Every feature is designed to be discovered mid-session, not after a training course.</p>
+          <div className="lp-section-title lp-fade-up lp-fade-up-d1">Simple to use.<br/>Powerful when it matters.</div>
+          <p className="lp-section-sub lp-fade-up lp-fade-up-d2">No learning curve. No complicated setup. Just start and go.</p>
           <div className="lp-bento-grid">
 
             <div className="lp-bento-card span2">
               <div className="lp-bento-icon" style={{background:"rgba(255,79,184,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></div>
-              <h4>QR join — no app, no account</h4>
-              <p>Participants scan a QR code or open a link, type their name, and they're in. Works on any phone or laptop instantly. Can be joined mid-session too.</p>
+              <h4>No app required</h4>
+              <p>Participants join using QR or link — works instantly on any device, no download needed.</p>
               <div style={{marginTop:20,background:"rgba(255,79,184,0.04)",border:"1px solid rgba(255,79,184,0.1)",borderRadius:12,padding:16,display:"flex",alignItems:"center",gap:20,flexWrap:"wrap"}}>
                 <div style={{textAlign:"center"}}>
                   <div style={{width:72,height:72,background:`linear-gradient(135deg,rgba(255,79,184,0.15),rgba(157,80,255,0.15))`,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px"}}>
@@ -652,8 +648,8 @@ export default function LandingPage({ onGetStarted, onLogin }) {
 
             <div className="lp-bento-card">
               <div className="lp-bento-icon" style={{background:"rgba(0,229,255,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={CYAN} strokeWidth="2.2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-              <h4>Live leaderboard push</h4>
-              <p>One tap sends the leaderboard to every participant's screen at once. Instant energy spike guaranteed.</p>
+              <h4>Live leaderboard</h4>
+              <p>Show rankings anytime to boost excitement and participation throughout your session.</p>
               <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:6}}>
                 {[{n:"1",c:"#F5A623",name:"Haziq Ibrahim",pts:"210",pc:PINK},{n:"2",c:NEUT,name:"Ahmad Faris",pts:"180",pc:TEXT},{n:"3",c:NEUT,name:"Nurul Ain",pts:"140",pc:TEXT}].map(r => (
                   <div key={r.n} style={{background:"#F9FAFB",borderRadius:8,padding:"8px 12px",display:"flex",alignItems:"center",gap:8}}>
@@ -669,8 +665,8 @@ export default function LandingPage({ onGetStarted, onLogin }) {
 
             <div className="lp-bento-card">
               <div className="lp-bento-icon" style={{background:"rgba(157,80,255,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-              <h4>Groups & team scoring</h4>
-              <p>Organise into teams. Points accumulate individually and for the group — perfect for competitions and workshops.</p>
+              <h4>Real-time control</h4>
+              <p>Manage participants and points during your session easily, with full control at your fingertips.</p>
               <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:6}}>
                 {[{col:PINK,name:"Team Alpha"},{col:PURPLE,name:"Team Bravo"},{col:"#3B82F6",name:"Team Charlie"}].map(g => (
                   <div key={g.name} style={{display:"flex",alignItems:"center",gap:8}}>
@@ -685,8 +681,8 @@ export default function LandingPage({ onGetStarted, onLogin }) {
 
             <div className="lp-bento-card">
               <div className="lp-bento-icon" style={{background:"rgba(0,229,255,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={CYAN} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg></div>
-              <h4>Coinmaster — co-host mode</h4>
-              <p>Give a helper a code to award coins from their own device. No account needed. Perfect for big rooms.</p>
+              <h4>Flexible usage</h4>
+              <p>Works for training, workshops, classrooms, and events — online or in-person.</p>
               <div style={{marginTop:14,background:"rgba(0,229,255,0.06)",border:"1px solid rgba(0,229,255,0.15)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10}}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={CYAN} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
                 <div><div style={{fontSize:11,fontWeight:700,color:CYAN}}>CM-4X8K</div><div style={{fontSize:10,color:NEUT}}>Active coinmaster code</div></div>
@@ -695,8 +691,8 @@ export default function LandingPage({ onGetStarted, onLogin }) {
 
             <div className="lp-bento-card">
               <div className="lp-bento-icon" style={{background:"rgba(255,79,184,0.08)"}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
-              <h4>Projector / TV mode</h4>
-              <p>Cast a clean full-screen leaderboard to your projector or second screen. Auto-refresh keeps it live.</p>
+              <h4>Fast setup</h4>
+              <p>Create and run your session in less than a minute. No complicated setup required.</p>
             </div>
 
             <div className="lp-bento-card span2">
@@ -749,8 +745,8 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       <section className="lp-who">
         <div className="lp-who-inner">
           <div className="lp-label lp-fade-up" style={{color:PINK}}>Who it's for</div>
-          <div className="lp-section-title lp-fade-up lp-fade-up-d1">Built for anyone who runs groups.</div>
-          <p className="lp-section-sub lp-fade-up lp-fade-up-d2">From classrooms to corporate training — if you lead a group, Teticoin makes engagement effortless.</p>
+          <div className="lp-section-title lp-fade-up lp-fade-up-d1">Built for anyone running sessions.</div>
+          <p className="lp-section-sub lp-fade-up lp-fade-up-d2">From classrooms to corporate training — if you run a session, Teticoin keeps everyone engaged.</p>
         </div>
         <div className="lp-carousel-wrap">
           <div className="lp-carousel-track">
@@ -771,11 +767,11 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       <section className="lp-pricing" id="pricing">
         <div className="lp-section-inner" style={{textAlign:"center"}}>
           <div className="lp-label lp-fade-up" style={{color:PINK}}>Pricing</div>
-          <div className="lp-section-title lp-fade-up lp-fade-up-d1">Simple, honest pricing.</div>
-          <p className="lp-section-sub lp-fade-up lp-fade-up-d2">Start for free. Upgrade when your sessions grow.</p>
+          <div className="lp-section-title lp-fade-up lp-fade-up-d1">Start free. Upgrade when you need more.</div>
+          <p className="lp-section-sub lp-fade-up lp-fade-up-d2">No commitments. No surprises. Just pick what works for you.</p>
           <div style={{display:"flex",justifyContent:"center",marginTop:28}}>
           <div className="lp-pricing-toggle lp-fade-up lp-fade-up-d3">
-            {[["monthly","Monthly"],["yearly","Yearly — save 35%"]].map(([v,l]) => (
+            {[["monthly","Monthly"],["yearly","Yearly — save RM 79"]].map(([v,l]) => (
               <button key={v} onClick={() => setBilling(v)}
                 style={{background:billing===v?GRAD:"transparent",color:billing===v?"#fff":NEUT,
                   boxShadow:billing===v?"0 4px 16px rgba(255,79,184,0.25)":"none"}}>
@@ -786,16 +782,16 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           </div>
           <div className="lp-pricing-grid lp-fade-up lp-fade-up-d4" style={{margin:"32px auto 0"}}>
             <div className="lp-plan-card">
-              <div className="lp-plan-label" style={{color:NEUT}}>Free forever</div>
+              <div className="lp-plan-label" style={{color:NEUT}}>Free</div>
               <div className="lp-plan-price" style={{color:TEXT}}>RM 0</div>
               <div className="lp-plan-period">No time limit. No card required.</div>
               <div className="lp-plan-divider"/>
               <ul className="lp-plan-features">
-                {["Up to 3 sessions","30 participants per session","Live leaderboard","QR join — no app needed","1 group per session"].map(f => (
+                {["1 session","Up to 20 participants","Basic features","Live leaderboard","QR join — no app needed"].map(f => (
                   <li key={f}><Check color={NEUT}/>{f}</li>
                 ))}
               </ul>
-              <button className="lp-plan-btn outline" onClick={onGetStarted}>Get started free</button>
+              <button className="lp-plan-btn outline" onClick={onGetStarted}>Get Started Free</button>
             </div>
             <div className="lp-plan-card popular">
               <div className="lp-plan-badge">POPULAR</div>
@@ -804,7 +800,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               <div className="lp-plan-period">{proPeriod}</div>
               <div className="lp-plan-divider" style={{background:"#FECDE8"}}/>
               <ul className="lp-plan-features">
-                {["Unlimited sessions","Unlimited participants","Up to 10 groups","Custom award labels","PIN rejoin for returning participants","Full session history","Coinmaster co-host mode"].map(f => (
+                {["Unlimited sessions","Up to 100 participants","Full features","Priority updates","Coinmaster co-host mode"].map(f => (
                   <li key={f}><Check/>{f}</li>
                 ))}
               </ul>
@@ -812,17 +808,16 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               <div style={{textAlign:"center",fontSize:11,color:NEUT,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>
             </div>
             <div className="lp-plan-card">
-              <div className="lp-plan-label" style={{color:PURPLE}}>Team</div>
-              <div className="lp-plan-price" style={{color:PURPLE}}>{teamPrice}</div>
-              <div className="lp-plan-period">{teamPeriod}</div>
+              <div className="lp-plan-label" style={{color:PURPLE}}>Enterprise</div>
+              <div className="lp-plan-price" style={{fontSize:28,color:PURPLE}}>Contact us</div>
+              <div className="lp-plan-period">For teams and organisations</div>
               <div className="lp-plan-divider" style={{background:"#DDD6FE"}}/>
               <ul className="lp-plan-features">
-                {["Everything in Pro","5 host accounts","Shared session library","Admin dashboard","Bulk participant import (CSV)"].map(f => (
+                {["Multiple hosts","Shared sessions","Flexible setup","Dedicated support"].map(f => (
                   <li key={f}><Check color={PURPLE}/>{f}</li>
                 ))}
               </ul>
-              <button className="lp-plan-btn outline" style={{borderColor:"#DDD6FE",color:PURPLE}} onClick={() => window.location.href = teamLink}>{teamBtn}</button>
-              <div style={{textAlign:"center",fontSize:11,color:NEUT,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>
+              <button className="lp-plan-btn outline" style={{borderColor:"#DDD6FE",color:PURPLE}} onClick={() => window.location.href = "mailto:hi.tetikus@gmail.com"}>Contact / Get Team Plan</button>
             </div>
           </div>
         </div>
@@ -831,11 +826,11 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       {/* CTA */}
       <section className="lp-cta-final">
         <div className="lp-cta-card lp-fade-up">
-          <h2>Make your next session<br/>one they'll remember.</h2>
-          <p>Join trainers, teachers, and facilitators who use Teticoin<br/>to turn passive attendance into active participation.</p>
+          <h2>Ready to run a more engaging session?</h2>
+          <p>Start your first session in minutes and see the difference immediately.</p>
           <div className="lp-cta-btns">
-            <button className="lp-cta-btn-white" onClick={onGetStarted}>Create Session</button>
-            <button className="lp-cta-btn-outline" onClick={() => scrollTo("pricing")}>See Pricing →</button>
+            <button className="lp-cta-btn-white" onClick={onGetStarted}>Get Started Free</button>
+            <button className="lp-cta-btn-outline" onClick={() => scrollTo("how")}>See how it works</button>
           </div>
           <p style={{marginTop:16,fontSize:12,color:"rgba(255,255,255,0.5)"}}>No credit card required · Free plan available forever</p>
         </div>
@@ -846,7 +841,8 @@ export default function LandingPage({ onGetStarted, onLogin }) {
         <div className="lp-footer-inner">
           <div>
             <div className="lp-footer-logo">Teticoin</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,0.2)",marginTop:4}}>by Tetikus · © 2026</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.2)",marginTop:4}}>Simple engagement tool for modern training & events</div>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.15)",marginTop:2}}>by Tetikus · © 2026</div>
           </div>
           <div className="lp-footer-links">
             <button onClick={() => setSubpage("privacy")}>Privacy Policy</button>
