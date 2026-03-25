@@ -5379,7 +5379,37 @@ export default function App() {
             setTimeout(() => setPaymentToast(null), 6000);
           });
 
-          setScreen("home");
+          // ── Restore the correct screen based on the current URL path ──
+          const restorePath = window.location.pathname;
+          const sessionMatch = restorePath.match(/^\/session\/([A-Z0-9]+)$/i);
+          if (sessionMatch) {
+            // Refresh on a session page — reload the session and go there
+            const sessionCode = sessionMatch[1].toUpperCase();
+            const s = await sgSession(sessionCode);
+            if (s) {
+              setCur(s);
+              setScreen("session");
+            } else {
+              setScreen("home");
+            }
+          } else if (restorePath === "/app/billing") {
+            setScreen("home");
+            setShowBilling(true);
+          } else if (restorePath === "/app/profile") {
+            setScreen("home");
+            setShowProfile(true);
+          } else if (restorePath === "/app/admin") {
+            setScreen("home");
+            setShowSuperAdmin(true);
+          } else if (restorePath === "/app/coins") {
+            setScreen("home");
+            setShowHostEarnings(true);
+          } else if (restorePath === "/app/settings") {
+            setScreen("home");
+            setShowSettings(true);
+          } else {
+            setScreen("home");
+          }
         } catch {}
       } else {
         // Not logged in — check if returning from payment (needs login first)
