@@ -276,6 +276,64 @@ function Check({ color = PINK }) {
   );
 }
 
+const FAQ_ITEMS = [
+  {q:"Do participants need to download an app?", a:"No. Participants join by scanning a QR code or clicking a link. It opens instantly in any browser — no download, no sign-up needed."},
+  {q:"How many participants can join a session?", a:"The Free plan supports up to 30 participants per session. The Pro plan supports up to 200. For larger groups, contact us about an Enterprise plan."},
+  {q:"Can I run multiple sessions at the same time?", a:"Yes. You can create as many sessions as your plan allows and switch between them at any time from the home screen."},
+  {q:"What happens when my Free plan session limit is reached?", a:"You can run up to 3 active sessions on the Free plan. You'll be prompted to upgrade to Pro for unlimited sessions."},
+  {q:"Can I customise what the coin buttons say?", a:"Yes. Pro users can rename every coin button to anything — 'Great Idea', 'Best Answer', 'Phone Out (-10)' — whatever fits your session style."},
+  {q:"Is there a team or group scoring feature?", a:"Yes. Pro users can create groups and assign participants to them. The scoreboard shows both individual and group rankings."},
+  {q:"How does the live scoreboard work?", a:"Participants open the session link on their own device and see their score update in real time whenever you award coins. You can also display a full-screen projector view for the whole room."},
+  {q:"Can I export session data?", a:"Yes. All plans include CSV export for session logs and participant scores so you can keep records or do further analysis."},
+  {q:"What payment methods are accepted?", a:"Payments are processed via Chip and support FPX (online banking), credit/debit cards, and DuitNow QR — all major Malaysian payment methods."},
+  {q:"Can I cancel my subscription anytime?", a:"Yes. There are no lock-in contracts. You can cancel at any time and your access continues until the end of the billing period. We don't offer refunds for unused time."},
+];
+
+function FaqList() {
+  const [open, setOpen] = useState(null);
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:0,borderTop:`1px solid #F3F4F6`}}>
+      {FAQ_ITEMS.map((item, i) => {
+        const isOpen = open === i;
+        return (
+          <div key={i}
+            className="lp-fade-up"
+            style={{borderBottom:`1px solid #F3F4F6`,overflow:"hidden"}}>
+            <button
+              onClick={() => setOpen(isOpen ? null : i)}
+              style={{
+                width:"100%",background:"none",border:"none",cursor:"pointer",
+                display:"flex",alignItems:"center",justifyContent:"space-between",
+                gap:16,padding:"22px 0",textAlign:"left",
+              }}>
+              <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:16,color:TEXT,lineHeight:1.4}}>{item.q}</span>
+              <span style={{
+                flexShrink:0,width:28,height:28,borderRadius:"50%",
+                background:isOpen?GRAD:"#F3F4F6",
+                display:"flex",alignItems:"center",justifyContent:"center",
+                transition:"background .2s",
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke={isOpen?"#fff":NEUT} strokeWidth="2.5" strokeLinecap="round"
+                  style={{transition:"transform .25s",transform:isOpen?"rotate(180deg)":"rotate(0deg)"}}>
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </span>
+            </button>
+            <div style={{
+              maxHeight:isOpen?320:0,
+              overflow:"hidden",
+              transition:"max-height .3s cubic-bezier(0.4,0,0.2,1)",
+            }}>
+              <p style={{fontSize:15,color:"#4B5563",lineHeight:1.75,paddingBottom:22,margin:0}}>{item.a}</p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function PrivacyPage({ onBack }) {
   return (
     <div style={{fontFamily:"'DM Sans',sans-serif",background:"#fff",color:TEXT,minHeight:"100vh"}}>
@@ -759,6 +817,15 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="lp-section" style={{background:"#fff"}}>
+        <div className="lp-section-inner">
+          <div className="lp-label lp-fade-up" style={{color:PINK}}>FAQ</div>
+          <div className="lp-section-title lp-fade-up lp-fade-up-d1" style={{marginBottom:48}}>Common questions.</div>
+          <FaqList/>
         </div>
       </section>
 
