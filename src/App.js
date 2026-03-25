@@ -118,9 +118,10 @@ const genCMCode = () => "CM-" + Math.random().toString(36).slice(2,6).toUpperCas
 const genToken = () => Math.random().toString(36).slice(2,10) + Math.random().toString(36).slice(2,10);
 
 // ── EmailJS credentials — paste yours here ──
-const EMAILJS_SERVICE_ID  = "service_xxxxxxx";
-const EMAILJS_TEMPLATE_ID = "template_xxxxxxx";
-const EMAILJS_PUBLIC_KEY  = "xxxxxxxxxxxxxxx";
+const EMAILJS_SERVICE_ID       = "service_mjms3vl";
+const EMAILJS_TEMPLATE_ID      = "template_xxxxxxx"; // badge claim template (unused for now)
+const EMAILJS_BETA_TEMPLATE_ID = "template_w4i7vxj"; // beta invite template
+const EMAILJS_PUBLIC_KEY       = "jNSW4DcPKgyR6_oa4";
 
 // ── Premade badge library ──
 const BADGE_PRESETS = [
@@ -4361,6 +4362,7 @@ function SuperAdminDashboard({ onClose }) {
     setInviteMsg(null);
     setInviteBusy(true);
     try {
+      // Write pending beta invite to Firestore
       const { getFirestore, doc, setDoc } = await import("firebase/firestore");
       const db = getFirestore();
       const expiry = new Date();
@@ -4370,7 +4372,17 @@ function SuperAdminDashboard({ onClose }) {
         expiry: expiry.toISOString(),
         createdAt: Date.now(),
       });
-      setInviteMsg({ ok: true, text: `✅ ${email} added to beta list. Beta Pro will activate automatically when they sign up or log in at teticoin.com.` });
+
+      // Send invite email via EmailJS
+      if (window.emailjs) {
+        await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_TEMPLATE_ID, {
+          to_email: email,
+        }, EMAILJS_PUBLIC_KEY);
+        setInviteMsg({ ok: true, text: `✅ Invite email sent to ${email}. Beta Pro activates automatically when they sign up.` });
+      } else {
+        // EmailJS not loaded — still saved to Firestore, just no email
+        setInviteMsg({ ok: true, text: `✅ ${email} added to beta list. (Email not sent — EmailJS not loaded. Refresh and try again.)` });
+      }
       setInviteEmail("");
     } catch(e) {
       setInviteMsg({ ok: false, text: `❌ Error: ${e.message}` });
