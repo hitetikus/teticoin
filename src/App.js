@@ -4313,8 +4313,8 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
 
 // ── ResendBtn — self-contained resend button with sent state ──
 function ResendBtn({ email, serviceId, templateId, publicKey }) {
-  const [sent, setSent] = React.useState(false);
-  const [busy, setBusy] = React.useState(false);
+  const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
   async function resend() {
     if (sent || busy) return;
     setBusy(true);
