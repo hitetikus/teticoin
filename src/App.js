@@ -120,7 +120,7 @@ const genToken = () => Math.random().toString(36).slice(2,10) + Math.random().to
 // ── EmailJS credentials — paste yours here ──
 const EMAILJS_SERVICE_ID       = "service_mjms3vl";
 const EMAILJS_TEMPLATE_ID      = "template_xxxxxxx"; // badge claim template (unused for now)
-const EMAILJS_BETA_TEMPLATE_ID = "template_w4i7vxj"; // beta invite template
+const EMAILJS_BETA_TEMPLATE_ID = "template_u65t3mv"; // beta invite template
 const EMAILJS_PUBLIC_KEY       = "jNSW4DcPKgyR6_oa4";
 
 // ── Premade badge library ──
@@ -462,7 +462,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Mass Give Coins</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Bulk Give Coins</div>
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           <div style={{fontSize:13,color:SUB,marginBottom:16}}>Award the same amount to multiple participants.</div>
@@ -650,7 +650,7 @@ function CoinCustomizer({ session, onSave, onClose }) {
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
-            {[["quick","Quick Coins"],["other","Give Coins"]].map(([id,l])=>(
+            {[["quick","Preset Coins"],["other","Give Coins"]].map(([id,l])=>(
               <button key={id} onClick={()=>setTab(id)} style={{padding:"8px 16px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}</button>
             ))}
           </div>
@@ -2435,6 +2435,7 @@ function CoinmasterView({ session: init, onBack }) {
         {/* AWARD TAB */}
         {tab==="award" && (
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+            {/* Participant selector */}
             <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0}}>
               <button onClick={()=>setPicker(true)} style={{width:"100%",display:"flex",alignItems:"center",gap:10,background:selP?SOFT:BG,border:`1.5px solid ${selP?PINK:BORDER}`,borderRadius:13,padding:"10px 14px",cursor:"pointer",textAlign:"left",transition:"all .12s"}}>
                 {selP ? (
@@ -2448,7 +2449,7 @@ function CoinmasterView({ session: init, onBack }) {
                       <div style={{fontSize:11,color:PINK,fontWeight:700,marginTop:1}}>{selP.total} coins total</div>
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:3,flexShrink:0}}>
-                      <span style={{fontFamily:"Poppins,sans-serif",fontSize:11,fontWeight:500,color:SUB}}>Change participant</span>
+                      <span style={{fontFamily:"Poppins,sans-serif",fontSize:11,fontWeight:500,color:SUB}}>Change</span>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                     </div>
                   </>
@@ -2456,33 +2457,26 @@ function CoinmasterView({ session: init, onBack }) {
                   <>
                     <div style={{width:36,height:36,borderRadius:8,background:BG,border:`1.5px dashed ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"center",color:SUB,fontSize:20,flexShrink:0}}>+</div>
                     <div style={{flex:1,fontSize:13,color:SUB,fontWeight:500}}>Tap to select participant</div>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                   </>
                 )}
               </button>
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+              {/* Give Coins + Preset Coins + Custom */}
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                  <SL style={{marginBottom:0}}>Give Coins</SL>
-                </div>
+                <SL style={{marginBottom:10}}>Give Coins</SL>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
                   {(ses.otherCoins||TV_DEFAULT).map((v,i) => (
-                    <InlineCoinBtn key={i} value={v}
-                      bg="#ffffff" border="#FECDE8" col={PINK} circle={true}
-                      disabled={!selP}
-                      onAward={e=>awardGuarded("token",v,e)}
-                      onEdit={()=>{}}/>
+                    <InlineCoinBtn key={i} value={v} bg="#ffffff" border="#FECDE8" col={PINK} circle={true}
+                      disabled={!selP} onAward={e=>awardGuarded("token",v,e)} onEdit={()=>{}}/>
                   ))}
                 </div>
-                <SL>Quick Coins</SL>
+                <SL>Preset Coins</SL>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
                   {ACTS.map((a,i) => {
                     const pts = (ses.quickCoins||ACTS_DEFAULT.map(x=>x.pts))[i] ?? a.pts;
-                    const palettes = [
-                      {bg:"#FAF5FF",border:"#DDB6FF",num:"#7C3AED",fill:"#7C3AED"},
-                      {bg:"#EEF4FF",border:"#C7D9FF",num:"#4F7CF6",fill:"#4F7CF6"},
-                      {bg:"#EDFAF5",border:"#B3EDDA",num:"#1DB87A",fill:"#1DB87A"},
-                    ];
+                    const palettes=[{bg:"#FAF5FF",border:"#DDB6FF",num:"#7C3AED",fill:"#7C3AED"},{bg:"#EEF4FF",border:"#C7D9FF",num:"#4F7CF6",fill:"#4F7CF6"},{bg:"#EDFAF5",border:"#B3EDDA",num:"#1DB87A",fill:"#1DB87A"}];
                     return <QuickCoinBtn key={a.id} pts={pts} label={a.label} pal={palettes[i]} onAward={e=>awardGuarded(a.id,pts,e)}/>;
                   })}
                 </div>
@@ -2490,16 +2484,56 @@ function CoinmasterView({ session: init, onBack }) {
                   <input type="number" placeholder="Custom amount" value={cAmt} onChange={e=>setCAmt(e.target.value)}
                     style={{flex:1,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
                   <button onClick={e=>{if(!cAmt||isNaN(cAmt))return;awardGuarded("token",Number(cAmt),e);setCAmt("");}}
-                    style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>
-                    Award
-                  </button>
+                    style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Award</button>
                 </div>
               </div>
-              {/* Locked features notice */}
-              <div style={{background:"#F9FAFB",border:`1px solid #E5E7EB`,borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <div style={{fontSize:11,color:"#9CA3AF",fontWeight:500}}>Session settings, coin values &amp; live toggle are host-only</div>
-              </div>
+
+              {/* Bulk Give Coins */}
+              {isPro ? (
+                <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  Bulk Give Coins
+                </button>
+              ) : (
+                <button onClick={()=>setProGateHint("massgive")} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PINK},${PINK2})`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span>Bulk Give Coins</span>
+                  <svg width="14" height="12" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
+                </button>
+              )}
+
+              {/* Quick Coins — search + horizontal scroll */}
+              {sorted.length > 0 && (
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                  <div style={{padding:"8px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}}>Quick Coins</span>
+                    <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
+                      style={{height:26,padding:"0 8px",border:`1.5px solid ${BORDER}`,borderRadius:7,fontFamily:"Poppins,sans-serif",fontSize:11,color:TEXT,outline:"none",width:110,background:BG}}/>
+                  </div>
+                  {sorted.filter(p=>!(qcSearch).trim()||(p.name.toLowerCase().includes(qcSearch.toLowerCase()))).map((p,i,arr)=>{
+                    const grp=ses.groups.find(g=>g.id===p.gid);
+                    const coins=ses.otherCoins||TV_DEFAULT;
+                    return (
+                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:11,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
+                        <Av s={p.av} color={grp?.color||PINK} size={26}/>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                          <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
+                        </div>
+                        <div style={{display:"flex",gap:3,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",flexShrink:0,maxWidth:180}}>
+                          {coins.map((v,ci)=>(
+                            <button key={ci} onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
+                              style={{minWidth:v>=100?40:34,height:32,borderRadius:7,border:`1.5px solid ${MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:v>=100?9:11,color:PINK,flexShrink:0,padding:0}}>
+                              +{v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -2591,6 +2625,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   const [snd] = useState(true);
   const [cAmt, setCAmt] = useState("");
   const [toast, setToast] = useState(null);
+  const [qcSearch, setQcSearch] = useState("");
   const aid = useRef(0);
 
   const isLive = ses.live !== false; // default true
@@ -2708,7 +2743,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 <svg width="40" height="34" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
               </div>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:8}}>
-                {proGateHint==="customlabels"?"Custom Coin Labels":proGateHint==="groups"?"Groups & Team Scoring":proGateHint==="massgive"?"Mass Give Coins":"Coinmaster Mode"} is Pro
+                {proGateHint==="customlabels"?"Custom Coin Labels":proGateHint==="groups"?"Groups & Team Scoring":proGateHint==="massgive"?"Bulk Give Coins":"Coinmaster Mode"} is Pro
               </div>
               <div style={{fontSize:14,color:SUB,lineHeight:1.7}}>
                 {proGateHint==="customlabels"
@@ -2841,8 +2876,15 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       </div>
 
       {/* ── MOBILE TABS (hidden on desktop) ── */}
-      <div className="tc-tab-bar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
-        {[["people","Participants"],["award","Award"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></span>],["log","Log"]].map(([id,l]) => (
+      <div className="tc-tab-bar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none"}}>
+        <style>{`.tc-tab-bar::-webkit-scrollbar{display:none}`}</style>
+        {[
+          ["people","Participants"],
+          ["award","Award"],
+          ["board","Scoreboard"],
+          ["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill={isPro?"#C0C0C0":"#ffb743"}/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill={isPro?"#C0C0C0":"#ffb743"}/></svg></span>],
+          ["log","Log"]
+        ].map(([id,l]) => (
           <button key={id} onClick={()=>{
             if (!isLive) return;
             setTab(id);
@@ -2850,12 +2892,11 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             else if (id==="groups") setRightTab("groups");
             else if (id==="log") setRightTab("log");
           }}
-            style={{padding:"11px 12px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
+            style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
               color:!isLive?`${SUB}55`:tab===id?PINK:SUB,cursor:isLive?"pointer":"default",flexShrink:0,
-              borderBottom:tab===id&&isLive?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
+              borderBottom:tab===id&&isLive?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s",whiteSpace:"nowrap"}}>{l}
           </button>
         ))}
-        <div style={{marginLeft:"auto",paddingRight:8,flexShrink:0}}/>
       </div>
 
       {/* ── BODY: two columns on desktop, single column on mobile ── */}
@@ -2924,7 +2965,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     onEdit={newV=>mut(s=>{const oc=[...(s.otherCoins||TV_DEFAULT)];oc[i]=newV;s.otherCoins=oc;})}/>
                 ))}
               </div>
-              <SL>Quick Coins</SL>
+              <SL>Preset Coins</SL>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
                 {ACTS.map((a,i) => {
                   const pts = (ses.quickCoins||ACTS_DEFAULT.map(x=>x.pts))[i] ?? a.pts;
@@ -2946,12 +2987,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             {isPro ? (
               <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Mass Give Coins
+                Bulk Give Coins
               </button>
             ) : (
               <button onClick={()=>setProGateHint("massgive")} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PINK},${PINK2})`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span>Mass Give Coins</span>
+                <span>Bulk Give Coins</span>
                 <svg width="14" height="12" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
               </button>
             )}
@@ -2963,7 +3004,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
           {/* Desktop right-panel tabs */}
           <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0,display:"none"}}>
-            {[["people","Participants"],["award_all","Award All"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></span>],["log","Log"]].map(([id,l]) => (
+            {[["people","Participants"],["award_all","Quick Coins"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill={isPro?"#C0C0C0":"#ffb743"}/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill={isPro?"#C0C0C0":"#ffb743"}/></svg></span>],["board","Scoreboard"],["log","Log"]].map(([id,l]) => (
               <button key={id} onClick={()=>setRightTab(id)}
                 style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
                   color:rightTab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
@@ -3067,16 +3108,17 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 </div>
               ) : (
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                  <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{padding:"8px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    <SL style={{marginBottom:0}}>Award to Everyone</SL>
-                    <span style={{fontSize:11,color:SUB,fontWeight:500,marginLeft:"auto"}}>Click a value to award</span>
+                    <SL style={{marginBottom:0,flex:1}}>Quick Coins</SL>
+                    <input placeholder="Search name…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
+                      style={{height:28,padding:"0 10px",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Poppins,sans-serif",fontSize:12,color:TEXT,outline:"none",width:130,background:BG}}/>
                   </div>
-                  {sorted.map((p,i) => {
+                  {sorted.filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase())).map((p,i,arr) => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
                     const coins = ses.otherCoins || TV_DEFAULT;
                     return (
-                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:i<sorted.length-1?`1px solid ${BORDER}`:"none",transition:"background .1s"}}
+                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",transition:"background .1s"}}
                         onMouseOver={e=>e.currentTarget.style.background=SOFT}
                         onMouseOut={e=>e.currentTarget.style.background="transparent"}>
                         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
@@ -3200,7 +3242,21 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                 </div>
               ) : <>
-              {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:32,textAlign:"center",fontSize:13,color:SUB}}>Create groups via the people icon in the top bar</div>}
+              {/* Inline group creation */}
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
+                <SL style={{marginBottom:10}}>Create Group</SL>
+                <div style={{display:"flex",gap:8,marginBottom:10}}>
+                  <input placeholder="Group name" value={ses._newGroupName||""} onChange={e=>mut(s=>{s._newGroupName=e.target.value;})}
+                    onKeyDown={e=>{if(e.key==="Enter"){const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";})}}}
+                    style={{flex:1,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"8px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
+                  <button onClick={()=>{const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";});}}
+                    style={{padding:"0 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
+                </div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {GC.map(c=><div key={c} onClick={()=>mut(s=>{s._newGroupColor=c;})} style={{width:22,height:22,borderRadius:6,background:c,cursor:"pointer",border:(ses._newGroupColor||GC[0])===c?`3px solid ${TEXT}`:"3px solid transparent",transform:(ses._newGroupColor||GC[0])===c?"scale(1.15)":"scale(1)",transition:".12s"}}/>)}
+                </div>
+              </div>
+              {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:24,textAlign:"center",fontSize:13,color:SUB}}>No groups yet. Add one above!</div>}
               {gs.map((g,i) => (
                 <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
@@ -4027,13 +4083,16 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
     : null;
 
   const planData = {
-    free:    {name:"Free",     price:"RM 0",    renewal:null,       color:SUB,  next:null},
-    oneTime: {name:"One Time", price:"RM 29",   renewal:"one-time", color:BLUE, next:null},
-    pro:     {name:"Pro",      price:"RM 29",   renewal:"monthly",  color:PINK, next:expiryLabel},
-    proY:    {name:"Pro",      price:"RM 269",  renewal:"yearly",   color:PINK, next:expiryLabel},
+    free:    {name:"Free",        price:"RM 0",    renewal:null,       color:SUB,    next:null},
+    oneTime: {name:"One Time",    price:"RM 29",   renewal:"one-time", color:BLUE,   next:null},
+    pro:     {name:"Pro",         price:"RM 29",   renewal:"monthly",  color:PINK,   next:expiryLabel},
+    proY:    {name:"Pro",         price:"RM 269",  renewal:"yearly",   color:PINK,   next:expiryLabel},
+    beta:    {name:"Beta Pro",    price:"Free",    renewal:"beta",     color:GREEN,  next:expiryLabel},
+    superadmin:{name:"Superadmin",price:"—",       renewal:null,       color:"#FF6B00",next:null},
   };
   const pd = planData[plan] || planData.free;
   const isFree = plan==="free";
+  const isBetaPlan = plan==="beta";
   // Build a single real invoice from the expiry date (payment date = expiry minus billing period)
   const invoices = plan!=="free" && planExpiry ? (() => {
     const expDate = new Date(planExpiry);
@@ -4065,16 +4124,17 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
 
           {/* Current plan card */}
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Current Plan</div>
-          <div style={{background:isFree?"#fff":pd.color===PINK?SOFT:"#FAF5FF",border:`2px solid ${pd.color}`,borderRadius:16,padding:"20px",marginBottom:20}}>
+          <div style={{background:isFree?"#fff":isBetaPlan?"#F0FDF4":pd.color===PINK?SOFT:"#FAF5FF",border:`2px solid ${pd.color}`,borderRadius:16,padding:"20px",marginBottom:20}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:pd.color}}>{pd.name}</div>
-              <div style={{background:`${pd.color}18`,border:`1.5px solid ${pd.color}44`,borderRadius:99,padding:"3px 12px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:pd.color}}>Active</div>
+              <div style={{background:`${pd.color}18`,border:`1.5px solid ${pd.color}44`,borderRadius:99,padding:"3px 12px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:pd.color}}>{isBetaPlan?"Beta Access":"Active"}</div>
             </div>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:TEXT,marginBottom:4,lineHeight:1}}>
-              {pd.price}{!isFree&&<span style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</span>}
+              {isBetaPlan?<span style={{fontSize:18,fontWeight:700,color:GREEN}}>Full Pro — Complimentary</span>:<>{pd.price}{!isFree&&pd.renewal!=="one-time"&&<span style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</span>}</>}
             </div>
-            {pd.next && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>Access until {pd.next}</div>}
+            {pd.next && <div style={{fontSize:12,color:isBetaPlan?"#16A34A":SUB,fontWeight:600,marginTop:6}}>Beta access until {pd.next}</div>}
             {isFree && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>No time limit · No card required</div>}
+            {isBetaPlan && <div style={{fontSize:11,color:"#166534",fontWeight:500,marginTop:4}}>You have been granted Beta Pro access. Enjoy all Pro features!</div>}
           </div>
 
           {/* Feature list */}
@@ -5505,6 +5565,27 @@ export default function App() {
             </div>
 
             {isFree && <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>setShowPricing(true)}/>}
+
+            {/* Beta Pro banner on home screen */}
+            {!isFree && isBeta && (() => {
+              const expStr = planExpiry ? new Date(planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : null;
+              const daysLeft = planExpiry ? Math.max(0,Math.ceil((new Date(planExpiry)-new Date())/(1000*60*60*24))) : null;
+              const expired = planExpiry && new Date(planExpiry) < new Date();
+              return (
+                <div style={{background:expired?"#FEF2F2":"linear-gradient(135deg,#F0FDF4,#DCFCE7)",border:`1.5px solid ${expired?"#FECACA":"#86EFAC"}`,borderRadius:14,padding:"12px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:12}}>
+                  <div style={{width:36,height:36,borderRadius:10,background:expired?"#FEF2F2":"#16A34A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={expired?"#EF4444":"#fff"} strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:expired?"#EF4444":"#15803D"}}>Beta Pro {expired?"— Expired":"— Active"}</div>
+                    <div style={{fontSize:12,color:expired?"#EF4444":"#166534",fontWeight:500}}>
+                      {expired?"Your Beta Pro access has ended."
+                        :expStr?`Full Pro access · Expires ${expStr}${daysLeft!==null?` (${daysLeft}d left)`:""}`:"Full Pro access"}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Hero card */}
             <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
