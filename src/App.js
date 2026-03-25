@@ -2698,12 +2698,11 @@ function CoinmasterView({ session: init, onBack }) {
                     <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
                       style={{height:26,padding:"0 8px",border:`1.5px solid ${BORDER}`,borderRadius:7,fontFamily:"Poppins,sans-serif",fontSize:11,color:TEXT,outline:"none",width:110,background:BG}}/>
                   </div>
-                  {sorted.filter(p=>!(qcSearch).trim()||(p.name.toLowerCase().includes(qcSearch.toLowerCase()))).map((p,i,arr)=>{
+                  {[...sorted].sort((a,b)=>a.name.localeCompare(b.name)).filter(p=>!(qcSearch).trim()||(p.name.toLowerCase().includes(qcSearch.toLowerCase()))).map((p,i,arr)=>{
                     const grp=ses.groups.find(g=>g.id===p.gid);
                     const coins=ses.otherCoins||TV_DEFAULT;
                     return (
                       <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:11,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
                         <Av s={p.av} color={grp?.color||PINK} size={26}/>
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
@@ -3162,7 +3161,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               )}
             </button>
           </div>
-          {/* Award scrollable content */}
+          {/* Award scrollable content — full panel scroll */}
           <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
             {/* ── Give Coins section ── */}
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
@@ -3216,29 +3215,29 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </button>
             )}
 
-            {/* ── Quick Coins section: flat list, scrolls with page ── */}
-            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-              <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:6}}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <SL style={{marginBottom:0,flex:1}}>Quick Coins</SL>
-              </div>
-              {sorted.length===0 ? (
-                <div style={{padding:"24px 16px",textAlign:"center",color:SUB,fontSize:13}}>No participants yet</div>
-              ) : (
-                [...sorted].sort((a,b)=>a.name.localeCompare(b.name)).map((p,pi,arr) => {
+            {/* ── Quick Coins: header label ── */}
+            <div style={{display:"flex",alignItems:"center",gap:6,paddingTop:4}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <SL style={{marginBottom:0}}>Quick Coins</SL>
+            </div>
+
+            {/* ── Quick Coins: one card per participant, no outer wrapper ── */}
+            {sorted.length===0 ? (
+              <div style={{padding:"24px 16px",textAlign:"center",color:SUB,fontSize:13,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14}}>No participants yet</div>
+            ) : (
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                {[...sorted].sort((a,b)=>a.name.localeCompare(b.name)).map((p,pi,arr) => {
                   const coins = ses.otherCoins||TV_DEFAULT;
                   const grp = ses.groups.find(g=>g.id===p.gid);
                   return (
-                    <div key={p.id} style={{display:"flex",alignItems:"center",padding:"9px 12px",borderBottom:pi<arr.length-1?`1px solid ${BORDER}`:"none",background:selId===p.id?SOFT:"#fff",gap:0}}>
-                      {/* Avatar + Name: fixed width, no shrink */}
+                    <div key={p.id} style={{display:"flex",alignItems:"center",padding:"9px 12px",borderBottom:pi<arr.length-1?`1px solid ${BORDER}`:"none",background:selId===p.id?SOFT:"#fff"}}>
                       <Av s={p.av} color={grp?.color||PINK} size={30}/>
-                      <div style={{width:88,flexShrink:0,marginLeft:8,marginRight:10}}>
+                      <div style={{width:88,flexShrink:0,marginLeft:8,marginRight:8}}>
                         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
                         <div style={{fontSize:10,color:PINK,fontWeight:600}}>{p.total} pts</div>
                       </div>
-                      {/* Horizontally scrollable coin buttons — overflow on its own track */}
                       <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
-                        <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:5,paddingBottom:1,paddingTop:1}}>
+                        <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:5}}>
                           {coins.map((v,ci) => (
                             <button key={ci} onClick={e=>{setSelId(p.id); setTimeout(()=>awardGuarded("token",v,e),0);}}
                               style={{border:`1.5px solid ${PINK}30`,background:SOFT,borderRadius:8,padding:"5px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:PINK,cursor:"pointer",flexShrink:0,width:44,textAlign:"center"}}>
@@ -3249,9 +3248,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                       </div>
                     </div>
                   );
-                })
-              )}
-            </div>
+                })}
+              </div>
+            )}
           </div>
         </div>
 
