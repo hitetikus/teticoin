@@ -5,38 +5,145 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <meta name="theme-color" content="#E91E8C" />
-    <meta name="description" content="Teticoin — Training gamification tool. Reward behaviour, not just answers." />
-    <meta property="og:title" content="Teticoin" />
-    <meta property="og:description" content="Training gamification tool by Tetikus. Reward behaviour, not just answers." />
-    <meta property="og:image" content="%PUBLIC_URL%/og-image.png" />
-    <title>Teticoin</title>
+
+    <!-- ── Primary meta ── -->
+    <title>Teticoin — Real-Time Engagement for Training &amp; Events</title>
+    <meta name="description" content="Award points live, show scoreboards, and keep participants hooked — no app needed. Built for trainers, teachers, and facilitators in Malaysia and beyond." />
+    <meta name="keywords" content="training gamification, participant engagement, live scoreboard, workshop tool, classroom points system, corporate training tool, teticoin, tetikus" />
+    <meta name="author" content="Tetikus" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://teticoin.com" />
+
+    <!-- ── Open Graph (Facebook, WhatsApp, LinkedIn) ── -->
+    <meta property="og:title" content="Teticoin — Real-Time Engagement for Training &amp; Events" />
+    <meta property="og:description" content="Award points live, show scoreboards, and keep participants hooked — no app needed." />
+    <meta property="og:image" content="https://teticoin.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://teticoin.com" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Teticoin" />
+    <meta property="og:locale" content="en_MY" />
+
+    <!-- ── Twitter Card ── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Teticoin — Real-Time Engagement for Training &amp; Events" />
+    <meta name="twitter:description" content="Award points live, show scoreboards, and keep participants hooked — no app needed." />
+    <meta name="twitter:image" content="https://teticoin.com/og-image.png" />
+    <meta name="twitter:site" content="@teticoin" />
+
+    <!-- ── Google Fonts (preconnect first, then stylesheet — avoids render-blocking) ── -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Nunito:wght@700;800;900&family=DM+Sans:wght@400;500;600&display=swap" />
+
+    <!-- ── JSON-LD Structured Data ── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Teticoin",
+      "url": "https://teticoin.com",
+      "logo": "https://teticoin.com/favicon.png",
+      "description": "Real-time participant engagement tool for trainers, teachers, and facilitators. Award points live, show scoreboards, and keep participants hooked — no app needed.",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Free Plan",
+          "price": "0",
+          "priceCurrency": "MYR",
+          "description": "3 active sessions, up to 30 participants"
+        },
+        {
+          "@type": "Offer",
+          "name": "Pro Plan",
+          "price": "29",
+          "priceCurrency": "MYR",
+          "billingIncrement": "P1M",
+          "description": "Unlimited sessions, up to 200 participants, groups, custom labels"
+        }
+      ],
+      "author": {
+        "@type": "Organization",
+        "name": "Tetikus",
+        "url": "https://www.tetikus.com.my",
+        "email": "hi.tetikus@gmail.com",
+        "address": {
+          "@type": "PostalAddress",
+          "addressCountry": "MY"
+        }
+      },
+      "featureList": [
+        "Live coin awarding",
+        "Real-time scoreboard",
+        "QR code participant join",
+        "Group and team scoring",
+        "Custom coin labels",
+        "Session history and CSV export",
+        "Projector / TV mode",
+        "No app required for participants"
+      ],
+      "screenshot": "https://teticoin.com/og-image.png",
+      "inLanguage": ["en", "ms"]
+    }
+    </script>
+
+    <!-- ── FAQ Structured Data (helps Google show rich results) ── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Do participants need to download an app to join?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Participants join via a QR code or link on any device — no download or account required."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How much does Teticoin cost?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Teticoin has a free plan (3 sessions, 30 participants) and a Pro plan at RM 29/month or RM 269/year. Enterprise pricing is available for teams."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What types of sessions is Teticoin suitable for?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Teticoin works for corporate training, workshops, classrooms, team meetings, and live events — both online and in-person."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use Teticoin for group or team scoring?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The Pro plan includes group and team scoring, allowing you to award points to entire teams at once and display group rankings on the scoreboard."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- ── EmailJS ── -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script>
+      window.addEventListener('load', function() {
+        emailjs.init({ publicKey: "jNSW4DcPKgyR6_oa4" });
+      });
+    </script>
+
     <style>
       /* Prevent flash of unstyled content */
       body { margin: 0; background: #F7F1F5; }
     </style>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<script>
-  window.addEventListener('load', function() {
-    emailjs.init({ publicKey: "jNSW4DcPKgyR6_oa4" });
-  });
-</script>
-<!-- Primary meta -->
-<title>Teticoin — Real-Time Engagement for Training & Events</title>
-<meta name="description" content="Award points live, show scoreboards, and keep participants hooked — no app needed. Built for trainers, teachers, and facilitators." />
-
-<!-- Open Graph (Facebook, WhatsApp, LinkedIn) -->
-<meta property="og:title" content="Teticoin — Real-Time Engagement for Training & Events" />
-<meta property="og:description" content="Award points live, show scoreboards, and keep participants hooked — no app needed." />
-<meta property="og:image" content="https://teticoin.com/og-image.png" />
-<meta property="og:url" content="https://teticoin.com" />
-<meta property="og:type" content="website" />
-<meta property="og:site_name" content="Teticoin" />
-
-<!-- Twitter Card -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Teticoin — Real-Time Engagement for Training & Events" />
-<meta name="twitter:description" content="Award points live, show scoreboards, and keep participants hooked — no app needed." />
-<meta name="twitter:image" content="https://teticoin.com/og-image.png" />	
   </head>
   <body>
     <noscript>You need to enable JavaScript to run Teticoin.</noscript>
