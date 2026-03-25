@@ -416,17 +416,36 @@ function PBtn({ children, onClick, disabled, full, style: sx = {} }) {
   );
 }
 
-// ── Participant QR ──
+// ── Participant QR — real scannable QR encoding participant number ──
 function PQR({ p, code, size = 160 }) {
-  const seed = `${code}-${p.id}`;
-  const h = seed.split("").reduce((a,c) => ((a<<5)-a)+c.charCodeAt(0)|0, 0);
-  const corners = [0,1,2,7,8,9,14,6,13,20,36,37,38,43,44,45,42,48];
-  const cells = Array.from({length:49}, (_,i) => { const v=(h^(i*2654435761))>>>0; return corners.includes(i)||(v%3===0); });
+  const ref = useRef();
+  const data = pNum(p.num); // encodes e.g. "P001"
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.innerHTML = "";
+    function renderQR() {
+      if (!window.QRCode) return;
+      new window.QRCode(ref.current, {
+        text: data,
+        width: size - 20,
+        height: size - 20,
+        colorDark: PINK,
+        colorLight: "#ffffff",
+        correctLevel: window.QRCode.CorrectLevel.M,
+      });
+    }
+    if (window.QRCode) {
+      renderQR();
+    } else {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+      s.onload = renderQR;
+      document.head.appendChild(s);
+    }
+  }, [data, size]);
   return (
-    <div style={{width:size,height:size,background:"#fff",borderRadius:12,padding:10,border:`1px solid ${BORDER}`,display:"inline-block"}}>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,height:"100%"}}>
-        {cells.map((on,i) => <div key={i} style={{borderRadius:2,background:on?PINK:"transparent"}}/>)}
-      </div>
+    <div style={{width:size,height:size,background:"#fff",borderRadius:12,padding:10,border:`1px solid ${BORDER}`,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
+      <div ref={ref}/>
     </div>
   );
 }
@@ -1341,16 +1360,47 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   const [loginBusy, setLoginBusy] = useState(false);
 
   const isPro = hostPlan !== "free";
+  const prevTotalRef = useRef(null); // track participant's last known total for coin sound
+  const [coinFlash, setCoinFlash] = useState(null); // {pts, key} for '+ N' flash animation
 
-  // Poll for live updates every 2s once joined
+  // ── Coin sound helper for participant ──
+  function playCoinSound() {
+    try {
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const g = ctx.createGain();
+      g.connect(ctx.destination);
+      // Caching sound: two quick high tones
+      [[880,0],[1100,.09],[1320,.18]].forEach(([f,t])=>{
+        const o = ctx.createOscillator(); o.connect(g);
+        o.type = "sine";
+        o.frequency.value = f; o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.12);
+      });
+      g.gain.setValueAtTime(.12, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.38);
+    } catch {}
+  }
+
+  // Poll for live updates every 2s once joined — play sound when coins received
   useEffect(() => {
     if (step !== "joined" || !init?.code) return;
     const t = setInterval(async () => {
       const s = await sgSession(init.code);
-      if (s) setLive(s);
+      if (!s) return;
+      // Detect coin gain for this participant
+      if (myId) {
+        const me = (s.participants||[]).find(p => p.id === myId);
+        if (me && prevTotalRef.current !== null && me.total > prevTotalRef.current) {
+          const gained = me.total - prevTotalRef.current;
+          playCoinSound();
+          setCoinFlash({ pts: gained, key: Date.now() });
+          setTimeout(() => setCoinFlash(null), 1400);
+        }
+        if (me) prevTotalRef.current = me.total;
+      }
+      setLive(s);
     }, 2000);
     return () => clearInterval(t);
-  }, [step, init?.code]);
+  }, [step, init?.code, myId]);
 
   function checkName() {
     if (!name.trim()) return;
@@ -1377,13 +1427,19 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,uid:currentUid,guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
+    prevTotalRef.current = 0; // initialise so first poll doesn't false-trigger
     const u = {...live,participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
   }
 
   function confirmReturn() {
     if (returnMatch.pin) { setStep("pinentry"); }
-    else { setMyId(returnMatch.id); setStep("joined"); }
+    else {
+      // init ref with existing total so returning participant doesn't get false sound
+      const existing = (live.participants||[]).find(p=>p.id===returnMatch.id);
+      prevTotalRef.current = existing?.total ?? 0;
+      setMyId(returnMatch.id); setStep("joined");
+    }
   }
 
   function notMe() { setStep(isPro ? "newpin" : "directjoin_new"); }
@@ -1401,6 +1457,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,pin,uid:(auth.currentUser?.uid || linkedUid || null),guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
+    prevTotalRef.current = 0;
     const u = {...live,participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
   }
@@ -1965,19 +2022,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
         {showMyQR && me && (
           <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center"}}>
             <div style={{fontSize:11,color:SUB,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>My QR Code</div>
-            <div style={{display:"inline-block",background:"#fff",borderRadius:12,padding:10,border:`1px solid ${BORDER}`}}>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,width:140,height:140}}>
-                {(() => {
-                  const seed = pNum(me.num);
-                  const h = seed.split("").reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0)|0,0);
-                  const corners=[0,1,2,7,8,9,14,6,13,20,36,37,38,43,44,45,42,48];
-                  return Array.from({length:49},(_,i)=>{
-                    const v=(Math.abs(h)^(i*2654435761))>>>0;
-                    return corners.includes(i)||(v%2===0);
-                  });
-                })().map((on,i)=><div key={i} style={{borderRadius:1,background:on?PINK:"transparent"}}/>)}
-              </div>
-            </div>
+            <PQR p={me} code={init.code} size={160}/>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:10,letterSpacing:2}}>{pNum(me.num)}</div>
             <div style={{fontSize:12,color:SUB,marginTop:2}}>{me.name}</div>
             <div style={{fontSize:11,color:SUB,marginTop:6,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
@@ -2036,9 +2081,15 @@ function ParticipantView({ session: init, hostPlan="free" }) {
         {/* Earned badges — shown if logged in */}
         {linkedUid && <ParticipantBadges uid={linkedUid}/>}
 
-        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,padding:"28px 24px",textAlign:"center",boxShadow:`0 4px 24px ${PINK}10`}}>
+        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"28px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}55`:`0 4px 24px ${PINK}10`,transition:"all .3s ease",position:"relative",overflow:"hidden"}}>
+          {/* Coin flash "+N" pop */}
+          {coinFlash && (
+            <div key={coinFlash.key} style={{position:"absolute",top:12,right:16,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:28,color:PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
+              +{coinFlash.pts}
+            </div>
+          )}
           <div style={{fontSize:11,fontWeight:700,color:SUB,marginBottom:6,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:80,lineHeight:1,color:PINK,letterSpacing:-4}}>{me?.total||0}</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:80,lineHeight:1,color:PINK,letterSpacing:-4,transition:"transform .2s ease",transform:coinFlash?"scale(1.08)":"scale(1)"}}>{me?.total||0}</div>
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
         </div>
 
@@ -2781,8 +2832,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
     return () => clearInterval(t);
   }, [isLive, ses.code]);
 
-  // ── Quick tour: show once per user on first session entry ──
+  // ── Quick tour: show once per user on first session entry (desktop only) ──
   useEffect(() => {
+    if (window.innerWidth < 900) return; // tour only on desktop — mobile layout differs
     const uid = auth.currentUser?.uid;
     if (!uid) return;
     // Use fsGet directly so we bypass any _currentUid timing issues
@@ -2790,7 +2842,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       const db = getFirestore();
       getDoc(doc(db, "users", uid, "data", "tourDone")).then(snap => {
         if (!snap.exists()) setShowTour(true);
-      }).catch(() => setShowTour(true));
+      }).catch(() => {});
     });
   }, []);
 
@@ -5577,6 +5629,10 @@ export default function App() {
     await ss("name", t.name);
     await ssParent(t.uid, t.email, t.name); // register in top-level users collection
 
+    // ── Load existing sessions so re-auth never clears them ──
+    const existingSessions = await sg("sessions_index");
+    if (existingSessions) setSessions(existingSessions);
+
     // ── Auto-claim beta invite if one was sent to this email ──
     const claimedExpiry = await claimBetaInvite(t.uid, t.email);
     let p = await sg("plan"); if (!p) { await ss("plan", "free"); p = "free"; }
@@ -5637,7 +5693,19 @@ export default function App() {
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
   if (false && screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
-  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onBack={()=>{ window.history.replaceState({},"","/app"); setScreen("home"); }} onPView={()=>setScreen("participant")}/></>;
+  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onBack={async()=>{
+    try {
+      const fresh = await sgSession(cur.code);
+      if (fresh) {
+        const count = (fresh.participants||[]).length;
+        const totalCoins = (fresh.participants||[]).reduce((s,p)=>s+(p.total||0),0);
+        const idx = sessions.map(x => x.code===cur.code ? {...x,count,totalCoins} : x);
+        setSessions(idx);
+        await ss("sessions_index", idx);
+      }
+    } catch {}
+    window.history.replaceState({},"","/app"); setScreen("home");
+  }} onPView={()=>setScreen("participant")}/></>;
 
   // Session settings from home list gear icon
   if (screen==="sessionSettings" && cur) return (
