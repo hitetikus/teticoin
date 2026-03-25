@@ -4218,6 +4218,7 @@ function SuperAdminDashboard({ onClose }) {
   const [actionMsg, setActionMsg] = useState(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteMsg, setInviteMsg] = useState(null);
+  const [inviteBusy, setInviteBusy] = useState(false);
   const [selected, setSelected] = useState(new Set());
 
   // Load all users — data is stored under users/{uid}/data/{key} subcollection
@@ -4335,25 +4336,25 @@ function SuperAdminDashboard({ onClose }) {
 
   async function sendBetaInvite() {
     const email = inviteEmail.trim();
-    if (!email) return;
+    if (!email || inviteBusy) return;
     setInviteMsg(null);
+    setInviteBusy(true);
     try {
-      // Use Firebase email link (passwordless) — works for NEW users who haven't signed up yet
       await sendSignInLinkToEmail(auth, email, {
         url: "https://teticoin.com/login",
         handleCodeInApp: true,
       });
-      setInviteMsg({ ok: true, text: `✅ Invite link sent to ${email} — they can use it to sign in/register. Then assign Beta Pro from the Users tab.` });
+      setInviteMsg({ ok: true, text: `✅ Invite sent to ${email}` });
       setInviteEmail("");
     } catch(e) {
-      // Fallback: sendPasswordResetEmail if email exists in Auth
       if (e.code === "auth/operation-not-allowed") {
-        setInviteMsg({ ok: false, text: `⚠ Email link sign-in not enabled in Firebase Console. Go to Authentication → Sign-in method → Email link and enable it. Then retry.` });
+        setInviteMsg({ ok: false, text: `⚠ Email link sign-in not enabled. Go to Firebase Console → Authentication → Sign-in method → enable Email link.` });
       } else {
         setInviteMsg({ ok: false, text: `❌ Could not send invite: ${e.message}` });
       }
     }
-    setTimeout(() => setInviteMsg(null), 10000);
+    setInviteBusy(false);
+    setTimeout(() => setInviteMsg(null), 8000);
   }
 
   async function bulkAssignBeta() {
@@ -4537,15 +4538,16 @@ function SuperAdminDashboard({ onClose }) {
             {/* Send invite email */}
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",marginBottom:16}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>Invite Beta Tester</div>
-              <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>Send a sign-in link to any email (including new users). Once they sign in at teticoin.com, go to the <strong>Users tab</strong> and click <strong>+ Beta Pro</strong> to activate their access.</div>
-              <div style={{padding:"10px 14px",background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:10,fontSize:12,color:"#92400E",marginBottom:14,lineHeight:1.5}}>
-                <strong>⚠ Requires setup:</strong> In Firebase Console → Authentication → Sign-in method → enable <strong>Email link (passwordless sign-in)</strong>. Also add <code>teticoin.com</code> to Authorized domains.
-              </div>
+              <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>Send a sign-in link to any email — works for new users too. Once they sign in at teticoin.com, go to the <strong>Users tab</strong> and click <strong>+ Beta Pro</strong> to activate their access.</div>
               <div style={{display:"flex",gap:10,marginBottom:8}}>
                 <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{flex:1}}/>
-                <button onClick={sendBetaInvite}
-                  style={{padding:"0 20px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
-                  Send Invite
+                <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
+                  style={{padding:"0 20px",background:inviteBusy||!inviteEmail.trim()?"#E5E7EB":GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:inviteBusy||!inviteEmail.trim()?SUB:"#fff",cursor:inviteBusy||!inviteEmail.trim()?"not-allowed":"pointer",flexShrink:0,transition:"all .15s",minWidth:110,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}
+                  onMouseOver={e=>{ if(!inviteBusy&&inviteEmail.trim()) e.currentTarget.style.opacity="0.85"; }}
+                  onMouseOut={e=>{ e.currentTarget.style.opacity="1"; }}>
+                  {inviteBusy ? (
+                    <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Sending…</>
+                  ) : "Send Invite"}
                 </button>
               </div>
               {inviteMsg && <div style={{fontSize:12,color:inviteMsg.ok?"#16A34A":"#B45309",marginTop:4,lineHeight:1.5,padding:"8px 12px",background:inviteMsg.ok?"#F0FDF4":"#FFFBEB",borderRadius:8}}>{inviteMsg.text}</div>}
