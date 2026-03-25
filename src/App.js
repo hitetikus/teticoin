@@ -3088,9 +3088,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         <style>{`.tc-tab-bar::-webkit-scrollbar{display:none}`}</style>
         {[
           ["people","Participants"],
-          ["award","Coin"],
-          ["board","Scoreboard"],
+          ["award","Coins"],
           ["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill={isPro?"#C0C0C0":"#ffb743"}/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill={isPro?"#C0C0C0":"#ffb743"}/></svg></span>],
+          ["board","Scoreboard"],
           ["log","Log"]
         ].map(([id,l]) => (
           <button key={id} onClick={()=>{
@@ -3104,6 +3104,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             if (id==="board") setRightTab("board");
             else if (id==="groups") setRightTab("groups");
             else if (id==="log") setRightTab("log");
+            else if (id==="people") setRightTab("people");
           }}
             style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
               color:!isLive?`${SUB}55`:tab===id?PINK:SUB,cursor:isLive?"pointer":"default",flexShrink:0,
@@ -3130,7 +3131,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           </div>
         )}
 
-        {/* ── LEFT PANEL: Award ── */}
+        {/* ── LEFT PANEL: Award (Coins tab on mobile) ── */}
         <div className="tc-session-left" style={{display: tab!=="award" ? "none" : "flex", flexDirection:"column", overflow:"hidden"}}>
           {/* Participant selector */}
           <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0}}>
@@ -3146,7 +3147,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     <div style={{fontSize:11,color:PINK,fontWeight:700,marginTop:1}}>{selP.total} coins total</div>
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:3,flexShrink:0}}>
-                    <span style={{fontFamily:"Poppins,sans-serif",fontSize:11,fontWeight:500,color:SUB}}>Change participant</span>
+                    <span style={{fontFamily:"Poppins,sans-serif",fontSize:11,fontWeight:500,color:SUB}}>Change</span>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                   </div>
                 </>
@@ -3161,6 +3162,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           </div>
           {/* Award scrollable content */}
           <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+            {/* ── Give Coins section ── */}
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                 <SL style={{marginBottom:0}}>Give Coins</SL>
@@ -3197,6 +3199,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Award</button>
               </div>
             </div>
+
+            {/* ── Bulk Give Coins button ── */}
             {isPro ? (
               <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -3209,10 +3213,49 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 <svg width="14" height="12" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
               </button>
             )}
+
+            {/* ── Quick Coins section: participant list with scrollable coin buttons ── */}
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+              <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:6}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <SL style={{marginBottom:0,flex:1}}>Quick Coins</SL>
+              </div>
+              {sorted.length===0 ? (
+                <div style={{padding:"24px 16px",textAlign:"center",color:SUB,fontSize:13}}>No participants yet</div>
+              ) : (
+                [...sorted].sort((a,b)=>a.name.localeCompare(b.name)).map((p,pi,arr) => {
+                  const coins = ses.otherCoins||TV_DEFAULT;
+                  const grp = ses.groups.find(g=>g.id===p.gid);
+                  return (
+                    <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderBottom:pi<arr.length-1?`1px solid ${BORDER}`:"none",background:selId===p.id?SOFT:"#fff"}}>
+                      {/* Avatar + Name (no rank number — sorted A-Z) */}
+                      <div style={{minWidth:16,flexShrink:0}}></div>
+                      <Av s={p.av} color={grp?.color||PINK} size={32}/>
+                      <div style={{minWidth:0,flex:"0 0 auto",maxWidth:72}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                        <div style={{fontSize:10,color:PINK,fontWeight:600}}>{p.total} pts</div>
+                      </div>
+                      {/* Horizontally scrollable coin buttons */}
+                      <div style={{flex:1,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:6,alignItems:"center",paddingBottom:2}}>
+                        <style>{`.tc-qcscroll::-webkit-scrollbar{display:none}`}</style>
+                        <div className="tc-qcscroll" style={{display:"flex",gap:5,flexShrink:0}}>
+                          {coins.map((v,ci) => (
+                            <button key={ci} onClick={e=>{setSelId(p.id); setTimeout(()=>awardGuarded("token",v,e),0);}}
+                              style={{border:`1.5px solid ${PINK}28`,background:SOFT,borderRadius:8,padding:"5px 8px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:PINK,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap",minWidth:38,textAlign:"center"}}>
+                              +{v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
 
-        {/* ── RIGHT PANEL: Award All / Board / Groups / Log ── */}
+        {/* ── RIGHT PANEL: Participants / Board / Groups / Log (+ desktop Award All) ── */}
         <div className="tc-session-right" style={{display: tab==="award" ? "none" : "flex", flexDirection:"column", overflow:"hidden"}}>
 
           {/* Desktop right-panel tabs */}
@@ -3365,7 +3408,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               <div onClick={()=>mut(s=>{s.boardVisible=!s.boardVisible;})}
                 style={{background:ses.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .2s"}}>
                 <div>
-                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?GREEN:TEXT}}>{ses.boardVisible?"Board is live on participant devices":"Board is hidden from participants"}</div>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?GREEN:TEXT}}>{ses.boardVisible?"Scoreboard visible to participants":"Show Scoreboard to Participants"}</div>
                   <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>Tap to {ses.boardVisible?"hide":"show"} scoreboard on participant screens</div>
                 </div>
                 <div style={{width:44,height:26,borderRadius:13,background:ses.boardVisible?GREEN:BORDER,position:"relative",transition:"all .2s",flexShrink:0,marginLeft:12}}>
