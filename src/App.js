@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { useState, useRef, useEffect, useCallback } from "react";
 import { auth, googleProvider, fsGet, fsSet, fsDel, fsGetSession, fsSetSession } from "./firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged, updateProfile, linkWithPopup, fetchSignInMethodsForEmail, EmailAuthProvider, linkWithCredential } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, sendPasswordResetEmail, sendSignInLinkToEmail, onAuthStateChanged, updateProfile, linkWithPopup, fetchSignInMethodsForEmail, EmailAuthProvider, linkWithCredential } from "firebase/auth";
 import LandingPage from "./Landing";
 
 const PINK = "#E91E8C";
@@ -440,7 +440,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Bulk Give Coins</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Mass Give Coins</div>
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           <div style={{fontSize:13,color:SUB,marginBottom:16}}>Award the same amount to multiple participants.</div>
@@ -628,7 +628,7 @@ function CoinCustomizer({ session, onSave, onClose }) {
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
           <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
-            {[["quick","Preset Coins"],["other","Give Coins"]].map(([id,l])=>(
+            {[["quick","Quick Coins"],["other","Give Coins"]].map(([id,l])=>(
               <button key={id} onClick={()=>setTab(id)} style={{padding:"8px 16px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}</button>
             ))}
           </div>
@@ -852,7 +852,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
           </div>
           <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
             {tabBtn("people","Participants")}
-            {tabBtn("groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill={isManagePro?"#C0C0C0":"#ffb743"}/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill={isManagePro?"#C0C0C0":"#ffb743"}/></svg></span>)}
+            {tabBtn("groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></span>)}
             {/* Coinmaster tab hidden — phase 2 feature */}
           </div>
         </div>
@@ -892,7 +892,12 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                   {(p.total === 0 && !p.uid) ? (
                     <button onClick={()=>remP(p.id)} title="Remove participant"
                       style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"4px 9px",fontSize:11,color:SUB,cursor:"pointer"}}>✕</button>
-                  ) : <div style={{width:28,flexShrink:0}}/>}
+                  ) : (
+                    <div title="Cannot remove — participant has joined or earned coins"
+                      style={{width:28,height:26,display:"flex",alignItems:"center",justifyContent:"center",color:`${SUB}44`,fontSize:13,flexShrink:0}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -1017,8 +1022,8 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
 }
 
 // ── Auth ──
-function Auth({ onDone, onBack }) {
-  const [view, setView] = useState("login");
+function Auth({ onDone, onBack, initialView="login" }) {
+  const [view, setView] = useState(initialView);
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [name, setName] = useState("");
@@ -1030,7 +1035,7 @@ function Auth({ onDone, onBack }) {
     setErr(""); setBusy(true);
     try {
       if (view==="forgot") {
-        await sendPasswordResetEmail(auth, email);
+        await sendPasswordResetEmail(auth, email, { url: "https://teticoin.com/login" });
         setView("sent");
       } else if (view==="login") {
         const c = await signInWithEmailAndPassword(auth, email, pass);
@@ -2348,14 +2353,16 @@ function CoinmasterView({ session: init, onBack }) {
 
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
-        {/* PEOPLE TAB (mobile) — mirrors desktop */}
+        {/* PEOPLE TAB (mobile) */}
         {tab==="people" && (
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-            {/* Add row */}
+            {/* Two-column add row */}
             <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
+              <Inp placeholder="Participant Name" value={""} onChange={()=>{}}
+                style={{flex:1,margin:0,pointerEvents:"none",opacity:0.5}}/>
               <button onClick={()=>setManage(true)}
-                style={{flex:1,padding:"0 14px",height:40,background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>
-                + Add Participant
+                style={{padding:"0 14px",height:40,background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
+                + Add
               </button>
               <button onClick={()=>setShowQR(true)}
                 style={{padding:"0 12px",height:40,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:11,display:"flex",alignItems:"center",gap:5,cursor:"pointer",flexShrink:0}}>
@@ -2373,7 +2380,6 @@ function CoinmasterView({ session: init, onBack }) {
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                   {sorted.map(p => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
-                    const canDelete = p.total===0 && !p.uid;
                     return (
                       <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:`1px solid ${BORDER}`}}>
                         <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
@@ -2389,11 +2395,12 @@ function CoinmasterView({ session: init, onBack }) {
                             {ses.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
                           </select>
                         )}
-                        {canDelete ? (
-                          <button onClick={()=>mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;})}
-                            style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:SUB,cursor:"pointer",flexShrink:0}}
-                            title="Remove">✕</button>
-                        ) : <div style={{width:26,flexShrink:0}}/>}
+                        <button onClick={()=>mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;})}
+                          style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:p.total===0&&!p.uid?SUB:`${SUB}33`,cursor:p.total===0&&!p.uid?"pointer":"default",flexShrink:0}}
+                          title={p.total===0&&!p.uid?"Remove":"Cannot remove — participant has joined"}
+                          disabled={!(p.total===0&&!p.uid)}>
+                          {p.total===0&&!p.uid?"✕":<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+                        </button>
                       </div>
                     );
                   })}
@@ -2406,7 +2413,6 @@ function CoinmasterView({ session: init, onBack }) {
         {/* AWARD TAB */}
         {tab==="award" && (
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-            {/* Participant selector */}
             <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0}}>
               <button onClick={()=>setPicker(true)} style={{width:"100%",display:"flex",alignItems:"center",gap:10,background:selP?SOFT:BG,border:`1.5px solid ${selP?PINK:BORDER}`,borderRadius:13,padding:"10px 14px",cursor:"pointer",textAlign:"left",transition:"all .12s"}}>
                 {selP ? (
@@ -2420,7 +2426,7 @@ function CoinmasterView({ session: init, onBack }) {
                       <div style={{fontSize:11,color:PINK,fontWeight:700,marginTop:1}}>{selP.total} coins total</div>
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:3,flexShrink:0}}>
-                      <span style={{fontFamily:"Poppins,sans-serif",fontSize:11,fontWeight:500,color:SUB}}>Change</span>
+                      <span style={{fontFamily:"Poppins,sans-serif",fontSize:11,fontWeight:500,color:SUB}}>Change participant</span>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                     </div>
                   </>
@@ -2428,14 +2434,11 @@ function CoinmasterView({ session: init, onBack }) {
                   <>
                     <div style={{width:36,height:36,borderRadius:8,background:BG,border:`1.5px dashed ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"center",color:SUB,fontSize:20,flexShrink:0}}>+</div>
                     <div style={{flex:1,fontSize:13,color:SUB,fontWeight:500}}>Tap to select participant</div>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                   </>
                 )}
               </button>
             </div>
-
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
-              {/* Give Coins + Preset Coins + Custom + Bulk Give */}
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                   <SL style={{marginBottom:0}}>Give Coins</SL>
@@ -2449,7 +2452,7 @@ function CoinmasterView({ session: init, onBack }) {
                       onEdit={()=>{}}/>
                   ))}
                 </div>
-                <SL>Preset Coins</SL>
+                <SL>Quick Coins</SL>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
                   {ACTS.map((a,i) => {
                     const pts = (ses.quickCoins||ACTS_DEFAULT.map(x=>x.pts))[i] ?? a.pts;
@@ -2470,56 +2473,11 @@ function CoinmasterView({ session: init, onBack }) {
                   </button>
                 </div>
               </div>
-
-              {/* Bulk Give Coins button */}
-              {isPro ? (
-                <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  Bulk Give Coins
-                </button>
-              ) : (
-                <button onClick={()=>setProGateHint("massgive")} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PINK},${PINK2})`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  <span>Bulk Give Coins</span>
-                  <svg width="14" height="12" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
-                </button>
-              )}
-
-              {/* Quick Coins — search + horizontal scroll per row */}
-              {sorted.length > 0 && (
-                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                  <div style={{padding:"10px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}}>Quick Coins</span>
-                    <input placeholder="Search…" value={qcSearch||""} onChange={e=>setQcSearch(e.target.value)}
-                      style={{height:26,padding:"0 8px",border:`1.5px solid ${BORDER}`,borderRadius:7,fontFamily:"Poppins,sans-serif",fontSize:11,color:TEXT,outline:"none",width:110,background:BG}}/>
-                  </div>
-                  {sorted.filter(p=>!(qcSearch||"").trim()||(p.name.toLowerCase().includes((qcSearch||"").toLowerCase()))).map((p,i,arr)=>{
-                    const grp=ses.groups.find(g=>g.id===p.gid);
-                    const coins=ses.otherCoins||TV_DEFAULT;
-                    return (
-                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:11,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
-                        <Av s={p.av} color={grp?.color||PINK} size={26}/>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
-                          <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
-                        </div>
-                        <div style={{display:"flex",gap:3,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",flexShrink:0,maxWidth:180}}>
-                          {coins.map((v,ci)=>(
-                            <button key={ci} onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
-                              style={{minWidth:v>=100?40:34,height:32,borderRadius:7,border:`1.5px solid ${MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:v>=100?9:11,color:PINK,flexShrink:0,padding:0}}
-                              onMouseOver={e=>{e.currentTarget.style.background=SOFT;e.currentTarget.style.borderColor=PINK;}}
-                              onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.borderColor=MID;}}>
-                              +{v}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              {/* Locked features notice */}
+              <div style={{background:"#F9FAFB",border:`1px solid #E5E7EB`,borderRadius:12,padding:"12px 14px",display:"flex",alignItems:"center",gap:10}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <div style={{fontSize:11,color:"#9CA3AF",fontWeight:500}}>Session settings, coin values &amp; live toggle are host-only</div>
+              </div>
             </div>
           </div>
         )}
@@ -2611,7 +2569,6 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   const [snd] = useState(true);
   const [cAmt, setCAmt] = useState("");
   const [toast, setToast] = useState(null);
-  const [qcSearch, setQcSearch] = useState("");
   const aid = useRef(0);
 
   const isLive = ses.live !== false; // default true
@@ -2729,7 +2686,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 <svg width="40" height="34" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
               </div>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:8}}>
-                {proGateHint==="customlabels"?"Custom Coin Labels":proGateHint==="groups"?"Groups & Team Scoring":proGateHint==="massgive"?"Bulk Give Coins":"Coinmaster Mode"} is Pro
+                {proGateHint==="customlabels"?"Custom Coin Labels":proGateHint==="groups"?"Groups & Team Scoring":proGateHint==="massgive"?"Mass Give Coins":"Coinmaster Mode"} is Pro
               </div>
               <div style={{fontSize:14,color:SUB,lineHeight:1.7}}>
                 {proGateHint==="customlabels"
@@ -2862,15 +2819,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       </div>
 
       {/* ── MOBILE TABS (hidden on desktop) ── */}
-      <div className="tc-tab-bar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none"}}>
-        <style>{`.tc-tab-bar::-webkit-scrollbar{display:none}`}</style>
-        {[
-          ["people","Participants"],
-          ["award","Award"],
-          ["board","Scoreboard"],
-          ["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill={isPro?"#C0C0C0":"#ffb743"}/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill={isPro?"#C0C0C0":"#ffb743"}/></svg></span>],
-          ["log","Log"]
-        ].map(([id,l]) => (
+      <div className="tc-tab-bar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
+        {[["people","Participants"],["award","Award"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></span>],["log","Log"]].map(([id,l]) => (
           <button key={id} onClick={()=>{
             if (!isLive) return;
             setTab(id);
@@ -2878,11 +2828,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             else if (id==="groups") setRightTab("groups");
             else if (id==="log") setRightTab("log");
           }}
-            style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
+            style={{padding:"11px 12px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
               color:!isLive?`${SUB}55`:tab===id?PINK:SUB,cursor:isLive?"pointer":"default",flexShrink:0,
-              borderBottom:tab===id&&isLive?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s",whiteSpace:"nowrap"}}>{l}
+              borderBottom:tab===id&&isLive?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
           </button>
         ))}
+        <div style={{marginLeft:"auto",paddingRight:8,flexShrink:0}}/>
       </div>
 
       {/* ── BODY: two columns on desktop, single column on mobile ── */}
@@ -2951,7 +2902,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     onEdit={newV=>mut(s=>{const oc=[...(s.otherCoins||TV_DEFAULT)];oc[i]=newV;s.otherCoins=oc;})}/>
                 ))}
               </div>
-              <SL>Preset Coins</SL>
+              <SL>Quick Coins</SL>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
                 {ACTS.map((a,i) => {
                   const pts = (ses.quickCoins||ACTS_DEFAULT.map(x=>x.pts))[i] ?? a.pts;
@@ -2973,12 +2924,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             {isPro ? (
               <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Bulk Give Coins
+                Mass Give Coins
               </button>
             ) : (
               <button onClick={()=>setProGateHint("massgive")} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PINK},${PINK2})`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span>Bulk Give Coins</span>
+                <span>Mass Give Coins</span>
                 <svg width="14" height="12" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
               </button>
             )}
@@ -2990,7 +2941,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
           {/* Desktop right-panel tabs */}
           <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0,display:"none"}}>
-            {[["people","Participants"],["award_all","Quick Coins"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill={isPro?"#C0C0C0":"#ffb743"}/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill={isPro?"#C0C0C0":"#ffb743"}/></svg></span>],["board","Scoreboard"],["log","Log"]].map(([id,l]) => (
+            {[["people","Participants"],["award_all","Award All"],["board","Scoreboard"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></span>],["log","Log"]].map(([id,l]) => (
               <button key={id} onClick={()=>setRightTab(id)}
                 style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
                   color:rightTab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
@@ -3044,11 +2995,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                           {ses.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
                         </select>
                       )}
-                      {p.total===0&&!p.uid ? (
-                        <button onClick={()=>mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;})}
-                          style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:SUB,cursor:"pointer",flexShrink:0}}
-                          title="Remove">✕</button>
-                      ) : <div style={{width:28,flexShrink:0}}/>}
+                      <button onClick={()=>mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;})}
+                        style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:p.total===0&&!p.uid?SUB:`${SUB}33`,cursor:p.total===0&&!p.uid?"pointer":"default",flexShrink:0}}
+                        title={p.total===0&&!p.uid?"Remove":"Cannot remove — participant has joined"}
+                        disabled={!(p.total===0&&!p.uid)}>
+                        {p.total===0&&!p.uid?"✕":<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+                      </button>
                     </div>
                   );
                 })}
@@ -3093,17 +3045,16 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 </div>
               ) : (
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                  <div style={{padding:"8px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    <SL style={{marginBottom:0,flex:1}}>Quick Coins</SL>
-                    <input placeholder="Search name…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
-                      style={{height:28,padding:"0 10px",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Poppins,sans-serif",fontSize:12,color:TEXT,outline:"none",width:130,background:BG}}/>
+                    <SL style={{marginBottom:0}}>Award to Everyone</SL>
+                    <span style={{fontSize:11,color:SUB,fontWeight:500,marginLeft:"auto"}}>Click a value to award</span>
                   </div>
-                  {sorted.filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase())).map((p,i,arr) => {
+                  {sorted.map((p,i) => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
                     const coins = ses.otherCoins || TV_DEFAULT;
                     return (
-                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",transition:"background .1s"}}
+                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:i<sorted.length-1?`1px solid ${BORDER}`:"none",transition:"background .1s"}}
                         onMouseOver={e=>e.currentTarget.style.background=SOFT}
                         onMouseOut={e=>e.currentTarget.style.background="transparent"}>
                         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
@@ -3227,21 +3178,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                 </div>
               ) : <>
-              {/* Inline group creation */}
-              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
-                <SL style={{marginBottom:10}}>Create Group</SL>
-                <div style={{display:"flex",gap:8,marginBottom:10}}>
-                  <input placeholder="Group name" value={ses._newGroupName||""} onChange={e=>mut(s=>{s._newGroupName=e.target.value;})}
-                    onKeyDown={e=>{if(e.key==="Enter"){const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";})}}}
-                    style={{flex:1,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"8px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
-                  <button onClick={()=>{const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";});}}
-                    style={{padding:"0 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
-                </div>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                  {GC.map(c=><div key={c} onClick={()=>mut(s=>{s._newGroupColor=c;})} style={{width:22,height:22,borderRadius:6,background:c,cursor:"pointer",border:(ses._newGroupColor||GC[0])===c?`3px solid ${TEXT}`:"3px solid transparent",transform:(ses._newGroupColor||GC[0])===c?"scale(1.15)":"scale(1)",transition:".12s"}}/>)}
-                </div>
-              </div>
-              {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:24,textAlign:"center",fontSize:13,color:SUB}}>No groups yet. Add one above!</div>}
+              {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:32,textAlign:"center",fontSize:13,color:SUB}}>Create groups via the people icon in the top bar</div>}
               {gs.map((g,i) => (
                 <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
@@ -3920,7 +3857,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
   async function sendReset() {
     setErr(""); setMsg("");
     try {
-      await sendPasswordResetEmail(auth, trainer.email);
+      await sendPasswordResetEmail(auth, trainer.email, { url: "https://teticoin.com/login" });
       setResetSent(true);
       setMsg("Password reset email sent to " + trainer.email);
     } catch(e) { setErr("Failed to send reset email."); }
@@ -4279,6 +4216,9 @@ function SuperAdminDashboard({ onClose }) {
   const [betaEmail, setBetaEmail] = useState("");
   const [betaMsg, setBetaMsg] = useState(null);
   const [actionMsg, setActionMsg] = useState(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteMsg, setInviteMsg] = useState(null);
+  const [selected, setSelected] = useState(new Set());
 
   // Load all users — data is stored under users/{uid}/data/{key} subcollection
   useEffect(() => {
@@ -4361,12 +4301,12 @@ function SuperAdminDashboard({ onClose }) {
 
   async function resendReset(email) {
     try {
-      await sendPasswordResetEmail(auth, email);
-      setActionMsg(`✅ Password reset email sent to ${email}`);
-      setTimeout(() => setActionMsg(null), 4000);
+      await sendPasswordResetEmail(auth, email, { url: "https://teticoin.com/login" });
+      setActionMsg(`✅ Password reset sent to ${email} — ask them to check spam/junk too`);
+      setTimeout(() => setActionMsg(null), 6000);
     } catch(e) {
-      setActionMsg("❌ Could not send reset email: " + (e.code === "auth/user-not-found" ? "User not found in Auth." : e.message));
-      setTimeout(() => setActionMsg(null), 5000);
+      const msg = e.code === "auth/user-not-found" ? `❌ ${email} has no Firebase Auth account yet` : e.code === "auth/too-many-requests" ? "❌ Too many requests — wait a few minutes" : "❌ " + e.message;
+      setActionMsg(msg); setTimeout(() => setActionMsg(null), 6000);
     }
   }
 
@@ -4391,6 +4331,55 @@ function SuperAdminDashboard({ onClose }) {
     await assignBeta(found.uid, found.email);
     setBetaEmail("");
     setBetaMsg(null);
+  }
+
+  async function sendBetaInvite() {
+    const email = inviteEmail.trim();
+    if (!email) return;
+    setInviteMsg(null);
+    try {
+      // Use Firebase email link (passwordless) — works for NEW users who haven't signed up yet
+      await sendSignInLinkToEmail(auth, email, {
+        url: "https://teticoin.com/login",
+        handleCodeInApp: true,
+      });
+      setInviteMsg({ ok: true, text: `✅ Invite link sent to ${email} — they can use it to sign in/register. Then assign Beta Pro from the Users tab.` });
+      setInviteEmail("");
+    } catch(e) {
+      // Fallback: sendPasswordResetEmail if email exists in Auth
+      if (e.code === "auth/operation-not-allowed") {
+        setInviteMsg({ ok: false, text: `⚠ Email link sign-in not enabled in Firebase Console. Go to Authentication → Sign-in method → Email link and enable it. Then retry.` });
+      } else {
+        setInviteMsg({ ok: false, text: `❌ Could not send invite: ${e.message}` });
+      }
+    }
+    setTimeout(() => setInviteMsg(null), 10000);
+  }
+
+  async function bulkAssignBeta() {
+    const targets = filtered.filter(u => selected.has(u.uid) && u.plan !== "beta" && u.plan !== "superadmin");
+    if (!targets.length) { setActionMsg("⚠ No eligible users selected for Beta Pro"); setTimeout(()=>setActionMsg(null),3000); return; }
+    for (const u of targets) await assignBeta(u.uid, u.email);
+    setSelected(new Set());
+    setActionMsg(`✅ Beta Pro assigned to ${targets.length} user${targets.length>1?"s":""}`);
+    setTimeout(()=>setActionMsg(null),3000);
+  }
+
+  async function bulkRevoke() {
+    const targets = filtered.filter(u => selected.has(u.uid) && u.plan !== "free" && u.plan !== "superadmin");
+    if (!targets.length) { setActionMsg("⚠ No eligible users selected to revoke"); setTimeout(()=>setActionMsg(null),3000); return; }
+    for (const u of targets) await revokePlan(u.uid, u.email);
+    setSelected(new Set());
+    setActionMsg(`✅ Plan revoked for ${targets.length} user${targets.length>1?"s":""}`);
+    setTimeout(()=>setActionMsg(null),3000);
+  }
+
+  async function bulkDelete() {
+    const targets = filtered.filter(u => selected.has(u.uid) && u.plan !== "superadmin");
+    if (!targets.length) { setActionMsg("⚠ No eligible users selected"); setTimeout(()=>setActionMsg(null),3000); return; }
+    if (!window.confirm(`Delete Firestore data for ${targets.length} user${targets.length>1?"s":""}?\n\nThis cannot be undone. Firebase Auth accounts must be removed separately.`)) return;
+    for (const u of targets) await deleteUserAccount(u.uid, u.email);
+    setSelected(new Set());
   }
 
   const PLAN_COLORS = { free: SUB, beta: GREEN, pro: PINK, proY: PINK, oneTime: BLUE, superadmin: "#FF6B00" };
@@ -4442,10 +4431,13 @@ function SuperAdminDashboard({ onClose }) {
 
       {/* Tabs */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",flexShrink:0}}>
-        {[["users","👥 Users"],["beta","⚡ Assign Beta"]].map(([id,l]) => (
+        {[
+          ["users", <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, "Users"],
+          ["beta",  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, "Beta Pro"],
+        ].map(([id, icon, label]) => (
           <button key={id} onClick={()=>setTab(id)}
-            style={{padding:"11px 20px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent"}}>
-            {l}
+            style={{padding:"11px 20px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",display:"flex",alignItems:"center",gap:6}}>
+            <span style={{color:tab===id?PINK:SUB}}>{icon}</span>{label}
           </button>
         ))}
       </div>
@@ -4460,10 +4452,29 @@ function SuperAdminDashboard({ onClose }) {
       <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
 
         {tab === "users" && <>
-          {/* Search */}
-          <div style={{marginBottom:16}}>
-            <Inp placeholder="Search by name or email…" value={search} onChange={e=>setSearch(e.target.value)} style={{width:"100%",maxWidth:480}}/>
+          {/* Search + Select All */}
+          <div style={{marginBottom:12,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+            <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:200,maxWidth:480}}/>
+            {!loading && filtered.length > 0 && (
+              <button onClick={()=>selected.size===filtered.length?setSelected(new Set()):setSelected(new Set(filtered.map(u=>u.uid)))}
+                style={{padding:"8px 14px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
+                {selected.size===filtered.length&&filtered.length>0?"Deselect All":`Select All (${filtered.length})`}
+              </button>
+            )}
           </div>
+
+          {/* Bulk action bar */}
+          {selected.size > 0 && (
+            <div style={{background:"#1A0A14",borderRadius:12,padding:"10px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",marginRight:4}}>{selected.size} selected</span>
+              <button onClick={bulkAssignBeta} style={{padding:"6px 14px",background:"#16A34A",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>+ Beta Pro</button>
+              <button onClick={bulkRevoke} style={{padding:"6px 14px",background:"#EF4444",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>Revoke</button>
+              <button onClick={bulkDelete} style={{padding:"6px 14px",background:"#374151",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Delete
+              </button>
+              <button onClick={()=>setSelected(new Set())} style={{marginLeft:"auto",padding:"6px 12px",background:"none",border:"1px solid rgba(255,255,255,.25)",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"rgba(255,255,255,.6)",cursor:"pointer"}}>✕ Clear</button>
+            </div>
+          )}
 
           {loading ? (
             <div style={{textAlign:"center",padding:48,color:SUB,fontSize:14}}>Loading users…</div>
@@ -4476,8 +4487,14 @@ function SuperAdminDashboard({ onClose }) {
                 const planLabel = PLAN_LABELS[u.plan] || u.plan;
                 const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : null;
                 const isSA = u.plan === "superadmin";
+                const isChecked = selected.has(u.uid);
                 return (
-                  <div key={u.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 18px",borderBottom:i<filtered.length-1?`1px solid ${BORDER}`:"none",flexWrap:"wrap"}}>
+                  <div key={u.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 18px",borderBottom:i<filtered.length-1?`1px solid ${BORDER}`:"none",flexWrap:"wrap",background:isChecked?SOFT:"#fff",transition:"background .1s"}}>
+                    {/* Checkbox */}
+                    <div onClick={()=>{ if(isSA)return; const s=new Set(selected); isChecked?s.delete(u.uid):s.add(u.uid); setSelected(s); }}
+                      style={{width:20,height:20,borderRadius:5,border:`2px solid ${isChecked?PINK:BORDER}`,background:isChecked?PINK:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:isSA?"default":"pointer",flexShrink:0,transition:"all .12s"}}>
+                      {isChecked&&<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>}
+                    </div>
                     <div style={{width:36,height:36,borderRadius:10,background:`${planColor}18`,border:`1.5px solid ${planColor}30`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:planColor}}>
                       {(u.name||"?")[0].toUpperCase()}
                     </div>
@@ -4490,27 +4507,20 @@ function SuperAdminDashboard({ onClose }) {
                       <span style={{background:`${planColor}15`,border:`1px solid ${planColor}40`,color:planColor,borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}>{planLabel}</span>
                       {!isSA && u.plan !== "beta" && (
                         <button onClick={()=>assignBeta(u.uid, u.email)}
-                          style={{padding:"4px 10px",background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:8,fontSize:11,fontWeight:700,color:"#16A34A",cursor:"pointer"}}>
-                          + Beta
-                        </button>
+                          style={{padding:"4px 10px",background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:8,fontSize:11,fontWeight:700,color:"#16A34A",cursor:"pointer"}}>+ Beta Pro</button>
                       )}
                       {!isSA && u.plan !== "free" && (
                         <button onClick={()=>revokePlan(u.uid, u.email)}
-                          style={{padding:"4px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:700,color:"#EF4444",cursor:"pointer"}}>
-                          Revoke
-                        </button>
+                          style={{padding:"4px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:700,color:"#EF4444",cursor:"pointer"}}>Revoke</button>
                       )}
                       {u.email !== "—" && (
                         <button onClick={()=>resendReset(u.email)}
-                          title="Send password reset email"
-                          style={{padding:"4px 10px",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:8,fontSize:11,fontWeight:700,color:"#2563EB",cursor:"pointer"}}>
-                          Reset pw
-                        </button>
+                          style={{padding:"4px 10px",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:8,fontSize:11,fontWeight:700,color:"#2563EB",cursor:"pointer"}}>Reset pw</button>
                       )}
                       {!isSA && (
                         <button onClick={()=>deleteUserAccount(u.uid, u.email)}
                           title="Delete Firestore data"
-                          style={{padding:"4px 8px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>
+                          style={{padding:"4px 8px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,color:SUB,cursor:"pointer",display:"flex",alignItems:"center"}}>
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                         </button>
                       )}
@@ -4523,52 +4533,49 @@ function SuperAdminDashboard({ onClose }) {
         </>}
 
         {tab === "beta" && (
-          <div style={{maxWidth:480}}>
-            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"24px"}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:TEXT,marginBottom:6}}>Assign Beta Tester</div>
-              <div style={{fontSize:13,color:SUB,marginBottom:18,lineHeight:1.6}}>Beta testers get full Pro access for 90 days. After 90 days their account automatically reverts to Free.</div>
-              <div style={{display:"flex",gap:10,marginBottom:12}}>
-                <Inp placeholder="User email address" value={betaEmail} onChange={e=>setBetaEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&assignBetaByEmail()} style={{flex:1}}/>
-                <button onClick={assignBetaByEmail}
+          <div style={{maxWidth:560}}>
+            {/* Send invite email */}
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",marginBottom:16}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>Invite Beta Tester</div>
+              <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>Send a sign-in link to any email (including new users). Once they sign in at teticoin.com, go to the <strong>Users tab</strong> and click <strong>+ Beta Pro</strong> to activate their access.</div>
+              <div style={{padding:"10px 14px",background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:10,fontSize:12,color:"#92400E",marginBottom:14,lineHeight:1.5}}>
+                <strong>⚠ Requires setup:</strong> In Firebase Console → Authentication → Sign-in method → enable <strong>Email link (passwordless sign-in)</strong>. Also add <code>teticoin.com</code> to Authorized domains.
+              </div>
+              <div style={{display:"flex",gap:10,marginBottom:8}}>
+                <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{flex:1}}/>
+                <button onClick={sendBetaInvite}
                   style={{padding:"0 20px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
-                  Assign
+                  Send Invite
                 </button>
               </div>
-              {betaMsg && <div style={{fontSize:13,color:"#EF4444",marginTop:4}}>{betaMsg}</div>}
-              <div style={{marginTop:20,padding:"12px 14px",background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:10}}>
-                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#16A34A",marginBottom:6}}>Beta plan includes</div>
-                {["Full Pro feature access","Groups & team scoring","Coinmaster co-host","Custom coin labels","Up to 200 participants","Automatic revert after 90 days"].map(f=>(
-                  <div key={f} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0"}}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    <div style={{fontSize:12,color:"#166534",fontWeight:500}}>{f}</div>
-                  </div>
-                ))}
-              </div>
+              {inviteMsg && <div style={{fontSize:12,color:inviteMsg.ok?"#16A34A":"#B45309",marginTop:4,lineHeight:1.5,padding:"8px 12px",background:inviteMsg.ok?"#F0FDF4":"#FFFBEB",borderRadius:8}}>{inviteMsg.text}</div>}
             </div>
 
-            {/* Current beta users */}
-            <div style={{marginTop:20}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Current Beta Testers ({users.filter(u=>u.plan==="beta").length})</div>
-              {users.filter(u=>u.plan==="beta").length === 0 ? (
-                <div style={{fontSize:13,color:SUB,padding:"16px 0"}}>No beta testers yet.</div>
-              ) : users.filter(u=>u.plan==="beta").map(u => {
-                const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
-                const expired = u.planExpiry && new Date(u.planExpiry) < new Date();
-                return (
-                  <div key={u.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,marginBottom:8}}>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</div>
-                      <div style={{fontSize:12,color:SUB}}>{u.email}</div>
-                      <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:600,marginTop:2}}>{expired?"Expired":"Active"} · until {expiryStr}</div>
-                    </div>
-                    <button onClick={()=>revokePlan(u.uid, u.email)}
-                      style={{padding:"5px 12px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:12,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
-                      Revoke
-                    </button>
-                  </div>
-                );
-              })}
+            {/* Beta user list */}
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>
+              Beta Pro Users ({users.filter(u=>u.plan==="beta").length})
             </div>
+            {users.filter(u=>u.plan==="beta").length === 0 ? (
+              <div style={{fontSize:13,color:SUB,padding:"16px 0"}}>No beta testers yet. Assign from the Users tab.</div>
+            ) : users.filter(u=>u.plan==="beta").map(u => {
+              const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
+              const expired = u.planExpiry && new Date(u.planExpiry) < new Date();
+              return (
+                <div key={u.uid} style={{background:"#fff",border:`1.5px solid ${expired?"#FECACA":BORDER}`,borderRadius:12,padding:"14px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</div>
+                    <div style={{fontSize:12,color:SUB}}>{u.email}</div>
+                    <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:600,marginTop:3}}>
+                      {expired?"⚠ Expired":"● Active"} · until {expiryStr}
+                    </div>
+                  </div>
+                  <button onClick={()=>revokePlan(u.uid, u.email)}
+                    style={{padding:"5px 12px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:12,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
+                    Revoke
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -4994,6 +5001,7 @@ function CoinmasterJoinModal({ onJoin, onClose }) {
 // ── Root app ──
 export default function App() {
   const [screen, setScreen] = useState("landing");
+  const [authInitialView, setAuthInitialView] = useState("login");
   const [trainer, setTrainer] = useState(null);
   const [sessions, setSessions] = useState(PAST);
   const [cur, setCur] = useState(null);
@@ -5221,8 +5229,8 @@ export default function App() {
 
   if (loading) return <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center"}}><style>{CSS}</style><Ham size={60}/></div>;
   if (screen==="claimBadge" && claimToken) return <><style>{CSS}</style><BadgeClaimScreen token={claimToken} onDone={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
-  if (screen==="landing") return <LandingPage onGetStarted={()=>{ window.history.replaceState({},"","/login"); setScreen("auth"); }} onLogin={()=>{ window.history.replaceState({},"","/login"); setScreen("auth"); }}/>;
-  if (screen==="auth") return <><style>{CSS}</style><Auth onDone={handleAuth} onBack={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
+  if (screen==="landing") return <LandingPage onGetStarted={()=>{ setAuthInitialView("signup"); window.history.replaceState({},"","/login"); setScreen("auth"); }} onLogin={()=>{ setAuthInitialView("login"); window.history.replaceState({},"","/login"); setScreen("auth"); }}/>; 
+  if (screen==="auth") return <><style>{CSS}</style><Auth onDone={handleAuth} onBack={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }} initialView={authInitialView}/></>;
   // participantJoin = loaded from /join/CODE URL — always show participant view, never host view
   if (screen==="participantJoin") {
     if (cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
@@ -5410,27 +5418,6 @@ export default function App() {
             </div>
 
             {isFree && <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>setShowPricing(true)}/>}
-
-            {/* Beta Pro banner — shown on home screen for beta users */}
-            {!isFree && isBeta && (() => {
-              const expStr = planExpiry ? new Date(planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : null;
-              const daysLeft = planExpiry ? Math.max(0,Math.ceil((new Date(planExpiry)-new Date())/(1000*60*60*24))) : null;
-              const expired = planExpiry && new Date(planExpiry) < new Date();
-              return (
-                <div style={{background:expired?"#FEF2F2":"linear-gradient(135deg,#F0FDF4,#DCFCE7)",border:`1.5px solid ${expired?"#FECACA":"#86EFAC"}`,borderRadius:14,padding:"12px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{width:36,height:36,borderRadius:10,background:expired?"#FEF2F2":"#16A34A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={expired?"#EF4444":"#fff"} strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:expired?"#EF4444":"#15803D"}}>Beta Pro {expired?"— Expired":"— Active"}</div>
-                    <div style={{fontSize:12,color:expired?"#EF4444":"#166534",fontWeight:500}}>
-                      {expired?"Your Beta Pro access has ended."
-                        :expStr?`Full Pro access · Expires ${expStr}${daysLeft!==null?` (${daysLeft}d left)`:""}`:"Full Pro access"}
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
 
             {/* Hero card */}
             <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
