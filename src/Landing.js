@@ -223,6 +223,7 @@ const CSS = `
 .lp-footer-links a:hover,.lp-footer-links button:hover{color:#fff;}
 .lp-footer-bottom{max-width:1120px;margin:16px auto 0;border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;font-size:12px;text-align:center;color:rgba(255,255,255,0.2);}
 @media(max-width:900px){
+  .lp-faq-grid{grid-template-columns:1fr !important;}
   .lp-nav-links,.lp-nav .lp-btn-ghost{display:none;}
   .lp-nav-login-icon{display:flex !important;}
   .lp-nav{padding:0 20px;}
@@ -291,45 +292,36 @@ const FAQ_ITEMS = [
 
 function FaqList() {
   const [open, setOpen] = useState(null);
+  const left  = FAQ_ITEMS.filter((_,i) => i % 2 === 0);
+  const right = FAQ_ITEMS.filter((_,i) => i % 2 === 1);
+  const FaqItem = ({ item, i }) => {
+    const isOpen = open === i;
+    return (
+      <div style={{borderBottom:`1px solid #F3F4F6`,overflow:"hidden"}}>
+        <button
+          onClick={() => setOpen(isOpen ? null : i)}
+          style={{width:"100%",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,padding:"20px 0",textAlign:"left"}}>
+          <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:15,color:TEXT,lineHeight:1.4}}>{item.q}</span>
+          <span style={{flexShrink:0,width:26,height:26,borderRadius:"50%",background:isOpen?GRAD:"#F3F4F6",display:"flex",alignItems:"center",justifyContent:"center",transition:"background .2s"}}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={isOpen?"#fff":NEUT} strokeWidth="2.5" strokeLinecap="round" style={{transition:"transform .25s",transform:isOpen?"rotate(180deg)":"rotate(0deg)"}}>
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </span>
+        </button>
+        <div style={{maxHeight:isOpen?320:0,overflow:"hidden",transition:"max-height .3s cubic-bezier(0.4,0,0.2,1)"}}>
+          <p style={{fontSize:14,color:"#4B5563",lineHeight:1.75,paddingBottom:20,margin:0}}>{item.a}</p>
+        </div>
+      </div>
+    );
+  };
   return (
-    <div style={{display:"flex",flexDirection:"column",gap:0,borderTop:`1px solid #F3F4F6`}}>
-      {FAQ_ITEMS.map((item, i) => {
-        const isOpen = open === i;
-        return (
-          <div key={i}
-            className="lp-fade-up"
-            style={{borderBottom:`1px solid #F3F4F6`,overflow:"hidden"}}>
-            <button
-              onClick={() => setOpen(isOpen ? null : i)}
-              style={{
-                width:"100%",background:"none",border:"none",cursor:"pointer",
-                display:"flex",alignItems:"center",justifyContent:"space-between",
-                gap:16,padding:"22px 0",textAlign:"left",
-              }}>
-              <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:700,fontSize:16,color:TEXT,lineHeight:1.4}}>{item.q}</span>
-              <span style={{
-                flexShrink:0,width:28,height:28,borderRadius:"50%",
-                background:isOpen?GRAD:"#F3F4F6",
-                display:"flex",alignItems:"center",justifyContent:"center",
-                transition:"background .2s",
-              }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke={isOpen?"#fff":NEUT} strokeWidth="2.5" strokeLinecap="round"
-                  style={{transition:"transform .25s",transform:isOpen?"rotate(180deg)":"rotate(0deg)"}}>
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </span>
-            </button>
-            <div style={{
-              maxHeight:isOpen?320:0,
-              overflow:"hidden",
-              transition:"max-height .3s cubic-bezier(0.4,0,0.2,1)",
-            }}>
-              <p style={{fontSize:15,color:"#4B5563",lineHeight:1.75,paddingBottom:22,margin:0}}>{item.a}</p>
-            </div>
-          </div>
-        );
-      })}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 48px",alignItems:"start"}} className="lp-faq-grid">
+      <div style={{borderTop:`1px solid #F3F4F6`}}>
+        {left.map((item, i) => <FaqItem key={i} item={item} i={i * 2}/>)}
+      </div>
+      <div style={{borderTop:`1px solid #F3F4F6`}}>
+        {right.map((item, i) => <FaqItem key={i} item={item} i={i * 2 + 1}/>)}
+      </div>
     </div>
   );
 }
