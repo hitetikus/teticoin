@@ -4310,6 +4310,28 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
   );
 }
 
+
+// ── ResendBtn — self-contained resend button with sent state ──
+function ResendBtn({ email, serviceId, templateId, publicKey }) {
+  const [sent, setSent] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  async function resend() {
+    if (sent || busy) return;
+    setBusy(true);
+    try {
+      const ejs = window.emailjs || (typeof emailjs !== "undefined" ? emailjs : null);
+      if (ejs) await ejs.send(serviceId, templateId, { to_email: email }, publicKey);
+      setSent(true);
+    } catch {}
+    setBusy(false);
+  }
+  return (
+    <button onClick={resend} disabled={sent||busy}
+      style={{padding:"4px 10px",background:sent?"#F3F4F6":"#FEF9C3",border:`1px solid ${sent?"#D1D5DB":"#FDE68A"}`,borderRadius:8,fontSize:11,fontWeight:700,color:sent?"#9CA3AF":"#92400E",cursor:sent?"default":"pointer",flexShrink:0,transition:"all .2s",whiteSpace:"nowrap"}}>
+      {busy?"Sending…":sent?"Resent ✓":"Resend"}
+    </button>
+  );
+}
 // ── Admin Dashboard ──────────────────────────────────────────
 function SuperAdminDashboard({ onClose }) {
   const [users, setUsers] = useState([]);
@@ -4687,9 +4709,9 @@ function SuperAdminDashboard({ onClose }) {
         </>}
 
         {tab === "beta" && (
-          <div style={{maxWidth:560}}>
-            {/* Send invite email */}
-            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",marginBottom:16}}>
+          <div style={{maxWidth:1100}}>
+            {/* Send invite email — full width on top */}
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",marginBottom:20}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>Add Beta Tester</div>
               <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>Enter their email below. When they sign up or log in at <strong>teticoin.com</strong>, Beta Pro activates automatically and they'll see a welcome message. Then let them know to sign up!</div>
               <div style={{display:"flex",gap:10,marginBottom:8}}>
@@ -4706,65 +4728,65 @@ function SuperAdminDashboard({ onClose }) {
               {inviteMsg && <div style={{fontSize:12,color:inviteMsg.ok?"#16A34A":"#B45309",marginTop:4,lineHeight:1.5,padding:"8px 12px",background:inviteMsg.ok?"#F0FDF4":"#FFFBEB",borderRadius:8}}>{inviteMsg.text}</div>}
             </div>
 
-            {/* Beta user list */}
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>
-              Beta Pro Users ({users.filter(u=>u.plan==="beta").length})
-            </div>
-            {users.filter(u=>u.plan==="beta").length === 0 ? (
-              <div style={{fontSize:13,color:SUB,padding:"16px 0"}}>No beta testers yet. Assign from the Users tab.</div>
-            ) : users.filter(u=>u.plan==="beta").map(u => {
-              const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
-              const expired = u.planExpiry && new Date(u.planExpiry) < new Date();
-              return (
-                <div key={u.uid} style={{background:"#fff",border:`1.5px solid ${expired?"#FECACA":BORDER}`,borderRadius:12,padding:"14px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</div>
-                    <div style={{fontSize:12,color:SUB}}>{u.email}</div>
-                    <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:600,marginTop:3}}>
-                      {expired?"⚠ Expired":"● Active"} · until {expiryStr}
-                    </div>
-                  </div>
-                  <button onClick={()=>revokePlan(u.uid, u.email)}
-                    style={{padding:"5px 12px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:12,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
-                    Revoke
-                  </button>
-                </div>
-              );
-            })}
+            {/* Two-column layout */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24,alignItems:"start"}}>
 
-            {/* Pending invites — invited but not yet signed up */}
-            {pendingInvites.length > 0 && (<>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,margin:"20px 0 10px"}}>
-                Pending Invites ({pendingInvites.length})
-              </div>
-              {pendingInvites.map(inv => (
-                <div key={inv.email} style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:12,padding:"12px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:700,color:TEXT}}>{inv.email}</div>
-                    <div style={{fontSize:11,color:"#92400E",marginTop:2}}>⏳ Invited · hasn't signed up yet</div>
-                  </div>
-                  <button onClick={async () => {
-                    try {
-                      const ejs = window.emailjs || (typeof emailjs !== "undefined" ? emailjs : null);
-                      if (ejs) await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_TEMPLATE_ID, { to_email: inv.email }, EMAILJS_PUBLIC_KEY);
-                      setInviteMsg({ ok: true, text: `📨 Invite resent to ${inv.email}` });
-                      setTimeout(() => setInviteMsg(null), 4000);
-                    } catch {}
-                  }} style={{padding:"4px 10px",background:"#FEF9C3",border:"1px solid #FDE68A",borderRadius:8,fontSize:11,fontWeight:700,color:"#92400E",cursor:"pointer",flexShrink:0}}>
-                    Resend
-                  </button>
-                  <button onClick={async () => {
-                    try {
-                      const { getFirestore, doc, deleteDoc } = await import("firebase/firestore");
-                      await deleteDoc(doc(getFirestore(), "betaInvites", inv.email.replace(/\./g,"_")));
-                      setPendingInvites(prev => prev.filter(i => i.email !== inv.email));
-                    } catch {}
-                  }} style={{padding:"4px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
-                    Cancel
-                  </button>
+              {/* LEFT — Beta Pro Users (signed up) */}
+              <div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>
+                  Beta Pro Users ({users.filter(u=>u.plan==="beta").length})
                 </div>
-              ))}
-            </>)}
+                {users.filter(u=>u.plan==="beta").length === 0 ? (
+                  <div style={{fontSize:13,color:SUB,padding:"16px 0"}}>No beta testers yet.</div>
+                ) : users.filter(u=>u.plan==="beta").map(u => {
+                  const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
+                  const expired = u.planExpiry && new Date(u.planExpiry) < new Date();
+                  return (
+                    <div key={u.uid} style={{background:"#fff",border:`1.5px solid ${expired?"#FECACA":BORDER}`,borderRadius:12,padding:"14px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</div>
+                        <div style={{fontSize:12,color:SUB}}>{u.email}</div>
+                        <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:600,marginTop:3}}>
+                          {expired?"⚠ Expired":"● Active"} · until {expiryStr}
+                        </div>
+                      </div>
+                      <button onClick={()=>revokePlan(u.uid, u.email)}
+                        style={{padding:"5px 12px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:12,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
+                        Revoke
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* RIGHT — Pending Invites (not yet signed up) */}
+              <div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>
+                  Pending Invites ({pendingInvites.length})
+                </div>
+                {pendingInvites.length === 0 ? (
+                  <div style={{fontSize:13,color:SUB,padding:"16px 0"}}>No pending invites.</div>
+                ) : pendingInvites.map(inv => (
+                  <div key={inv.email} style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:12,padding:"12px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:TEXT,wordBreak:"break-all"}}>{inv.email}</div>
+                      <div style={{fontSize:11,color:"#92400E",marginTop:2}}>⏳ Invited · hasn't signed up yet</div>
+                    </div>
+                    <ResendBtn email={inv.email} serviceId={EMAILJS_SERVICE_ID} templateId={EMAILJS_BETA_TEMPLATE_ID} publicKey={EMAILJS_PUBLIC_KEY}/>
+                    <button onClick={async () => {
+                      try {
+                        const { getFirestore, doc, deleteDoc } = await import("firebase/firestore");
+                        await deleteDoc(doc(getFirestore(), "betaInvites", inv.email.replace(/\./g,"_")));
+                        setPendingInvites(prev => prev.filter(i => i.email !== inv.email));
+                      } catch {}
+                    }} style={{padding:"4px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
+                      Cancel
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+            </div>
           </div>
         )}
       </div>
