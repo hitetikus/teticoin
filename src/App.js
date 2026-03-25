@@ -123,6 +123,23 @@ const EMAILJS_TEMPLATE_ID      = "template_xxxxxxx"; // badge claim template (un
 const EMAILJS_BETA_TEMPLATE_ID = "template_u65t3mv"; // beta invite template
 const EMAILJS_PUBLIC_KEY       = "jNSW4DcPKgyR6_oa4";
 
+const EMAILJS_WELCOME_TEMPLATE_ID = "template_w4i7vxj"; // welcome email
+
+// ── Send welcome email to new signups ──
+async function sendWelcomeEmail({ toEmail, toName }) {
+  try {
+    const ejs = window.emailjs || (typeof emailjs !== "undefined" ? emailjs : null);
+    if (!ejs) return;
+    await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_WELCOME_TEMPLATE_ID, {
+      to_email: toEmail,
+      to_name:  toName,
+      app_url:  "https://teticoin.com",
+    }, EMAILJS_PUBLIC_KEY);
+  } catch(e) {
+    console.warn("Welcome email failed:", e.message);
+  }
+}
+
 // ── Premade badge library ──
 const BADGE_PRESETS = [
   { id:"top",      icon:"🏆", label:"Top Scorer",    color:"#F5A623" },
@@ -1065,7 +1082,7 @@ function Auth({ onDone, onBack, initialView="login" }) {
       } else {
         const c = await createUserWithEmailAndPassword(auth, email, pass);
         await updateProfile(c.user, { displayName: name||email.split("@")[0] });
-        onDone({ name: name||email.split("@")[0], email, uid: c.user.uid });
+        onDone({ name: name||email.split("@")[0], email, uid: c.user.uid, isNew: true });
       }
     } catch(e) {
       const msg = e.code==="auth/invalid-credential"||e.code==="auth/user-not-found"||e.code==="auth/wrong-password" ? "Incorrect email or password. Please try again."
@@ -4443,7 +4460,7 @@ function SuperAdminDashboard({ onClose }) {
       try {
         const ejs = window.emailjs || (typeof emailjs !== "undefined" ? emailjs : null);
         if (ejs) {
-          await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_TEMPLATE_ID, { to_email: email });
+          await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_TEMPLATE_ID, { to_email: email }, EMAILJS_PUBLIC_KEY);
           setInviteMsg({ ok: true, text: `✅ Invite email sent to ${email}. Beta Pro activates automatically when they sign up.` });
         } else {
           setInviteMsg({ ok: true, text: `✅ ${email} added to beta list. (Tell them to sign up at teticoin.com)` });
@@ -5321,6 +5338,10 @@ export default function App() {
     }
 
     loadHomeEarnings(t.uid);
+
+    // ── Send welcome email to brand-new signups ──
+    if (t.isNew) sendWelcomeEmail({ toEmail: t.email, toName: t.name });
+
     window.history.replaceState({}, "", "/app");
     setScreen("home"); 
   }
