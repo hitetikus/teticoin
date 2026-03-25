@@ -5218,13 +5218,13 @@ export default function App() {
         setCurrentUid(user.uid);
         try {
           const s = await sg("sessions_index"); if (s) setSessions(s);
-          const t = { name: user.displayName || user.email.split("@")[0], email: user.email, uid: user.uid };
+          const t = { name: user.displayName || user.email?.split("@")[0] || "User", email: user.email || "", uid: user.uid };
           setTrainer(t);
           // Write email + name to Firestore so they're visible in Firebase console
-          await ss("email", user.email);
+          if (user.email) await ss("email", user.email);
           await ss("name", t.name);
           // Write sentinel doc at users/{uid} so admin dashboard can list this user
-          await ssParent(user.uid, user.email, t.name);
+          await ssParent(user.uid, user.email || "", t.name);
           loadHomeEarnings(user.uid);
 
           // ── Auto-claim beta invite if one was sent to this email ──
@@ -5392,7 +5392,7 @@ export default function App() {
       {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>setShowPricing(false)}/>}
       {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>{ window.history.replaceState({},"","/app"); setShowBilling(false);}}/>}
       {showProfile && <ProfilePage trainer={trainer} onClose={()=>{ window.history.replaceState({},"","/app"); setShowProfile(false);}} onSaved={(newName)=>setTrainer(t=>({...t,name:newName}))}/>}
-      {showSuperAdmin && <SuperAdminDashboard onClose={()=>setShowSuperAdmin(false)}/>}
+      {showSuperAdmin && <SuperAdminDashboard onClose={()=>{ window.history.replaceState({},"","/app"); setShowSuperAdmin(false);}}/>}
       {showHostEarnings && trainer && <EarningsPage uid={trainer.uid} name={trainer.name} onClose={()=>{ window.history.replaceState({},"","/app"); setShowHostEarnings(false);}}/>}
       {showSettings && <SettingsPage onClose={()=>{ window.history.replaceState({},"","/app"); setShowSettings(false);}}/>}
       {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);setShowPricing(true);}} onClose={()=>setLimitModal(null)}/>}
@@ -5459,11 +5459,11 @@ export default function App() {
             </div>
             {[
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, label:"Profile", fn:()=>{window.history.replaceState({},"","/app/profile");setShowProfile(true);}},
-              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, label:"Billing & Plan", fn:()=>{window.history.replaceState({},"","/app/billing");setShowBilling(true);}},
+              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, label:"Billing & Plan", fn:()=>{window.history.replaceState({},"","/app/billing");setShowBilling(true);}, hidden:isSuperadmin},
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>, label:"My Coins", fn:()=>{window.history.replaceState({},"","/app/coins");setShowHostEarnings(true);}},
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>, label:"Settings", fn:()=>{window.history.replaceState({},"","/app/settings");setShowSettings(true);}},
-              ...(isSuperadmin ? [{icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label:"Admin Dashboard", fn:()=>{setShowSuperAdmin(true);}}] : []),
-            ].map(item => (
+              ...(isSuperadmin ? [{icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label:"Admin Dashboard", fn:()=>{window.history.replaceState({},"","/app/admin");setShowSuperAdmin(true);}}] : []),
+            ].filter(item => !item.hidden).map(item => (
               <button key={item.label} onClick={()=>{setProfileOpen(false);item.fn();}}
                 style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,fontWeight:600,color:TEXT}}
                 onMouseOver={e=>e.currentTarget.style.background=SOFT}
@@ -5490,13 +5490,38 @@ export default function App() {
         {/* ── Beta Pro Welcome Modal ── */}
         {showBetaWelcome && (
           <div style={{position:"fixed",inset:0,zIndex:900,background:"rgba(26,10,20,.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-            <div style={{background:"#fff",borderRadius:24,padding:"36px 32px",maxWidth:420,width:"100%",textAlign:"center",boxShadow:"0 24px 80px rgba(26,10,20,.25)",animation:"fadeIn .3s ease"}}>
-              {/* Confetti-style top accent */}
+            {/* Confetti canvas */}
+            <canvas id="beta-confetti" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:1}}
+              ref={el=>{
+                if(!el||el._started) return; el._started=true;
+                el.width=window.innerWidth; el.height=window.innerHeight;
+                const cols=["#E91E8C","#FF4FB8","#16A34A","#22C55E","#F5A623","#3B82F6","#A855F7","#fff"];
+                const pts=Array.from({length:120},()=>({
+                  x:Math.random()*el.width,y:-10-Math.random()*200,
+                  vx:(Math.random()-.5)*5,vy:Math.random()*4+2,
+                  col:cols[Math.floor(Math.random()*cols.length)],
+                  s:Math.random()*8+4,r:Math.random()*360,vr:(Math.random()-.5)*8,
+                }));
+                const ctx=el.getContext("2d"); let alive=true;
+                const draw=()=>{
+                  if(!alive)return;
+                  ctx.clearRect(0,0,el.width,el.height);
+                  pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.05;p.r+=p.vr;
+                    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r*Math.PI/180);
+                    ctx.fillStyle=p.col;ctx.globalAlpha=Math.max(0,1-p.y/el.height);
+                    ctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);ctx.restore();
+                  });
+                  if(pts.some(p=>p.y<el.height)) requestAnimationFrame(draw); else alive=false;
+                };
+                draw();
+              }}/>
+            {/* Modal */}
+            <div style={{background:"#fff",borderRadius:24,padding:"36px 32px",maxWidth:420,width:"100%",textAlign:"center",boxShadow:"0 24px 80px rgba(26,10,20,.25)",animation:"fadeIn .3s ease",position:"relative",zIndex:2}}>
               <div style={{width:72,height:72,borderRadius:20,background:"linear-gradient(135deg,#16A34A,#22C55E)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               </div>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:"#15803D",marginBottom:8}}>
-                Welcome to Beta Pro! 🎉
+                Welcome to Beta Pro!
               </div>
               <div style={{fontSize:14,color:"#166534",fontWeight:600,marginBottom:6}}>
                 You've been granted Beta Pro access
