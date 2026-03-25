@@ -67,6 +67,27 @@ async function ssParent(uid, email, name) {
 async function sgSession(code) { return await fsGetSession(code); }
 async function ssSession(code, data) { await fsSetSession(code, data); }
 
+// Auto-claim beta invite if one exists for this email
+async function claimBetaInvite(uid, email) {
+  try {
+    const { getFirestore, doc, getDoc, setDoc, deleteDoc } = await import("firebase/firestore");
+    const db = getFirestore();
+    const key = email.toLowerCase().replace(/\./g,"_");
+    const inviteSnap = await getDoc(doc(db, "betaInvites", key));
+    if (!inviteSnap.exists()) return null;
+    const { expiry } = inviteSnap.data();
+    // Already expired before they signed up — ignore
+    if (new Date(expiry) < new Date()) { await deleteDoc(doc(db, "betaInvites", key)); return null; }
+    // Assign beta plan
+    await Promise.all([
+      setDoc(doc(db, "users", uid, "data", "plan"),       { value: "beta",   updatedAt: Date.now() }),
+      setDoc(doc(db, "users", uid, "data", "planExpiry"), { value: expiry,   updatedAt: Date.now() }),
+      deleteDoc(doc(db, "betaInvites", key)), // consume the invite
+    ]);
+    return expiry;
+  } catch(e) { console.error("claimBetaInvite error", e); return null; }
+}
+
 const DEMO = {
   code:"DEMO1", name:"Design Thinking Workshop", boardVisible:false,
   participants:[
@@ -4335,16 +4356,27 @@ function SuperAdminDashboard({ onClose }) {
   }
 
   async function sendBetaInvite() {
-    const email = inviteEmail.trim();
+    const email = inviteEmail.trim().toLowerCase();
     if (!email || inviteBusy) return;
     setInviteMsg(null);
     setInviteBusy(true);
     try {
+      // Write a pending beta invite to Firestore — auto-claimed on next login
+      const { getFirestore, doc, setDoc } = await import("firebase/firestore");
+      const db = getFirestore();
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + 90);
+      await setDoc(doc(db, "betaInvites", email.replace(/\./g,"_")), {
+        email,
+        expiry: expiry.toISOString(),
+        createdAt: Date.now(),
+      });
+      // Send the sign-in link email
       await sendSignInLinkToEmail(auth, email, {
         url: "https://teticoin.com/login",
         handleCodeInApp: true,
       });
-      setInviteMsg({ ok: true, text: `✅ Invite sent to ${email}` });
+      setInviteMsg({ ok: true, text: `✅ Invite sent to ${email} — Beta Pro will activate automatically when they sign in.` });
       setInviteEmail("");
     } catch(e) {
       if (e.code === "auth/operation-not-allowed") {
@@ -4538,7 +4570,7 @@ function SuperAdminDashboard({ onClose }) {
             {/* Send invite email */}
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",marginBottom:16}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>Invite Beta Tester</div>
-              <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>Send a sign-in link to any email — works for new users too. Once they sign in at teticoin.com, go to the <strong>Users tab</strong> and click <strong>+ Beta Pro</strong> to activate their access.</div>
+              <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>Enter their email and send an invite. When they sign in or register at teticoin.com, <strong>Beta Pro activates automatically</strong> — 90 days starting from their first sign-in.</div>
               <div style={{display:"flex",gap:10,marginBottom:8}}>
                 <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{flex:1}}/>
                 <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
@@ -5122,8 +5154,15 @@ export default function App() {
           // Write sentinel doc at users/{uid} so admin dashboard can list this user
           await ssParent(user.uid, user.email, t.name);
           loadHomeEarnings(user.uid);
+
+          // ── Auto-claim beta invite if one was sent to this email ──
+          const claimedExpiry = await claimBetaInvite(user.uid, user.email);
+
           let p = await sg("plan"); 
           let exp = await sg("planExpiry");
+
+          // If beta invite just claimed, override plan
+          if (claimedExpiry) { p = "beta"; exp = claimedExpiry; }
 
           // ── Superadmin override ──
           if (user.email === SUPERADMIN_EMAIL) {
@@ -5196,7 +5235,18 @@ export default function App() {
     await ss("email", t.email);
     await ss("name", t.name);
     await ssParent(t.uid, t.email, t.name); // register in top-level users collection
-    let p = await sg("plan"); if (!p) { await ss("plan", "free"); }
+
+    // ── Auto-claim beta invite if one was sent to this email ──
+    const claimedExpiry = await claimBetaInvite(t.uid, t.email);
+    let p = await sg("plan"); if (!p) { await ss("plan", "free"); p = "free"; }
+    if (claimedExpiry) {
+      p = "beta";
+      setPlan("beta");
+      setPlanExpiry(claimedExpiry);
+    } else if (p) {
+      setPlan(p);
+    }
+
     loadHomeEarnings(t.uid);
     window.history.replaceState({}, "", "/app");
     setScreen("home"); 
