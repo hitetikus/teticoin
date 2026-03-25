@@ -2704,17 +2704,19 @@ function CoinmasterView({ session: init, onBack }) {
                     return (
                       <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
                         <Av s={p.av} color={grp?.color||PINK} size={26}/>
-                        <div style={{flex:1,minWidth:0}}>
+                        <div style={{width:110,flexShrink:0}}>
                           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
                           <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
                         </div>
-                        <div style={{display:"flex",gap:3,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",flexShrink:0,maxWidth:180}}>
-                          {coins.map((v,ci)=>(
-                            <button key={ci} onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
-                              style={{minWidth:v>=100?40:34,height:32,borderRadius:7,border:`1.5px solid ${MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:v>=100?9:11,color:PINK,flexShrink:0,padding:0}}>
-                              +{v}
-                            </button>
-                          ))}
+                        <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
+                          <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:3}}>
+                            {coins.map((v,ci)=>(
+                              <button key={ci} onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
+                                style={{minWidth:v>=100?40:34,height:32,borderRadius:7,border:`1.5px solid ${MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:v>=100?9:11,color:PINK,flexShrink:0,padding:0}}>
+                                +{v}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     );
@@ -3133,7 +3135,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         )}
 
         {/* ── LEFT PANEL: Award (Coins tab on mobile) ── */}
-        <div className="tc-session-left" style={{display: tab!=="award" ? "none" : "flex", flexDirection:"column", overflow:"hidden"}}>
+        <div className="tc-session-left" style={{display: tab!=="award" ? "none" : "flex", flexDirection:"column"}}>
           {/* Participant selector */}
           <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0}}>
             <button onClick={()=>isLive&&setPicker(true)} style={{width:"100%",display:"flex",alignItems:"center",gap:10,background:selP?SOFT:BG,border:`1.5px solid ${selP?PINK:BORDER}`,borderRadius:13,padding:"10px 14px",cursor:isLive?"pointer":"default",textAlign:"left",transition:"all .12s"}}>
@@ -3161,8 +3163,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               )}
             </button>
           </div>
-          {/* Award scrollable content — full panel scroll */}
-          <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+          {/* Award content — flows directly, tc-session-left scrolls on mobile */}
+          <div style={{padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
             {/* ── Give Coins section ── */}
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
@@ -3370,29 +3372,30 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     <input placeholder="Search name…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
                       style={{height:28,padding:"0 10px",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Poppins,sans-serif",fontSize:12,color:TEXT,outline:"none",width:130,background:BG}}/>
                   </div>
-                  {sorted.filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase())).map((p,i,arr) => {
+                  {[...sorted].sort((a,b)=>a.name.localeCompare(b.name)).filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase())).map((p,i,arr) => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
                     const coins = ses.otherCoins || TV_DEFAULT;
                     return (
                       <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",transition:"background .1s"}}
                         onMouseOver={e=>e.currentTarget.style.background=SOFT}
                         onMouseOut={e=>e.currentTarget.style.background="transparent"}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:rankColor(i),minWidth:16,textAlign:"center",flexShrink:0}}>{i+1}</div>
                         <Av s={p.av} color={grp?.color||PINK} size={28}/>
                         <div style={{width:130,flexShrink:0}}>
                           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
                           <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
                         </div>
-                        <div style={{display:"flex",gap:4,flexShrink:0,flexWrap:"nowrap"}}>
-                          {coins.map((v,ci) => (
-                            <button key={ci}
-                              onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
-                              style={{width:v>=100?42:36,height:34,borderRadius:8,border:`1.5px solid ${MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:v>=100?10:11,color:PINK,transition:"all .1s",flexShrink:0,padding:0}}
-                              onMouseOver={e=>{e.currentTarget.style.background=SOFT;e.currentTarget.style.transform="scale(1.08)";e.currentTarget.style.borderColor=PINK;}}
-                              onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.transform="scale(1)";e.currentTarget.style.borderColor=MID;}}>
-                              +{v}
-                            </button>
-                          ))}
+                        <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
+                          <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:4}}>
+                            {coins.map((v,ci) => (
+                              <button key={ci}
+                                onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
+                                style={{width:v>=100?42:36,height:34,borderRadius:8,border:`1.5px solid ${MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:v>=100?10:11,color:PINK,transition:"all .1s",flexShrink:0,padding:0}}
+                                onMouseOver={e=>{e.currentTarget.style.background=SOFT;e.currentTarget.style.transform="scale(1.08)";e.currentTarget.style.borderColor=PINK;}}
+                                onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.transform="scale(1)";e.currentTarget.style.borderColor=MID;}}>
+                                +{v}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     );
@@ -6169,7 +6172,7 @@ const CSS = `
 
   /* ─── Session body: stacked on mobile, side-by-side on desktop ─── */
   .tc-session-body { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-  .tc-session-left { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .tc-session-left { flex:1; display:flex; flex-direction:column; overflow-y:auto; }
   .tc-session-right { display:flex; flex-direction:column; overflow:hidden; }
   .tc-tab-bar { background:#fff; border-bottom:1px solid ${BORDER}; display:flex; align-items:center; flex-shrink:0; }
   .tc-right-tabs { display:none; }
@@ -6194,7 +6197,7 @@ const CSS = `
   @media (min-width:900px) {
     /* Session: side-by-side panels */
     .tc-session-body { flex-direction:row !important; }
-    .tc-session-left { width:420px !important; flex:none !important; border-right:1px solid ${BORDER}; display:flex !important; }
+    .tc-session-left { width:420px !important; flex:none !important; border-right:1px solid ${BORDER}; display:flex !important; overflow:hidden !important; overflow-y:hidden !important; }
     .tc-session-right { flex:1 !important; display:flex !important; }
     .tc-tab-bar { display:none !important; }
     .tc-right-tabs { display:flex !important; background:#fff; border-bottom:1px solid ${BORDER}; align-items:center; flex-shrink:0; }
