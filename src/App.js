@@ -4374,14 +4374,17 @@ function SuperAdminDashboard({ onClose }) {
       });
 
       // Send invite email via EmailJS
-      if (window.emailjs) {
-        await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_TEMPLATE_ID, {
-          to_email: email,
-        }, EMAILJS_PUBLIC_KEY);
-        setInviteMsg({ ok: true, text: `✅ Invite email sent to ${email}. Beta Pro activates automatically when they sign up.` });
-      } else {
-        // EmailJS not loaded — still saved to Firestore, just no email
-        setInviteMsg({ ok: true, text: `✅ ${email} added to beta list. (Email not sent — EmailJS not loaded. Refresh and try again.)` });
+      try {
+        const ejs = window.emailjs || (typeof emailjs !== "undefined" ? emailjs : null);
+        if (ejs) {
+          await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_TEMPLATE_ID, { to_email: email });
+          setInviteMsg({ ok: true, text: `✅ Invite email sent to ${email}. Beta Pro activates automatically when they sign up.` });
+        } else {
+          setInviteMsg({ ok: true, text: `✅ ${email} added to beta list. (Tell them to sign up at teticoin.com)` });
+        }
+      } catch(emailErr) {
+        // Firestore invite saved — just email failed
+        setInviteMsg({ ok: true, text: `✅ ${email} added to beta list. Email error: ${emailErr.message}` });
       }
       setInviteEmail("");
     } catch(e) {
