@@ -2567,9 +2567,10 @@ function CoinmasterView({ session: init, onBack }) {
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             {/* Two-column add row */}
             <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
-              <Inp placeholder="Participant Name" value={""} onChange={()=>{}}
-                style={{flex:1,margin:0,pointerEvents:"none",opacity:0.5}}/>
-              <button onClick={()=>setManage(true)}
+              <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
+                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
+                style={{flex:1,margin:0}}/>
+              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
                 style={{padding:"0 14px",height:40,background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
                 + Add
               </button>
@@ -2813,6 +2814,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   const [cAmt, setCAmt] = useState("");
   const [toast, setToast] = useState(null);
   const [qcSearch, setQcSearch] = useState("");
+  const [inlineAddName, setInlineAddName] = useState("");
   const aid = useRef(0);
 
   const isLive = ses.live !== false; // default true
@@ -3085,7 +3087,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
       {/* ── MOBILE TABS (hidden on desktop) ── */}
       <div className="tc-tab-bar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none"}}>
-        <style>{`.tc-tab-bar::-webkit-scrollbar{display:none}`}</style>
+        <style>{`.tc-tab-bar::-webkit-scrollbar{display:none}.tc-qcrow::-webkit-scrollbar{display:none}`}</style>
         {[
           ["people","Participants"],
           ["award","Coins"],
@@ -3214,7 +3216,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </button>
             )}
 
-            {/* ── Quick Coins section: participant list with scrollable coin buttons ── */}
+            {/* ── Quick Coins section: flat list, scrolls with page ── */}
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
               <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:6}}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -3227,21 +3229,19 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   const coins = ses.otherCoins||TV_DEFAULT;
                   const grp = ses.groups.find(g=>g.id===p.gid);
                   return (
-                    <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderBottom:pi<arr.length-1?`1px solid ${BORDER}`:"none",background:selId===p.id?SOFT:"#fff"}}>
-                      {/* Avatar + Name (no rank number — sorted A-Z) */}
-                      <div style={{minWidth:16,flexShrink:0}}></div>
-                      <Av s={p.av} color={grp?.color||PINK} size={32}/>
-                      <div style={{minWidth:0,flex:"0 0 auto",maxWidth:72}}>
+                    <div key={p.id} style={{display:"flex",alignItems:"center",padding:"9px 12px",borderBottom:pi<arr.length-1?`1px solid ${BORDER}`:"none",background:selId===p.id?SOFT:"#fff",gap:0}}>
+                      {/* Avatar + Name: fixed width, no shrink */}
+                      <Av s={p.av} color={grp?.color||PINK} size={30}/>
+                      <div style={{width:88,flexShrink:0,marginLeft:8,marginRight:10}}>
                         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
                         <div style={{fontSize:10,color:PINK,fontWeight:600}}>{p.total} pts</div>
                       </div>
-                      {/* Horizontally scrollable coin buttons */}
-                      <div style={{flex:1,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:6,alignItems:"center",paddingBottom:2}}>
-                        <style>{`.tc-qcscroll::-webkit-scrollbar{display:none}`}</style>
-                        <div className="tc-qcscroll" style={{display:"flex",gap:5,flexShrink:0}}>
+                      {/* Horizontally scrollable coin buttons — overflow on its own track */}
+                      <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
+                        <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:5,paddingBottom:1,paddingTop:1}}>
                           {coins.map((v,ci) => (
                             <button key={ci} onClick={e=>{setSelId(p.id); setTimeout(()=>awardGuarded("token",v,e),0);}}
-                              style={{border:`1.5px solid ${PINK}28`,background:SOFT,borderRadius:8,padding:"5px 8px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:PINK,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap",minWidth:38,textAlign:"center"}}>
+                              style={{border:`1.5px solid ${PINK}30`,background:SOFT,borderRadius:8,padding:"5px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:PINK,cursor:"pointer",flexShrink:0,width:44,textAlign:"center"}}>
                               +{v}
                             </button>
                           ))}
@@ -3276,11 +3276,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           {/* ── PEOPLE TAB (desktop) ── */}
           {rightTab==="people" && (
             <div style={{flex:1,overflowY:"auto",padding:"14px 16px",display:"flex",flexDirection:"column",gap:12}}>
-              {/* Two-column add row */}
+              {/* Inline add row */}
               <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"center"}}>
-                <Inp placeholder="Participant Name" value={""} onChange={()=>{}}
-                  style={{margin:0,pointerEvents:"none",opacity:0.5}}/>
-                <button onClick={()=>setManage(true)}
+                <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
+                  onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
+                  style={{margin:0}}/>
+                <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
                   style={{padding:"0 16px",height:42,background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
                   + Add
                 </button>
