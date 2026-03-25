@@ -4323,6 +4323,7 @@ function SuperAdminDashboard({ onClose }) {
   const [inviteMsg, setInviteMsg] = useState(null);
   const [inviteBusy, setInviteBusy] = useState(false);
   const [selected, setSelected] = useState(new Set());
+  const [pendingInvites, setPendingInvites] = useState([]);
 
   // Load all users — data is stored under users/{uid}/data/{key} subcollection
   useEffect(() => {
@@ -4367,6 +4368,13 @@ function SuperAdminDashboard({ onClose }) {
           return (order[a.plan]||3) - (order[b.plan]||3);
         });
         setUsers(list);
+        // Load pending invites
+        try {
+          const invSnap = await getDocs(collection(db, "betaInvites"));
+          const invites = invSnap.docs.map(d => ({ email: d.data().email, createdAt: d.data().createdAt, expiry: d.data().expiry }));
+          invites.sort((a,b) => b.createdAt - a.createdAt);
+          setPendingInvites(invites);
+        } catch {}
       } catch(e) { console.error("Dashboard load error:", e); }
       setLoading(false);
     }
@@ -4445,16 +4453,41 @@ function SuperAdminDashboard({ onClose }) {
     setInviteMsg(null);
     setInviteBusy(true);
     try {
-      // Write pending beta invite to Firestore
-      const { getFirestore, doc, setDoc } = await import("firebase/firestore");
+      const { getFirestore, doc, setDoc, getDoc } = await import("firebase/firestore");
       const db = getFirestore();
+
+      // ── Check 1: already a registered beta/pro user? ──
+      const alreadyUser = users.find(u => u.email.toLowerCase() === email);
+      if (alreadyUser) {
+        if (alreadyUser.plan === "beta" || alreadyUser.plan === "pro" || alreadyUser.plan === "proY" || alreadyUser.plan === "superadmin") {
+          setInviteMsg({ ok: false, text: `⚠️ ${email} is already a Beta Pro user. No need to invite again.` });
+          setInviteBusy(false); setTimeout(() => setInviteMsg(null), 6000); return;
+        }
+        // Registered but free — assign directly without invite flow
+        await assignBeta(alreadyUser.uid, alreadyUser.email);
+        setInviteEmail("");
+        setInviteBusy(false); return;
+      }
+
+      // ── Check 2: already has a pending invite? ──
+      const alreadyPending = pendingInvites.find(i => i.email === email);
+      if (alreadyPending) {
+        // Resend the email but don't overwrite expiry
+        try {
+          const ejs = window.emailjs || (typeof emailjs !== "undefined" ? emailjs : null);
+          if (ejs) await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_TEMPLATE_ID, { to_email: email }, EMAILJS_PUBLIC_KEY);
+        } catch {}
+        setInviteMsg({ ok: true, text: `📨 ${email} was already invited. Invite email resent.` });
+        setInviteEmail("");
+        setInviteBusy(false); setTimeout(() => setInviteMsg(null), 6000); return;
+      }
+
+      // ── New invite ──
       const expiry = new Date();
       expiry.setDate(expiry.getDate() + 90);
-      await setDoc(doc(db, "betaInvites", email.replace(/\./g,"_")), {
-        email,
-        expiry: expiry.toISOString(),
-        createdAt: Date.now(),
-      });
+      const inviteData = { email, expiry: expiry.toISOString(), createdAt: Date.now() };
+      await setDoc(doc(db, "betaInvites", email.replace(/\./g,"_")), inviteData);
+      setPendingInvites(prev => [inviteData, ...prev]);
 
       // Send invite email via EmailJS
       try {
@@ -4466,7 +4499,6 @@ function SuperAdminDashboard({ onClose }) {
           setInviteMsg({ ok: true, text: `✅ ${email} added to beta list. (Tell them to sign up at teticoin.com)` });
         }
       } catch(emailErr) {
-        // Firestore invite saved — just email failed
         setInviteMsg({ ok: true, text: `✅ ${email} added to beta list. Email error: ${emailErr.message}` });
       }
       setInviteEmail("");
@@ -4476,6 +4508,7 @@ function SuperAdminDashboard({ onClose }) {
     setInviteBusy(false);
     setTimeout(() => setInviteMsg(null), 8000);
   }
+
 
   async function bulkAssignBeta() {
     const targets = filtered.filter(u => selected.has(u.uid) && u.plan !== "beta" && u.plan !== "superadmin");
@@ -4698,6 +4731,40 @@ function SuperAdminDashboard({ onClose }) {
                 </div>
               );
             })}
+
+            {/* Pending invites — invited but not yet signed up */}
+            {pendingInvites.length > 0 && (<>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,margin:"20px 0 10px"}}>
+                Pending Invites ({pendingInvites.length})
+              </div>
+              {pendingInvites.map(inv => (
+                <div key={inv.email} style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:12,padding:"12px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:700,color:TEXT}}>{inv.email}</div>
+                    <div style={{fontSize:11,color:"#92400E",marginTop:2}}>⏳ Invited · hasn't signed up yet</div>
+                  </div>
+                  <button onClick={async () => {
+                    try {
+                      const ejs = window.emailjs || (typeof emailjs !== "undefined" ? emailjs : null);
+                      if (ejs) await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_TEMPLATE_ID, { to_email: inv.email }, EMAILJS_PUBLIC_KEY);
+                      setInviteMsg({ ok: true, text: `📨 Invite resent to ${inv.email}` });
+                      setTimeout(() => setInviteMsg(null), 4000);
+                    } catch {}
+                  }} style={{padding:"4px 10px",background:"#FEF9C3",border:"1px solid #FDE68A",borderRadius:8,fontSize:11,fontWeight:700,color:"#92400E",cursor:"pointer",flexShrink:0}}>
+                    Resend
+                  </button>
+                  <button onClick={async () => {
+                    try {
+                      const { getFirestore, doc, deleteDoc } = await import("firebase/firestore");
+                      await deleteDoc(doc(getFirestore(), "betaInvites", inv.email.replace(/\./g,"_")));
+                      setPendingInvites(prev => prev.filter(i => i.email !== inv.email));
+                    } catch {}
+                  }} style={{padding:"4px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
+                    Cancel
+                  </button>
+                </div>
+              ))}
+            </>)}
           </div>
         )}
       </div>
