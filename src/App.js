@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { useState, useRef, useEffect, useCallback } from "react";
 import { auth, googleProvider, fsGet, fsSet, fsDel, fsGetSession, fsSetSession } from "./firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, sendPasswordResetEmail, sendSignInLinkToEmail, onAuthStateChanged, updateProfile, linkWithPopup, fetchSignInMethodsForEmail, EmailAuthProvider, linkWithCredential } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged, updateProfile, linkWithPopup, fetchSignInMethodsForEmail, EmailAuthProvider, linkWithCredential } from "firebase/auth";
 import LandingPage from "./Landing";
 
 const PINK = "#E91E8C";
@@ -4361,7 +4361,6 @@ function SuperAdminDashboard({ onClose }) {
     setInviteMsg(null);
     setInviteBusy(true);
     try {
-      // Write a pending beta invite to Firestore — auto-claimed on next login
       const { getFirestore, doc, setDoc } = await import("firebase/firestore");
       const db = getFirestore();
       const expiry = new Date();
@@ -4371,19 +4370,10 @@ function SuperAdminDashboard({ onClose }) {
         expiry: expiry.toISOString(),
         createdAt: Date.now(),
       });
-      // Send the sign-in link email
-      await sendSignInLinkToEmail(auth, email, {
-        url: "https://teticoin.com/login",
-        handleCodeInApp: true,
-      });
-      setInviteMsg({ ok: true, text: `✅ Invite sent to ${email} — Beta Pro will activate automatically when they sign in.` });
+      setInviteMsg({ ok: true, text: `✅ ${email} added to beta list. Beta Pro will activate automatically when they sign up or log in at teticoin.com.` });
       setInviteEmail("");
     } catch(e) {
-      if (e.code === "auth/operation-not-allowed") {
-        setInviteMsg({ ok: false, text: `⚠ Email link sign-in not enabled. Go to Firebase Console → Authentication → Sign-in method → enable Email link.` });
-      } else {
-        setInviteMsg({ ok: false, text: `❌ Could not send invite: ${e.message}` });
-      }
+      setInviteMsg({ ok: false, text: `❌ Error: ${e.message}` });
     }
     setInviteBusy(false);
     setTimeout(() => setInviteMsg(null), 8000);
@@ -4569,8 +4559,8 @@ function SuperAdminDashboard({ onClose }) {
           <div style={{maxWidth:560}}>
             {/* Send invite email */}
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",marginBottom:16}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>Invite Beta Tester</div>
-              <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>Enter their email and send an invite. When they sign in or register at teticoin.com, <strong>Beta Pro activates automatically</strong> — 90 days starting from their first sign-in.</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>Add Beta Tester</div>
+              <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>Enter their email below. When they sign up or log in at <strong>teticoin.com</strong>, Beta Pro activates automatically and they'll see a welcome message. Then let them know to sign up!</div>
               <div style={{display:"flex",gap:10,marginBottom:8}}>
                 <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{flex:1}}/>
                 <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
@@ -4578,8 +4568,8 @@ function SuperAdminDashboard({ onClose }) {
                   onMouseOver={e=>{ if(!inviteBusy&&inviteEmail.trim()) e.currentTarget.style.opacity="0.85"; }}
                   onMouseOut={e=>{ e.currentTarget.style.opacity="1"; }}>
                   {inviteBusy ? (
-                    <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Sending…</>
-                  ) : "Send Invite"}
+                    <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Adding…</>
+                  ) : "Add to Beta"}
                 </button>
               </div>
               {inviteMsg && <div style={{fontSize:12,color:inviteMsg.ok?"#16A34A":"#B45309",marginTop:4,lineHeight:1.5,padding:"8px 12px",background:inviteMsg.ok?"#F0FDF4":"#FFFBEB",borderRadius:8}}>{inviteMsg.text}</div>}
@@ -5056,6 +5046,7 @@ export default function App() {
   const [showCMJoin, setShowCMJoin] = useState(false);
   const [cmSession, setCmSession] = useState(null);
   const [paymentToast, setPaymentToast] = useState(null);
+  const [showBetaWelcome, setShowBetaWelcome] = useState(false);
   const [claimToken, setClaimToken] = useState(null); // badge claim token from /claim/TOKEN URL
 
   const isSuperadmin = plan === "superadmin";
@@ -5162,7 +5153,7 @@ export default function App() {
           let exp = await sg("planExpiry");
 
           // If beta invite just claimed, override plan
-          if (claimedExpiry) { p = "beta"; exp = claimedExpiry; }
+          if (claimedExpiry) { p = "beta"; exp = claimedExpiry; setShowBetaWelcome(true); }
 
           // ── Superadmin override ──
           if (user.email === SUPERADMIN_EMAIL) {
@@ -5243,6 +5234,7 @@ export default function App() {
       p = "beta";
       setPlan("beta");
       setPlanExpiry(claimedExpiry);
+      setShowBetaWelcome(true);
     } else if (p) {
       setPlan(p);
     }
@@ -5413,6 +5405,34 @@ export default function App() {
 
       {/* ── HOME: desktop two-column, mobile single column ── */}
       <div className="tc-home-wrap" style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column"}}>
+
+        {/* ── Beta Pro Welcome Modal ── */}
+        {showBetaWelcome && (
+          <div style={{position:"fixed",inset:0,zIndex:900,background:"rgba(26,10,20,.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+            <div style={{background:"#fff",borderRadius:24,padding:"36px 32px",maxWidth:420,width:"100%",textAlign:"center",boxShadow:"0 24px 80px rgba(26,10,20,.25)",animation:"fadeIn .3s ease"}}>
+              {/* Confetti-style top accent */}
+              <div style={{width:72,height:72,borderRadius:20,background:"linear-gradient(135deg,#16A34A,#22C55E)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:"#15803D",marginBottom:8}}>
+                Welcome to Beta Pro! 🎉
+              </div>
+              <div style={{fontSize:14,color:"#166534",fontWeight:600,marginBottom:6}}>
+                You've been granted Beta Pro access
+              </div>
+              <div style={{fontSize:13,color:"#6B7280",lineHeight:1.7,marginBottom:24}}>
+                Enjoy full Pro features — unlimited sessions, up to 200 participants, groups, custom coin labels, and more. Your access is active for <strong>90 days</strong>.
+              </div>
+              <div style={{background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:12,padding:"12px 16px",marginBottom:24,fontSize:12,color:"#166534",fontWeight:500}}>
+                Have feedback? We'd love to hear it — reach us at <strong>hi.tetikus@gmail.com</strong>
+              </div>
+              <button onClick={()=>setShowBetaWelcome(false)}
+                style={{width:"100%",padding:"14px 0",background:"linear-gradient(135deg,#16A34A,#22C55E)",border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
+                Start exploring →
+              </button>
+            </div>
+          </div>
+        )}
         {/* Desktop top nav bar */}
         <div className="tc-home-topnav" style={{display:"none",background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 32px",height:64,alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
