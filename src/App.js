@@ -200,6 +200,117 @@ function playSound(big) {
   } catch {}
 }
 
+// ── QuickTour — first-session onboarding spotlight ──
+const TOUR_STEPS = [
+  { selector:'[data-tour="coin-buttons"]', title:"Award coins instantly",       body:"Tap any coin amount to give points to the selected participant — live and instant.", placement:"top"    },
+  { selector:'[data-tour="qr-join"]',      title:"Let participants join",        body:"Share this QR code or link — participants join on their phone, no app needed.",        placement:"bottom" },
+  { selector:'[data-tour="quick-coins"]',  title:"Quick Coins are your shortcuts", body:"These are preset award buttons. Customise them anytime via the ⋯ menu above.",      placement:"top"    },
+];
+
+function QuickTour({ onDone }) {
+  const [step, setStep] = useState(0);
+  const [rect, setRect] = useState(null);
+  const PAD = 14;
+
+  useEffect(() => {
+    setRect(null);
+    let attempts = 0;
+    function tryMeasure() {
+      const el = document.querySelector(TOUR_STEPS[step].selector);
+      if (!el) {
+        if (attempts++ < 20) setTimeout(tryMeasure, 150);
+        return;
+      }
+      el.scrollIntoView({ behavior:"smooth", block:"center" });
+      setTimeout(() => {
+        const r = el.getBoundingClientRect();
+        setRect({ left:r.left, top:r.top, width:r.width, height:r.height });
+      }, 300);
+    }
+    tryMeasure();
+    function onResize() {
+      const el = document.querySelector(TOUR_STEPS[step].selector);
+      if (el) { const r = el.getBoundingClientRect(); setRect({ left:r.left, top:r.top, width:r.width, height:r.height }); }
+    }
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [step]);
+
+  if (!rect) return null;
+
+  const isLast = step === TOUR_STEPS.length - 1;
+  const placement = TOUR_STEPS[step].placement;
+  const TOOLTIP_W = 284;
+  const sx = rect.left - PAD, sy = rect.top - PAD, sw = rect.width + PAD*2, sh = rect.height + PAD*2;
+  let ttLeft = sx + sw/2 - TOOLTIP_W/2;
+  ttLeft = Math.max(12, Math.min(ttLeft, window.innerWidth - TOOLTIP_W - 12));
+  const ttTopBase = placement === "top" ? sy - 152 : sy + sh + 12;
+  const ttTop = ttTopBase < 12 ? sy + sh + 12 : ttTopBase;
+  const arrowLeft = Math.max(8, Math.min((sx + sw/2) - ttLeft - 10, TOOLTIP_W - 28));
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:9999,pointerEvents:"none"}}>
+      <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"all"}}>
+        <defs>
+          <mask id="tc-tour-mask">
+            <rect width="100%" height="100%" fill="white"/>
+            <rect x={sx} y={sy} width={sw} height={sh} rx="14" fill="black"/>
+          </mask>
+        </defs>
+        <rect width="100%" height="100%" fill="rgba(10,10,15,0.58)" mask="url(#tc-tour-mask)"/>
+      </svg>
+      <div style={{position:"absolute",left:sx,top:sy,width:sw,height:sh,borderRadius:14,
+        boxShadow:"0 0 0 2.5px #FF4FB8,0 0 0 6px rgba(255,79,184,0.22),0 0 28px rgba(255,79,184,0.28)",
+        pointerEvents:"none",animation:"tcTourPulse 2s ease-in-out infinite"}}/>
+      <div key={step} style={{position:"absolute",left:ttLeft,top:ttTop,width:TOOLTIP_W,
+        pointerEvents:"all",animation:"tcTourFade 0.22s ease",display:"flex",flexDirection:"column"}}>
+        {placement === "bottom" && (
+          <div style={{paddingLeft:arrowLeft,marginBottom:-1}}>
+            <svg width="20" height="10" viewBox="0 0 20 10"><polygon points="0,10 10,0 20,10" fill="#fff"/></svg>
+          </div>
+        )}
+        <div style={{background:"#fff",borderRadius:18,padding:"18px 20px 16px",
+          boxShadow:"0 16px 48px rgba(0,0,0,0.24),0 0 0 1px rgba(0,0,0,0.05)"}}>
+          <div style={{display:"flex",gap:5,marginBottom:13}}>
+            {TOUR_STEPS.map((_,i) => (
+              <div key={i} style={{height:5,borderRadius:99,
+                width:i===step?20:5,
+                background:i===step?"#FF4FB8":"#E5E7EB",
+                transition:"all .3s cubic-bezier(0.22,1,0.36,1)"}}/>
+            ))}
+          </div>
+          <div style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontWeight:800,fontSize:15,color:"#0A0A0F",marginBottom:6}}>
+            {TOUR_STEPS[step].title}
+          </div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#6B7280",lineHeight:1.65,marginBottom:16}}>
+            {TOUR_STEPS[step].body}
+          </div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <span style={{fontSize:12,color:"#9CA3AF",fontFamily:"'DM Sans',sans-serif"}}>{step+1} of {TOUR_STEPS.length}</span>
+            <button onClick={()=>isLast?onDone():setStep(s=>s+1)}
+              style={{background:"linear-gradient(135deg,#FF4FB8,#9D50FF)",color:"#fff",border:"none",
+                borderRadius:999,padding:"9px 22px",fontFamily:"'DM Sans',sans-serif",fontWeight:700,
+                fontSize:13,cursor:"pointer",boxShadow:"0 4px 14px rgba(255,79,184,0.35)"}}>
+              {isLast?"Done ✓":"Got it →"}
+            </button>
+          </div>
+        </div>
+        {placement === "top" && (
+          <div style={{paddingLeft:arrowLeft,marginTop:-1}}>
+            <svg width="20" height="10" viewBox="0 0 20 10"><polygon points="0,0 10,10 20,0" fill="#fff"/></svg>
+          </div>
+        )}
+      </div>
+      <button onClick={onDone} style={{position:"absolute",top:16,right:16,
+        background:"rgba(255,255,255,0.13)",border:"1px solid rgba(255,255,255,0.22)",
+        color:"rgba(255,255,255,0.75)",borderRadius:999,padding:"6px 16px",
+        fontFamily:"'DM Sans',sans-serif",fontSize:12,cursor:"pointer",pointerEvents:"all"}}>
+        Skip tour
+      </button>
+    </div>
+  );
+}
+
 // ── Hamster ──
 function Ham({ size = 72 }) {
   return (
@@ -2487,14 +2598,14 @@ function CoinmasterView({ session: init, onBack }) {
               {/* Give Coins + Preset Coins + Custom */}
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
                 <SL style={{marginBottom:10}}>Give Coins</SL>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+                <div data-tour="coin-buttons" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
                   {(ses.otherCoins||TV_DEFAULT).map((v,i) => (
                     <InlineCoinBtn key={i} value={v} bg="#ffffff" border="#FECDE8" col={PINK} circle={true}
                       disabled={!selP} onAward={e=>awardGuarded("token",v,e)} onEdit={()=>{}}/>
                   ))}
                 </div>
                 <SL>Preset Coins</SL>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+                <div data-tour="quick-coins" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
                   {ACTS.map((a,i) => {
                     const pts = (ses.quickCoins||ACTS_DEFAULT.map(x=>x.pts))[i] ?? a.pts;
                     const palettes=[{bg:"#FAF5FF",border:"#DDB6FF",num:"#7C3AED",fill:"#7C3AED"},{bg:"#EEF4FF",border:"#C7D9FF",num:"#4F7CF6",fill:"#4F7CF6"},{bg:"#EDFAF5",border:"#B3EDDA",num:"#1DB87A",fill:"#1DB87A"}];
@@ -2652,6 +2763,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   const isLive = ses.live !== false; // default true
 
   const [confirmOffline, setConfirmOffline] = useState(false);
+  const [showTour, setShowTour] = useState(false);
   const [showBadgePicker, setShowBadgePicker] = useState(false);
   const [badgePickerTarget, setBadgePickerTarget] = useState(null);
   const [showLuckyDraw, setShowLuckyDraw] = useState(false);
@@ -2668,6 +2780,25 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
     }, 3000);
     return () => clearInterval(t);
   }, [isLive, ses.code]);
+
+  // ── Quick tour: show once per user on first session entry ──
+  useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    // Use fsGet directly so we bypass any _currentUid timing issues
+    import("firebase/firestore").then(({ getFirestore, doc, getDoc }) => {
+      const db = getFirestore();
+      getDoc(doc(db, "users", uid, "data", "tourDone")).then(snap => {
+        if (!snap.exists()) setShowTour(true);
+      }).catch(() => setShowTour(true));
+    });
+  }, []);
+
+  function handleTourDone() {
+    setShowTour(false);
+    const uid = auth.currentUser?.uid;
+    if (uid) ss("tourDone", true);
+  }
 
   useEffect(() => { ssSession(ses.code, ses); }, [ses]);
   function mut(fn) { setSes(prev => { const s = JSON.parse(JSON.stringify(prev)); fn(s); return s; }); }
@@ -2740,6 +2871,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
     <div className="tc-app-shell">
       <Confetti active={confetti}/>
       {anims.map(a => <FloatAnim key={a.id} {...a} onDone={()=>setAnims(p=>p.filter(x=>x.id!==a.id))}/>)}
+      {showTour && <QuickTour onDone={handleTourDone}/>}
       {toast && (
         <div style={{position:"fixed",bottom:28,left:"50%",transform:"translateX(-50%)",
           background:toast.type==="warn"?"#FFF3CD":TEXT,color:toast.type==="warn"?"#92400E":"#fff",
@@ -2885,7 +3017,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           <div style={{width:7,height:7,borderRadius:"50%",background:isLive?GREEN:"#EF4444",animation:isLive?"pulse 2s infinite":"none"}}/>
           <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isLive?PINK:"#EF4444",letterSpacing:.5}}>{isLive?"LIVE":"OFFLINE"}</span>
         </button>
-        <button onClick={()=>setShowQR(true)} style={IB} title="QR Code">
+        <button data-tour="qr-join" onClick={()=>setShowQR(true)} style={IB} title="QR Code">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
         </button>
         <button onClick={()=>setProj(true)} style={IB} title="Projector view">
@@ -5872,6 +6004,8 @@ const CSS = `
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:Poppins,sans-serif; -webkit-font-smoothing:antialiased; background:${BG}; user-select:none; -webkit-user-select:none; cursor:default; }
   @keyframes floatUp { 0%{transform:translateY(0);opacity:1} 100%{transform:translateY(-80px);opacity:0} }
+  @keyframes tcTourPulse { 0%,100%{box-shadow:0 0 0 2.5px #FF4FB8,0 0 0 6px rgba(255,79,184,0.2),0 0 24px rgba(255,79,184,0.22);} 50%{box-shadow:0 0 0 2.5px #FF4FB8,0 0 0 10px rgba(255,79,184,0.12),0 0 36px rgba(255,79,184,0.32);} }
+  @keyframes tcTourFade { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
   @keyframes slideUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
   @keyframes fadeIn { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
   @keyframes slideInRight { from{transform:translateX(100%)} to{transform:translateX(0)} }
