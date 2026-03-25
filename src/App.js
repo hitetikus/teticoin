@@ -1124,12 +1124,16 @@ function Auth({ onDone, onBack, initialView="login" }) {
         </div>
 
         {view!=="forgot" && (
-          <div style={{display:"flex",background:BG,borderRadius:12,padding:4,marginBottom:20}}>
+          <div style={{display:"flex",background:"#F3F4F6",borderRadius:12,padding:4,marginBottom:20}}>
             {["login","register"].map(v => (
-              <button key={v} onClick={()=>{setView(v);setErr("");}} 
-                style={{flex:1,padding:"9px 0",borderRadius:9,border:"none",background:view===v?"#fff":"transparent",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:view===v?TEXT:SUB,cursor:"pointer",boxShadow:view===v?"0 1px 6px rgba(0,0,0,.08)":"none",transition:"all .15s"}}
-                onMouseOver={e=>{ if(view!==v) e.currentTarget.style.color=TEXT; }}
-                onMouseOut={e=>{ if(view!==v) e.currentTarget.style.color=SUB; }}>
+              <button key={v} onClick={()=>{setView(v);setErr("");}}
+                style={{flex:1,padding:"10px 0",borderRadius:9,border:"none",
+                  background:view===v?GRAD:"transparent",
+                  fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,
+                  color:view===v?"#fff":SUB,
+                  cursor:"pointer",
+                  boxShadow:view===v?"0 2px 8px rgba(233,30,140,.25)":"none",
+                  transition:"all .2s"}}>
                 {v==="login"?"Sign In":"Register"}
               </button>
             ))}
@@ -4326,10 +4330,12 @@ function SuperAdminDashboard({ onClose }) {
             const plan = planDoc.exists() ? planDoc.data().value : "free";
             const planExpiry = planExpiryDoc.exists() ? planExpiryDoc.data().value : null;
             const sessionsVal = sessionsDoc.exists() ? sessionsDoc.data().value : [];
+            // Fall back to sentinel doc top-level fields if subcollection email/name are missing
+            const sentinelData = userDoc.data() || {};
             list.push({
               uid,
-              email: emailDoc.exists() ? emailDoc.data().value : "—",
-              name:  nameDoc.exists()  ? nameDoc.data().value  : "—",
+              email: emailDoc.exists() ? emailDoc.data().value : (sentinelData.email || "—"),
+              name:  nameDoc.exists()  ? nameDoc.data().value  : (sentinelData.name  || "—"),
               plan:  plan || "free",
               planExpiry,
               sessionsCount: Array.isArray(sessionsVal) ? sessionsVal.length : 0,
@@ -4724,7 +4730,7 @@ function EarningsPage({ uid, name, onClose }) {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
-        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:17,color:TEXT}}>My Earnings</div>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:17,color:TEXT}}>My Coins</div>
         <div style={{width:48}}/>
       </div>
 
@@ -5348,7 +5354,7 @@ export default function App() {
 
   if (loading) return <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center"}}><style>{CSS}</style><Ham size={60}/></div>;
   if (screen==="claimBadge" && claimToken) return <><style>{CSS}</style><BadgeClaimScreen token={claimToken} onDone={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
-  if (screen==="landing") return <LandingPage onGetStarted={()=>{ setAuthInitialView("signup"); window.history.replaceState({},"","/login"); setScreen("auth"); }} onLogin={()=>{ setAuthInitialView("login"); window.history.replaceState({},"","/login"); setScreen("auth"); }}/>; 
+  if (screen==="landing") return <LandingPage onGetStarted={()=>{ setAuthInitialView("register"); window.history.replaceState({},"","/login"); setScreen("auth"); }} onLogin={()=>{ setAuthInitialView("login"); window.history.replaceState({},"","/login"); setScreen("auth"); }}/>; 
   if (screen==="auth") return <><style>{CSS}</style><Auth onDone={handleAuth} onBack={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }} initialView={authInitialView}/></>;
   // participantJoin = loaded from /join/CODE URL — always show participant view, never host view
   if (screen==="participantJoin") {
@@ -5384,11 +5390,11 @@ export default function App() {
       <style>{CSS}</style>
 
       {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>setShowPricing(false)}/>}
-      {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>setShowBilling(false)}/>}
-      {showProfile && <ProfilePage trainer={trainer} onClose={()=>setShowProfile(false)} onSaved={(newName)=>setTrainer(t=>({...t,name:newName}))}/>}
+      {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>{ window.history.replaceState({},"","/app"); setShowBilling(false);}}/>}
+      {showProfile && <ProfilePage trainer={trainer} onClose={()=>{ window.history.replaceState({},"","/app"); setShowProfile(false);}} onSaved={(newName)=>setTrainer(t=>({...t,name:newName}))}/>}
       {showSuperAdmin && <SuperAdminDashboard onClose={()=>setShowSuperAdmin(false)}/>}
-      {showHostEarnings && trainer && <EarningsPage uid={trainer.uid} name={trainer.name} onClose={()=>setShowHostEarnings(false)}/>}
-      {showSettings && <SettingsPage onClose={()=>setShowSettings(false)}/>}
+      {showHostEarnings && trainer && <EarningsPage uid={trainer.uid} name={trainer.name} onClose={()=>{ window.history.replaceState({},"","/app"); setShowHostEarnings(false);}}/>}
+      {showSettings && <SettingsPage onClose={()=>{ window.history.replaceState({},"","/app"); setShowSettings(false);}}/>}
       {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);setShowPricing(true);}} onClose={()=>setLimitModal(null)}/>}
       {creating && <CreateModal onConfirm={handleNew} onClose={()=>setCreating(false)}/>}
 
@@ -5452,10 +5458,10 @@ export default function App() {
               <div style={{fontSize:12,color:plan==="free"?SUB:PINK,marginTop:2,fontWeight:600}}>{planLabel}</div>
             </div>
             {[
-              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, label:"Profile", fn:()=>{setShowProfile(true);}},
-              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, label:"Billing & Plan", fn:()=>{setShowBilling(true);}},
-              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>, label:"My Earnings", fn:()=>{setShowHostEarnings(true);}},
-              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>, label:"Settings", fn:()=>{setShowSettings(true);}},
+              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, label:"Profile", fn:()=>{window.history.replaceState({},"","/app/profile");setShowProfile(true);}},
+              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, label:"Billing & Plan", fn:()=>{window.history.replaceState({},"","/app/billing");setShowBilling(true);}},
+              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>, label:"My Coins", fn:()=>{window.history.replaceState({},"","/app/coins");setShowHostEarnings(true);}},
+              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>, label:"Settings", fn:()=>{window.history.replaceState({},"","/app/settings");setShowSettings(true);}},
               ...(isSuperadmin ? [{icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label:"Admin Dashboard", fn:()=>{setShowSuperAdmin(true);}}] : []),
             ].map(item => (
               <button key={item.label} onClick={()=>{setProfileOpen(false);item.fn();}}
