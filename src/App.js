@@ -1341,11 +1341,18 @@ function Auth({ onDone, onBack, initialView="login" }) {
               <div style={{flex:1,height:1,background:BORDER}}/><span style={{fontSize:12,color:SUB,fontWeight:600}}>or</span><div style={{flex:1,height:1,background:BORDER}}/>
             </div>
             <button onClick={googleSignIn} disabled={busy}
-              style={{width:"100%",padding:"12px 0",borderRadius:13,border:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,transition:"all .15s",opacity:busy?.6:1}}
-              onMouseOver={e=>{e.currentTarget.style.background=BG;e.currentTarget.style.borderColor=PINK;}}
-              onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.borderColor=BORDER;}}>
-              <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 32.3 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7 29 5 24 5 13.5 5 5 13.5 5 24s8.5 19 19 19c10 0 18.7-7.2 18.7-19 0-1.3-.1-2.7-.1-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16.1 19 13 24 13c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7 29 5 24 5c-7.2 0-13.4 4-16.7 9.7z"/><path fill="#4CAF50" d="M24 43c5.2 0 9.8-1.8 13.4-4.7l-6.2-5.2C29.3 34.3 26.8 35 24 35c-5.2 0-9.6-3.5-11.2-8.3l-6.5 5C9.8 39.2 16.4 43 24 43z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.6-2.7 4.8-5.1 6.1l6.2 5.2C40 35.8 44 30.4 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
-              Continue with Google
+              style={{width:"100%",padding:"12px 0",borderRadius:13,border:`1.5px solid ${busy?PINK:BORDER}`,background:busy?SOFT:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,cursor:busy?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,transition:"all .2s"}}>
+              {busy ? (
+                <>
+                  <span style={{width:18,height:18,border:`2px solid ${PINK}40`,borderTopColor:PINK,borderRadius:"50%",display:"inline-block",animation:"spin .7s linear infinite",flexShrink:0}}/>
+                  <span style={{color:PINK,fontWeight:700}}>Signing in…</span>
+                </>
+              ) : (
+                <>
+                  <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 32.3 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7 29 5 24 5 13.5 5 5 13.5 5 24s8.5 19 19 19c10 0 18.7-7.2 18.7-19 0-1.3-.1-2.7-.1-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16.1 19 13 24 13c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7 29 5 24 5c-7.2 0-13.4 4-16.7 9.7z"/><path fill="#4CAF50" d="M24 43c5.2 0 9.8-1.8 13.4-4.7l-6.2-5.2C29.3 34.3 26.8 35 24 35c-5.2 0-9.6-3.5-11.2-8.3l-6.5 5C9.8 39.2 16.4 43 24 43z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.6-2.7 4.8-5.1 6.1l6.2 5.2C40 35.8 44 30.4 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
+                  Continue with Google
+                </>
+              )}
             </button>
           </>}
         </div>
@@ -2648,27 +2655,51 @@ function CoinmasterView({ session: init, onBack }) {
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                   {sorted.map(p => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
+                    const isEditing = editingPid === p.id;
                     return (
-                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:`1px solid ${BORDER}`}}>
-                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
-                        <Av s={p.av} color={grp?.color||PINK} size={32}/>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
-                          <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
-                        </div>
-                        {isPro && (
-                          <select value={p.gid??""} onChange={e=>mut(s=>{const px=s.participants.find(x=>x.id===p.id);if(px)px.gid=e.target.value===""?null:Number(e.target.value);return s;})}
-                            style={{background:SOFT,border:`1px solid ${MID}`,color:TEXT,borderRadius:8,padding:"4px 6px",fontSize:10,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:72,flexShrink:0}}>
-                            <option value="">No group</option>
-                            {ses.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
-                          </select>
+                      <div key={p.id} style={{borderBottom:`1px solid ${BORDER}`}}>
+                        {isEditing ? (
+                          <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px"}}>
+                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
+                            <input autoFocus value={editingPName}
+                              onChange={e=>setEditingPName(e.target.value)}
+                              onKeyDown={e=>{
+                                if(e.key==="Enter"&&editingPName.trim()){const n=editingPName.trim();mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}
+                                if(e.key==="Escape") setEditingPid(null);
+                              }}
+                              style={{flex:1,padding:"7px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,outline:"none"}}/>
+                            <button onClick={()=>{const n=editingPName.trim();if(!n)return;mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}}
+                              style={{padding:"0 12px",height:34,background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",flexShrink:0}}>Save</button>
+                            <button onClick={()=>setEditingPid(null)}
+                              style={{padding:"0 10px",height:34,background:"none",border:`1px solid ${BORDER}`,borderRadius:9,fontSize:13,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
+                          </div>
+                        ) : (
+                          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px"}}>
+                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
+                            <Av s={p.av} color={grp?.color||PINK} size={32}/>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                              <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
+                            </div>
+                            {isPro && (
+                              <select value={p.gid??""} onChange={e=>mut(s=>{const px=s.participants.find(x=>x.id===p.id);if(px)px.gid=e.target.value===""?null:Number(e.target.value);return s;})}
+                                style={{background:SOFT,border:`1px solid ${MID}`,color:TEXT,borderRadius:8,padding:"4px 6px",fontSize:10,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:72,flexShrink:0}}>
+                                <option value="">No group</option>
+                                {ses.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
+                              </select>
+                            )}
+                            <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);}}
+                              title="Rename participant"
+                              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;});}}
+                              title="Remove participant"
+                              style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            </button>
+                          </div>
                         )}
-                        <button onClick={()=>mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;})}
-                          style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:p.total===0&&!p.uid?SUB:`${SUB}33`,cursor:p.total===0&&!p.uid?"pointer":"default",flexShrink:0}}
-                          title={p.total===0&&!p.uid?"Remove":"Cannot remove — participant has joined"}
-                          disabled={!(p.total===0&&!p.uid)}>
-                          {p.total===0&&!p.uid?"✕":<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
-                        </button>
                       </div>
                     );
                   })}
@@ -2748,39 +2779,7 @@ function CoinmasterView({ session: init, onBack }) {
                 </button>
               )}
 
-              {/* Quick Coins — search + horizontal scroll */}
-              {sorted.length > 0 && (
-                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                  <div style={{padding:"8px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
-                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}}>Quick Coins</span>
-                    <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
-                      style={{height:26,padding:"0 8px",border:`1.5px solid ${BORDER}`,borderRadius:7,fontFamily:"Poppins,sans-serif",fontSize:11,color:TEXT,outline:"none",width:110,background:BG}}/>
-                  </div>
-                  {[...sorted].sort((a,b)=>a.name.localeCompare(b.name)).filter(p=>!(qcSearch).trim()||(p.name.toLowerCase().includes(qcSearch.toLowerCase()))).map((p,i,arr)=>{
-                    const grp=ses.groups.find(g=>g.id===p.gid);
-                    const coins=ses.otherCoins||TV_DEFAULT;
-                    return (
-                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
-                        <Av s={p.av} color={grp?.color||PINK} size={26}/>
-                        <div style={{width:110,flexShrink:0}}>
-                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
-                          <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
-                        </div>
-                        <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
-                          <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:3}}>
-                            {coins.map((v,ci)=>(
-                              <button key={ci} onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
-                                style={{minWidth:Math.abs(v)>=100?40:34,height:32,borderRadius:7,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?9:11,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
-                                {v>0?"+":""}{v}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+
             </div>
           </div>
         )}
@@ -2925,6 +2924,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   const [cAmt, setCAmt] = useState("");
   const [toast, setToast] = useState(null);
   const [qcSearch, setQcSearch] = useState("");
+  const [editingPid, setEditingPid] = useState(null);   // participant id being renamed
+  const [editingPName, setEditingPName] = useState(""); // current edit value
   const [inlineAddName, setInlineAddName] = useState("");
   const aid = useRef(0);
 
@@ -3425,27 +3426,55 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 )}
                 {sorted.map(p => {
                   const grp = ses.groups.find(g=>g.id===p.gid);
+                  const isEditing = editingPid === p.id;
                   return (
-                    <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:`1px solid ${BORDER}`}}>
-                      <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:36,flexShrink:0}}>{pNum(p.num)}</span>
-                      <Av s={p.av} color={grp?.color||PINK} size={32}/>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
-                        <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
-                      </div>
-                      {isPro && (
-                        <select value={p.gid??""} onChange={e=>mut(s=>{const px=s.participants.find(x=>x.id===p.id);if(px)px.gid=e.target.value===""?null:Number(e.target.value);return s;})}
-                          style={{background:SOFT,border:`1px solid ${MID}`,color:TEXT,borderRadius:8,padding:"4px 6px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:80,flexShrink:0}}>
-                          <option value="">No group</option>
-                          {ses.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
-                        </select>
+                    <div key={p.id} style={{borderBottom:`1px solid ${BORDER}`}}>
+                      {isEditing ? (
+                        <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px"}}>
+                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:36,flexShrink:0}}>{pNum(p.num)}</span>
+                          <input autoFocus value={editingPName}
+                            onChange={e=>setEditingPName(e.target.value)}
+                            onKeyDown={e=>{
+                              if(e.key==="Enter"&&editingPName.trim()){const n=editingPName.trim();mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}
+                              if(e.key==="Escape") setEditingPid(null);
+                            }}
+                            style={{flex:1,padding:"7px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,outline:"none"}}/>
+                          <button onClick={()=>{const n=editingPName.trim();if(!n)return;mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}}
+                            style={{padding:"0 14px",height:34,background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",flexShrink:0}}>Save</button>
+                          <button onClick={()=>setEditingPid(null)}
+                            style={{padding:"0 10px",height:34,background:"none",border:`1px solid ${BORDER}`,borderRadius:9,fontSize:13,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
+                        </div>
+                      ) : (
+                        <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px"}}>
+                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:36,flexShrink:0}}>{pNum(p.num)}</span>
+                          <Av s={p.av} color={grp?.color||PINK} size={32}/>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                            <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
+                          </div>
+                          {isPro && (
+                            <select value={p.gid??""} onChange={e=>mut(s=>{const px=s.participants.find(x=>x.id===p.id);if(px)px.gid=e.target.value===""?null:Number(e.target.value);return s;})}
+                              style={{background:SOFT,border:`1px solid ${MID}`,color:TEXT,borderRadius:8,padding:"4px 6px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:80,flexShrink:0}}>
+                              <option value="">No group</option>
+                              {ses.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
+                            </select>
+                          )}
+                          <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);}}
+                            title="Rename participant"
+                            style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}
+                            onMouseOver={e=>{e.currentTarget.style.borderColor=PINK;}}
+                            onMouseOut={e=>{e.currentTarget.style.borderColor=BORDER;}}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          </button>
+                          <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;});}}
+                            title="Remove participant"
+                            style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}
+                            onMouseOver={e=>{e.currentTarget.style.background="#FEF2F2";}}
+                            onMouseOut={e=>{e.currentTarget.style.background="none";}}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                          </button>
+                        </div>
                       )}
-                      <button onClick={()=>mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;})}
-                        style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:p.total===0&&!p.uid?SUB:`${SUB}33`,cursor:p.total===0&&!p.uid?"pointer":"default",flexShrink:0}}
-                        title={p.total===0&&!p.uid?"Remove":"Cannot remove — participant has joined"}
-                        disabled={!(p.total===0&&!p.uid)}>
-                        {p.total===0&&!p.uid?"✕":<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
-                      </button>
                     </div>
                   );
                 })}
@@ -5819,34 +5848,29 @@ export default function App() {
   async function handleAuth(t) { 
     setCurrentUid(t.uid);
     setTrainer(t);
-    await sd("trainer"); // clean up old field if present
-    await ss("email", t.email);
-    await ss("name", t.name);
-    await ssParent(t.uid, t.email, t.name); // register in top-level users collection
-
-    // ── Load existing sessions so re-auth / email-link click never clears them ──
-    const existingSessions = await sg("sessions_index");
-    if (existingSessions) setSessions(existingSessions);
-
-    // ── Auto-claim beta invite if one was sent to this email ──
-    const claimedExpiry = await claimBetaInvite(t.uid, t.email);
-    let p = await sg("plan"); if (!p) { await ss("plan", "free"); p = "free"; }
-    if (claimedExpiry) {
-      p = "beta";
-      setPlan("beta");
-      setPlanExpiry(claimedExpiry);
-      setShowBetaWelcome(true);
-    } else if (p) {
-      setPlan(p);
-    }
-
-    loadHomeEarnings(t.uid);
-
-    // ── Send welcome email to brand-new signups ──
-    if (t.isNew) sendWelcomeEmail({ toEmail: t.email, toName: t.name });
-
+    // Redirect immediately — don't make user wait for Firestore
     window.history.replaceState({}, "", "/app");
-    setScreen("home"); 
+    setScreen("home");
+    // All background Firestore work happens after redirect
+    sd("trainer"); // clean up old field if present
+    ss("email", t.email);
+    ss("name", t.name);
+    ssParent(t.uid, t.email, t.name); // register in top-level users collection
+    // Load sessions in background
+    sg("sessions_index").then(existingSessions => {
+      if (existingSessions) setSessions(existingSessions);
+    });
+    // Load plan in background
+    (async () => {
+      const claimedExpiry = await claimBetaInvite(t.uid, t.email);
+      let p = await sg("plan"); if (!p) { ss("plan", "free"); p = "free"; }
+      if (claimedExpiry) {
+        p = "beta"; setPlan("beta"); setPlanExpiry(claimedExpiry); setShowBetaWelcome(true);
+      } else if (p) { setPlan(p); }
+    })();
+    loadHomeEarnings(t.uid);
+    // Send welcome email to brand-new signups
+    if (t.isNew) sendWelcomeEmail({ toEmail: t.email, toName: t.name });
   }
   async function handleLogout() { 
     try { await signOut(auth); } catch {}
