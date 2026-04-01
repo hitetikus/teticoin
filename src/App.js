@@ -1865,7 +1865,7 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   const sorted = [...(live?.participants||[])].sort((a,b) => b.total - a.total);
   const myRank = sorted.findIndex(p => p.id === myId) + 1;
   const myUid = linkedUid || auth.currentUser?.uid || null;
-  const isMeAssignedCM = myUid && (live?.coinmasterUids||[]).includes(myUid);
+  const isMeAssignedCM = myUid && live?.coinmasterEnabled && (live?.coinmasterUids||[]).includes(myUid);
 
   // If assigned as coinmaster, show CoinmasterView instead of normal participant view
   if (step === "joined" && isMeAssignedCM) {
@@ -2530,9 +2530,13 @@ function CoinmasterView({ session: init, onBack }) {
   const [confetti, setConfetti] = useState(false);
   const [toast, setToast] = useState(null);
   const [cAmt, setCAmt] = useState("");
+  const [qcSearch, setQcSearch] = useState("");
+  const [editingPid, setEditingPid] = useState(null);
+  const [editingPName, setEditingPName] = useState("");
+  const [inlineAddName, setInlineAddName] = useState("");
   const aid = useRef(0);
 
-  // Poll session every 3s
+  // Poll session every 3s — get full fresh copy
   useEffect(() => {
     const t = setInterval(async () => {
       const fresh = await sgSession(ses.code);
@@ -2541,14 +2545,20 @@ function CoinmasterView({ session: init, onBack }) {
     return () => clearInterval(t);
   }, [ses.code]);
 
-  // Save changes (only participant additions)
-  function mut(fn) { setSes(prev => { const s = JSON.parse(JSON.stringify(prev)); fn(s); ssSession(s.code, s); return s; }); }
+  function mut(fn) {
+    setSes(prev => {
+      const s = JSON.parse(JSON.stringify(prev));
+      fn(s);
+      ssSession(s.code, s);
+      return s;
+    });
+  }
   function notify(m, type="ok") { setToast({m,type}); setTimeout(()=>setToast(null), 2200); }
 
   function award(pid, type, pts, mx = window.innerWidth/2, my = 300) {
     if (!pid) { notify("Select a participant first","warn"); return; }
     if (ses.live === false) { notify("Session is offline","warn"); return; }
-    playSound(pts >= 100);
+    if (pts > 0) playSound(pts >= 100);
     if (pts >= 100) { setConfetti(true); setTimeout(()=>setConfetti(false), 3000); }
     mut(s => {
       const p = s.participants.find(x=>x.id===pid); if (!p) return;
@@ -2560,7 +2570,6 @@ function CoinmasterView({ session: init, onBack }) {
     setAnims(a => [...a, {id:aid.current++,x:mx,y:my,text:pts<0?`${pts}`:`+${pts}`,color:pts<0?"#EF4444":col}]);
     notify(pts<0?`${pts} coins deducted`:`+${pts} coins awarded`);
   }
-
   function awardGuarded(type, pts, e) {
     if (!selId) { notify("Select a participant first","warn"); return; }
     award(selId, type, pts, e?.clientX, e?.clientY);
@@ -2592,34 +2601,34 @@ function CoinmasterView({ session: init, onBack }) {
         <button onClick={onBack} style={{background:"none",border:`1.5px solid ${BORDER}`,borderRadius:"50%",width:32,height:32,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:0}}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div style={{flex:1,overflow:"hidden",minWidth:0,display:"flex",alignItems:"center"}}>
+        <div style={{flex:1,overflow:"hidden",minWidth:0}}>
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ses.name}</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:5,background:ses.live!==false?SOFT:"#FEF2F2",border:`1px solid ${ses.live!==false?MID:"#EF444455"}`,borderRadius:20,padding:"5px 10px",flexShrink:0}}>
-          <div style={{width:7,height:7,borderRadius:"50%",background:ses.live!==false?GREEN:"#EF4444",animation:ses.live!==false?"pulse 2s infinite":"none"}}/>
+          <div style={{width:7,height:7,borderRadius:"50%",background:ses.live!==false?GREEN:"#EF4444"}}/>
           <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:ses.live!==false?PINK:"#EF4444",letterSpacing:.5}}>{ses.live!==false?"LIVE":"OFFLINE"}</span>
         </div>
-        <button onClick={()=>setMass(true)} style={IB} title="Mass give coins">
+        <button onClick={()=>setMass(true)} style={IB} title="Bulk give coins">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </button>
       </div>
 
       {/* COINMASTER BADGE BAR */}
-      <div style={{background:"#FAF5FF",borderBottom:`1px solid #EDE9FE`,padding:"6px 14px",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+      <div style={{background:"#FAF5FF",borderBottom:`1px solid #EDE9FE`,padding:"5px 14px",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
         <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#7C3AED",borderRadius:99,padding:"2px 10px",letterSpacing:.5,flexShrink:0}}>COINMASTER</span>
-        <span style={{fontSize:11,color:"#7C3AED",fontWeight:600}}>You can award points and add participants</span>
+        <span style={{fontSize:11,color:"#7C3AED",fontWeight:600}}>Award coins · edit participants · bulk give</span>
       </div>
 
       {/* TABS */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
-        {[["award","Award"],["board","Board"],["log","Log"]].map(([id,l]) => (
+        {[["award","Coins"],["people","Participants"],["board","Board"],["log","Log"]].map(([id,l]) => (
           <button key={id} onClick={()=>setTab(id)}
-            style={{padding:"11px 16px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
+            style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
               color:tab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
               borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
           </button>
         ))}
-        <div style={{marginLeft:"auto",paddingRight:14,display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
+        <div style={{marginLeft:"auto",paddingRight:12,display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
         </div>
@@ -2627,89 +2636,7 @@ function CoinmasterView({ session: init, onBack }) {
 
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
-        {/* PEOPLE TAB (mobile) */}
-        {tab==="people" && (
-          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-            {/* Two-column add row */}
-            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
-              <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
-                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
-                style={{flex:1,margin:0}}/>
-              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
-                style={{padding:"0 14px",height:40,background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
-                + Add
-              </button>
-              <button onClick={()=>setShowQR(true)}
-                style={{padding:"0 12px",height:40,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:11,display:"flex",alignItems:"center",gap:5,cursor:"pointer",flexShrink:0}}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
-                <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap"}}>QR</span>
-              </button>
-            </div>
-            {/* Participant list */}
-            <div style={{flex:1,overflowY:"auto",padding:"10px 14px"}}>
-              {sorted.length===0 ? (
-                <div style={{textAlign:"center",padding:"32px 16px",color:SUB,fontSize:13}}>
-                  <Ham size={48}/><div style={{marginTop:10}}>No participants yet</div>
-                </div>
-              ) : (
-                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                  {sorted.map(p => {
-                    const grp = ses.groups.find(g=>g.id===p.gid);
-                    const isEditing = editingPid === p.id;
-                    return (
-                      <div key={p.id} style={{borderBottom:`1px solid ${BORDER}`}}>
-                        {isEditing ? (
-                          <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px"}}>
-                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
-                            <input autoFocus value={editingPName}
-                              onChange={e=>setEditingPName(e.target.value)}
-                              onKeyDown={e=>{
-                                if(e.key==="Enter"&&editingPName.trim()){const n=editingPName.trim();mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}
-                                if(e.key==="Escape") setEditingPid(null);
-                              }}
-                              style={{flex:1,padding:"7px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,outline:"none"}}/>
-                            <button onClick={()=>{const n=editingPName.trim();if(!n)return;mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}}
-                              style={{padding:"0 12px",height:34,background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",flexShrink:0}}>Save</button>
-                            <button onClick={()=>setEditingPid(null)}
-                              style={{padding:"0 10px",height:34,background:"none",border:`1px solid ${BORDER}`,borderRadius:9,fontSize:13,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
-                          </div>
-                        ) : (
-                          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px"}}>
-                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
-                            <Av s={p.av} color={grp?.color||PINK} size={32}/>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
-                              <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
-                            </div>
-                            {isPro && (
-                              <select value={p.gid??""} onChange={e=>mut(s=>{const px=s.participants.find(x=>x.id===p.id);if(px)px.gid=e.target.value===""?null:Number(e.target.value);return s;})}
-                                style={{background:SOFT,border:`1px solid ${MID}`,color:TEXT,borderRadius:8,padding:"4px 6px",fontSize:10,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:72,flexShrink:0}}>
-                                <option value="">No group</option>
-                                {ses.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
-                              </select>
-                            )}
-                            <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);}}
-                              title="Rename participant"
-                              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            </button>
-                            <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;});}}
-                              title="Remove participant"
-                              style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* AWARD TAB */}
+        {/* ── COINS TAB ── */}
         {tab==="award" && (
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             {/* Participant selector */}
@@ -2740,17 +2667,17 @@ function CoinmasterView({ session: init, onBack }) {
               </button>
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
-              {/* Give Coins + Preset Coins + Custom */}
+              {/* Give Coins */}
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
                 <SL style={{marginBottom:10}}>Give Coins</SL>
-                <div data-tour="coin-buttons" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
                   {(ses.otherCoins||TV_DEFAULT).map((v,i) => (
                     <InlineCoinBtn key={i} value={v} bg="#ffffff" border="#FECDE8" col={PINK} circle={true}
                       disabled={!selP} onAward={e=>awardGuarded("token",v,e)} onEdit={()=>{}}/>
                   ))}
                 </div>
                 <SL>Preset Coins</SL>
-                <div data-tour="quick-coins" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
                   {ACTS.map((a,i) => {
                     const pts = (ses.quickCoins||ACTS_DEFAULT.map(x=>x.pts))[i] ?? a.pts;
                     const palettes=[{bg:"#FAF5FF",border:"#DDB6FF",num:"#7C3AED",fill:"#7C3AED"},{bg:"#EEF4FF",border:"#C7D9FF",num:"#4F7CF6",fill:"#4F7CF6"},{bg:"#EDFAF5",border:"#B3EDDA",num:"#1DB87A",fill:"#1DB87A"}];
@@ -2764,22 +2691,12 @@ function CoinmasterView({ session: init, onBack }) {
                     style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Award</button>
                 </div>
               </div>
-
-              {/* Bulk Give Coins */}
-              {isPro ? (
-                <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  Bulk Give Coins
-                </button>
-              ) : (
-                <button onClick={()=>setProGateHint("massgive")} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PINK},${PINK2})`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  <span>Bulk Give Coins</span>
-                  <svg width="14" height="12" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
-                </button>
-              )}
-
-              {/* ── Mobile Quick Coins — calls award(p.id) directly, no selId dependency ── */}
+              {/* Bulk Give */}
+              <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Bulk Give Coins
+              </button>
+              {/* Quick Coins */}
               {sorted.length > 0 && (
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                   <div style={{padding:"8px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
@@ -2816,12 +2733,74 @@ function CoinmasterView({ session: init, onBack }) {
                     })}
                 </div>
               )}
-
             </div>
           </div>
         )}
 
-        {/* BOARD TAB */}
+        {/* ── PARTICIPANTS TAB ── */}
+        {tab==="people" && (
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
+              <Inp placeholder="Add participant name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
+                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
+                style={{flex:1,margin:0}}/>
+              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
+                style={{padding:"0 14px",height:40,background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
+                + Add
+              </button>
+            </div>
+            <div style={{flex:1,overflowY:"auto",padding:"10px 14px"}}>
+              {sorted.length===0 ? (
+                <div style={{textAlign:"center",padding:"32px 16px",color:SUB,fontSize:13}}><Ham size={48}/><div style={{marginTop:10}}>No participants yet</div></div>
+              ) : (
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                  {sorted.map(p => {
+                    const grp = ses.groups.find(g=>g.id===p.gid);
+                    const isEditing = editingPid === p.id;
+                    return (
+                      <div key={p.id} style={{borderBottom:`1px solid ${BORDER}`}}>
+                        {isEditing ? (
+                          <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px"}}>
+                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
+                            <input autoFocus value={editingPName} onChange={e=>setEditingPName(e.target.value)}
+                              onKeyDown={e=>{
+                                if(e.key==="Enter"&&editingPName.trim()){const n=editingPName.trim();mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}
+                                if(e.key==="Escape") setEditingPid(null);
+                              }}
+                              style={{flex:1,padding:"7px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,outline:"none"}}/>
+                            <button onClick={()=>{const n=editingPName.trim();if(!n)return;mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}}
+                              style={{padding:"0 12px",height:34,background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",flexShrink:0}}>Save</button>
+                            <button onClick={()=>setEditingPid(null)}
+                              style={{padding:"0 10px",height:34,background:"none",border:`1px solid ${BORDER}`,borderRadius:9,fontSize:13,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
+                          </div>
+                        ) : (
+                          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px"}}>
+                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
+                            <Av s={p.av} color={grp?.color||PINK} size={32}/>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                              <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
+                            </div>
+                            <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);}}
+                              title="Rename" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;});}}
+                              title="Remove" style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── BOARD TAB ── */}
         {tab==="board" && (
           <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
@@ -2853,85 +2832,32 @@ function CoinmasterView({ session: init, onBack }) {
           </div>
         )}
 
-        {/* LOG TAB */}
+        {/* ── LOG TAB ── */}
         {tab==="log" && (
           <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-              <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`}}>
                 <SL>Activity Log</SL>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontSize:11,color:SUB,fontWeight:600}}>{ses.log.length} events</span>
-                  {isPro ? (
-                    <button onClick={()=>triggerCsvDownload(buildLogCsv(ses),`teticoin-${ses.code}-log.csv`)}
-                      title="Export Log CSV"
-                      style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",background:`linear-gradient(135deg,#9D50FF,#7C3AED)`,border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:"#fff",cursor:"pointer"}}>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                      Export CSV
-                    </button>
-                  ) : (
-                    <button onClick={()=>setProGateHint("exportlog")}
-                      title="Export Log CSV (Pro)"
-                      style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",background:"#F3F4F6",border:"1.5px solid #E5E7EB",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:"#9CA3AF",cursor:"pointer"}}>
-                      <svg width="10" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
-                      Export CSV
-                    </button>
-                  )}
-                </div>
               </div>
-              {ses.log.length===0 && <div style={{padding:40,textAlign:"center"}}><Ham size={56}/><div style={{marginTop:10,fontSize:13,color:SUB}}>No activity yet</div></div>}
-              {ses.log.map(item => {
-                const a = ACTS.find(x=>x.id===item.type);
-                const col = item.type==="token" ? YELLOW : a?.col;
-                return (
-                  <div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderBottom:`1px solid ${BORDER}`}}>
-                    <div style={{width:6,height:6,borderRadius:"50%",background:col,flexShrink:0}}/>
-                    <div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{item.name}</div>
-                    <div style={{fontSize:12,color:SUB,fontWeight:500}}>{item.type==="token"?"Token":a?.label}</div>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:col}}>+{item.pts}</div>
+              {(ses.log||[]).length===0 ? (
+                <div style={{padding:32,textAlign:"center",color:SUB,fontSize:13}}>No activity yet</div>
+              ) : (ses.log||[]).map((item,i) => (
+                <div key={item.id||i} style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:32,height:32,borderRadius:10,background:item.pts<0?"#FEF2F2":SOFT,border:`1px solid ${item.pts<0?"#FCA5A5":MID}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:item.pts<0?"#EF4444":PINK}}>{item.pts>0?"+":""}{item.pts}</span>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.name}</div>
                     <div style={{fontSize:11,color:SUB}}>{item.t}</div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </div>
         )}
       </div>
     </div>
   );
-}
-
-// ── CSV export helpers ────────────────────────────────────────────────────────
-// Wraps a cell value: quotes it if it contains comma, quote, or newline
-function csvCell(v) {
-  const s = v === null || v === undefined ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-function csvRow(arr) { return arr.map(csvCell).join(","); }
-
-// Participants CSV — available to all plans
-function buildParticipantsCsv(session) {
-  const rows = [["#","Name","Group","Total Coins"]];
-  [...(session.participants || [])].sort((a,b)=>b.total-a.total).forEach(p => {
-    const g = (session.groups || []).find(g => g.id === p.gid);
-    rows.push([pNum(p.num), p.name, g?.name || "", p.total]);
-  });
-  return rows.map(csvRow).join("\n");
-}
-
-// Activity Log CSV — Pro only
-function buildLogCsv(session) {
-  const rows = [["Timestamp","Participant","Type","Points","Session Code","Session Name"]];
-  (session.log || []).forEach(item => {
-    rows.push([item.t || "", item.name || "", item.type || "", item.pts, session.code, session.name]);
-  });
-  return rows.map(csvRow).join("\n");
-}
-
-function triggerCsvDownload(csvString, filename) {
-  const a = document.createElement("a");
-  a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csvString);
-  a.download = filename;
-  a.click();
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -2963,6 +2889,15 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   const [qcSearch, setQcSearch] = useState("");
   const [editingPid, setEditingPid] = useState(null);   // participant id being renamed
   const [editingPName, setEditingPName] = useState(""); // current edit value
+  const [pMenuOpen, setPMenuOpen] = useState(null);     // participant id whose ⋯ menu is open
+
+  // Close ⋯ menu when clicking outside
+  useEffect(() => {
+    if (!pMenuOpen) return;
+    const close = () => setPMenuOpen(null);
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [pMenuOpen]);
   const [inlineAddName, setInlineAddName] = useState("");
   const aid = useRef(0);
 
@@ -3379,6 +3314,44 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </button>
             )}
 
+            {/* ── Mobile Quick Coins — direct award(p.id), no selId dependency ── */}
+            {sorted.length > 0 && (
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                <div style={{padding:"8px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}}>Quick Coins</span>
+                  <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
+                    style={{height:26,padding:"0 8px",border:`1.5px solid ${BORDER}`,borderRadius:7,fontFamily:"Poppins,sans-serif",fontSize:11,color:TEXT,outline:"none",width:100,background:BG}}/>
+                </div>
+                {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
+                  .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
+                  .map((p,i,arr) => {
+                    const grp = ses.groups.find(g=>g.id===p.gid);
+                    const coins = ses.otherCoins||TV_DEFAULT;
+                    return (
+                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
+                        <Av s={p.av} color={grp?.color||PINK} size={28}/>
+                        <div style={{width:100,flexShrink:0}}>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                          <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
+                        </div>
+                        <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
+                          <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:4}}>
+                            {coins.map((v,ci) => (
+                              <button key={ci}
+                                onClick={e=>{e.stopPropagation();setSelId(p.id);award(p.id,"token",v,e.clientX,e.clientY);}}
+                                style={{minWidth:Math.abs(v)>=100?38:30,height:30,borderRadius:7,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?9:11,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
+                                {v>0?"+":""}{v}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+
           </div>
         </div>
 
@@ -3419,6 +3392,25 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 </button>
               </div>
               {/* Participant list */}
+              {isPro && (
+                <div onClick={()=>mut(s=>{s.coinmasterEnabled=!s.coinmasterEnabled;if(!s.coinmasterEnabled)s.coinmasterUids=[];return s;})}
+                  style={{background:ses.coinmasterEnabled?"#FAF5FF":"#F9FAFB",border:`1px solid ${ses.coinmasterEnabled?"#DDD6FE":BORDER}`,borderRadius:12,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",userSelect:"none"}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ses.coinmasterEnabled?"#7C3AED":SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
+                  <div style={{flex:1}}>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:ses.coinmasterEnabled?"#7C3AED":TEXT}}>
+                      Coinmaster {ses.coinmasterEnabled ? "enabled" : "disabled"}
+                    </div>
+                    <div style={{fontSize:11,color:SUB,marginTop:1}}>
+                      {ses.coinmasterEnabled
+                        ? `${(ses.coinmasterUids||[]).length} assigned — tap ⋯ on a logged-in participant to assign`
+                        : "Enable so participants can be assigned as co-hosts"}
+                    </div>
+                  </div>
+                  <div style={{width:36,height:20,borderRadius:10,background:ses.coinmasterEnabled?"#7C3AED":BORDER,position:"relative",flexShrink:0,transition:"background .2s"}}>
+                    <div style={{position:"absolute",top:2,left:ses.coinmasterEnabled?18:2,width:16,height:16,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,.2)",transition:"left .2s"}}/>
+                  </div>
+                </div>
+              )}
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                 {sorted.length===0 && (
                   <div style={{padding:"32px 16px",textAlign:"center",color:SUB,fontSize:13}}>
@@ -3428,8 +3420,10 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 {sorted.map(p => {
                   const grp = ses.groups.find(g=>g.id===p.gid);
                   const isEditing = editingPid === p.id;
+                  const isCM = isPro && ses.coinmasterEnabled && (ses.coinmasterUids||[]).includes(p.uid);
+                  const menuOpen = pMenuOpen === p.id;
                   return (
-                    <div key={p.id} style={{borderBottom:`1px solid ${BORDER}`}}>
+                    <div key={p.id} style={{borderBottom:`1px solid ${BORDER}`,position:"relative"}}>
                       {isEditing ? (
                         <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px"}}>
                           <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:36,flexShrink:0}}>{pNum(p.num)}</span>
@@ -3448,9 +3442,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                       ) : (
                         <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px"}}>
                           <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:36,flexShrink:0}}>{pNum(p.num)}</span>
-                          <Av s={p.av} color={grp?.color||PINK} size={32}/>
+                          <Av s={p.av} color={isCM?"#7C3AED":grp?.color||PINK} size={32}/>
                           <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                            <div style={{display:"flex",alignItems:"center",gap:5}}>
+                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                              {isCM && <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#7C3AED",borderRadius:99,padding:"1px 6px",flexShrink:0}}>CM</span>}
+                            </div>
                             <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                           </div>
                           {isPro && (
@@ -3460,20 +3457,40 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                               {ses.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
                             </select>
                           )}
-                          <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);}}
-                            title="Rename participant"
-                            style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}
-                            onMouseOver={e=>{e.currentTarget.style.borderColor=PINK;}}
-                            onMouseOut={e=>{e.currentTarget.style.borderColor=BORDER;}}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                          </button>
-                          <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;});}}
-                            title="Remove participant"
-                            style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}
-                            onMouseOver={e=>{e.currentTarget.style.background="#FEF2F2";}}
-                            onMouseOut={e=>{e.currentTarget.style.background="none";}}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                          </button>
+                          {/* ⋯ context menu */}
+                          <div style={{position:"relative",flexShrink:0}}>
+                            <button onClick={()=>setPMenuOpen(menuOpen?null:p.id)}
+                              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center",color:SUB}}
+                              onMouseOver={e=>e.currentTarget.style.borderColor=PINK}
+                              onMouseOut={e=>e.currentTarget.style.borderColor=BORDER}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+                            </button>
+                            {menuOpen && (
+                              <div style={{position:"absolute",right:0,top:"calc(100% + 4px)",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,.12)",zIndex:50,minWidth:170,overflow:"hidden"}}
+                                onClick={e=>e.stopPropagation()}>
+                                <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);setPMenuOpen(null);}}
+                                  style={{width:"100%",padding:"10px 14px",background:"none",border:"none",textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
+                                  onMouseOver={e=>e.currentTarget.style.background=SOFT} onMouseOut={e=>e.currentTarget.style.background="none"}>
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                  Rename
+                                </button>
+                                {isPro && ses.coinmasterEnabled && p.uid && (
+                                  <button onClick={()=>{isCM?mut(s=>{s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;}):mut(s=>{s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==p.uid),p.uid];return s;});setPMenuOpen(null);}}
+                                    style={{width:"100%",padding:"10px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:isCM?"#7C3AED":TEXT,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
+                                    onMouseOver={e=>e.currentTarget.style.background="#FAF5FF"} onMouseOut={e=>e.currentTarget.style.background="none"}>
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={isCM?"#7C3AED":SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
+                                    {isCM?"Remove Coinmaster":"Make Coinmaster"}
+                                  </button>
+                                )}
+                                <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`)){mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;});}setPMenuOpen(null);}}
+                                  style={{width:"100%",padding:"10px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#EF4444",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
+                                  onMouseOver={e=>e.currentTarget.style.background="#FEF2F2"} onMouseOut={e=>e.currentTarget.style.background="none"}>
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                                  Remove
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
