@@ -18,7 +18,7 @@ const BLUE = "#3B82F6";
 const PURPLE = "#7C3AED";
 const GRAD = `linear-gradient(135deg,${PINK},${PINK2})`;
 const GC = ["#E91E8C","#8B5CF6","#3B82F6","#00C48C","#F5A623","#EF4444"];
-const TV_DEFAULT = [10,30,50,100,150,200]; // default Other Coins (editable per session)
+const TV_DEFAULT = [10,30,50,100,200,-10]; // default Other Coins (editable per session)
 const ACTS_DEFAULT = [
   {id:"correct", label:"Correct Answer", pts:50, col:PINK},
   {id:"question",label:"Asked Question", pts:30, col:BLUE},
@@ -1042,7 +1042,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
           <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
             {tabBtn("people","Participants")}
             {tabBtn("groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></span>)}
-            {/* Coinmaster tab hidden — phase 2 feature */}
+            {isManagePro && tabBtn("coinmaster","Coinmaster")}
           </div>
         </div>
         <div style={{overflowY:"auto",flex:1,padding:"16px 20px 32px"}}>
@@ -1383,6 +1383,24 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   const prevTotalRef = useRef(null);
   const [coinFlash, setCoinFlash] = useState(null); // {pts, key}
 
+  // Auto-populate from already-logged-in Firebase user on mount
+  useEffect(() => {
+    const u = auth.currentUser;
+    if (u && !linkedUid) {
+      const displayName = u.displayName || u.email?.split("@")[0] || "";
+      setLinkedUid(u.uid);
+      setLinkedName(displayName);
+      setShowLoginBanner(false);
+      if (!name.trim()) setName(displayName);
+      const existingByUid = (init.participants||[]).find(p => p.uid === u.uid);
+      if (existingByUid) {
+        prevTotalRef.current = existingByUid.total ?? 0;
+        setMyId(existingByUid.id);
+        setStep("joined");
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   function playCoinSound() {
     try {
       const ctx = new (window.AudioContext||window.webkitAudioContext)();
@@ -1425,8 +1443,20 @@ function ParticipantView({ session: init, hostPlan="free" }) {
   function checkName() {
     if (!name.trim()) return;
     // Block host from joining their own session
-    const currentUid = auth.currentUser?.uid || null;
+    const currentUid = auth.currentUser?.uid || linkedUid || null;
     if (currentUid && live.hostUid && currentUid === live.hostUid) { setStep("hostblocked"); return; }
+    // Check if this UID already has a slot (e.g. Google login before entering name)
+    if (currentUid) {
+      const existingByUid = (live.participants||[]).find(p => p.uid === currentUid);
+      if (existingByUid) {
+        prevTotalRef.current = existingByUid.total ?? 0;
+        setMyId(existingByUid.id);
+        setLinkedUid(currentUid);
+        setLinkedName(existingByUid.name);
+        setStep("joined");
+        return;
+      }
+    }
     const existing = (live.participants||[]).find(
       p => p.name.toLowerCase().trim() === name.toLowerCase().trim()
     );
@@ -1506,8 +1536,21 @@ function ParticipantView({ session: init, hostPlan="free" }) {
       setLinkedUid(uid);
       setLinkedName(displayName);
 
-      // If they log in before joining, use the logged-in name for the first join
+      // If they log in before joining, check if this UID already has a participant slot
       if (!myId) {
+        const existingByUid = (live.participants||[]).find(p => p.uid === uid);
+        if (existingByUid) {
+          // Already in session — just resume, no new participant created
+          prevTotalRef.current = existingByUid.total ?? 0;
+          setMyId(existingByUid.id);
+          setLinkedUid(uid);
+          setLinkedName(displayName);
+          setLoginModal(false);
+          setShowLoginBanner(false);
+          setStep("joined");
+          setLoginBusy(false);
+          return;
+        }
         if (!name.trim()) setName(displayName);
         setLoginModal(false);
         setShowLoginBanner(false);
@@ -2441,6 +2484,7 @@ function InlineCoinBtn({ value, bg, border, col, disabled, onAward, onEdit, circ
     </div>
   );
 
+  const isNeg = value < 0;
   return (
     <button
       onClick={e=>{if(!editing)onAward(e);}}
@@ -2449,15 +2493,15 @@ function InlineCoinBtn({ value, bg, border, col, disabled, onAward, onEdit, circ
       onDoubleClick={e=>{e.preventDefault();setEditing(true);}}
       style={{padding:"8px 6px",
         borderRadius:10,
-        border:"1.5px solid #FECDE8",
-        background: pressed ? "#E91E8C" : "#fff",
+        border: isNeg ? "1.5px solid #FCA5A5" : "1.5px solid #FECDE8",
+        background: pressed ? (isNeg ? "#EF4444" : "#E91E8C") : "#fff",
         cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,
         fontSize:28,
-        color: pressed ? "#fff" : "transparent",
-        WebkitTextFillColor: pressed ? "#fff" : "transparent",
-        backgroundClip: pressed ? "unset" : "text",
-        WebkitBackgroundClip: pressed ? "unset" : "text",
-        backgroundImage: pressed ? "none" : "linear-gradient(135deg,#E91E8C,#FF4FB8)",
+        color: pressed ? "#fff" : (isNeg ? "#EF4444" : "transparent"),
+        WebkitTextFillColor: pressed ? "#fff" : (isNeg ? "#EF4444" : "transparent"),
+        backgroundClip: (pressed || isNeg) ? "unset" : "text",
+        WebkitBackgroundClip: (pressed || isNeg) ? "unset" : "text",
+        backgroundImage: (pressed || isNeg) ? "none" : "linear-gradient(135deg,#E91E8C,#FF4FB8)",
         transition:"transform .08s, background-color .08s",
         display:"flex",alignItems:"center",justifyContent:"center",
         transform: pressed ? "scale(0.91)" : "scale(1)",
@@ -2506,8 +2550,8 @@ function CoinmasterView({ session: init, onBack }) {
       s.log = [{id:Date.now(),name:p.name,type,pts,t:new Date().toLocaleTimeString()}, ...(s.log||[]).slice(0,99)];
     });
     const col = type==="token" ? YELLOW : ACTS.find(x=>x.id===type)?.col||YELLOW;
-    setAnims(a => [...a, {id:aid.current++,x:mx,y:my,text:`+${pts}`,color:col}]);
-    notify(`+${pts} coins awarded`);
+    setAnims(a => [...a, {id:aid.current++,x:mx,y:my,text:pts<0?`${pts}`:`+${pts}`,color:pts<0?"#EF4444":col}]);
+    notify(pts<0?`${pts} coins deducted`:`+${pts} coins awarded`);
   }
 
   function awardGuarded(type, pts, e) {
@@ -2726,8 +2770,8 @@ function CoinmasterView({ session: init, onBack }) {
                           <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:3}}>
                             {coins.map((v,ci)=>(
                               <button key={ci} onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
-                                style={{minWidth:v>=100?40:34,height:32,borderRadius:7,border:`1.5px solid ${MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:v>=100?9:11,color:PINK,flexShrink:0,padding:0}}>
-                                +{v}
+                                style={{minWidth:Math.abs(v)>=100?40:34,height:32,borderRadius:7,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?9:11,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
+                                {v>0?"+":""}{v}
                               </button>
                             ))}
                           </div>
@@ -2895,15 +2939,23 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
   // ── Live poll: pull participant updates from Firebase every 3s ──
   useEffect(() => {
-    if (!isLive) return;
     const t = setInterval(async () => {
       const fresh = await sgSession(ses.code);
       if (!fresh) return;
-      // Only update participants + log from remote — don't overwrite local UI state
-      setSes(prev => ({...prev, participants: fresh.participants||prev.participants, log: fresh.log||prev.log}));
+      // Sync participants, log, boardVisible and live from remote so both
+      // mobile and desktop host views stay in sync with each other
+      setSes(prev => ({
+        ...prev,
+        participants: fresh.participants||prev.participants,
+        log: fresh.log||prev.log,
+        boardVisible: fresh.boardVisible ?? prev.boardVisible,
+        live: fresh.live ?? prev.live,
+        coinmasterEnabled: fresh.coinmasterEnabled ?? prev.coinmasterEnabled,
+        coinmasterUids: fresh.coinmasterUids ?? prev.coinmasterUids,
+      }));
     }, 3000);
     return () => clearInterval(t);
-  }, [isLive, ses.code]);
+  }, [ses.code]);
 
   // ── Quick tour: show once per user on first session entry — desktop only ──
   useEffect(() => {
@@ -2924,8 +2976,17 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
     if (uid) ss("tourDone", true);
   }
 
-  useEffect(() => { ssSession(ses.code, ses); }, [ses]);
-  function mut(fn) { setSes(prev => { const s = JSON.parse(JSON.stringify(prev)); fn(s); return s; }); }
+  // Only write to Firebase when a LOCAL mutation happens (not on poll-driven updates)
+  const localMutRef = useRef(false);
+  useEffect(() => {
+    if (!localMutRef.current) return;
+    localMutRef.current = false;
+    ssSession(ses.code, ses);
+  }, [ses]);
+  function mut(fn) {
+    localMutRef.current = true;
+    setSes(prev => { const s = JSON.parse(JSON.stringify(prev)); fn(s); return s; });
+  }
   function notify(m, type="ok") { setToast({m,type}); setTimeout(()=>setToast(null), 2200); }
   function toggleLive() {
     if (ses.live !== false) {
@@ -2942,7 +3003,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   function award(pid, type, pts, mx = window.innerWidth/2, my = 300) {
     if (!pid) { notify("Select a participant first","warn"); return; }
     if (!isLive) { notify("Session is offline — go live first","warn"); return; }
-    if (snd) playSound(pts >= 100);
+    if (snd && pts > 0) playSound(pts >= 100);
     if (pts >= 100) { setConfetti(true); setTimeout(()=>setConfetti(false), 3000); }
     mut(s => {
       const p = s.participants.find(x=>x.id===pid); if (!p) return;
@@ -2971,8 +3032,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       }
     });
     const col = type==="token" ? YELLOW : ACTS.find(x=>x.id===type)?.col||YELLOW;
-    setAnims(a => [...a, {id:aid.current++,x:mx,y:my,text:`+${pts}`,color:col}]);
-    notify(`+${pts} coins awarded`);
+    setAnims(a => [...a, {id:aid.current++,x:mx,y:my,text:pts<0?`${pts}`:`+${pts}`,color:pts<0?"#EF4444":col}]);
+    notify(pts<0?`${pts} coins deducted`:`+${pts} coins awarded`);
   }
 
   // Award with guard: if no participant selected or session paused, show warning
@@ -3305,8 +3366,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                         <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:5}}>
                           {coins.map((v,ci) => (
                             <button key={ci} onClick={e=>{setSelId(p.id); setTimeout(()=>awardGuarded("token",v,e),0);}}
-                              style={{border:`1.5px solid ${PINK}30`,background:SOFT,borderRadius:8,padding:"5px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:PINK,cursor:"pointer",flexShrink:0,width:44,textAlign:"center"}}>
-                              +{v}
+                              style={{border:`1.5px solid ${v<0?"#FCA5A5":PINK+"30"}`,background:v<0?"#FEF2F2":SOFT,borderRadius:8,padding:"5px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:v<0?"#EF4444":PINK,cursor:"pointer",flexShrink:0,width:44,textAlign:"center"}}>
+                              {v>0?"+":""}{v}
                             </button>
                           ))}
                         </div>
@@ -3452,10 +3513,10 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                             {coins.map((v,ci) => (
                               <button key={ci}
                                 onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
-                                style={{width:v>=100?42:36,height:34,borderRadius:8,border:`1.5px solid ${MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:v>=100?10:11,color:PINK,transition:"all .1s",flexShrink:0,padding:0}}
-                                onMouseOver={e=>{e.currentTarget.style.background=SOFT;e.currentTarget.style.transform="scale(1.08)";e.currentTarget.style.borderColor=PINK;}}
-                                onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.transform="scale(1)";e.currentTarget.style.borderColor=MID;}}>
-                                +{v}
+                                style={{width:Math.abs(v)>=100?42:36,height:34,borderRadius:8,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?10:11,color:v<0?"#EF4444":PINK,transition:"all .1s",flexShrink:0,padding:0}}
+                                onMouseOver={e=>{e.currentTarget.style.background=v<0?"#FEF2F2":SOFT;e.currentTarget.style.transform="scale(1.08)";e.currentTarget.style.borderColor=v<0?"#EF4444":PINK;}}
+                                onMouseOut={e=>{e.currentTarget.style.background="#fff";e.currentTarget.style.transform="scale(1)";e.currentTarget.style.borderColor=v<0?"#FCA5A5":MID;}}>
+                                {v>0?"+":""}{v}
                               </button>
                             ))}
                           </div>
@@ -5826,7 +5887,7 @@ export default function App() {
     return <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}><style>{CSS}</style><Ham size={60}/><div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:PINK}}>Loading session…</div></div>;
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
-  if (false && screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
+  if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
   if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onBack={async()=>{
     // Sync sessions_index with real participant count + total coins before going home
     try {
@@ -5900,7 +5961,7 @@ export default function App() {
       )}
 
       {/* ── COINMASTER JOIN MODAL ── */}
-      {false && showCMJoin && <CoinmasterJoinModal onJoin={async(code)=>{
+      {isPro && showCMJoin && <CoinmasterJoinModal onJoin={async(code)=>{
         let upperCode = code.toUpperCase().trim();
         if (!upperCode.startsWith("CM-") && upperCode.length === 4) upperCode = "CM-" + upperCode;
         // Strategy: we store a lookup doc in sessions collection keyed "cm-{code}"
