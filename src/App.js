@@ -3316,7 +3316,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
             {/* ── Mobile Quick Coins — direct award(p.id), no selId dependency ── */}
             {sorted.length > 0 && (
-              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+              <div className="tc-mobile-qc" style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                 <div style={{padding:"8px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                   <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}}>Quick Coins</span>
@@ -5930,19 +5930,21 @@ export default function App() {
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
   if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
-  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onBack={async()=>{
-    // Sync sessions_index with real participant count + total coins before going home
-    try {
-      const fresh = await sgSession(cur.code);
-      if (fresh) {
-        const count = (fresh.participants||[]).length;
-        const totalCoins = (fresh.participants||[]).reduce((s,p)=>s+(p.total||0),0);
-        const idx = sessions.map(x => x.code===cur.code ? {...x,count,totalCoins} : x);
-        setSessions(idx);
-        await ss("sessions_index", idx);
-      }
-    } catch {}
+  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onBack={()=>{
+    // Navigate immediately — sync sessions_index in background
     window.history.replaceState({},"","/app"); setScreen("home");
+    (async()=>{
+      try {
+        const fresh = await sgSession(cur.code);
+        if (fresh) {
+          const count = (fresh.participants||[]).length;
+          const totalCoins = (fresh.participants||[]).reduce((s,p)=>s+(p.total||0),0);
+          const idx = sessions.map(x => x.code===cur.code ? {...x,count,totalCoins} : x);
+          setSessions(idx);
+          ss("sessions_index", idx);
+        }
+      } catch {}
+    })();
   }} onPView={()=>setScreen("participant")}/></>;
 
   // Session settings from home list gear icon
@@ -6286,7 +6288,23 @@ export default function App() {
                               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:s.archived?SUB:TEXT,lineHeight:1.2}}>{s.name}</div>
                               {s.archived && <span style={{fontSize:9,fontWeight:700,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"2px 6px",flexShrink:0}}>ARCHIVED</span>}
                             </div>
-                            <div style={{fontSize:11,color:SUB,fontWeight:400}}>{s.date} · {s.count} participants</div>
+                            <div style={{display:"flex",alignItems:"center",gap:8,fontSize:11,color:SUB,fontWeight:400}}>
+                              <span className="tc-session-meta-text">{s.date}</span>
+                              <span className="tc-session-meta-text" style={{color:BORDER}}>·</span>
+                              <span style={{display:"flex",alignItems:"center",gap:3}}>
+                                <svg className="tc-meta-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                                <span>{s.count||0}</span>
+                                <span className="tc-session-meta-text"> participant{(s.count||0)!==1?"s":""}</span>
+                              </span>
+                              {(s.totalCoins||0)>0 && <>
+                                <span style={{color:BORDER}}>·</span>
+                                <span style={{display:"flex",alignItems:"center",gap:3}}>
+                                  <svg className="tc-meta-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                                  <span style={{color:PINK,fontWeight:600}}>{s.totalCoins}</span>
+                                  <span className="tc-session-meta-text" style={{color:SUB}}> coins</span>
+                                </span>
+                              </>}
+                            </div>
                           </div>
                         </button>
                         <button onClick={async()=>{const full=await sgSession(s.code);if(full){setCur(full);setScreen("sessionSettings");}}}
@@ -6387,6 +6405,11 @@ const CSS = `
     .tc-tab-bar { display:none !important; }
     .tc-right-tabs { display:flex !important; background:#fff; border-bottom:1px solid ${BORDER}; align-items:center; flex-shrink:0; }
     .tc-session-topbar { padding:0 24px !important; }
+    /* Hide mobile-only Quick Coins from tc-session-left on desktop */
+    .tc-mobile-qc { display:none !important; }
+    /* Show full text labels in session cards on desktop */
+    .tc-session-meta-text { display:inline !important; }
+    .tc-meta-icon { display:none !important; }
 
     /* Home: fixed top nav + two-column body */
     .tc-home-wrap { flex-direction:column; overflow:hidden; height:100%; }
@@ -6395,5 +6418,10 @@ const CSS = `
     .tc-home-left { overflow-y:auto; padding:28px 32px !important; border-right:1px solid ${BORDER}; }
     .tc-home-right { overflow-y:auto; padding:28px 32px !important; }
     .tc-home-mobile-topbar { display:none !important; }
+  }
+  /* Mobile: hide text labels, show icons in session cards */
+  @media (max-width:899px) {
+    .tc-session-meta-text { display:none; }
+    .tc-meta-icon { display:inline !important; }
   }
 `;
