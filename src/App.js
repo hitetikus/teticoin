@@ -2779,6 +2779,43 @@ function CoinmasterView({ session: init, onBack }) {
                 </button>
               )}
 
+              {/* ── Mobile Quick Coins — calls award(p.id) directly, no selId dependency ── */}
+              {sorted.length > 0 && (
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                  <div style={{padding:"8px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}}>Quick Coins</span>
+                    <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
+                      style={{height:26,padding:"0 8px",border:`1.5px solid ${BORDER}`,borderRadius:7,fontFamily:"Poppins,sans-serif",fontSize:11,color:TEXT,outline:"none",width:100,background:BG}}/>
+                  </div>
+                  {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
+                    .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
+                    .map((p,i,arr) => {
+                      const grp = ses.groups.find(g=>g.id===p.gid);
+                      const coins = ses.otherCoins||TV_DEFAULT;
+                      return (
+                        <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
+                          <Av s={p.av} color={grp?.color||PINK} size={28}/>
+                          <div style={{width:100,flexShrink:0}}>
+                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                            <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
+                          </div>
+                          <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
+                            <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:4}}>
+                              {coins.map((v,ci) => (
+                                <button key={ci}
+                                  onClick={e=>{e.stopPropagation();setSelId(p.id);award(p.id,"token",v,e.clientX,e.clientY);}}
+                                  style={{minWidth:Math.abs(v)>=100?38:30,height:30,borderRadius:7,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?9:11,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
+                                  {v>0?"+":""}{v}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
 
             </div>
           </div>
@@ -3342,42 +3379,6 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </button>
             )}
 
-            {/* ── Quick Coins: header label ── */}
-            <div style={{display:"flex",alignItems:"center",gap:6,paddingTop:4}}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              <SL style={{marginBottom:0}}>Quick Coins</SL>
-            </div>
-
-            {/* ── Quick Coins: one card per participant, no outer wrapper ── */}
-            {sorted.length===0 ? (
-              <div style={{padding:"24px 16px",textAlign:"center",color:SUB,fontSize:13,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14}}>No participants yet</div>
-            ) : (
-              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                {[...sorted].sort((a,b)=>a.name.localeCompare(b.name)).map((p,pi,arr) => {
-                  const coins = ses.otherCoins||TV_DEFAULT;
-                  const grp = ses.groups.find(g=>g.id===p.gid);
-                  return (
-                    <div key={p.id} style={{display:"flex",alignItems:"center",padding:"9px 12px",borderBottom:pi<arr.length-1?`1px solid ${BORDER}`:"none",background:selId===p.id?SOFT:"#fff"}}>
-                      <Av s={p.av} color={grp?.color||PINK} size={30}/>
-                      <div style={{width:88,flexShrink:0,marginLeft:8,marginRight:8}}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
-                        <div style={{fontSize:10,color:PINK,fontWeight:600}}>{p.total} pts</div>
-                      </div>
-                      <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
-                        <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:5}}>
-                          {coins.map((v,ci) => (
-                            <button key={ci} onClick={e=>{setSelId(p.id); setTimeout(()=>awardGuarded("token",v,e),0);}}
-                              style={{border:`1.5px solid ${v<0?"#FCA5A5":PINK+"30"}`,background:v<0?"#FEF2F2":SOFT,borderRadius:8,padding:"5px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:v<0?"#EF4444":PINK,cursor:"pointer",flexShrink:0,width:44,textAlign:"center"}}>
-                              {v>0?"+":""}{v}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
 
