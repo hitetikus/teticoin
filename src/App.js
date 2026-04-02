@@ -4,7 +4,6 @@ import { auth, googleProvider, fsGet, fsSet, fsDel, fsGetSession, fsSetSession }
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged, updateProfile, linkWithPopup, fetchSignInMethodsForEmail, EmailAuthProvider, linkWithCredential } from "firebase/auth";
 import LandingPage from "./Landing";
 
-const PACMAN_LOTTIE_DATA = {"v":"5.8.0","fr":60,"ip":0,"op":121,"w":300,"h":300,"nm":"Comp 1","ddd":0,"assets":[{"id":"comp_0","nm":"pac man","fr":60,"layers":[{"ddd":0,"ind":1,"ty":4,"nm":"Shape Layer 1","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":0,"s":[149.864,145.411,0],"to":[0,1.667,0],"ti":[0,0,0]},{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":60,"s":[149.864,155.411,0],"to":[0,0,0],"ti":[0,1.667,0]},{"t":120,"s":[149.864,145.411,0]}],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[64,64,100],"ix":6,"l":2}},"ao":0,"hasMask":true,"masksProperties":[{"inv":false,"mode":"s","pt":{"a":1,"k":[{"i":{"x":0.083,"y":1},"o":{"x":0.333,"y":0},"t":0,"s":[{"i":[[0,0],[0,0],[0,0]],"o":[[0,0],[0,0],[0,0]],"v":[[75.692,0.108],[0.011,-0.162],[75.698,0.111]],"c":true}]},{"i":{"x":0.667,"y":1},"o":{"x":0.949,"y":0},"t":15,"s":[{"i":[[0,0],[0,0],[0,0]],"o":[[0,0],[0,0],[0,0]],"v":[[56.465,-40.689],[0.011,-0.162],[55.933,41.46]],"c":true}]},{"i":{"x":0.083,"y":1},"o":{"x":0.333,"y":0},"t":30,"s":[{"i":[[0,0],[0,0],[0,0]],"o":[[0,0],[0,0],[0,0]],"v":[[75.692,0.108],[0.011,-0.162],[75.698,0.111]],"c":true}]},{"i":{"x":0.667,"y":1},"o":{"x":0.949,"y":0},"t":45,"s":[{"i":[[0,0],[0,0],[0,0]],"o":[[0,0],[0,0],[0,0]],"v":[[56.465,-40.689],[0.011,-0.162],[55.933,41.46]],"c":true}]},{"i":{"x":0.083,"y":1},"o":{"x":0.333,"y":0},"t":60,"s":[{"i":[[0,0],[0,0],[0,0]],"o":[[0,0],[0,0],[0,0]],"v":[[75.692,0.108],[0.011,-0.162],[75.698,0.111]],"c":true}]},{"i":{"x":0.667,"y":1},"o":{"x":0.949,"y":0},"t":75,"s":[{"i":[[0,0],[0,0],[0,0]],"o":[[0,0],[0,0],[0,0]],"v":[[56.465,-40.689],[0.011,-0.162],[55.933,41.46]],"c":true}]},{"i":{"x":0.083,"y":1},"o":{"x":0.333,"y":0},"t":90,"s":[{"i":[[0,0],[0,0],[0,0]],"o":[[0,0],[0,0],[0,0]],"v":[[75.692,0.108],[0.011,-0.162],[75.698,0.111]],"c":true}]},{"i":{"x":0.667,"y":1},"o":{"x":0.949,"y":0},"t":105,"s":[{"i":[[0,0],[0,0],[0,0]],"o":[[0,0],[0,0],[0,0]],"v":[[56.465,-40.689],[0.011,-0.162],[55.933,41.46]],"c":true}]},{"t":120,"s":[{"i":[[0,0],[0,0],[0,0]],"o":[[0,0],[0,0],[0,0]],"v":[[75.692,0.108],[0.011,-0.162],[75.698,0.111]],"c":true}]}],"ix":1},"o":{"a":0,"k":100,"ix":3},"x":{"a":0,"k":0,"ix":4},"nm":"Mask 1"}],"shapes":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[-27.614,0],[0,-27.614],[27.614,0],[0,27.614]],"o":[[27.614,0],[0,27.614],[-27.614,0],[0,-27.614]],"v":[[0,-50],[50,0],[0,50],[-50,0]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0.914,0.118,0.549,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false}],"ip":0,"op":121,"st":0,"bm":0},{"ddd":0,"ind":2,"ty":3,"nm":"Null 1","sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":0,"s":[149.864,145.411,0],"to":[0,1.667,0],"ti":[0,0,0]},{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":60,"s":[149.864,155.411,0],"to":[0,0,0],"ti":[0,1.667,0]},{"t":120,"s":[149.864,145.411,0]}],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"ip":0,"op":121,"st":0,"bm":0},{"ddd":0,"ind":3,"ty":4,"nm":"food 6","parent":2,"sr":1,"ks":{"o":{"a":1,"k":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":-32,"s":[0]},{"t":-18,"s":[100]}],"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":-32,"s":[126.817,0.578,0],"to":[-20.167,0,0],"ti":[20.167,0,0]},{"t":28,"s":[5.817,0.578,0]}],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,-4.69],[4.69,0],[0,4.69],[-4.69,0]],"o":[[0,4.69],[-4.69,0],[0,-4.69],[4.69,0]],"v":[[8.492,0],[0,8.492],[-8.492,0],[0,-8.492]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0.961,0.651,0.137,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[0,0],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0,"op":28,"st":-32,"bm":0},{"ddd":0,"ind":4,"ty":4,"nm":"food 5","parent":2,"sr":1,"ks":{"o":{"a":1,"k":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":29,"s":[0]},{"t":43,"s":[100]}],"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":29,"s":[126.817,0.578,0],"to":[-20.167,0,0],"ti":[20.167,0,0]},{"t":89,"s":[5.817,0.578,0]}],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,-4.69],[4.69,0],[0,4.69],[-4.69,0]],"o":[[0,4.69],[-4.69,0],[0,-4.69],[4.69,0]],"v":[[8.492,0],[0,8.492],[-8.492,0],[0,-8.492]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0.961,0.651,0.137,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[0,0],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":29,"op":89,"st":29,"bm":0},{"ddd":0,"ind":5,"ty":4,"nm":"food 4","parent":2,"sr":1,"ks":{"o":{"a":1,"k":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":59,"s":[0]},{"t":73,"s":[100]}],"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":59,"s":[126.817,0.578,0],"to":[-20.167,0,0],"ti":[20.167,0,0]},{"t":119,"s":[5.817,0.578,0]}],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,-4.69],[4.69,0],[0,4.69],[-4.69,0]],"o":[[0,4.69],[-4.69,0],[0,-4.69],[4.69,0]],"v":[[8.492,0],[0,8.492],[-8.492,0],[0,-8.492]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0.961,0.651,0.137,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[0,0],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":59,"op":119,"st":59,"bm":0},{"ddd":0,"ind":6,"ty":4,"nm":"food 3","parent":2,"sr":1,"ks":{"o":{"a":1,"k":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":88,"s":[0]},{"t":102,"s":[100]}],"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":88,"s":[126.817,0.578,0],"to":[-20.167,0,0],"ti":[20.167,0,0]},{"t":148,"s":[5.817,0.578,0]}],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,-4.69],[4.69,0],[0,4.69],[-4.69,0]],"o":[[0,4.69],[-4.69,0],[0,-4.69],[4.69,0]],"v":[[8.492,0],[0,8.492],[-8.492,0],[0,-8.492]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0.961,0.651,0.137,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[0,0],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":88,"op":121,"st":88,"bm":0},{"ddd":0,"ind":7,"ty":4,"nm":"food 2","parent":2,"sr":1,"ks":{"o":{"a":1,"k":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":123,"s":[0]},{"t":137,"s":[100]}],"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":123,"s":[126.817,0.578,0],"to":[-20.167,0,0],"ti":[20.167,0,0]},{"t":183,"s":[5.817,0.578,0]}],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,-4.69],[4.69,0],[0,4.69],[-4.69,0]],"o":[[0,4.69],[-4.69,0],[0,-4.69],[4.69,0]],"v":[[8.492,0],[0,8.492],[-8.492,0],[0,-8.492]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0.961,0.651,0.137,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[0,0],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":123,"op":123.606060606061,"st":123,"bm":0},{"ddd":0,"ind":8,"ty":4,"nm":"food","parent":2,"sr":1,"ks":{"o":{"a":1,"k":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":0,"s":[0]},{"t":14,"s":[100]}],"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":0,"s":[126.817,0.578,0],"to":[-20.167,0,0],"ti":[20.167,0,0]},{"t":60,"s":[5.817,0.578,0]}],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,-4.69],[4.69,0],[0,4.69],[-4.69,0]],"o":[[0,4.69],[-4.69,0],[0,-4.69],[4.69,0]],"v":[[8.492,0],[0,8.492],[-8.492,0],[0,-8.492]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0.961,0.651,0.137,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[0,0],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0,"op":60,"st":0,"bm":0}]}],"layers":[{"ddd":0,"ind":1,"ty":0,"nm":"pac man","refId":"comp_0","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[150,150,0],"ix":2,"l":2},"a":{"a":0,"k":[150,150,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"w":300,"h":300,"ip":0,"op":121,"st":0,"bm":0}],"markers":[]};
 
 const PINK = "#E91E8C";
 const PINK2 = "#FF4FB8";
@@ -342,28 +341,141 @@ function Ham({ size = 72 }) {
 
 // ── Animated loading hamster ──
 function HamLoading() {
-  const ref = useRef(null);
-  useEffect(() => {
-    function init() {
-      if (!ref.current || !window.lottie) return;
-      window.lottie.loadAnimation({
-        container: ref.current,
-        renderer: "svg",
-        loop: true,
-        autoplay: true,
-        animationData: PACMAN_LOTTIE_DATA,
-      });
-    }
-    if (window.lottie) { init(); return; }
-    const existing = document.querySelector("script[data-lottie]");
-    if (existing) { existing.addEventListener("load", init); return; }
-    const s = document.createElement("script");
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js";
-    s.setAttribute("data-lottie","1");
-    s.onload = init;
-    document.head.appendChild(s);
-  }, []);
-  return <div ref={ref} style={{width:160,height:160}}/>;
+  return (
+    <div style={{position:"relative",width:220,height:160}}>
+      {/* Speed lines — left of hamster */}
+      <svg style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",overflow:"visible"}} width="70" height="80" viewBox="0 0 70 80">
+        <line x1="0" y1="18" x2="52" y2="18" stroke="#F9A8D4" strokeWidth="2.5" strokeLinecap="round" style={{animation:"speedLine 0.4s ease-in-out infinite"}}/>
+        <line x1="8" y1="30" x2="58" y2="30" stroke="#FDA4CF" strokeWidth="2" strokeLinecap="round" style={{animation:"speedLine 0.4s ease-in-out 0.08s infinite"}}/>
+        <line x1="0" y1="42" x2="62" y2="42" stroke="#FECDE8" strokeWidth="2.5" strokeLinecap="round" style={{animation:"speedLine 0.4s ease-in-out 0.16s infinite"}}/>
+        <line x1="12" y1="54" x2="55" y2="54" stroke="#FCA5A5" strokeWidth="1.8" strokeLinecap="round" style={{animation:"speedLine 0.4s ease-in-out 0.06s infinite"}}/>
+        <line x1="4" y1="64" x2="48" y2="64" stroke="#FBCFE8" strokeWidth="1.5" strokeLinecap="round" style={{animation:"speedLine 0.4s ease-in-out 0.2s infinite"}}/>
+      </svg>
+
+      {/* Sparkles — right of hamster */}
+      <svg style={{position:"absolute",right:0,top:6,overflow:"visible"}} width="40" height="60" viewBox="0 0 40 60">
+        <path d="M12 4 L14 10 L20 12 L14 14 L12 20 L10 14 L4 12 L10 10 Z" fill="#F5A623" style={{animation:"twinkle 1.0s ease-in-out infinite"}}/>
+        <path d="M32 28 L33.5 32 L38 33.5 L33.5 35 L32 39 L30.5 35 L26 33.5 L30.5 32 Z" fill="#F5A623" style={{animation:"twinkle 1.0s ease-in-out 0.35s infinite"}}/>
+        <circle cx="6" cy="38" r="3" fill="#FDA4CF" style={{animation:"twinkle 1.2s ease-in-out 0.2s infinite"}}/>
+        <circle cx="30" cy="10" r="2" fill="#FDA4CF" style={{animation:"twinkle 1.2s ease-in-out 0.5s infinite"}}/>
+      </svg>
+
+      {/* Hamster body — bounces up/down while running */}
+      <div style={{
+        position:"absolute",
+        left:"50%",transform:"translateX(-50%)",
+        bottom:8,
+        animation:"hamRun 0.35s ease-in-out infinite alternate",
+      }}>
+        <svg width="130" height="130" viewBox="0 0 130 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            {/* Fluffy body gradient */}
+            <radialGradient id="bodyGrad" cx="45%" cy="40%" r="58%">
+              <stop offset="0%" stopColor="#FFF0F5"/>
+              <stop offset="45%" stopColor="#FECDE8"/>
+              <stop offset="100%" stopColor="#F9A8D4"/>
+            </radialGradient>
+            <radialGradient id="bellyGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#ffffff"/>
+              <stop offset="100%" stopColor="#FFF0F5"/>
+            </radialGradient>
+            <radialGradient id="earGrad" cx="40%" cy="30%" r="60%">
+              <stop offset="0%" stopColor="#FDE8F0"/>
+              <stop offset="100%" stopColor="#F9A8D4"/>
+            </radialGradient>
+            <radialGradient id="eyeGrad" cx="35%" cy="30%" r="60%">
+              <stop offset="0%" stopColor="#5C2A0A"/>
+              <stop offset="100%" stopColor="#2D0A00"/>
+            </radialGradient>
+          </defs>
+
+          {/* ── TAIL ── */}
+          <ellipse cx="22" cy="74" rx="9" ry="6" fill="#FECDE8" stroke="#E8A0B8" strokeWidth="1.2" transform="rotate(-20 22 74)"/>
+
+          {/* ── BACK LEGS ── */}
+          {/* Back left leg — kicks back */}
+          <g style={{transformOrigin:"30px 95px", animation:"legBackL 0.35s ease-in-out infinite alternate"}}>
+            <ellipse cx="30" cy="100" rx="12" ry="8" fill="#F9A8D4" stroke="#D4789A" strokeWidth="1.2" transform="rotate(10 30 100)"/>
+            <ellipse cx="22" cy="106" rx="8" ry="5" fill="#FDA4CF" stroke="#D4789A" strokeWidth="1"/>
+          </g>
+          {/* Back right leg — kicks forward */}
+          <g style={{transformOrigin:"50px 95px", animation:"legBackR 0.35s ease-in-out infinite alternate"}}>
+            <ellipse cx="50" cy="100" rx="12" ry="8" fill="#F9A8D4" stroke="#D4789A" strokeWidth="1.2" transform="rotate(-5 50 100)"/>
+            <ellipse cx="44" cy="106" rx="8" ry="5" fill="#FDA4CF" stroke="#D4789A" strokeWidth="1"/>
+          </g>
+
+          {/* ── MAIN FLUFFY BODY ── */}
+          {/* Fluffy fur spikes around body edge */}
+          {[
+            [48,18,6,5,-15],[34,22,5,5,-30],[22,32,5,5,-50],[16,44,5,4.5,-70],
+            [18,58,5,5,-100],[24,70,5,5,-130],[36,78,5,5,-155],[52,82,6,5,175],
+            [68,80,5,5,160],[82,74,5,4.5,140],[92,64,5,4.5,120],[96,52,5,4.5,100],
+            [92,40,5,5,70],[84,30,5,5,50],[72,22,5,5,30],[58,18,6,5,10],
+          ].map(([cx,cy,rx,ry,rot],i)=>(
+            <ellipse key={i} cx={cx} cy={cy} rx={rx} ry={ry}
+              fill="#F9A8D4" stroke="#E8A0B8" strokeWidth="0.8"
+              transform={`rotate(${rot} ${cx} ${cy})`}/>
+          ))}
+          {/* Main body oval */}
+          <ellipse cx="57" cy="60" rx="40" ry="36" fill="url(#bodyGrad)" stroke="#D4789A" strokeWidth="1.5"/>
+          {/* Soft white belly */}
+          <ellipse cx="62" cy="66" rx="24" ry="22" fill="url(#bellyGrad)" stroke="#FDE8F0" strokeWidth="0.8"/>
+          {/* Extra fluffy texture highlights */}
+          <ellipse cx="45" cy="48" rx="10" ry="7" fill="#FFF0F5" opacity="0.7" transform="rotate(-20 45 48)"/>
+          <ellipse cx="55" cy="40" rx="8" ry="5" fill="#FFF0F5" opacity="0.5" transform="rotate(-10 55 40)"/>
+
+          {/* ── EARS ── */}
+          {/* Left ear */}
+          <ellipse cx="36" cy="24" rx="13" ry="12" fill="url(#earGrad)" stroke="#D4789A" strokeWidth="1.5"/>
+          <ellipse cx="36" cy="24" rx="7" ry="6" fill="#FECDE8"/>
+          {/* Right ear */}
+          <ellipse cx="72" cy="20" rx="13" ry="12" fill="url(#earGrad)" stroke="#D4789A" strokeWidth="1.5"/>
+          <ellipse cx="72" cy="20" rx="7" ry="6" fill="#FECDE8"/>
+
+          {/* ── FRONT ARMS ── */}
+          {/* Front left arm — swings back */}
+          <g style={{transformOrigin:"60px 72px", animation:"armL 0.35s ease-in-out infinite alternate"}}>
+            <ellipse cx="52" cy="80" rx="10" ry="7" fill="#F9A8D4" stroke="#D4789A" strokeWidth="1.2" transform="rotate(20 52 80)"/>
+            <ellipse cx="46" cy="86" rx="7" ry="4.5" fill="#FDA4CF" stroke="#D4789A" strokeWidth="1"/>
+          </g>
+          {/* Front right arm — swings forward */}
+          <g style={{transformOrigin:"75px 72px", animation:"armR 0.35s ease-in-out infinite alternate"}}>
+            <ellipse cx="80" cy="78" rx="10" ry="7" fill="#F9A8D4" stroke="#D4789A" strokeWidth="1.2" transform="rotate(-15 80 78)"/>
+            <ellipse cx="86" cy="83" rx="7" ry="4.5" fill="#FDA4CF" stroke="#D4789A" strokeWidth="1"/>
+          </g>
+
+          {/* ── FACE ── */}
+          {/* Left eye */}
+          <circle cx="52" cy="50" r="9" fill="url(#eyeGrad)" stroke="#2D0A00" strokeWidth="1"/>
+          <circle cx="55" cy="46" r="3.5" fill="white"/>
+          <circle cx="57" cy="44.5" r="1.4" fill="white" opacity=".8"/>
+          {/* Right eye */}
+          <circle cx="74" cy="48" r="9" fill="url(#eyeGrad)" stroke="#2D0A00" strokeWidth="1"/>
+          <circle cx="77" cy="44" r="3.5" fill="white"/>
+          <circle cx="79" cy="42.5" r="1.4" fill="white" opacity=".8"/>
+          {/* Eye sparkle blink */}
+          <g style={{animation:"eyeSquint 2.8s ease-in-out infinite"}}>
+            <rect x="43" y="49" width="18" height="2" rx="1" fill="#2D0A00" opacity="0"/>
+            <rect x="65" y="47" width="18" height="2" rx="1" fill="#2D0A00" opacity="0"/>
+          </g>
+          {/* Nose */}
+          <ellipse cx="63" cy="60" rx="3.5" ry="2.5" fill="#E91E8C"/>
+          {/* Happy open mouth */}
+          <path d="M54 66 Q63 75 72 66" fill="#FFF0F5" stroke="#C0185A" strokeWidth="1.5" strokeLinecap="round"/>
+          {/* Tongue */}
+          <ellipse cx="63" cy="72" rx="5" ry="3.5" fill="#F472B6"/>
+          {/* Blush cheeks */}
+          <ellipse cx="44" cy="62" rx="8" ry="5.5" fill="#F9A8D4" opacity=".55"/>
+          <ellipse cx="82" cy="60" rx="8" ry="5.5" fill="#F9A8D4" opacity=".55"/>
+          {/* Whiskers */}
+          <line x1="68" y1="60" x2="90" y2="55" stroke="#FDA4CF" strokeWidth="1" opacity=".9"/>
+          <line x1="68" y1="63" x2="90" y2="63" stroke="#FDA4CF" strokeWidth="1" opacity=".9"/>
+          <line x1="58" y1="60" x2="36" y2="55" stroke="#FDA4CF" strokeWidth="1" opacity=".9"/>
+          <line x1="58" y1="63" x2="36" y2="63" stroke="#FDA4CF" strokeWidth="1" opacity=".9"/>
+        </svg>
+      </div>
+    </div>
+  );
 }
 
 // ── Confetti ──
@@ -5978,10 +6090,9 @@ export default function App() {
   }
 
   if (loading) return (
-    <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8}}>
+    <div style={{minHeight:"100vh",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>
       <style>{CSS}</style>
       <HamLoading/>
-      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:18,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-.3}}>Teticoin</div>
     </div>
   );
   if (screen==="claimBadge" && claimToken) return <><style>{CSS}</style><BadgeClaimScreen token={claimToken} onDone={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
@@ -5990,7 +6101,7 @@ export default function App() {
   // participantJoin = loaded from /join/CODE URL — always show participant view, never host view
   if (screen==="participantJoin") {
     if (cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
-    return <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8}}><style>{CSS}</style><HamLoading/><div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:PINK}}>Loading session…</div></div>;
+    return <div style={{minHeight:"100vh",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}><style>{CSS}</style><HamLoading/></div>;
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
   if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
@@ -6401,17 +6512,14 @@ const CSS = `
   @keyframes slideInRight { from{transform:translateX(100%)} to{transform:translateX(0)} }
   @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(1.2)} }
   @keyframes spin { to{transform:rotate(360deg)} }
-  @keyframes hamBounce { 0%,100%{transform:translateY(0);} 45%{transform:translateY(-10px);} 65%{transform:translateY(-6px);} }
-  @keyframes earWiggleL { 0%,100%{transform:rotate(0deg);} 30%{transform:rotate(-12deg);} 60%{transform:rotate(5deg);} }
-  @keyframes earWiggleR { 0%,100%{transform:rotate(0deg);} 30%{transform:rotate(12deg);} 60%{transform:rotate(-5deg);} }
-  @keyframes eyeBlink { 0%,92%,100%{transform:scaleY(1);} 95%,97%{transform:scaleY(0.08);} }
-  @keyframes cheekPulse { 0%,100%{opacity:0.6;} 50%{opacity:1;} }
-  @keyframes dotBounce { 0%,80%,100%{transform:translateY(0);opacity:.4;} 40%{transform:translateY(-6px);opacity:1;} }
-  @keyframes hamBob { from{transform:translateY(0px);} to{transform:translateY(-5px);} }
-  @keyframes chomp { from{transform:rotate(0deg);} to{transform:rotate(22deg);} }
-  @keyframes coinScroll { 0%{transform:translateX(280px);opacity:1;} 78%{opacity:1;} 88%{opacity:0;} 100%{transform:translateX(170px);opacity:0;} }
-  @keyframes coinFlyIn { 0%{transform:translateX(0) scale(1);opacity:1;} 70%{transform:translateX(-20px) scale(0.85);opacity:1;} 90%{transform:translateX(-40px) scale(0.5);opacity:0;} 100%{transform:translateX(0) scale(1);opacity:0;} }
-  @keyframes sparkle { 0%,100%{transform:scale(1) rotate(0deg);opacity:.9;} 50%{transform:scale(1.4) rotate(20deg);opacity:.4;} }
+  @keyframes hamRun { from{transform:translateX(-50%) translateY(0px);} to{transform:translateX(-50%) translateY(-8px);} }
+  @keyframes legBackL { from{transform:rotate(-30deg);} to{transform:rotate(25deg);} }
+  @keyframes legBackR { from{transform:rotate(25deg);} to{transform:rotate(-30deg);} }
+  @keyframes armL { from{transform:rotate(30deg);} to{transform:rotate(-25deg);} }
+  @keyframes armR { from{transform:rotate(-25deg);} to{transform:rotate(30deg);} }
+  @keyframes speedLine { 0%{transform:translateX(0);opacity:1;} 60%{transform:translateX(-12px);opacity:.3;} 100%{transform:translateX(0);opacity:1;} }
+  @keyframes twinkle { 0%,100%{transform:scale(1) rotate(0deg);opacity:1;} 50%{transform:scale(0.5) rotate(15deg);opacity:.2;} }
+  @keyframes eyeSquint { 0%,88%,100%{opacity:0;transform:scaleY(1);} 92%,96%{opacity:1;} }
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-thumb { background:${MID}; border-radius:4px; }
   input, textarea { user-select:text; -webkit-user-select:text; cursor:text; }
