@@ -339,48 +339,93 @@ function Ham({ size = 72 }) {
 }
 
 // ── Animated loading hamster ──
-function HamLoading({ size = 80 }) {
+function HamLoading() {
+  // Hamster eating coins like Pac-Man
+  // Scene: 280 wide x 100 tall. Ham moves right, mouth chomps, coins scroll left into mouth.
   return (
-    <div style={{display:"inline-block",animation:"hamBounce 0.9s ease-in-out infinite"}}>
-      <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
-        {/* Left ear — wiggles */}
-        <g style={{transformOrigin:"22px 38px",animation:"earWiggleL 1.8s ease-in-out infinite"}}>
-          <ellipse cx="22" cy="30" rx="16" ry="16" fill="#F9A8D4"/>
-          <ellipse cx="22" cy="30" rx="9" ry="9" fill="#FDE8F0"/>
-        </g>
-        {/* Right ear — wiggles opposite */}
-        <g style={{transformOrigin:"78px 38px",animation:"earWiggleR 1.8s ease-in-out infinite"}}>
-          <ellipse cx="78" cy="30" rx="16" ry="16" fill="#F9A8D4"/>
-          <ellipse cx="78" cy="30" rx="9" ry="9" fill="#FDE8F0"/>
-        </g>
-        {/* Body */}
-        <ellipse cx="50" cy="78" rx="30" ry="22" fill="#FDE8F0"/>
-        <ellipse cx="50" cy="52" rx="32" ry="30" fill="#FCE7F3"/>
-        <ellipse cx="50" cy="80" rx="18" ry="14" fill="#FFF0F5"/>
-        {/* Cheeks — pulse pink */}
-        <ellipse cx="26" cy="58" rx="9" ry="7" fill="#FDA4CF" style={{animation:"cheekPulse 1.8s ease-in-out infinite"}}/>
-        <ellipse cx="74" cy="58" rx="9" ry="7" fill="#FDA4CF" style={{animation:"cheekPulse 1.8s ease-in-out infinite"}}/>        {/* Eyes — blink */}
-        <g style={{animation:"eyeBlink 3s ease-in-out infinite"}}>
-          <circle cx="40" cy="47" r="4.5" fill="#1A0A14"/>
-          <circle cx="60" cy="47" r="4.5" fill="#1A0A14"/>
-          <circle cx="41.5" cy="45.5" r="1.8" fill="white" opacity=".85"/>
-          <circle cx="61.5" cy="45.5" r="1.8" fill="white" opacity=".85"/>
-        </g>
-        {/* Nose */}
-        <ellipse cx="50" cy="56" rx="3.5" ry="2.5" fill={PINK}/>
-        {/* Smile */}
-        <path d="M44 62 Q50 68 56 62" stroke="#C0185A" strokeWidth="2" fill="none" strokeLinecap="round"/>
-        {/* Whiskers */}
-        <line x1="54" y1="57" x2="76" y2="53" stroke="#FDA4CF" strokeWidth="1.2" opacity=".7"/>
-        <line x1="54" y1="59" x2="76" y2="59" stroke="#FDA4CF" strokeWidth="1.2" opacity=".7"/>
-        <line x1="46" y1="57" x2="24" y2="53" stroke="#FDA4CF" strokeWidth="1.2" opacity=".7"/>
-        <line x1="46" y1="59" x2="24" y2="59" stroke="#FDA4CF" strokeWidth="1.2" opacity=".7"/>
-        {/* Little paws peeking at bottom */}
-        <ellipse cx="34" cy="94" rx="10" ry="7" fill="#FDE8F0"/>
-        <ellipse cx="66" cy="94" rx="10" ry="7" fill="#FDE8F0"/>
-        <ellipse cx="34" cy="94" rx="6" ry="4" fill="#FECDE8"/>
-        <ellipse cx="66" cy="94" rx="6" ry="4" fill="#FECDE8"/>
-      </svg>
+    <div style={{width:280,height:100,position:"relative",overflow:"hidden"}}>
+      {/* Track / ground line */}
+      <div style={{position:"absolute",bottom:18,left:0,right:0,height:2,background:"#FECDE8",borderRadius:1}}/>
+
+      {/* ── COINS — 4 coins spaced, scroll left and disappear into ham's mouth ── */}
+      {[0,1,2,3].map(i => (
+        <div key={i} style={{
+          position:"absolute",
+          bottom:26,
+          left:0,
+          animation:`coinScroll 1.6s linear ${i*0.4}s infinite`,
+          transformOrigin:"center",
+        }}>
+          {/* Coin — gold circle with $ */}
+          <svg width="22" height="22" viewBox="0 0 22 22">
+            <circle cx="11" cy="11" r="10" fill="#F5A623" stroke="#E8951A" strokeWidth="1.5"/>
+            <circle cx="11" cy="11" r="7" fill="#FBBD36" opacity=".6"/>
+            <text x="11" y="15.5" textAnchor="middle" fontSize="9" fontWeight="900" fill="#A36200" fontFamily="Plus Jakarta Sans,sans-serif">$</text>
+          </svg>
+        </div>
+      ))}
+
+      {/* ── HAMSTER — fixed right side, body bobs, mouth chomps ── */}
+      <div style={{
+        position:"absolute",
+        right:12,
+        bottom:16,
+        animation:"hamBob 0.4s ease-in-out infinite alternate",
+      }}>
+        <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+          {/* Left ear */}
+          <ellipse cx="18" cy="22" rx="12" ry="12" fill="#F9A8D4"/>
+          <ellipse cx="18" cy="22" rx="7" ry="7" fill="#FDE8F0"/>
+          {/* Right ear */}
+          <ellipse cx="62" cy="22" rx="12" ry="12" fill="#F9A8D4"/>
+          <ellipse cx="62" cy="22" rx="7" ry="7" fill="#FDE8F0"/>
+          {/* Body */}
+          <ellipse cx="40" cy="58" rx="26" ry="20" fill="#FDE8F0"/>
+          <ellipse cx="40" cy="42" rx="28" ry="26" fill="#FCE7F3"/>
+          <ellipse cx="40" cy="62" rx="16" ry="12" fill="#FFF0F5"/>
+          {/* Cheeks — bulging with coins! */}
+          <ellipse cx="18" cy="46" rx="10" ry="9" fill="#FDA4CF" opacity=".9"/>
+          <ellipse cx="62" cy="46" rx="10" ry="9" fill="#FDA4CF" opacity=".9"/>
+          {/* Coin bulge shimmer in left cheek */}
+          <ellipse cx="16" cy="44" rx="5" ry="4" fill="#F5A623" opacity=".35"/>
+          {/* Eye — happy squint from eating */}
+          <path d="M28 34 Q32 30 36 34" stroke="#1A0A14" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+          <path d="M44 34 Q48 30 52 34" stroke="#1A0A14" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+          {/* Nose */}
+          <ellipse cx="40" cy="44" rx="3" ry="2" fill="#E91E8C"/>
+          {/* Whiskers */}
+          <line x1="43" y1="44" x2="62" y2="40" stroke="#FDA4CF" strokeWidth="1" opacity=".8"/>
+          <line x1="43" y1="46" x2="62" y2="47" stroke="#FDA4CF" strokeWidth="1" opacity=".8"/>
+          <line x1="37" y1="44" x2="18" y2="40" stroke="#FDA4CF" strokeWidth="1" opacity=".8"/>
+          <line x1="37" y1="46" x2="18" y2="47" stroke="#FDA4CF" strokeWidth="1" opacity=".8"/>
+          {/* MOUTH — chomping open/close. Upper jaw fixed, lower jaw animates */}
+          {/* Upper jaw */}
+          <path d="M28 52 Q40 48 52 52" fill="#FCE7F3" stroke="#FDA4CF" strokeWidth="1"/>
+          {/* Lower jaw — animates down then up */}
+          <g style={{transformOrigin:"40px 52px", animation:"chomp 0.4s ease-in-out infinite alternate"}}>
+            <path d="M28 52 Q40 62 52 52" fill="#FFF0F5" stroke="#FDA4CF" strokeWidth="1"/>
+            {/* Tongue */}
+            <ellipse cx="40" cy="56" rx="5" ry="3" fill="#F472B6"/>
+          </g>
+          {/* Tiny paws */}
+          <ellipse cx="22" cy="72" rx="8" ry="6" fill="#FDE8F0"/>
+          <ellipse cx="58" cy="72" rx="8" ry="6" fill="#FDE8F0"/>
+          <ellipse cx="22" cy="73" rx="5" ry="3.5" fill="#FECDE8"/>
+          <ellipse cx="58" cy="73" rx="5" ry="3.5" fill="#FECDE8"/>
+        </svg>
+      </div>
+
+      {/* Star sparkles near mouth when eating */}
+      <div style={{position:"absolute",right:80,bottom:48,animation:"sparkle 0.8s ease-in-out infinite"}}>
+        <svg width="12" height="12" viewBox="0 0 12 12">
+          <path d="M6 0 L7 5 L12 6 L7 7 L6 12 L5 7 L0 6 L5 5 Z" fill="#F5A623" opacity=".9"/>
+        </svg>
+      </div>
+      <div style={{position:"absolute",right:92,bottom:56,animation:"sparkle 0.8s ease-in-out 0.3s infinite"}}>
+        <svg width="8" height="8" viewBox="0 0 12 12">
+          <path d="M6 0 L7 5 L12 6 L7 7 L6 12 L5 7 L0 6 L5 5 Z" fill="#FECDE8" opacity=".9"/>
+        </svg>
+      </div>
     </div>
   );
 }
@@ -5997,15 +6042,11 @@ export default function App() {
   }
 
   if (loading) return (
-    <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
+    <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20}}>
       <style>{CSS}</style>
-      <HamLoading size={90}/>
+      <HamLoading/>
       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-.3}}>Teticoin</div>
-      <div style={{display:"flex",gap:6,marginTop:-8}}>
-        {[0,1,2].map(i=>(
-          <div key={i} style={{width:6,height:6,borderRadius:"50%",background:PINK,animation:`dotBounce 1.2s ease-in-out ${i*0.18}s infinite`}}/>
-        ))}
-      </div>
+      <div style={{fontSize:13,color:SUB,fontFamily:"Poppins,sans-serif",marginTop:-8}}>Nomming coins, hang tight…</div>
     </div>
   );
   if (screen==="claimBadge" && claimToken) return <><style>{CSS}</style><BadgeClaimScreen token={claimToken} onDone={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
@@ -6014,7 +6055,7 @@ export default function App() {
   // participantJoin = loaded from /join/CODE URL — always show participant view, never host view
   if (screen==="participantJoin") {
     if (cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
-    return <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}><style>{CSS}</style><HamLoading size={80}/><div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:PINK}}>Loading session…</div></div>;
+    return <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}><style>{CSS}</style><HamLoading/><div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:PINK}}>Loading session…</div></div>;
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
   if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
@@ -6431,6 +6472,10 @@ const CSS = `
   @keyframes eyeBlink { 0%,92%,100%{transform:scaleY(1);} 95%,97%{transform:scaleY(0.08);} }
   @keyframes cheekPulse { 0%,100%{opacity:0.6;} 50%{opacity:1;} }
   @keyframes dotBounce { 0%,80%,100%{transform:translateY(0);opacity:.4;} 40%{transform:translateY(-6px);opacity:1;} }
+  @keyframes hamBob { from{transform:translateY(0px);} to{transform:translateY(-5px);} }
+  @keyframes chomp { from{transform:rotate(0deg);} to{transform:rotate(22deg);} }
+  @keyframes coinScroll { 0%{transform:translateX(280px);opacity:1;} 78%{opacity:1;} 88%{opacity:0;} 100%{transform:translateX(170px);opacity:0;} }
+  @keyframes sparkle { 0%,100%{transform:scale(1) rotate(0deg);opacity:.9;} 50%{transform:scale(1.4) rotate(20deg);opacity:.4;} }
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-thumb { background:${MID}; border-radius:4px; }
   input, textarea { user-select:text; -webkit-user-select:text; cursor:text; }
