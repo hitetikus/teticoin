@@ -2960,14 +2960,33 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
     localMutRef.current = true;
     setSes(prev => { const s = JSON.parse(JSON.stringify(prev)); fn(s); return s; });
   }
+
+  // Auto-jump host to board tab when boardVisible changes (from poll or local toggle)
+  const prevBoardVisibleRef = useRef(ses.boardVisible);
+  useEffect(() => {
+    if (ses.boardVisible === prevBoardVisibleRef.current) return;
+    prevBoardVisibleRef.current = ses.boardVisible;
+    if (ses.boardVisible) {
+      // Scoreboard turned ON — jump to board tab
+      setTab("board"); setRightTab("board");
+    } else {
+      // Scoreboard turned OFF — jump back to coins/award tab
+      setTab("award"); setRightTab("award_all");
+    }
+  }, [ses.boardVisible]);
   function notify(m, type="ok") { setToast({m,type}); setTimeout(()=>setToast(null), 2200); }
   function toggleLive() {
     if (ses.live !== false) {
       // Going offline — show confirm
       setConfirmOffline(true);
     } else {
-      // Going live — instant, no confirm needed
-      mut(s=>{s.live=true;}); notify("Session is now Live");
+      // Going live — also unarchive if needed
+      if (ses.archived) {
+        mut(s=>{s.live=true; s.archived=false;});
+        notify("Session unarchived and now Live");
+      } else {
+        mut(s=>{s.live=true;}); notify("Session is now Live");
+      }
     }
   }
   function goOffline() { mut(s=>{s.live=false;}); setConfirmOffline(false); notify("Session is offline"); }
@@ -3098,7 +3117,11 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         </div>
       )}
       {showQR && <QRModal session={ses} onClose={()=>setShowQR(false)}/>}
-      {showLeader && <LeaderSheet session={ses} onToggle={()=>mut(s=>{s.boardVisible=!s.boardVisible;})} onClose={()=>setShowLeader(false)}/>}
+      {showLeader && <LeaderSheet session={ses} onToggle={()=>{
+        const turningOn = !ses.boardVisible;
+        mut(s=>{s.boardVisible=!s.boardVisible;});
+        if (turningOn) { setRightTab("board"); setTab("board"); setShowLeader(false); }
+      }} onClose={()=>setShowLeader(false)}/>}
       {showSettings && <SessionSettings session={ses}
         isPro={isPro}
         onRename={renameSession}
@@ -3195,10 +3218,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         ].map(([id,l]) => (
           <button key={id} onClick={()=>{
             if (!isLive) return;
-            // If leaving board tab while scoreboard is visible, warn host
-            if (tab==="board" && ses.boardVisible && id!=="board") {
-              if (!window.confirm("The scoreboard is currently visible to participants. Switching tabs will close it. Continue?")) return;
-              mut(s=>{s.boardVisible=false;});
+            // If scoreboard is visible, block switching away — host must turn it off first
+            if (ses.boardVisible && id!=="board") {
+              notify("Turn off scoreboard first before switching tabs","warn"); return;
             }
             setTab(id);
             if (id==="board") setRightTab("board");
@@ -3356,12 +3378,15 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         </div>
 
         {/* ── RIGHT PANEL: Participants / Board / Groups / Log (+ desktop Award All) ── */}
-        <div className="tc-session-right" style={{display: tab==="award" ? "none" : "flex", flexDirection:"column", overflow:"hidden"}}>
+        <div className="tc-session-right" style={{display: tab==="award" ? "none" : "flex", flexDirection:"column"}}>
 
           {/* Desktop right-panel tabs */}
           <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0,display:"none"}}>
             {[["people","Participants"],["award_all","Quick Coins"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill={isPro?"#C0C0C0":"#ffb743"}/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill={isPro?"#C0C0C0":"#ffb743"}/></svg></span>],["board","Scoreboard"],["log","Log"]].map(([id,l]) => (
-              <button key={id} onClick={()=>setRightTab(id)}
+              <button key={id} onClick={()=>{
+                if (ses.boardVisible && id!=="board") { notify("Turn off scoreboard first before switching tabs","warn"); return; }
+                setRightTab(id);
+              }}
                 style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
                   color:rightTab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
                   borderBottom:rightTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
@@ -3579,7 +3604,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           {/* ── BOARD TAB ── */}
           {rightTab==="board" && (
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
-              <div onClick={()=>mut(s=>{s.boardVisible=!s.boardVisible;})}
+              <div onClick={()=>{
+                const turningOn = !ses.boardVisible;
+                mut(s=>{s.boardVisible=!s.boardVisible;});
+                if (turningOn) { setRightTab("board"); setTab("board"); }
+                else { setRightTab("award_all"); setTab("award"); }
+              }}
                 style={{background:ses.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .2s"}}>
                 <div>
                   <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?GREEN:TEXT}}>{ses.boardVisible?"Scoreboard visible to participants":"Show Scoreboard to Participants"}</div>
@@ -5955,7 +5985,7 @@ export default function App() {
         <SessionSettings session={cur}
           isPro={plan !== "free"}
           onRename={async(name)=>{ const s={...cur,name}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,name}:x); setSessions(idx); await ss("sessions_index",idx); }}
-          onToggleLive={async()=>{ const s={...cur,live:cur.live===false?true:false}; await ssSession(s.code, s); setCur(s); }}
+          onToggleLive={async()=>{ const goingLive = cur.live===false; const s={...cur, live:goingLive, ...(goingLive&&cur.archived?{archived:false}:{})}; await ssSession(s.code, s); setCur(s); }}
           onDuplicate={async()=>{ const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onArchive={async()=>{ if(!window.confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onExport={()=>{ triggerCsvDownload(buildParticipantsCsv(cur), `teticoin-${cur.code}-participants.csv`); }}
