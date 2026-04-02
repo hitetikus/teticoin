@@ -338,6 +338,53 @@ function Ham({ size = 72 }) {
   );
 }
 
+// ── Animated loading hamster ──
+function HamLoading({ size = 80 }) {
+  return (
+    <div style={{display:"inline-block",animation:"hamBounce 0.9s ease-in-out infinite"}}>
+      <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+        {/* Left ear — wiggles */}
+        <g style={{transformOrigin:"22px 38px",animation:"earWiggleL 1.8s ease-in-out infinite"}}>
+          <ellipse cx="22" cy="30" rx="16" ry="16" fill="#F9A8D4"/>
+          <ellipse cx="22" cy="30" rx="9" ry="9" fill="#FDE8F0"/>
+        </g>
+        {/* Right ear — wiggles opposite */}
+        <g style={{transformOrigin:"78px 38px",animation:"earWiggleR 1.8s ease-in-out infinite"}}>
+          <ellipse cx="78" cy="30" rx="16" ry="16" fill="#F9A8D4"/>
+          <ellipse cx="78" cy="30" rx="9" ry="9" fill="#FDE8F0"/>
+        </g>
+        {/* Body */}
+        <ellipse cx="50" cy="78" rx="30" ry="22" fill="#FDE8F0"/>
+        <ellipse cx="50" cy="52" rx="32" ry="30" fill="#FCE7F3"/>
+        <ellipse cx="50" cy="80" rx="18" ry="14" fill="#FFF0F5"/>
+        {/* Cheeks — pulse pink */}
+        <ellipse cx="26" cy="58" rx="9" ry="7" fill="#FDA4CF" style={{animation:"cheekPulse 1.8s ease-in-out infinite"}}/>
+        <ellipse cx="74" cy="58" rx="9" ry="7" fill="#FDA4CF" style={{animation:"cheekPulse 1.8s ease-in-out infinite"}}/>        {/* Eyes — blink */}
+        <g style={{animation:"eyeBlink 3s ease-in-out infinite"}}>
+          <circle cx="40" cy="47" r="4.5" fill="#1A0A14"/>
+          <circle cx="60" cy="47" r="4.5" fill="#1A0A14"/>
+          <circle cx="41.5" cy="45.5" r="1.8" fill="white" opacity=".85"/>
+          <circle cx="61.5" cy="45.5" r="1.8" fill="white" opacity=".85"/>
+        </g>
+        {/* Nose */}
+        <ellipse cx="50" cy="56" rx="3.5" ry="2.5" fill={PINK}/>
+        {/* Smile */}
+        <path d="M44 62 Q50 68 56 62" stroke="#C0185A" strokeWidth="2" fill="none" strokeLinecap="round"/>
+        {/* Whiskers */}
+        <line x1="54" y1="57" x2="76" y2="53" stroke="#FDA4CF" strokeWidth="1.2" opacity=".7"/>
+        <line x1="54" y1="59" x2="76" y2="59" stroke="#FDA4CF" strokeWidth="1.2" opacity=".7"/>
+        <line x1="46" y1="57" x2="24" y2="53" stroke="#FDA4CF" strokeWidth="1.2" opacity=".7"/>
+        <line x1="46" y1="59" x2="24" y2="59" stroke="#FDA4CF" strokeWidth="1.2" opacity=".7"/>
+        {/* Little paws peeking at bottom */}
+        <ellipse cx="34" cy="94" rx="10" ry="7" fill="#FDE8F0"/>
+        <ellipse cx="66" cy="94" rx="10" ry="7" fill="#FDE8F0"/>
+        <ellipse cx="34" cy="94" rx="6" ry="4" fill="#FECDE8"/>
+        <ellipse cx="66" cy="94" rx="6" ry="4" fill="#FECDE8"/>
+      </svg>
+    </div>
+  );
+}
+
 // ── Confetti ──
 function Confetti({ active }) {
   const ref = useRef(); const pts = useRef([]); const raf = useRef();
@@ -5949,14 +5996,25 @@ export default function App() {
     setShowPricing(false);
   }
 
-  if (loading) return <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center"}}><style>{CSS}</style><Ham size={60}/></div>;
+  if (loading) return (
+    <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
+      <style>{CSS}</style>
+      <HamLoading size={90}/>
+      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-.3}}>Teticoin</div>
+      <div style={{display:"flex",gap:6,marginTop:-8}}>
+        {[0,1,2].map(i=>(
+          <div key={i} style={{width:6,height:6,borderRadius:"50%",background:PINK,animation:`dotBounce 1.2s ease-in-out ${i*0.18}s infinite`}}/>
+        ))}
+      </div>
+    </div>
+  );
   if (screen==="claimBadge" && claimToken) return <><style>{CSS}</style><BadgeClaimScreen token={claimToken} onDone={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
   if (screen==="landing") return <LandingPage onGetStarted={()=>{ setAuthInitialView("register"); window.history.replaceState({},"","/login"); setScreen("auth"); }} onLogin={()=>{ setAuthInitialView("login"); window.history.replaceState({},"","/login"); setScreen("auth"); }}/>; 
   if (screen==="auth") return <><style>{CSS}</style><Auth onDone={handleAuth} onBack={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }} initialView={authInitialView}/></>;
   // participantJoin = loaded from /join/CODE URL — always show participant view, never host view
   if (screen==="participantJoin") {
     if (cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
-    return <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}><style>{CSS}</style><Ham size={60}/><div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:PINK}}>Loading session…</div></div>;
+    return <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}><style>{CSS}</style><HamLoading size={80}/><div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:PINK}}>Loading session…</div></div>;
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur}/></>;
   if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
@@ -6367,6 +6425,12 @@ const CSS = `
   @keyframes slideInRight { from{transform:translateX(100%)} to{transform:translateX(0)} }
   @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(1.2)} }
   @keyframes spin { to{transform:rotate(360deg)} }
+  @keyframes hamBounce { 0%,100%{transform:translateY(0);} 45%{transform:translateY(-10px);} 65%{transform:translateY(-6px);} }
+  @keyframes earWiggleL { 0%,100%{transform:rotate(0deg);} 30%{transform:rotate(-12deg);} 60%{transform:rotate(5deg);} }
+  @keyframes earWiggleR { 0%,100%{transform:rotate(0deg);} 30%{transform:rotate(12deg);} 60%{transform:rotate(-5deg);} }
+  @keyframes eyeBlink { 0%,92%,100%{transform:scaleY(1);} 95%,97%{transform:scaleY(0.08);} }
+  @keyframes cheekPulse { 0%,100%{opacity:0.6;} 50%{opacity:1;} }
+  @keyframes dotBounce { 0%,80%,100%{transform:translateY(0);opacity:.4;} 40%{transform:translateY(-6px);opacity:1;} }
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-thumb { background:${MID}; border-radius:4px; }
   input, textarea { user-select:text; -webkit-user-select:text; cursor:text; }
