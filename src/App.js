@@ -1076,7 +1076,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
   function addP() { if (!np.trim()) return; const n=(session.participants.reduce((m,p)=>Math.max(m,p.num),0))+1; onUpdate(s=>{s.participants.push({id:Date.now(),name:np.trim(),av:mkAv(np),total:0,bk:{},gid:null,num:n});return s;}); setNp(""); }
   function addG() { if (!ng.trim()) return; onUpdate(s=>{s.groups.push({id:Date.now(),name:ng.trim(),color:ngc});return s;}); setNg(""); }
   function remP(pid) { onUpdate(s=>{s.participants=s.participants.filter(x=>x.id!==pid);return s;}); }
-  function asgG(pid,gid) { onUpdate(s=>{const p=s.participants.find(x=>x.id===pid);if(p)p.gid=gid===""?null:Number(gid)||null;return s;}); }
+  function asgG(pid,gid) { onUpdate(s=>{const p=s.participants.find(x=>x.id===pid);if(p)p.gid=gid===""?null:(isNaN(Number(gid))?null:Number(gid));return s;}); }
   function assignCM(uid) { onUpdate(s=>{ s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==uid),uid]; return s; }); }
   function removeCM(uid) { onUpdate(s=>{ s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==uid); return s; }); }
   function toggleCoinmaster() { onUpdate(s=>{ s.coinmasterEnabled=!s.coinmasterEnabled; return s; }); }
@@ -1133,7 +1133,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{p.name}</div>
                     <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                   </div>
-                  {isManagePro && (() => { const selG = session.groups.find(g=>g.id===p.gid); return (
+                  {session.groups.length > 0 && (() => { const selG = session.groups.find(g=>g.id===p.gid); return (
                     <select value={p.gid??""} onChange={e=>asgG(p.id,e.target.value)} style={{background:SOFT,border:`1px solid ${selG?.color||MID}`,color:selG?.color||TEXT,borderRadius:9,padding:"5px 8px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:110}}>
                       <option value="">No group</option>
                       {session.groups.map(g=><option key={g.id} value={g.id} style={{color:g.color}}>■ {g.name}</option>)}
@@ -3037,16 +3037,14 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
     if (uid) ss("tourDone", true);
   }
 
-  // Only write to Firebase when a LOCAL mutation happens (not on poll-driven updates)
-  const localMutRef = useRef(false);
-  useEffect(() => {
-    if (!localMutRef.current) return;
-    localMutRef.current = false;
-    ssSession(ses.code, ses);
-  }, [ses]);
+  // Firebase writes now happen directly inside mut() with the new state
   function mut(fn) {
-    localMutRef.current = true;
-    setSes(prev => { const s = JSON.parse(JSON.stringify(prev)); fn(s); return s; });
+    setSes(prev => {
+      const s = JSON.parse(JSON.stringify(prev));
+      fn(s);
+      ssSession(s.code, s); // write to Firebase with the ACTUAL new state (not stale closure)
+      return s;
+    });
   }
 
   // Auto-jump host to board tab when boardVisible changes (from poll or local toggle)
@@ -3134,6 +3132,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
   return (
     <div className="tc-app-shell">
+      <style>{CSS}</style>
       <Confetti active={confetti}/>
       {anims.map(a => <FloatAnim key={a.id} {...a} onDone={()=>setAnims(p=>p.filter(x=>x.id!==a.id))}/>)}
       {showTour && <QuickTour onDone={handleTourDone}/>}
