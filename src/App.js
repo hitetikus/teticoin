@@ -427,7 +427,7 @@ function Inp({ placeholder, value, onChange, type="text", onKeyDown, autoFocus, 
   return (
     <input type={type} placeholder={placeholder} value={value} onChange={onChange}
       onKeyDown={onKeyDown} autoFocus={autoFocus}
-      style={{background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"11px 14px",fontFamily:"Poppins,sans-serif",fontSize:14,color:TEXT,outline:"none",width:"100%",boxSizing:"border-box",...sx}}/>
+      style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"11px 14px",fontFamily:"Poppins,sans-serif",fontSize:14,color:TEXT,outline:"none",width:"100%",boxSizing:"border-box",caretColor:TEXT,...sx}}/>
   );
 }
 
@@ -1042,7 +1042,7 @@ function GroupEditRow({ g, session, onUpdate }) {
           <input value={editName} onChange={e=>setEditName(e.target.value)}
             style={{width:"100%",padding:"8px 10px",border:`1.5px solid ${MID}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",marginBottom:8,boxSizing:"border-box",caretColor:TEXT}}/>
           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-            {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:22,height:22,borderRadius:6,background:c,cursor:"pointer",border:editColor===c?`3px solid ${TEXT}`:"3px solid transparent",transition:".12s",transform:editColor===c?"scale(1.15)":"scale(1)"}}/>)}
+            {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`3px solid ${TEXT}`:"3px solid transparent",outlineOffset:2,transition:".12s",transform:editColor===c?"scale(1.15)":"scale(1)"}}/>)}
           </div>
           <div style={{display:"flex",gap:6}}>
             <button onClick={()=>{ onUpdate(s=>{const gx=s.groups.find(x=>x.id===g.id);if(gx){gx.name=editName.trim()||g.name;gx.color=editColor;}return s;}); setEditingG(false); }} style={{flex:1,padding:"7px 0",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
@@ -1076,7 +1076,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
   function addP() { if (!np.trim()) return; const n=(session.participants.reduce((m,p)=>Math.max(m,p.num),0))+1; onUpdate(s=>{s.participants.push({id:Date.now(),name:np.trim(),av:mkAv(np),total:0,bk:{},gid:null,num:n});return s;}); setNp(""); }
   function addG() { if (!ng.trim()) return; onUpdate(s=>{s.groups.push({id:Date.now(),name:ng.trim(),color:ngc});return s;}); setNg(""); }
   function remP(pid) { onUpdate(s=>{s.participants=s.participants.filter(x=>x.id!==pid);return s;}); }
-  function asgG(pid,gid) { onUpdate(s=>{const p=s.participants.find(x=>x.id===pid);if(p)p.gid=gid===""?null:Number(gid);return s;}); }
+  function asgG(pid,gid) { onUpdate(s=>{const p=s.participants.find(x=>x.id===pid);if(p)p.gid=gid===""?null:Number(gid)||null;return s;}); }
   function assignCM(uid) { onUpdate(s=>{ s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==uid),uid]; return s; }); }
   function removeCM(uid) { onUpdate(s=>{ s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==uid); return s; }); }
   function toggleCoinmaster() { onUpdate(s=>{ s.coinmasterEnabled=!s.coinmasterEnabled; return s; }); }
@@ -1156,7 +1156,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                     <div style={{width:64,height:38,background:MID,borderRadius:10,opacity:0.5}}/>
                   </div>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-                    {GC.slice(0,4).map(c=><div key={c} style={{width:22,height:22,borderRadius:6,background:c,opacity:0.6}}/>)}
+                    {GC.slice(0,4).map(c=><div key={c} style={{width:24,height:24,borderRadius:"50%",background:c,opacity:0.6}}/>)}
                   </div>
                   {[{name:"Team Alpha",color:GC[0],count:3},{name:"Team Bravo",color:GC[1],count:2},{name:"Team Charlie",color:GC[2],count:4}].map((g,i)=>(
                     <div key={g.name} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${BORDER}`,opacity:0.6}}>
@@ -1182,7 +1182,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
               <button onClick={addG} style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
             </div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-              {GC.map(c => <div key={c} onClick={()=>setNgc(c)} style={{width:26,height:26,borderRadius:8,background:c,cursor:"pointer",transition:".12s",border:ngc===c?`3px solid ${TEXT}`:"3px solid transparent",transform:ngc===c?"scale(1.15)":"scale(1)"}}/>)}
+              {GC.map(c => <div key={c} onClick={()=>setNgc(c)} style={{width:28,height:28,borderRadius:"50%",background:c,cursor:"pointer",transition:".12s",outline:ngc===c?`3px solid ${TEXT}`:"3px solid transparent",outlineOffset:2,transform:ngc===c?"scale(1.15)":"scale(1)"}}/>)}
             </div>
             {/* Randomize groups button */}
             {session.groups.length > 0 && session.participants.length > 0 && (
@@ -3205,7 +3205,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         </div>
       )}
       {showQR && <QRModal session={ses} onClose={()=>setShowQR(false)}/>}
-      {showLeader && <LeaderSheet session={ses} onToggle={()=>{
+      {showLeader && <LeaderSheet session={ses} onToggleBoard={()=>{
         const turningOn = !ses.boardVisible;
         mut(s=>{s.boardVisible=!s.boardVisible;});
         if (turningOn) { setRightTab("board"); setTab("board"); setShowLeader(false); }
