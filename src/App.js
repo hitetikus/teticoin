@@ -427,7 +427,7 @@ function Inp({ placeholder, value, onChange, type="text", onKeyDown, autoFocus, 
   return (
     <input type={type} placeholder={placeholder} value={value} onChange={onChange}
       onKeyDown={onKeyDown} autoFocus={autoFocus}
-      style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"11px 14px",fontFamily:"Poppins,sans-serif",fontSize:14,color:TEXT,outline:"none",width:"100%",boxSizing:"border-box",caretColor:TEXT,...sx}}/>
+      style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"11px 14px",fontFamily:"Poppins,sans-serif",fontSize:14,color:"#1A0A14",outline:"none",width:"100%",boxSizing:"border-box",caretColor:"#1A0A14",...sx}}/>
   );
 }
 
@@ -494,7 +494,7 @@ function Picker({ participants, groups, selId, onSelect, onClose }) {
         <div style={{width:56}}/>
       </div>
       <div style={{padding:"10px 16px",background:"#fff",borderBottom:`1px solid ${BORDER}`,flexShrink:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"8px 14px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"8px 14px"}}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input placeholder="Search name or number..." value={q} onChange={e=>setQ(e.target.value)} autoFocus style={{flex:1,background:"none",border:"none",fontFamily:"Poppins,sans-serif",fontSize:14,color:TEXT,outline:"none"}}/>
           {q && <button onClick={()=>setQ("")} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:18}}>×</button>}
@@ -905,7 +905,7 @@ function CoinCustomizer({ session, onSave, onClose }) {
             <div style={{display:"flex",gap:8,marginBottom:14}}>
               <input type="number" placeholder="Enter value (e.g. 200 or −50)" value={newVal}
                 onChange={e=>setNewVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addOther()}
-                style={{flex:1,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
+                style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
               <button onClick={addOther} disabled={other.length>=15||!newVal}
                 style={{padding:"0 16px",background:other.length>=15?BG:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:other.length>=15?SUB:"#fff",cursor:other.length>=15?"not-allowed":"pointer"}}>
                 Add
@@ -1866,12 +1866,12 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             </div>
             <input placeholder="Email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)}
               type="email" autoComplete="email"
-              style={{background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"11px 14px",fontFamily:"Poppins,sans-serif",fontSize:14,color:TEXT,outline:"none",width:"100%",boxSizing:"border-box",marginBottom:8}}/>
+              style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"11px 14px",fontFamily:"Poppins,sans-serif",fontSize:14,color:TEXT,outline:"none",width:"100%",boxSizing:"border-box",marginBottom:8}}/>
             <div style={{position:"relative",marginBottom:loginErr?8:12}}>
               <input placeholder="Password" value={loginPass} onChange={e=>setLoginPass(e.target.value)}
                 type={showLoginPw?"text":"password"} autoComplete="current-password"
                 onKeyDown={e=>e.key==="Enter"&&handleOptionalLogin(null,"email")}
-                style={{background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"11px 44px 11px 14px",fontFamily:"Poppins,sans-serif",fontSize:14,color:TEXT,outline:"none",width:"100%",boxSizing:"border-box"}}/>
+                style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"11px 44px 11px 14px",fontFamily:"Poppins,sans-serif",fontSize:14,color:TEXT,outline:"none",width:"100%",boxSizing:"border-box"}}/>
               <button type="button" onMouseDown={e=>{e.preventDefault();setShowLoginPw(v=>!v);}}
                 style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:SUB,padding:4,display:"flex",alignItems:"center"}}>
                 {showLoginPw
@@ -2815,7 +2815,7 @@ function CoinmasterView({ session: init, onBack }) {
                 </div>
                 <div style={{display:"flex",gap:8}}>
                   <input type="number" placeholder="Custom amount" value={cAmt} onChange={e=>setCAmt(e.target.value)}
-                    style={{flex:1,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
+                    style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
                   <button onClick={e=>{if(!cAmt||isNaN(cAmt))return;awardGuarded("token",Number(cAmt),e);setCAmt("");}}
                     style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Award</button>
                 </div>
@@ -3544,7 +3544,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </div>
               <div style={{display:"flex",gap:8}}>
                 <input type="number" placeholder="Custom amount" value={cAmt} onChange={e=>setCAmt(e.target.value)}
-                  style={{flex:1,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
+                  style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
                 <button onClick={e=>{if(!cAmt||isNaN(cAmt))return;awardGuarded("token",Number(cAmt),e);setCAmt("");}}
                   style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Award</button>
               </div>
@@ -3879,23 +3879,21 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                         const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
                         return (
                           <div key={p.id} style={{padding:"13px 16px",borderRadius:14,border:ses.boardVisible?(i===0?"1.5px solid rgba(233,30,140,.4)":"1.5px solid rgba(255,255,255,.07)"):`1.5px solid ${BORDER}`,background:ses.boardVisible?(i===0?"rgba(233,30,140,.12)":"rgba(255,255,255,.05)"):(i===0?SOFT:"#fff"),cursor:"pointer",transition:"background .1s"}}
-                            onClick={()=>{setSelId(p.id);setTab("award");}}
-                            onMouseOver={e=>e.currentTarget.style.background=SOFT}
-                            onMouseOut={e=>e.currentTarget.style.background=i===0?SOFT:"#fff"}>
+                            onClick={()=>{setSelId(p.id);setTab("award");}}>
                             <div style={{display:"flex",alignItems:"center",gap:10}}>
                               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
                               <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:ses.boardVisible?"rgba(255,255,255,.45)":SUB,minWidth:30}}>{pNum(p.num)}</span>
                               <Av s={p.av} color={grp?.color||PINK} size={34}/>
                               <div style={{flex:1}}>
-                                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
-                                {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
+                                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?"#fff":TEXT}}>{p.name}</div>
+                                {grp && <span style={{fontSize:10,background:ses.boardVisible?`${grp.color}30`:`${grp.color}18`,border:`1px solid ${grp.color}50`,color:ses.boardVisible?"#fff":grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
                               </div>
                               <div style={{textAlign:"right",minWidth:56}}>
-                                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
-                                <div style={{fontSize:10,color:SUB}}>coins</div>
+                                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:(ses.boardVisible?"#fff":TEXT)}}>{p.total}</div>
+                                <div style={{fontSize:10,color:ses.boardVisible?"rgba(255,255,255,.4)":SUB}}>coins</div>
                               </div>
                             </div>
-                            <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                            <div style={{marginTop:8,height:4,background:ses.boardVisible?"rgba(255,255,255,.1)":BORDER,borderRadius:4,overflow:"hidden"}}>
                               <div style={{height:4,background:GRAD,width:`${(p.total/maxP)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
                             </div>
                           </div>
@@ -4257,7 +4255,7 @@ function CreateModal({ onConfirm, onClose }) {
         <div style={{fontSize:13,color:SUB,marginBottom:16}}>Give your session a name so you can find it later.</div>
         <Inp placeholder="e.g. Design Thinking Workshop" value={n} onChange={e=>setN(e.target.value)} autoFocus onKeyDown={e=>e.key==="Enter"&&n.trim()&&onConfirm(n.trim())} style={{marginBottom:20}}/>
         <div style={{display:"flex",gap:10}}>
-          <button onClick={onClose} style={{flex:1,padding:"13px 0",background:BG,border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:SUB,cursor:"pointer"}}>Cancel</button>
+          <button onClick={onClose} style={{flex:1,padding:"13px 0",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:SUB,cursor:"pointer"}}>Cancel</button>
           <PBtn onClick={()=>n.trim()&&onConfirm(n.trim())} disabled={!n.trim()} style={{flex:2,padding:"13px 22px"}}>Start Session</PBtn>
         </div>
       </div>
@@ -4402,7 +4400,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
 
             {/* Billing toggle — centered */}
             <div style={{display:"flex",justifyContent:"center"}}>
-              <div style={{display:"flex",background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:3,gap:3,width:320}}>
+              <div style={{display:"flex",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:3,gap:3,width:320}}>
                 {[["monthly","Monthly",null],["yearly","Yearly","SAVE 35%"]].map(([b,label,badge]) => (
                   <button key={b} onClick={()=>setBilling(b)}
                     style={{flex:1,padding:"10px 0",borderRadius:9,border:"none",
@@ -5304,7 +5302,7 @@ function SuperAdminDashboard({ onClose }) {
           {label:"Beta Testers", val:stats.beta, color:GREEN},
           {label:"Free", val:stats.free, color:SUB},
         ].map(s => (
-          <div key={s.label} style={{background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 18px",flexShrink:0,minWidth:100,textAlign:"center"}}>
+          <div key={s.label} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 18px",flexShrink:0,minWidth:100,textAlign:"center"}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:s.color}}>{loading ? "…" : s.val}</div>
             <div style={{fontSize:11,color:SUB,fontWeight:600,marginTop:2}}>{s.label}</div>
           </div>
@@ -6010,6 +6008,17 @@ export default function App() {
   const paxLimit = isFree ? FREE_PAX_LIMIT : PRO_PAX_LIMIT;
 
   // ── Handle payment return from Chip ──
+  // Inject global caret-color fix once on mount (fixes Chrome white cursor)
+  useEffect(() => {
+    const styleId = 'tc-global-caret';
+    if (!document.getElementById(styleId)) {
+      const s = document.createElement('style');
+      s.id = styleId;
+      s.textContent = '* { caret-color: #1A0A14 !important; } input, textarea { color: #1A0A14; }';
+      document.head.appendChild(s);
+    }
+  }, []);
+
   useEffect(() => {
     if (!trainer) return; // wait until logged in
     const params = new URLSearchParams(window.location.search);
@@ -6708,7 +6717,8 @@ const CSS = `
   @keyframes eyeSquint { 0%,88%,100%{opacity:0;transform:scaleY(1);} 92%,96%{opacity:1;} }
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-thumb { background:${MID}; border-radius:4px; }
-  input, textarea { user-select:text; -webkit-user-select:text; cursor:text; caret-color:#1A0A14 !important; color:#1A0A14; }
+  input, textarea { user-select:text; -webkit-user-select:text; cursor:text !important; caret-color:#1A0A14 !important; }
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]) { caret-color:#1A0A14 !important; }
   input::placeholder { color:${SUB}; opacity:.6; }
   select option { background:#fff; }
 
@@ -6793,4 +6803,7 @@ const CSS = `
     .tc-session-meta-text { display:none; }
     .tc-meta-icon { display:inline !important; }
   }
+  /* Global cursor fix */
+  * { caret-color: #1A0A14 !important; }
+  input, textarea, [contenteditable] { caret-color: #1A0A14 !important; color: inherit; }
 `;
