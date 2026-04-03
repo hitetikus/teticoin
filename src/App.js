@@ -1042,7 +1042,7 @@ function GroupEditRow({ g, session, onUpdate }) {
           <input value={editName} onChange={e=>setEditName(e.target.value)}
             style={{width:"100%",padding:"8px 10px",border:`1.5px solid ${MID}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",marginBottom:8,boxSizing:"border-box",caretColor:TEXT}}/>
           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-            {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`3px solid ${TEXT}`:"3px solid transparent",outlineOffset:2,transition:".12s",transform:editColor===c?"scale(1.15)":"scale(1)"}}/>)}
+            {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
           </div>
           <div style={{display:"flex",gap:6}}>
             <button onClick={()=>{ onUpdate(s=>{const gx=s.groups.find(x=>x.id===g.id);if(gx){gx.name=editName.trim()||g.name;gx.color=editColor;}return s;}); setEditingG(false); }} style={{flex:1,padding:"7px 0",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
@@ -1136,7 +1136,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                   {session.groups.length > 0 && (() => { const selG = session.groups.find(g=>g.id===p.gid); return (
                     <select value={p.gid??""} onChange={e=>asgG(p.id,e.target.value)} style={{background:SOFT,border:`1px solid ${selG?.color||MID}`,color:selG?.color||TEXT,borderRadius:9,padding:"5px 8px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:110}}>
                       <option value="">No group</option>
-                      {session.groups.map(g=><option key={g.id} value={g.id} style={{color:g.color}}>■ {g.name}</option>)}
+                      {session.groups.map(g=><option key={g.id} value={g.id} style={{color:g.color}}>● {g.name}</option>)}
                     </select>
                   ); })()}
                   <button onClick={()=>{ if(p.total>0||p.uid){if(!window.confirm(`Remove ${p.name}? They have ${p.total} coins. This cannot be undone.`))return;} remP(p.id); }} title="Remove participant"
@@ -1182,7 +1182,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
               <button onClick={addG} style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
             </div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-              {GC.map(c => <div key={c} onClick={()=>setNgc(c)} style={{width:28,height:28,borderRadius:"50%",background:c,cursor:"pointer",transition:".12s",outline:ngc===c?`3px solid ${TEXT}`:"3px solid transparent",outlineOffset:2,transform:ngc===c?"scale(1.15)":"scale(1)"}}/>)}
+              {GC.map(c => <div key={c} onClick={()=>setNgc(c)} style={{width:28,height:28,borderRadius:"50%",background:c,cursor:"pointer",transition:".12s",outline:ngc===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2}}/>)}
             </div>
             {/* Randomize groups button */}
             {session.groups.length > 0 && session.participants.length > 0 && (
@@ -2443,7 +2443,7 @@ function LeaderSheet({ session, onToggleBoard, onClose }) {
         {/* Tabs — only show if groups are assigned */}
         {hasGroups && (
           <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`,flexShrink:0,padding:"0 16px"}}>
-            {[["individual","👤 Individual"],["groups","🏆 Groups"]].map(([id,label])=>(
+            {[["individual","Individual"],["groups","Groups"]].map(([id,label])=>(
               <button key={id} onClick={()=>setScoreTab(id)} style={{padding:"10px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:scoreTab===id?PINK:SUB,cursor:"pointer",borderBottom:scoreTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
                 {label}
               </button>
@@ -2897,9 +2897,12 @@ function CoinmasterView({ session: init, onBack }) {
             <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
               {hasGrps && (
                 <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`,flexShrink:0,background:"#fff"}}>
-                  {[["individual","👤 Individual"],["groups","🏆 Groups"]].map(([id,label])=>(
+                  {[
+                    ["individual",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</>],
+                    ["groups",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</>]
+                  ].map(([id,label])=>(
                     <button key={id} onClick={()=>setBoardSubTab(id)}
-                      style={{padding:"9px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:boardSubTab===id?PINK:SUB,cursor:"pointer",borderBottom:boardSubTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
+                      style={{padding:"9px 14px",border:"none",background:"none",display:"flex",alignItems:"center",gap:5,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:boardSubTab===id?PINK:SUB,cursor:"pointer",borderBottom:boardSubTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
                       {label}
                     </button>
                   ))}
@@ -2936,7 +2939,7 @@ function CoinmasterView({ session: init, onBack }) {
                 )}
                 {hasGrps && boardSubTab==="groups" && grpScores.map((g,i)=>(
                   <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                       <div style={{display:"flex",alignItems:"center",gap:8}}>
                         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
                         <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
@@ -2944,9 +2947,6 @@ function CoinmasterView({ session: init, onBack }) {
                         <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
                       </div>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:g.color}}>{g.total}</div>
-                    </div>
-                    <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-                      {g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)}
                     </div>
                     <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
                       <div style={{height:4,background:g.color,width:`${(g.total/maxGrp)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
@@ -3006,7 +3006,7 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
             onKeyDown={e=>{if(e.key==="Enter")saveEdit();if(e.key==="Escape")setEditing(false);}}
             style={{width:"100%",padding:"7px 10px",border:`1.5px solid ${editColor}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",marginBottom:10,boxSizing:"border-box",caretColor:TEXT}}/>
           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:10}}>
-            {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`3px solid ${TEXT}`:"3px solid transparent",outlineOffset:2,transition:".12s",transform:editColor===c?"scale(1.15)":"scale(1)"}}/>)}
+            {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
           </div>
           <div style={{display:"flex",gap:6}}>
             <button onClick={saveEdit} style={{flex:1,padding:"7px 0",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
@@ -3157,10 +3157,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
     if (ses.boardVisible) {
       // Scoreboard turned ON — jump to board tab
       setTab("board"); setRightTab("board");
-    } else {
-      // Scoreboard turned OFF — jump back to coins/award tab
-      setTab("award"); setRightTab("award_all");
     }
+    // Scoreboard turned OFF — stay on board tab, don't auto-jump away
   }, [ses.boardVisible]);
   function notify(m, type="ok") { setToast({m,type}); setTimeout(()=>setToast(null), 2200); }
   function toggleLive() {
@@ -3668,7 +3666,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                             <select value={p.gid??""} onChange={e=>mut(s=>{const px=s.participants.find(x=>x.id===p.id);if(px)px.gid=e.target.value===""?null:Number(e.target.value);return s;})}
                               style={{background:SOFT,border:`1.5px solid ${grp?.color||MID}`,color:grp?.color||SUB,borderRadius:8,padding:"4px 6px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:90,flexShrink:0,fontWeight:700}}>
                               <option value="">No group</option>
-                              {ses.groups.map(g=><option key={g.id} value={g.id} style={{color:g.color}}>■ {g.name}</option>)}
+                              {ses.groups.map(g=><option key={g.id} value={g.id} style={{color:g.color}}>● {g.name}</option>)}
                             </select>
                           )}
                           {/* ⋯ context menu */}
@@ -3680,8 +3678,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
                             </button>
                             {menuOpen && (
-                              <div style={{position:"absolute",right:0,top:"calc(100% + 4px)",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,.12)",zIndex:50,minWidth:170,overflow:"hidden"}}
-                                onClick={e=>e.stopPropagation()}>
+                              <div style={{position:"absolute",right:0,top:"calc(100% + 4px)",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,.12)",zIndex:200,minWidth:170,overflow:"hidden"}}
+                                onClick={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()}>
                                 <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);setPMenuOpen(null);}}
                                   style={{width:"100%",padding:"10px 14px",background:"none",border:"none",textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
                                   onMouseOver={e=>e.currentTarget.style.background=SOFT} onMouseOut={e=>e.currentTarget.style.background="none"}>
@@ -3792,17 +3790,15 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
           {/* ── BOARD TAB ── */}
           {rightTab==="board" && (
-            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,background:ses.boardVisible?"#1A1A2E":"transparent",transition:"background .4s"}}>
               <div onClick={()=>{
-                const turningOn = !ses.boardVisible;
                 mut(s=>{s.boardVisible=!s.boardVisible;});
-                if (turningOn) { setRightTab("board"); setTab("board"); }
-                else { setRightTab("award_all"); setTab("award"); }
+                if (!ses.boardVisible) { setRightTab("board"); setTab("board"); }
               }}
-                style={{background:ses.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .2s"}}>
+                style={{background:ses.boardVisible?"#1A1A2E":"#fff",border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .3s"}}>
                 <div>
-                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?GREEN:TEXT}}>{ses.boardVisible?"Scoreboard visible to participants":"Show Scoreboard to Participants"}</div>
-                  <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>Tap to {ses.boardVisible?"hide":"show"} scoreboard on participant screens</div>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?"#fff":TEXT}}>{ses.boardVisible?"Scoreboard is LIVE to participants":"Show Scoreboard to Participants"}</div>
+                  <div style={{fontSize:12,color:ses.boardVisible?"rgba(255,255,255,.55)":SUB,marginTop:2,fontWeight:500}}>Tap to {ses.boardVisible?"hide":"show"} scoreboard on participant screens</div>
                 </div>
                 <div style={{width:44,height:26,borderRadius:13,background:ses.boardVisible?GREEN:BORDER,position:"relative",transition:"all .2s",flexShrink:0,marginLeft:12}}>
                   <div style={{position:"absolute",top:3,left:ses.boardVisible?21:3,width:20,height:20,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
@@ -3823,28 +3819,31 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 const maxGrp = grpScores[0]?.total||1;
                 return (<>
                   {hasGrps && (
-                    <div style={{display:"flex",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:11,overflow:"hidden",flexShrink:0}}>
-                      {[["individual","👤 Individual"],["groups","🏆 Groups"]].map(([id,label])=>(
+                    <div style={{display:"flex",background:ses.boardVisible?"rgba(255,255,255,.08)":"#fff",border:`1.5px solid ${ses.boardVisible?"rgba(255,255,255,.15)":BORDER}`,borderRadius:11,overflow:"hidden",flexShrink:0}}>
+                      {[
+                        ["individual",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</>],
+                        ["groups",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</>]
+                      ].map(([id,label])=>(
                         <button key={id} onClick={()=>setBoardSubTab(id)}
-                          style={{flex:1,padding:"9px 0",border:"none",background:boardSubTab===id?SOFT:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:boardSubTab===id?PINK:SUB,cursor:"pointer",borderBottom:boardSubTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
+                          style={{flex:1,padding:"9px 0",border:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:5,background:boardSubTab===id?(ses.boardVisible?"rgba(255,255,255,.12)":SOFT):(ses.boardVisible?"transparent":"#fff"),fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:boardSubTab===id?(ses.boardVisible?"#fff":PINK):(ses.boardVisible?"rgba(255,255,255,.45)":SUB),cursor:"pointer",borderBottom:boardSubTab===id?`2.5px solid ${ses.boardVisible?"#fff":PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
                           {label}
                         </button>
                       ))}
                     </div>
                   )}
                   {(!hasGrps || boardSubTab==="individual") && (
-                    <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                      {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
+                    <div style={{background:ses.boardVisible?"rgba(255,255,255,.07)":"#fff",border:`1.5px solid ${ses.boardVisible?"rgba(255,255,255,.12)":BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                      {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:ses.boardVisible?"rgba(255,255,255,.5)":SUB}}>No participants yet</div></div>}
                       {sorted.map((p,i) => {
                         const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
                         return (
-                          <div key={p.id} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff",cursor:"pointer",transition:"background .1s"}}
+                          <div key={p.id} style={{padding:"12px 14px",borderBottom:`1px solid ${ses.boardVisible?"rgba(255,255,255,.08)":BORDER}`,background:i===0?(ses.boardVisible?"rgba(255,255,255,.1)":SOFT):(ses.boardVisible?"transparent":"#fff"),cursor:"pointer",transition:"background .1s"}}
                             onClick={()=>{setSelId(p.id);setTab("award");}}
                             onMouseOver={e=>e.currentTarget.style.background=SOFT}
                             onMouseOut={e=>e.currentTarget.style.background=i===0?SOFT:"#fff"}>
                             <div style={{display:"flex",alignItems:"center",gap:10}}>
                               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
-                              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
+                              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:ses.boardVisible?"rgba(255,255,255,.45)":SUB,minWidth:30}}>{pNum(p.num)}</span>
                               <Av s={p.av} color={grp?.color||PINK} size={34}/>
                               <div style={{flex:1}}>
                                 <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
@@ -3874,10 +3873,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                         </div>
                         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:g.color}}>{g.total}</div>
                       </div>
-                      <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-                        {g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)}
-                      </div>
-                      <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                        <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
                         <div style={{height:4,background:g.color,width:`${(g.total/maxGrp)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
                       </div>
                     </div>
@@ -3934,14 +3930,15 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     style={{padding:"0 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
                 </div>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4}}>
-                  {GC.map(c=><div key={c} onClick={()=>mut(s=>{s._newGroupColor=c;})} style={{width:26,height:26,borderRadius:"50%",background:c,cursor:"pointer",outline:(ses._newGroupColor||GC[0])===c?`3px solid ${TEXT}`:"3px solid transparent",outlineOffset:2,transform:(ses._newGroupColor||GC[0])===c?"scale(1.15)":"scale(1)",transition:".12s"}}/>)}
+                  {GC.map(c=><div key={c} onClick={()=>mut(s=>{s._newGroupColor=c;})} style={{width:26,height:26,borderRadius:"50%",background:c,cursor:"pointer",outline:(ses._newGroupColor||GC[0])===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
                 </div>
               </div>
               {/* Randomize button */}
               {gs.length > 0 && ses.participants.length > 0 && (
-                <button onClick={()=>{if(!window.confirm("Randomly assign all participants to groups?"))return;mut(s=>{const ids=s.groups.map(g=>g.id);s.participants=s.participants.map((p,i)=>({...p,gid:ids[i%ids.length]}));return s;});}}
-                  style={{width:"100%",padding:"9px 0",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                  🎲 Randomize Groups
+                <button onClick={()=>{if(!window.confirm("Group all participants randomly?"))return;const ids=ses.groups.map(g=>g.id);const shuffled=[...ses.participants].sort(()=>Math.random()-.5);mut(s=>{s.participants=s.participants.map(p=>{const i=shuffled.findIndex(x=>x.id===p.id);return{...p,gid:ids[i%ids.length]};});return s;});}}
+                  style={{width:"100%",padding:"10px 0",background:"#1A0A14",border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+                  Group All Participants Randomly
                 </button>
               )}
               {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:24,textAlign:"center",fontSize:13,color:SUB}}>No groups yet. Add one above!</div>}
