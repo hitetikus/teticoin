@@ -1042,7 +1042,7 @@ function GroupEditRow({ g, session, onUpdate }) {
           <input value={editName} onChange={e=>setEditName(e.target.value)}
             style={{width:"100%",padding:"8px 10px",border:`1.5px solid ${MID}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",marginBottom:8,boxSizing:"border-box",caretColor:TEXT}}/>
           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-            {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
+            {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:16,height:16,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
           </div>
           <div style={{display:"flex",gap:6}}>
             <button onClick={()=>{ onUpdate(s=>{const gx=s.groups.find(x=>x.id===g.id);if(gx){gx.name=editName.trim()||g.name;gx.color=editColor;}return s;}); setEditingG(false); }} style={{flex:1,padding:"7px 0",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
@@ -1440,6 +1440,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [editingName, setEditingName] = useState(false);
   const [editNameVal, setEditNameVal] = useState("");
   const [returnMatch, setReturnMatch] = useState(null);
+  const [pBoardTab, setPBoardTab] = useState("individual"); // participant scoreboard tab
   const [linkedUid, setLinkedUid] = useState(null);       // set after optional login
   const [linkedName, setLinkedName] = useState(null);     // display name from linked account
   const [guestName, setGuestName] = useState("");         // original typed name before optional login
@@ -2072,21 +2073,61 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       <Confetti active/>
       <Ham size={56}/>
       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:4,marginBottom:2,lineHeight:1.1}}>Scoreboard</div>
-      <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:20}}>{live?.name}</div>
-      <div style={{width:"100%",maxWidth:400,display:"flex",flexDirection:"column",gap:8}}>
-        {sorted.map((p,i) => (
-          <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 16px",background:p.id===myId?"rgba(233,30,140,.18)":"rgba(255,255,255,.05)",borderRadius:14,border:p.id===myId?`1.5px solid ${PINK}66`:"1.5px solid rgba(255,255,255,.07)"}}>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:rankColor(i),minWidth:22}}>{i+1}</div>
-            <Av s={p.av} color={live.groups?.find(g=>g.id===p.gid)?.color||PINK} size={34}/>
-            <div style={{flex:1}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14}}>{p.name}</div>
-              <div style={{fontSize:11,color:"rgba(255,255,255,.4)"}}>{pNum(p.num)}</div>
+      <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:16}}>{live?.name}</div>
+      {(() => {
+        const hasGroups = (live.groups||[]).length>0 && sorted.some(p=>p.gid!=null);
+        const grpScores = (live.groups||[]).map(g=>({...g,total:sorted.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0),members:sorted.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
+        const maxG = grpScores[0]?.total||1;
+        const myGrp = me ? (live.groups||[]).find(g=>g.id===me.gid) : null;
+        return (<>
+          {hasGroups && (
+            <div style={{display:"flex",background:"rgba(255,255,255,.08)",borderRadius:11,overflow:"hidden",marginBottom:16,width:"100%",maxWidth:400}}>
+              {[["individual",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</>],["groups",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</>]].map(([id,label])=>(
+                <button key={id} onClick={()=>setPBoardTab(id)} style={{flex:1,padding:"9px 0",border:"none",background:pBoardTab===id?"rgba(255,255,255,.12)":"transparent",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:pBoardTab===id?"#fff":"rgba(255,255,255,.45)",cursor:"pointer",borderBottom:pBoardTab===id?"2.5px solid #fff":"2.5px solid transparent",transition:"all .12s",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+                  {label}
+                </button>
+              ))}
             </div>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:p.id===myId?PINK:"#fff"}}>{p.total}</div>
-            {p.id===myId && <div style={{fontSize:10,background:PINK,color:"#fff",padding:"2px 8px",borderRadius:99,fontWeight:700}}>You</div>}
-          </div>
-        ))}
-      </div>
+          )}
+          {(!hasGroups || pBoardTab==="individual") && (
+            <div style={{width:"100%",maxWidth:400,display:"flex",flexDirection:"column",gap:8}}>
+              {sorted.map((p,i) => (
+                <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 16px",background:p.id===myId?"rgba(233,30,140,.18)":"rgba(255,255,255,.05)",borderRadius:14,border:p.id===myId?`1.5px solid ${PINK}66`:"1.5px solid rgba(255,255,255,.07)"}}>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:rankColor(i),minWidth:22}}>{i+1}</div>
+                  <Av s={p.av} color={live.groups?.find(g=>g.id===p.gid)?.color||PINK} size={34}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14}}>{p.name}</div>
+                    <div style={{fontSize:11,color:"rgba(255,255,255,.4)"}}>{pNum(p.num)}</div>
+                  </div>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:p.id===myId?PINK:"#fff"}}>{p.total}</div>
+                  {p.id===myId && <div style={{fontSize:10,background:PINK,color:"#fff",padding:"2px 8px",borderRadius:99,fontWeight:700}}>You</div>}
+                </div>
+              ))}
+            </div>
+          )}
+          {hasGroups && pBoardTab==="groups" && (
+            <div style={{width:"100%",maxWidth:400,display:"flex",flexDirection:"column",gap:8}}>
+              {grpScores.map((g,i)=>(
+                <div key={g.id} style={{padding:"13px 16px",borderRadius:14,border:myGrp?.id===g.id?`1.5px solid ${g.color}88`:"1.5px solid rgba(255,255,255,.07)",background:myGrp?.id===g.id?"rgba(255,255,255,.08)":"rgba(255,255,255,.04)"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:rankColor(i),minWidth:22}}>{i+1}</div>
+                    <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
+                    <div style={{flex:1}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:g.color}}>{g.name}</div>
+                      <div style={{fontSize:11,color:"rgba(255,255,255,.4)"}}>{g.members.length} members</div>
+                    </div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:g.color}}>{g.total}</div>
+                    {myGrp?.id===g.id && <div style={{fontSize:10,background:g.color,color:"#fff",padding:"2px 8px",borderRadius:99,fontWeight:700}}>Your group</div>}
+                  </div>
+                  <div style={{marginTop:8,height:3,background:"rgba(255,255,255,.1)",borderRadius:4,overflow:"hidden"}}>
+                    <div style={{height:3,background:g.color,width:`${(g.total/maxG)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>);
+      })()}
       {/* Share button */}
       {me && (
         <div style={{marginTop:24,width:"100%",maxWidth:400}}>
@@ -3006,7 +3047,7 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
             onKeyDown={e=>{if(e.key==="Enter")saveEdit();if(e.key==="Escape")setEditing(false);}}
             style={{width:"100%",padding:"7px 10px",border:`1.5px solid ${editColor}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",marginBottom:10,boxSizing:"border-box",caretColor:TEXT}}/>
           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:10}}>
-            {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
+            {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:16,height:16,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
           </div>
           <div style={{display:"flex",gap:6}}>
             <button onClick={saveEdit} style={{flex:1,padding:"7px 0",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
@@ -3832,12 +3873,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     </div>
                   )}
                   {(!hasGrps || boardSubTab==="individual") && (
-                    <div style={{background:ses.boardVisible?"rgba(255,255,255,.07)":"#fff",border:`1.5px solid ${ses.boardVisible?"rgba(255,255,255,.12)":BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                    <div style={{background:"transparent",border:"none",display:"flex",flexDirection:"column",gap:6}}>
                       {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:ses.boardVisible?"rgba(255,255,255,.5)":SUB}}>No participants yet</div></div>}
                       {sorted.map((p,i) => {
                         const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
                         return (
-                          <div key={p.id} style={{padding:"12px 14px",borderBottom:`1px solid ${ses.boardVisible?"rgba(255,255,255,.08)":BORDER}`,background:i===0?(ses.boardVisible?"rgba(255,255,255,.1)":SOFT):(ses.boardVisible?"transparent":"#fff"),cursor:"pointer",transition:"background .1s"}}
+                          <div key={p.id} style={{padding:"13px 16px",borderRadius:14,border:ses.boardVisible?(i===0?"1.5px solid rgba(233,30,140,.4)":"1.5px solid rgba(255,255,255,.07)"):`1.5px solid ${BORDER}`,background:ses.boardVisible?(i===0?"rgba(233,30,140,.12)":"rgba(255,255,255,.05)"):(i===0?SOFT:"#fff"),cursor:"pointer",transition:"background .1s"}}
                             onClick={()=>{setSelId(p.id);setTab("award");}}
                             onMouseOver={e=>e.currentTarget.style.background=SOFT}
                             onMouseOut={e=>e.currentTarget.style.background=i===0?SOFT:"#fff"}>
@@ -3925,7 +3966,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 <div style={{display:"flex",gap:8,marginBottom:10}}>
                   <input placeholder="Group name" value={ses._newGroupName||""} onChange={e=>mut(s=>{s._newGroupName=e.target.value;})}
                     onKeyDown={e=>{if(e.key==="Enter"){const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";})}}}
-                    style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"8px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",caretColor:TEXT}}/>
+                    style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"8px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#1A0A14",outline:"none",caretColor:"#1A0A14"}}/>
                   <button onClick={()=>{const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";});}}
                     style={{padding:"0 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
                 </div>
@@ -3937,7 +3978,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               {gs.length > 0 && ses.participants.length > 0 && (
                 <button onClick={()=>{if(!window.confirm("Group all participants randomly?"))return;const ids=ses.groups.map(g=>g.id);const shuffled=[...ses.participants].sort(()=>Math.random()-.5);mut(s=>{s.participants=s.participants.map(p=>{const i=shuffled.findIndex(x=>x.id===p.id);return{...p,gid:ids[i%ids.length]};});return s;});}}
                   style={{width:"100%",padding:"10px 0",background:"#1A0A14",border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="8" cy="8" r="1.2" fill="#fff"/><circle cx="16" cy="8" r="1.2" fill="#fff"/><circle cx="8" cy="16" r="1.2" fill="#fff"/><circle cx="16" cy="16" r="1.2" fill="#fff"/><circle cx="12" cy="12" r="1.2" fill="#fff"/></svg>
                   Group All Participants Randomly
                 </button>
               )}
@@ -6523,25 +6564,26 @@ export default function App() {
                 if (isFree && sessions.filter(s=>!s.archived).length >= sessionLimit) { setLimitModal("sessions"); return; }
                 setCreating(true);
               }}>+ Create New Session</PBtn>
+              {/* Stats inline inside hero card */}
+              {(() => {
+                const allS = sessions;
+                const totalSessions = allS.length;
+                const totalParticipants = allS.reduce((s,x)=>s+(x.count||0),0);
+                const totalCoins = allS.reduce((s,x)=>s+(x.totalCoins||0),0);
+                return (
+                  <div style={{display:"flex",borderTop:`1px solid ${MID}`,marginTop:16,paddingTop:14}}>
+                    {[{num:totalSessions,label:"Sessions"},{num:totalParticipants,label:"Participants"},{num:totalCoins,label:"Coins Given"}].map(({num,label},i,arr)=>(
+                      <div key={label} style={{flex:1,textAlign:"center",borderRight:i<arr.length-1?`1px solid ${MID}`:"none",padding:"0 8px"}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:PINK,lineHeight:1}}>{num}</div>
+                        <div style={{fontSize:10,color:SUB,fontWeight:500,marginTop:3}}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
-            {/* Stats — includes archived, excludes permanently deleted */}
-            {(() => {
-              const allNonDeleted = sessions; // permanently deleted sessions are gone from this list
-              const totalParticipants = allNonDeleted.reduce((sum,s)=>sum+(s.count||0),0);
-              const totalCoins = allNonDeleted.reduce((sum,s)=>sum+(s.totalCoins||0),0);
-              const totalSessions = allNonDeleted.filter(s=>!s.archived).length + allNonDeleted.filter(s=>s.archived).length;
-              return (
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
-                  {[{num:totalSessions,label:"Sessions Created"},{num:totalParticipants,label:"Participants Joined"},{num:totalCoins,label:"Coins Given"}].map(({num,label})=>(
-                    <div key={label} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 10px",textAlign:"center"}}>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:PINK,lineHeight:1}}>{num}</div>
-                      <div style={{fontSize:10,color:SUB,fontWeight:500,marginTop:4,lineHeight:1.3}}>{label}</div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
+
 
             {/* Join a session — separate card, neutral color */}
             <HomeJoinSection setCur={setCur} setScreen={setScreen}/>
@@ -6666,7 +6708,7 @@ const CSS = `
   @keyframes eyeSquint { 0%,88%,100%{opacity:0;transform:scaleY(1);} 92%,96%{opacity:1;} }
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-thumb { background:${MID}; border-radius:4px; }
-  input, textarea { user-select:text; -webkit-user-select:text; cursor:text; caret-color:${TEXT}; }
+  input, textarea { user-select:text; -webkit-user-select:text; cursor:text; caret-color:#1A0A14 !important; color:#1A0A14; }
   input::placeholder { color:${SUB}; opacity:.6; }
   select option { background:#fff; }
 
