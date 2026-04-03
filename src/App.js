@@ -2841,7 +2841,7 @@ function CoinmasterView({ session: init, onBack }) {
               {sorted.length===0 ? (
                 <div style={{textAlign:"center",padding:"32px 16px",color:SUB,fontSize:13}}><Ham size={48}/><div style={{marginTop:10}}>No participants yet</div></div>
               ) : (
-                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"visible"}}>
                   {sorted.map(p => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
                     const isEditing = editingPid === p.id;
@@ -2889,36 +2889,74 @@ function CoinmasterView({ session: init, onBack }) {
         )}
 
         {/* ── BOARD TAB ── */}
-        {tab==="board" && (
-          <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
-            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-              {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
-              {sorted.map((p,i) => {
-                const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
-                return (
-                  <div key={p.id} onClick={()=>{setSelId(p.id);setTab("award");}} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,cursor:"pointer",background:i===0?SOFT:"#fff",transition:".1s"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
-                      <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
-                      <Av s={p.av} color={grp?.color||PINK} size={34}/>
-                      <div style={{flex:1}}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
-                        {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
+        {tab==="board" && (() => {
+          const hasGrps = ses.participants.some(p=>p.gid!=null) && ses.groups.length>0;
+          const grpScores = ses.groups.map(g=>({...g,total:ses.participants.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0),members:ses.participants.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
+          const maxGrp = grpScores[0]?.total||1;
+          return (
+            <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+              {hasGrps && (
+                <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`,flexShrink:0,background:"#fff"}}>
+                  {[["individual","👤 Individual"],["groups","🏆 Groups"]].map(([id,label])=>(
+                    <button key={id} onClick={()=>setBoardSubTab(id)}
+                      style={{padding:"9px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:boardSubTab===id?PINK:SUB,cursor:"pointer",borderBottom:boardSubTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+                {(!hasGrps || boardSubTab==="individual") && (
+                  <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                    {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
+                    {sorted.map((p,i) => {
+                      const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
+                      return (
+                        <div key={p.id} onClick={()=>{setSelId(p.id);setTab("award");}} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,cursor:"pointer",background:i===0?SOFT:"#fff",transition:".1s"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10}}>
+                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
+                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
+                            <Av s={p.av} color={grp?.color||PINK} size={34}/>
+                            <div style={{flex:1}}>
+                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
+                              {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
+                            </div>
+                            <div style={{textAlign:"right"}}>
+                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
+                              <div style={{fontSize:10,color:SUB}}>coins</div>
+                            </div>
+                          </div>
+                          <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                            <div style={{height:4,background:GRAD,width:`${(p.total/maxP)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {hasGrps && boardSubTab==="groups" && grpScores.map((g,i)=>(
+                  <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
+                        <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:g.color}}>{g.name}</div>
+                        <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
                       </div>
-                      <div style={{textAlign:"right"}}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
-                        <div style={{fontSize:10,color:SUB}}>coins</div>
-                      </div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:g.color}}>{g.total}</div>
                     </div>
-                    <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
-                      <div style={{height:4,background:GRAD,width:`${(p.total/maxP)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
+                    <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+                      {g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)}
+                    </div>
+                    <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                      <div style={{height:4,background:g.color,width:`${(g.total/maxGrp)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
                     </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ── LOG TAB ── */}
         {tab==="log" && (
@@ -2950,6 +2988,69 @@ function CoinmasterView({ session: init, onBack }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Session screen ──
+// ── GroupSessionCard — editable group card in Session right panel ──
+function GroupSessionCard({ g, i, mut, ses, pNum }) {
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(g.name);
+  const [editColor, setEditColor] = useState(g.color);
+  const rankColor = i => ["#F5A623","#94A3B8","#CD7C2E"][i]||"#9A6080";
+  const maxTotal = ses.groups.reduce((m,gr)=>{
+    const t=ses.participants.filter(p=>p.gid===gr.id).reduce((s,p)=>s+(p.total||0),0);
+    return Math.max(m,t);
+  },1);
+  return (
+    <div style={{background:"#fff",border:`1.5px solid ${editing?g.color:BORDER}`,borderRadius:14,padding:"14px 16px",transition:"border .2s"}}>
+      {editing ? (
+        <div>
+          <input value={editName} autoFocus onChange={e=>setEditName(e.target.value)}
+            onKeyDown={e=>{if(e.key==="Enter")saveEdit();if(e.key==="Escape")setEditing(false);}}
+            style={{width:"100%",padding:"7px 10px",border:`1.5px solid ${editColor}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",marginBottom:10,boxSizing:"border-box",caretColor:TEXT}}/>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:10}}>
+            {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`3px solid ${TEXT}`:"3px solid transparent",outlineOffset:2,transition:".12s",transform:editColor===c?"scale(1.15)":"scale(1)"}}/>)}
+          </div>
+          <div style={{display:"flex",gap:6}}>
+            <button onClick={saveEdit} style={{flex:1,padding:"7px 0",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
+            <button onClick={()=>setEditing(false)} style={{flex:1,padding:"7px 0",background:"#fff",border:`1px solid ${BORDER}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer"}}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
+              <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:g.color}}>{g.name}</div>
+              <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:g.color}}>{g.total}</div>
+              <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditing(true);}}
+                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Rename / recolor">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button onClick={()=>{if(!window.confirm(`Delete group "${g.name}"?`))return;mut(s=>{s.groups=s.groups.filter(x=>x.id!==g.id);s.participants=s.participants.map(p=>p.gid===g.id?{...p,gid:null}:p);return s;});}}
+                style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Delete group">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              </button>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+            {g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)}
+          </div>
+          <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+            <div style={{height:4,background:g.color,width:`${(g.total/maxTotal)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
+          </div>
+        </>
+      )}
+    </div>
+  );
+  function saveEdit() {
+    if(!editName.trim())return;
+    mut(s=>{const gx=s.groups.find(x=>x.id===g.id);if(gx){gx.name=editName.trim();gx.color=editColor;}return s;});
+    setEditing(false);
+  }
+}
+
 function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, onPView }) {
   const isSesAdmin = plan === "superadmin";
   const isSuperadmin = plan === "superadmin";
@@ -2978,6 +3079,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   const [editingPid, setEditingPid] = useState(null);   // participant id being renamed
   const [editingPName, setEditingPName] = useState(""); // current edit value
   const [pMenuOpen, setPMenuOpen] = useState(null);     // participant id whose ⋯ menu is open
+  const [boardSubTab, setBoardSubTab] = useState("individual"); // board tab: individual | groups
 
   // Close ⋯ menu when clicking outside
   useEffect(() => {
@@ -3523,7 +3625,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                 </div>
               )}
-              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"visible"}}>
                 {sorted.length===0 && (
                   <div style={{padding:"32px 16px",textAlign:"center",color:SUB,fontSize:13}}>
                     <Ham size={48}/><div style={{marginTop:10}}>No participants yet</div>
@@ -3562,11 +3664,11 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                             </div>
                             <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                           </div>
-                          {isPro && (
+                          {(ses.groups.length > 0) && (
                             <select value={p.gid??""} onChange={e=>mut(s=>{const px=s.participants.find(x=>x.id===p.id);if(px)px.gid=e.target.value===""?null:Number(e.target.value);return s;})}
-                              style={{background:SOFT,border:`1px solid ${MID}`,color:TEXT,borderRadius:8,padding:"4px 6px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:80,flexShrink:0}}>
+                              style={{background:SOFT,border:`1.5px solid ${grp?.color||MID}`,color:grp?.color||SUB,borderRadius:8,padding:"4px 6px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:90,flexShrink:0,fontWeight:700}}>
                               <option value="">No group</option>
-                              {ses.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
+                              {ses.groups.map(g=><option key={g.id} value={g.id} style={{color:g.color}}>■ {g.name}</option>)}
                             </select>
                           )}
                           {/* ⋯ context menu */}
@@ -3653,7 +3755,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     <SL style={{marginBottom:0,flex:1}}>Quick Coins</SL>
                     <input placeholder="Search name…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
-                      style={{height:28,padding:"0 10px",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Poppins,sans-serif",fontSize:12,color:TEXT,outline:"none",width:130,background:BG}}/>
+                      style={{height:28,padding:"0 10px",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Poppins,sans-serif",fontSize:12,color:TEXT,outline:"none",width:130,background:"#fff",caretColor:TEXT}}/>
                   </div>
                   {[...sorted].sort((a,b)=>a.name.localeCompare(b.name)).filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase())).map((p,i,arr) => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
@@ -3715,41 +3817,73 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   🎡 <span>Lucky Draw Wheel</span>
                 </button>
               )}
-              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
-                {sorted.map((p,i) => {
-                  const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
-                  const showBadgeBtn = false; // phase 2 — badge award deactivated
-                  const showPending  = false; // phase 2
-                  return (
-                    <div key={p.id} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff",cursor:"pointer",transition:"background .1s"}}
-                      onClick={()=>{setSelId(p.id);setTab("award");}}
-                      onMouseOver={e=>e.currentTarget.style.background=SOFT}
-                      onMouseOut={e=>e.currentTarget.style.background=i===0?SOFT:"#fff"}>
-                      <div style={{display:"flex",alignItems:"center",gap:10}}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
-                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
-                        <Av s={p.av} color={grp?.color||PINK} size={34}/>
-                        <div style={{flex:1}}>
-                          <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
-                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
+              {(() => {
+                const hasGrps = ses.participants.some(p=>p.gid!=null) && ses.groups.length>0;
+                const grpScores = ses.groups.map(g=>({...g,total:ses.participants.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0),members:ses.participants.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
+                const maxGrp = grpScores[0]?.total||1;
+                return (<>
+                  {hasGrps && (
+                    <div style={{display:"flex",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:11,overflow:"hidden",flexShrink:0}}>
+                      {[["individual","👤 Individual"],["groups","🏆 Groups"]].map(([id,label])=>(
+                        <button key={id} onClick={()=>setBoardSubTab(id)}
+                          style={{flex:1,padding:"9px 0",border:"none",background:boardSubTab===id?SOFT:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:boardSubTab===id?PINK:SUB,cursor:"pointer",borderBottom:boardSubTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {(!hasGrps || boardSubTab==="individual") && (
+                    <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                      {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
+                      {sorted.map((p,i) => {
+                        const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
+                        return (
+                          <div key={p.id} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff",cursor:"pointer",transition:"background .1s"}}
+                            onClick={()=>{setSelId(p.id);setTab("award");}}
+                            onMouseOver={e=>e.currentTarget.style.background=SOFT}
+                            onMouseOut={e=>e.currentTarget.style.background=i===0?SOFT:"#fff"}>
+                            <div style={{display:"flex",alignItems:"center",gap:10}}>
+                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
+                              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
+                              <Av s={p.av} color={grp?.color||PINK} size={34}/>
+                              <div style={{flex:1}}>
+                                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
+                                {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
+                              </div>
+                              <div style={{textAlign:"right",minWidth:56}}>
+                                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
+                                <div style={{fontSize:10,color:SUB}}>coins</div>
+                              </div>
+                            </div>
+                            <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                              <div style={{height:4,background:GRAD,width:`${(p.total/maxP)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
+                            </div>
                           </div>
-                          {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
+                        );
+                      })}
+                    </div>
+                  )}
+                  {hasGrps && boardSubTab==="groups" && grpScores.map((g,i)=>(
+                    <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
+                          <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:g.color}}>{g.name}</div>
+                          <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
                         </div>
-                        <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0,justifyContent:"flex-end"}}>
-                          <div style={{textAlign:"right",minWidth:56}}>
-                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
-                            <div style={{fontSize:10,color:SUB}}>coins</div>
-                          </div>
-                        </div>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:g.color}}>{g.total}</div>
                       </div>
-                      <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
-                        <div style={{height:4,background:GRAD,width:`${(p.total/maxP)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
+                      <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+                        {g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)}
+                      </div>
+                      <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                        <div style={{height:4,background:g.color,width:`${(g.total/maxGrp)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </>);
+              })()}
             </div>
           )}
 
@@ -3795,33 +3929,24 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 <div style={{display:"flex",gap:8,marginBottom:10}}>
                   <input placeholder="Group name" value={ses._newGroupName||""} onChange={e=>mut(s=>{s._newGroupName=e.target.value;})}
                     onKeyDown={e=>{if(e.key==="Enter"){const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";})}}}
-                    style={{flex:1,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"8px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
+                    style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"8px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",caretColor:TEXT}}/>
                   <button onClick={()=>{const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";});}}
                     style={{padding:"0 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
                 </div>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                  {GC.map(c=><div key={c} onClick={()=>mut(s=>{s._newGroupColor=c;})} style={{width:22,height:22,borderRadius:6,background:c,cursor:"pointer",border:(ses._newGroupColor||GC[0])===c?`3px solid ${TEXT}`:"3px solid transparent",transform:(ses._newGroupColor||GC[0])===c?"scale(1.15)":"scale(1)",transition:".12s"}}/>)}
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4}}>
+                  {GC.map(c=><div key={c} onClick={()=>mut(s=>{s._newGroupColor=c;})} style={{width:26,height:26,borderRadius:"50%",background:c,cursor:"pointer",outline:(ses._newGroupColor||GC[0])===c?`3px solid ${TEXT}`:"3px solid transparent",outlineOffset:2,transform:(ses._newGroupColor||GC[0])===c?"scale(1.15)":"scale(1)",transition:".12s"}}/>)}
                 </div>
               </div>
+              {/* Randomize button */}
+              {gs.length > 0 && ses.participants.length > 0 && (
+                <button onClick={()=>{if(!window.confirm("Randomly assign all participants to groups?"))return;mut(s=>{const ids=s.groups.map(g=>g.id);s.participants=s.participants.map((p,i)=>({...p,gid:ids[i%ids.length]}));return s;});}}
+                  style={{width:"100%",padding:"9px 0",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                  🎲 Randomize Groups
+                </button>
+              )}
               {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:24,textAlign:"center",fontSize:13,color:SUB}}>No groups yet. Add one above!</div>}
               {gs.map((g,i) => (
-                <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
-                      <div style={{width:11,height:11,borderRadius:3,background:g.color,flexShrink:0}}/>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:g.color}}>{g.name}</div>
-                      <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
-                    </div>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</div>
-                  </div>
-                  <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-                    {g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)}
-                  </div>
-                  <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
-                    <div style={{height:4,background:g.color,width:`${(g.total/(gs[0]?.total||1))*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
-                  </div>
-                </div>
+                <GroupSessionCard key={g.id} g={g} i={i} mut={mut} ses={ses} pNum={pNum}/>
               ))}
               </>}
             </div>
