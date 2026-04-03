@@ -1030,6 +1030,38 @@ function SessionSettings({ session, isPro=false, onRename, onToggleLive, onExpor
   );
 }
 
+// ── GroupEditRow — editable group row in Manage sheet ──
+function GroupEditRow({ g, session, onUpdate }) {
+  const [editingG, setEditingG] = useState(false);
+  const [editName, setEditName] = useState(g.name);
+  const [editColor, setEditColor] = useState(g.color);
+  return (
+    <div style={{padding:"10px 0",borderBottom:`1px solid ${BORDER}`}}>
+      {editingG ? (
+        <div>
+          <input value={editName} onChange={e=>setEditName(e.target.value)}
+            style={{width:"100%",padding:"8px 10px",border:`1.5px solid ${MID}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",marginBottom:8,boxSizing:"border-box",caretColor:TEXT}}/>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+            {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:22,height:22,borderRadius:6,background:c,cursor:"pointer",border:editColor===c?`3px solid ${TEXT}`:"3px solid transparent",transition:".12s",transform:editColor===c?"scale(1.15)":"scale(1)"}}/>)}
+          </div>
+          <div style={{display:"flex",gap:6}}>
+            <button onClick={()=>{ onUpdate(s=>{const gx=s.groups.find(x=>x.id===g.id);if(gx){gx.name=editName.trim()||g.name;gx.color=editColor;}return s;}); setEditingG(false); }} style={{flex:1,padding:"7px 0",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
+            <button onClick={()=>setEditingG(false)} style={{flex:1,padding:"7px 0",background:"#fff",border:`1px solid ${BORDER}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer"}}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:12,height:12,borderRadius:3,background:g.color,flexShrink:0}}/>
+          <div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:g.color}}>{g.name}</div>
+          <div style={{fontSize:11,color:SUB}}>{session.participants.filter(p=>p.gid===g.id).length} members</div>
+          <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditingG(true);}} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:SUB,cursor:"pointer"}}>✎</button>
+          <button onClick={()=>{ if(!window.confirm(`Delete group "${g.name}"?`)) return; onUpdate(s=>{s.groups=s.groups.filter(x=>x.id!==g.id);s.participants=s.participants.map(p=>p.gid===g.id?{...p,gid:null}:p);return s;}); }} style={{background:"none",border:`1px solid #EF444440`,borderRadius:7,padding:"3px 8px",fontSize:11,color:"#EF4444",cursor:"pointer"}}>✕</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClose, onShowQR, onExport, onReset, onRename, onToggleLive }) {
   const isManagePro = plan !== "free";
   const [showUpgradeHint, setShowUpgradeHint] = useState(null);
@@ -1101,13 +1133,12 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{p.name}</div>
                     <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                   </div>
-                  {isManagePro && (
-                    {(() => { const selG = session.groups.find(g=>g.id===p.gid); return (
+                  {isManagePro && (() => { const selG = session.groups.find(g=>g.id===p.gid); return (
                     <select value={p.gid??""} onChange={e=>asgG(p.id,e.target.value)} style={{background:SOFT,border:`1px solid ${selG?.color||MID}`,color:selG?.color||TEXT,borderRadius:9,padding:"5px 8px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:110}}>
                       <option value="">No group</option>
                       {session.groups.map(g=><option key={g.id} value={g.id} style={{color:g.color}}>■ {g.name}</option>)}
-                    </select>); })()}
-                  )}
+                    </select>
+                  ); })()}
                   <button onClick={()=>{ if(p.total>0||p.uid){if(!window.confirm(`Remove ${p.name}? They have ${p.total} coins. This cannot be undone.`))return;} remP(p.id); }} title="Remove participant"
                     style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"4px 9px",fontSize:11,color:SUB,cursor:"pointer"}}>✕</button>
                 </div>
@@ -1167,36 +1198,9 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                 🎲 Randomize Groups
               </button>
             )}
-            {session.groups.map(g => {
-              const [editingG, setEditingG] = React.useState(false);
-              const [editName, setEditName] = React.useState(g.name);
-              const [editColor, setEditColor] = React.useState(g.color);
-              return (
-                <div key={g.id} style={{padding:"10px 0",borderBottom:`1px solid ${BORDER}`}}>
-                  {editingG ? (
-                    <div>
-                      <input value={editName} onChange={e=>setEditName(e.target.value)}
-                        style={{width:"100%",padding:"8px 10px",border:`1.5px solid ${MID}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",marginBottom:8,boxSizing:"border-box"}}/>
-                      <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-                        {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:22,height:22,borderRadius:6,background:c,cursor:"pointer",border:editColor===c?`3px solid ${TEXT}`:"3px solid transparent",transition:".12s",transform:editColor===c?"scale(1.15)":"scale(1)"}}/>)}
-                      </div>
-                      <div style={{display:"flex",gap:6}}>
-                        <button onClick={()=>{ onUpdate(s=>{const gx=s.groups.find(x=>x.id===g.id);if(gx){gx.name=editName.trim()||g.name;gx.color=editColor;}return s;}); setEditingG(false); }} style={{flex:1,padding:"7px 0",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
-                        <button onClick={()=>setEditingG(false)} style={{flex:1,padding:"7px 0",background:"#fff",border:`1px solid ${BORDER}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer"}}>Cancel</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <div style={{width:12,height:12,borderRadius:3,background:g.color,flexShrink:0}}/>
-                      <div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:g.color}}>{g.name}</div>
-                      <div style={{fontSize:11,color:SUB}}>{session.participants.filter(p=>p.gid===g.id).length} members</div>
-                      <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditingG(true);}} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:SUB,cursor:"pointer"}}>✎</button>
-                      <button onClick={()=>{ if(!window.confirm(`Delete group "${g.name}"?`)) return; onUpdate(s=>{s.groups=s.groups.filter(x=>x.id!==g.id);s.participants=s.participants.map(p=>p.gid===g.id?{...p,gid:null}:p);return s;}); }} style={{background:"none",border:`1px solid #EF444440`,borderRadius:7,padding:"3px 8px",fontSize:11,color:"#EF4444",cursor:"pointer"}}>✕</button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {session.groups.map(g => (
+              <GroupEditRow key={g.id} g={g} session={session} onUpdate={onUpdate}/>
+            ))}
             </>}
           </>}
 
@@ -5470,6 +5474,65 @@ function EarningsPage({ uid, name, onClose }) {
   );
 }
 
+
+// ── HomeJoinSection — join card with QR scanner on home screen ──
+function HomeJoinSection({ setCur, setScreen }) {
+  const [showJoinScanner, setShowJoinScanner] = useState(false);
+  const joinScannerRef = useRef(null);
+  const joinHtml5QrRef = useRef(null);
+
+  useEffect(() => {
+    if (!showJoinScanner) {
+      if (joinHtml5QrRef.current) { joinHtml5QrRef.current.stop().catch(()=>{}); joinHtml5QrRef.current = null; }
+      return;
+    }
+    const cid = "tc-home-join-scanner";
+    function initScan() {
+      if (!window.Html5Qrcode) return;
+      const sc = new window.Html5Qrcode(cid);
+      joinHtml5QrRef.current = sc;
+      sc.start({facingMode:"environment"},{fps:10,qrbox:{width:200,height:200}}, async(text) => {
+        sc.stop().catch(()=>{}); joinHtml5QrRef.current = null; setShowJoinScanner(false);
+        const raw = text.replace(/.*\/join\//i,"").replace(/[^A-Z0-9]/gi,"").toUpperCase();
+        const code = raw.slice(0,8);
+        if (!code) return;
+        const s = await sgSession(code);
+        if (s) {
+          setCur(s);
+          setScreen(auth.currentUser ? "participant" : "participant");
+        }
+      }, ()=>{}).catch(()=>{ setShowJoinScanner(false); });
+    }
+    if (window.Html5Qrcode) { initScan(); }
+    else {
+      const sc = document.createElement("script");
+      sc.src = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
+      sc.onload = initScan; document.head.appendChild(sc);
+    }
+    return () => { if (joinHtml5QrRef.current) { joinHtml5QrRef.current.stop().catch(()=>{}); joinHtml5QrRef.current = null; } };
+  }, [showJoinScanner]);
+
+  return (
+    <div style={{background:"#F8FAFC",border:"1.5px solid #E2E8F0",borderRadius:16,padding:"18px 16px",marginBottom:16}}>
+      <div style={{fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>Join a Session</div>
+      <JoinSessionField onJoin={async(code)=>{
+        const s = await sgSession(code.toUpperCase().trim());
+        if (s) { setCur(s); setScreen("participant"); return null; }
+        return "Session not found. Check the code and try again.";
+      }}/>
+      <button onClick={()=>setShowJoinScanner(v=>!v)} style={{marginTop:10,width:"100%",padding:"10px 0",background:showJoinScanner?"#E2E8F0":"#fff",border:"1.5px solid #E2E8F0",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#475569",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M23 7V2H18M7 2H2v5M2 17v5h5M18 22h5v-5"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+        {showJoinScanner ? "Close Camera" : "Scan QR Code"}
+      </button>
+      {showJoinScanner && (
+        <div style={{marginTop:10,borderRadius:12,overflow:"hidden",background:"#000"}}>
+          <div id="tc-home-join-scanner" ref={joinScannerRef} style={{width:"100%"}}/>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── JoinSessionField — compact code entry used on home screen ──
 function JoinSessionField({ onJoin }) {
   const [code, setCode] = useState("");
@@ -6360,62 +6423,7 @@ export default function App() {
             })()}
 
             {/* Join a session — separate card, neutral color */}
-            {(() => {
-              const [showJoinScanner, setShowJoinScanner] = React.useState(false);
-              const joinScannerRef = React.useRef(null);
-              const joinHtml5QrRef = React.useRef(null);
-              React.useEffect(() => {
-                if (!showJoinScanner) {
-                  if (joinHtml5QrRef.current) { joinHtml5QrRef.current.stop().catch(()=>{}); joinHtml5QrRef.current = null; }
-                  return;
-                }
-                const cid = "tc-home-join-scanner";
-                function initScan() {
-                  if (!window.Html5Qrcode) return;
-                  const sc = new window.Html5Qrcode(cid);
-                  joinHtml5QrRef.current = sc;
-                  sc.start({facingMode:"environment"},{fps:10,qrbox:{width:200,height:200}}, async(text) => {
-                    sc.stop().catch(()=>{}); joinHtml5QrRef.current = null; setShowJoinScanner(false);
-                    const m = text.match(/\/join\/([A-Z0-9]+)/i);
-                    const code = m ? m[1].toUpperCase() : text.replace(/[^A-Z0-9]/gi,"").toUpperCase();
-                    if (!code) return;
-                    const user = auth.currentUser;
-                    const s = await sgSession(code);
-                    if (s) {
-                      if (user) { setCur(s); setScreen("participant"); }
-                      else { setCur(s); setScreen("participant"); }
-                    }
-                  }, ()=>{}).catch(()=>{ setShowJoinScanner(false); });
-                }
-                if (window.Html5Qrcode) { initScan(); }
-                else {
-                  const sc = document.createElement("script");
-                  sc.src = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
-                  sc.onload = initScan; document.head.appendChild(sc);
-                }
-                return () => { if (joinHtml5QrRef.current) { joinHtml5QrRef.current.stop().catch(()=>{}); joinHtml5QrRef.current = null; } };
-              }, [showJoinScanner]);
-              return (
-                <div style={{background:"#F8FAFC",border:"1.5px solid #E2E8F0",borderRadius:16,padding:"18px 16px",marginBottom:16}}>
-                  <div style={{fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>Join a Session</div>
-                  <JoinSessionField onJoin={async(code)=>{
-                    const user = auth.currentUser;
-                    const s = await sgSession(code.toUpperCase().trim());
-                    if (s) { setCur(s); setScreen("participant"); return null; }
-                    return "Session not found. Check the code and try again.";
-                  }}/>
-                  <button onClick={()=>setShowJoinScanner(v=>!v)} style={{marginTop:10,width:"100%",padding:"10px 0",background:showJoinScanner?"#E2E8F0":"#fff",border:"1.5px solid #E2E8F0",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#475569",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M23 7V2H18M7 2H2v5M2 17v5h5M18 22h5v-5"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
-                    {showJoinScanner ? "Close Camera" : "Scan QR Code"}
-                  </button>
-                  {showJoinScanner && (
-                    <div style={{marginTop:10,borderRadius:12,overflow:"hidden",background:"#000"}}>
-                      <div id="tc-home-join-scanner" ref={joinScannerRef} style={{width:"100%"}}/>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+            <HomeJoinSection setCur={setCur} setScreen={setScreen}/>
           </div>
 
           {/* RIGHT col: recent sessions */}
