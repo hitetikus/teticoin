@@ -20,7 +20,7 @@ const GREEN = "#00C48C";
 const BLUE = "#3B82F6";
 const PURPLE = "#7C3AED";
 const GRAD = `linear-gradient(135deg,${PINK},${PINK2})`;
-const GC = ["#E91E8C","#8B5CF6","#3B82F6","#00C48C","#F5A623","#EF4444"];
+const GC = ["#8B5CF6","#3B82F6","#00C48C","#F5A623","#EF4444","#F97316","#06B6D4","#10B981","#EC4899","#6366F1","#84CC16","#A855F7","#0EA5E9","#D97706","#64748B"];
 const TV_DEFAULT = [10,30,50,100,200,-10]; // default Other Coins (editable per session)
 const ACTS_DEFAULT = [
   {id:"correct", label:"Correct Answer", pts:50, col:PINK},
@@ -1102,20 +1102,14 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                     <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                   </div>
                   {isManagePro && (
-                    <select value={p.gid??""} onChange={e=>asgG(p.id,e.target.value)} style={{background:SOFT,border:`1px solid ${MID}`,color:TEXT,borderRadius:9,padding:"5px 8px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:90}}>
+                    {(() => { const selG = session.groups.find(g=>g.id===p.gid); return (
+                    <select value={p.gid??""} onChange={e=>asgG(p.id,e.target.value)} style={{background:SOFT,border:`1px solid ${selG?.color||MID}`,color:selG?.color||TEXT,borderRadius:9,padding:"5px 8px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:110}}>
                       <option value="">No group</option>
-                      {session.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
-                    </select>
+                      {session.groups.map(g=><option key={g.id} value={g.id} style={{color:g.color}}>■ {g.name}</option>)}
+                    </select>); })()}
                   )}
-                  {(p.total === 0 && !p.uid) ? (
-                    <button onClick={()=>remP(p.id)} title="Remove participant"
-                      style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"4px 9px",fontSize:11,color:SUB,cursor:"pointer"}}>✕</button>
-                  ) : (
-                    <div title="Cannot remove — participant has joined or earned coins"
-                      style={{width:28,height:26,display:"flex",alignItems:"center",justifyContent:"center",color:`${SUB}44`,fontSize:13,flexShrink:0}}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    </div>
-                  )}
+                  <button onClick={()=>{ if(p.total>0||p.uid){if(!window.confirm(`Remove ${p.name}? They have ${p.total} coins. This cannot be undone.`))return;} remP(p.id); }} title="Remove participant"
+                    style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"4px 9px",fontSize:11,color:SUB,cursor:"pointer"}}>✕</button>
                 </div>
               );
             })}
@@ -1153,19 +1147,56 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
               </div>
             ) : <>
             <div style={{display:"flex",gap:8,marginBottom:10}}>
-              <Inp placeholder="Group name" value={ng} onChange={e=>setNg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addG()} style={{flex:1}}/>
+              <input placeholder="Group name" value={ng} onChange={e=>setNg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addG()} style={{flex:1,padding:"11px 14px",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",cursor:"text",caretColor:TEXT}}/>
               <button onClick={addG} style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
             </div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
               {GC.map(c => <div key={c} onClick={()=>setNgc(c)} style={{width:26,height:26,borderRadius:8,background:c,cursor:"pointer",transition:".12s",border:ngc===c?`3px solid ${TEXT}`:"3px solid transparent",transform:ngc===c?"scale(1.15)":"scale(1)"}}/>)}
             </div>
-            {session.groups.map(g => (
-              <div key={g.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${BORDER}`}}>
-                <div style={{width:12,height:12,borderRadius:3,background:g.color,flexShrink:0}}/>
-                <div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:g.color}}>{g.name}</div>
-                <div style={{fontSize:11,color:SUB}}>{session.participants.filter(p=>p.gid===g.id).length} members</div>
-              </div>
-            ))}
+            {/* Randomize groups button */}
+            {session.groups.length > 0 && session.participants.length > 0 && (
+              <button onClick={()=>{
+                if(!window.confirm("Randomly assign all participants to groups?")) return;
+                onUpdate(s=>{
+                  const gIds = s.groups.map(g=>g.id);
+                  if(gIds.length===0) return s;
+                  s.participants = s.participants.map((p,i)=>({...p, gid: gIds[i % gIds.length]}));
+                  return s;
+                });
+              }} style={{width:"100%",padding:"10px 0",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,cursor:"pointer",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                🎲 Randomize Groups
+              </button>
+            )}
+            {session.groups.map(g => {
+              const [editingG, setEditingG] = React.useState(false);
+              const [editName, setEditName] = React.useState(g.name);
+              const [editColor, setEditColor] = React.useState(g.color);
+              return (
+                <div key={g.id} style={{padding:"10px 0",borderBottom:`1px solid ${BORDER}`}}>
+                  {editingG ? (
+                    <div>
+                      <input value={editName} onChange={e=>setEditName(e.target.value)}
+                        style={{width:"100%",padding:"8px 10px",border:`1.5px solid ${MID}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",marginBottom:8,boxSizing:"border-box"}}/>
+                      <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+                        {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:22,height:22,borderRadius:6,background:c,cursor:"pointer",border:editColor===c?`3px solid ${TEXT}`:"3px solid transparent",transition:".12s",transform:editColor===c?"scale(1.15)":"scale(1)"}}/>)}
+                      </div>
+                      <div style={{display:"flex",gap:6}}>
+                        <button onClick={()=>{ onUpdate(s=>{const gx=s.groups.find(x=>x.id===g.id);if(gx){gx.name=editName.trim()||g.name;gx.color=editColor;}return s;}); setEditingG(false); }} style={{flex:1,padding:"7px 0",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
+                        <button onClick={()=>setEditingG(false)} style={{flex:1,padding:"7px 0",background:"#fff",border:`1px solid ${BORDER}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer"}}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{width:12,height:12,borderRadius:3,background:g.color,flexShrink:0}}/>
+                      <div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:g.color}}>{g.name}</div>
+                      <div style={{fontSize:11,color:SUB}}>{session.participants.filter(p=>p.gid===g.id).length} members</div>
+                      <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditingG(true);}} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 8px",fontSize:11,color:SUB,cursor:"pointer"}}>✎</button>
+                      <button onClick={()=>{ if(!window.confirm(`Delete group "${g.name}"?`)) return; onUpdate(s=>{s.groups=s.groups.filter(x=>x.id!==g.id);s.participants=s.participants.map(p=>p.gid===g.id?{...p,gid:null}:p);return s;}); }} style={{background:"none",border:`1px solid #EF444440`,borderRadius:7,padding:"3px 8px",fontSize:11,color:"#EF4444",cursor:"pointer"}}>✕</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             </>}
           </>}
 
@@ -2377,6 +2408,8 @@ function LeaderSheet({ session, onToggleBoard, onClose }) {
   const sorted = [...session.participants].sort((a,b)=>b.total-a.total);
   const gs = session.groups.map(g=>({...g,total:session.participants.filter(p=>p.gid===g.id).reduce((s,p)=>s+p.total,0),members:session.participants.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
   const maxP = sorted[0]?.total||1;
+  const hasGroups = session.participants.some(p=>p.gid!=null) && gs.length > 0;
+  const [scoreTab, setScoreTab] = useState("individual");
   return (
     <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:420}}>
       <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(26,10,20,.45)",backdropFilter:"blur(3px)"}}/>
@@ -2403,57 +2436,70 @@ function LeaderSheet({ session, onToggleBoard, onClose }) {
             </div>
           </div>
         </div>
-        <div style={{overflowY:"auto",flex:1,padding:"0 16px 32px"}}>
-          {/* Individuals */}
-          <SL>Individual Rankings</SL>
-          <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:20}}>
-            {sorted.length===0 && <div style={{padding:32,textAlign:"center",color:SUB,fontSize:13}}>No participants yet</div>}
-            {sorted.map((p,i)=>{
-              const grp=session.groups.find(g=>g.id===p.gid);
-              return (
-                <div key={p.id} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
-                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
-                    <Av s={p.av} color={grp?.color||PINK} size={34}/>
-                    <div style={{flex:1}}>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
-                      {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
-                    </div>
-                    <div style={{textAlign:"right"}}>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
-                      <div style={{fontSize:10,color:SUB}}>coins</div>
-                    </div>
-                  </div>
-                  <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
-                    <div style={{height:4,background:GRAD,width:`${(p.total/maxP)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {/* Groups */}
-          {gs.length > 0 && <>
-            <SL>Group Rankings</SL>
-            {gs.map((g,i)=>(
-              <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
-                    <div style={{width:11,height:11,borderRadius:3,background:g.color,flexShrink:0}}/>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:g.color}}>{g.name}</div>
-                    <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
-                  </div>
-                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</div>
-                </div>
-                <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-                  {g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)}
-                </div>
-                <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
-                  <div style={{height:4,background:g.color,width:`${(g.total/(gs[0]?.total||1))*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
-                </div>
-              </div>
+        {/* Tabs — only show if groups are assigned */}
+        {hasGroups && (
+          <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`,flexShrink:0,padding:"0 16px"}}>
+            {[["individual","👤 Individual"],["groups","🏆 Groups"]].map(([id,label])=>(
+              <button key={id} onClick={()=>setScoreTab(id)} style={{padding:"10px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:scoreTab===id?PINK:SUB,cursor:"pointer",borderBottom:scoreTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
+                {label}
+              </button>
             ))}
+          </div>
+        )}
+        <div style={{overflowY:"auto",flex:1,padding:"0 16px 32px"}}>
+          {/* Individual Rankings */}
+          {(!hasGroups || scoreTab==="individual") && <>
+            {!hasGroups && <SL>Individual Rankings</SL>}
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:20,marginTop:hasGroups?12:0}}>
+              {sorted.length===0 && <div style={{padding:32,textAlign:"center",color:SUB,fontSize:13}}>No participants yet</div>}
+              {sorted.map((p,i)=>{
+                const grp=session.groups.find(g=>g.id===p.gid);
+                return (
+                  <div key={p.id} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
+                      <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
+                      <Av s={p.av} color={grp?.color||PINK} size={34}/>
+                      <div style={{flex:1}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
+                        {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
+                        <div style={{fontSize:10,color:SUB}}>coins</div>
+                      </div>
+                    </div>
+                    <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                      <div style={{height:4,background:GRAD,width:`${(p.total/maxP)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>}
+          {/* Group Rankings — only shown when tab is "groups" and groups exist */}
+          {hasGroups && scoreTab==="groups" && <>
+            <div style={{marginTop:12}}>
+              {gs.map((g,i)=>(
+                <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
+                      <div style={{width:11,height:11,borderRadius:3,background:g.color,flexShrink:0}}/>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:g.color}}>{g.name}</div>
+                      <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
+                    </div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</div>
+                  </div>
+                  <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+                    {g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)}
+                  </div>
+                  <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                    <div style={{height:4,background:g.color,width:`${(g.total/(gs[0]?.total||1))*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
+                  </div>
+                </div>
+              ))}
+            </div>
           </>}
         </div>
       </div>
@@ -5789,7 +5835,13 @@ export default function App() {
       sgSession(code).then(s => {
         if (s) {
           setCur(s);
-          setScreen("participantJoin");
+          // If user is already logged in, skip participantJoin name prompt and go straight in
+          const currentUser = auth.currentUser;
+          if (currentUser) {
+            setScreen("participant");
+          } else {
+            setScreen("participantJoin");
+          }
           setLoading(false);
         } else {
           setLoading(false);
@@ -6287,29 +6339,17 @@ export default function App() {
                 if (isFree && sessions.filter(s=>!s.archived).length >= sessionLimit) { setLimitModal("sessions"); return; }
                 setCreating(true);
               }}>+ Create New Session</PBtn>
-
-              {/* Join a session as participant */}
-              <div style={{marginTop:20,borderTop:`2px solid ${BORDER}`,paddingTop:14}}>
-                <div style={{fontSize:11,color:SUB,fontWeight:600,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Join a session as participant</div>
-                <JoinSessionField onJoin={async(code)=>{
-                  const s = await sgSession(code.toUpperCase().trim());
-                  if (s) { setCur(s); setScreen("participant"); return null; }
-                  return "Session not found. Check the code and try again.";
-                }}/> 
-              </div>
-
-              <div style={{marginTop:12,textAlign:"center"}}>
-              </div>
             </div>
 
-            {/* Stats */}
+            {/* Stats — includes archived, excludes permanently deleted */}
             {(() => {
-              const activeSessions = sessions.filter(s=>!s.archived);
-              const totalParticipants = activeSessions.reduce((sum,s)=>sum+(s.count||0),0);
-              const totalCoins = activeSessions.reduce((sum,s)=>sum+(s.totalCoins||0),0);
+              const allNonDeleted = sessions; // permanently deleted sessions are gone from this list
+              const totalParticipants = allNonDeleted.reduce((sum,s)=>sum+(s.count||0),0);
+              const totalCoins = allNonDeleted.reduce((sum,s)=>sum+(s.totalCoins||0),0);
+              const totalSessions = allNonDeleted.filter(s=>!s.archived).length + allNonDeleted.filter(s=>s.archived).length;
               return (
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
-                  {[{num:activeSessions.length,label:"Sessions Created"},{num:totalParticipants,label:"Participants Joined"},{num:totalCoins,label:"Coins Given"}].map(({num,label})=>(
+                  {[{num:totalSessions,label:"Sessions Created"},{num:totalParticipants,label:"Participants Joined"},{num:totalCoins,label:"Coins Given"}].map(({num,label})=>(
                     <div key={label} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 10px",textAlign:"center"}}>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:PINK,lineHeight:1}}>{num}</div>
                       <div style={{fontSize:10,color:SUB,fontWeight:500,marginTop:4,lineHeight:1.3}}>{label}</div>
@@ -6318,12 +6358,70 @@ export default function App() {
                 </div>
               );
             })()}
+
+            {/* Join a session — separate card, neutral color */}
+            {(() => {
+              const [showJoinScanner, setShowJoinScanner] = React.useState(false);
+              const joinScannerRef = React.useRef(null);
+              const joinHtml5QrRef = React.useRef(null);
+              React.useEffect(() => {
+                if (!showJoinScanner) {
+                  if (joinHtml5QrRef.current) { joinHtml5QrRef.current.stop().catch(()=>{}); joinHtml5QrRef.current = null; }
+                  return;
+                }
+                const cid = "tc-home-join-scanner";
+                function initScan() {
+                  if (!window.Html5Qrcode) return;
+                  const sc = new window.Html5Qrcode(cid);
+                  joinHtml5QrRef.current = sc;
+                  sc.start({facingMode:"environment"},{fps:10,qrbox:{width:200,height:200}}, async(text) => {
+                    sc.stop().catch(()=>{}); joinHtml5QrRef.current = null; setShowJoinScanner(false);
+                    const m = text.match(/\/join\/([A-Z0-9]+)/i);
+                    const code = m ? m[1].toUpperCase() : text.replace(/[^A-Z0-9]/gi,"").toUpperCase();
+                    if (!code) return;
+                    const user = auth.currentUser;
+                    const s = await sgSession(code);
+                    if (s) {
+                      if (user) { setCur(s); setScreen("participant"); }
+                      else { setCur(s); setScreen("participant"); }
+                    }
+                  }, ()=>{}).catch(()=>{ setShowJoinScanner(false); });
+                }
+                if (window.Html5Qrcode) { initScan(); }
+                else {
+                  const sc = document.createElement("script");
+                  sc.src = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
+                  sc.onload = initScan; document.head.appendChild(sc);
+                }
+                return () => { if (joinHtml5QrRef.current) { joinHtml5QrRef.current.stop().catch(()=>{}); joinHtml5QrRef.current = null; } };
+              }, [showJoinScanner]);
+              return (
+                <div style={{background:"#F8FAFC",border:"1.5px solid #E2E8F0",borderRadius:16,padding:"18px 16px",marginBottom:16}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>Join a Session</div>
+                  <JoinSessionField onJoin={async(code)=>{
+                    const user = auth.currentUser;
+                    const s = await sgSession(code.toUpperCase().trim());
+                    if (s) { setCur(s); setScreen("participant"); return null; }
+                    return "Session not found. Check the code and try again.";
+                  }}/>
+                  <button onClick={()=>setShowJoinScanner(v=>!v)} style={{marginTop:10,width:"100%",padding:"10px 0",background:showJoinScanner?"#E2E8F0":"#fff",border:"1.5px solid #E2E8F0",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#475569",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M23 7V2H18M7 2H2v5M2 17v5h5M18 22h5v-5"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+                    {showJoinScanner ? "Close Camera" : "Scan QR Code"}
+                  </button>
+                  {showJoinScanner && (
+                    <div style={{marginTop:10,borderRadius:12,overflow:"hidden",background:"#000"}}>
+                      <div id="tc-home-join-scanner" ref={joinScannerRef} style={{width:"100%"}}/>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* RIGHT col: recent sessions */}
           <div className="tc-home-right" style={{padding:"20px"}}>
             {/* Desktop section label */}
-            <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1.2,fontFamily:"Poppins,sans-serif",marginBottom:12}}>Recent Sessions</div>
+            <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1.2,fontFamily:"Poppins,sans-serif",marginBottom:12}}>Recent Sessions Created</div>
 
             {(() => {
               const active = sessions.filter(s=>!s.archived);
@@ -6380,10 +6478,29 @@ export default function App() {
                             </div>
                           </div>
                         </button>
-                        <button onClick={async()=>{const full=await sgSession(s.code);if(full){setCur(full);setScreen("sessionSettings");}}}
-                          style={{padding:"0 14px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",minHeight:62}}>
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                        </button>
+                        {s.archived ? (
+                          <div style={{display:"flex",flexShrink:0,borderLeft:`1px solid ${BORDER}`}}>
+                            <button onClick={async()=>{
+                              if(!window.confirm("Unarchive this session? It will move to inactive sessions.")) return;
+                              const full = await sgSession(s.code);
+                              if (full) { await ssSession(s.code, {...full, archived:false, live:false}); setSessions(prev=>prev.map(x=>x.code===s.code?{...x,archived:false,live:false}:x)); }
+                            }} title="Unarchive" style={{padding:"0 12px",height:"100%",background:"none",border:"none",cursor:"pointer",color:"#3B82F6",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,fontSize:11,fontWeight:700,fontFamily:"Plus Jakarta Sans,sans-serif"}}>
+                              Restore
+                            </button>
+                            <button onClick={async()=>{
+                              if(!window.confirm("Permanently delete this session? This cannot be undone.")) return;
+                              await fsDel(null, s.code, true);
+                              setSessions(prev=>prev.filter(x=>x.code!==s.code));
+                            }} title="Delete permanently" style={{padding:"0 12px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",color:"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,fontSize:11,fontWeight:700,fontFamily:"Plus Jakarta Sans,sans-serif"}}>
+                              Delete
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={async()=>{const full=await sgSession(s.code);if(full){setCur(full);setScreen("sessionSettings");}}}
+                            style={{padding:"0 14px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",minHeight:62}}>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -6420,7 +6537,7 @@ const CSS = `
   @keyframes eyeSquint { 0%,88%,100%{opacity:0;transform:scaleY(1);} 92%,96%{opacity:1;} }
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-thumb { background:${MID}; border-radius:4px; }
-  input, textarea { user-select:text; -webkit-user-select:text; cursor:text; }
+  input, textarea { user-select:text; -webkit-user-select:text; cursor:text; caret-color:${TEXT}; }
   input::placeholder { color:${SUB}; opacity:.6; }
   select option { background:#fff; }
 
