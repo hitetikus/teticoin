@@ -2074,7 +2074,10 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       <Confetti active/>
       <Ham size={56}/>
       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:4,marginBottom:2,lineHeight:1.1}}>Scoreboard</div>
-      <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:16}}>{live?.name}</div>
+      <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:6,flexWrap:"wrap"}}>
+        <span>{live?.name}</span>
+        {init?.code && <><span style={{color:"rgba(255,255,255,.15)"}}>|</span><span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,letterSpacing:1}}>{init.code}</span></>}
+      </div>
       {(() => {
         const hasGroups = (live.groups||[]).length>0 && sorted.some(p=>p.gid!=null);
         const grpScores = (live.groups||[]).map(g=>({...g,total:sorted.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0),members:sorted.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
@@ -3003,17 +3006,20 @@ function CoinmasterView({ session: init, onBack }) {
                   </div>
                 )}
                 {hasGrps && boardSubTab==="groups" && grpScores.map((g,i)=>(
-                  <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8}}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
-                        <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:g.color}}>{g.name}</div>
-                        <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
+                  <div key={g.id} style={{padding:"13px 16px",borderRadius:14,border:i===0?`1.5px solid ${g.color}55`:"1.5px solid rgba(255,255,255,.07)",background:i===0?`${g.color}14`:"rgba(255,255,255,.05)"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
+                      <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
+                      <div style={{flex:1}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff"}}>{g.name}</div>
+                        <div style={{fontSize:11,color:"rgba(255,255,255,.4)"}}>{g.members.length} members</div>
                       </div>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:g.color}}>{g.total}</div>
+                      <div style={{textAlign:"right",minWidth:56}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</div>
+                        <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>coins</div>
+                      </div>
                     </div>
-                    <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                    <div style={{marginTop:8,height:4,background:"rgba(255,255,255,.1)",borderRadius:4,overflow:"hidden"}}>
                       <div style={{height:4,background:g.color,width:`${(g.total/maxGrp)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
                     </div>
                   </div>
@@ -3869,6 +3875,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   <div style={{position:"absolute",top:3,left:ses.boardVisible?21:3,width:20,height:20,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
                 </div>
               </div>
+              {ses.boardVisible && (
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:"rgba(0,196,140,.1)",border:"1.5px solid rgba(0,196,140,.25)",borderRadius:12}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:GREEN}}>Participants can now view the scoreboard on their devices</span>
+                </div>
+              )}
               {/* Lucky Draw button — disabled, phase 2 feature */}
               {false && ses.boardVisible && (
                 <button onClick={()=>setShowLuckyDraw(true)}
@@ -3926,17 +3938,20 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     </div>
                   )}
                   {hasGrps && boardSubTab==="groups" && grpScores.map((g,i)=>(
-                    <div key={g.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                        <div style={{display:"flex",alignItems:"center",gap:8}}>
-                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
-                          <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
-                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:g.color}}>{g.name}</div>
-                          <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
+                    <div key={g.id} style={{padding:"13px 16px",borderRadius:14,border:ses.boardVisible?(i===0?`1.5px solid ${g.color}55`:"1.5px solid rgba(255,255,255,.07)"):`1.5px solid ${BORDER}`,background:ses.boardVisible?(i===0?`${g.color}14`:"rgba(255,255,255,.05)"):(i===0?`${g.color}08`:"#fff")}}>
+                      <div style={{display:"flex",alignItems:"center",gap:10}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
+                        <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
+                        <div style={{flex:1}}>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?"#fff":g.color}}>{g.name}</div>
+                          <div style={{fontSize:11,color:ses.boardVisible?"rgba(255,255,255,.4)":SUB}}>{g.members.length} members</div>
                         </div>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:g.color}}>{g.total}</div>
+                        <div style={{textAlign:"right",minWidth:56}}>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?g.color:(ses.boardVisible?"#fff":g.color)}}>{g.total}</div>
+                          <div style={{fontSize:10,color:ses.boardVisible?"rgba(255,255,255,.4)":SUB}}>coins</div>
+                        </div>
                       </div>
-                        <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                      <div style={{marginTop:8,height:4,background:ses.boardVisible?"rgba(255,255,255,.1)":BORDER,borderRadius:4,overflow:"hidden"}}>
                         <div style={{height:4,background:g.color,width:`${(g.total/maxGrp)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
                       </div>
                     </div>
