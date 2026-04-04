@@ -2086,7 +2086,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         return (<>
           {hasGroups && (
             <div style={{display:"flex",background:"rgba(255,255,255,.08)",borderRadius:11,overflow:"hidden",marginBottom:16,width:"100%",maxWidth:400}}>
-              {[["individual",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</>],["groups",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</>]].map(([id,label])=>(
+              {[["individual",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</span>],["groups",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</span>]].map(([id,label])=>(
                 <button key={id} onClick={()=>setPBoardTab(id)} style={{flex:1,padding:"9px 0",border:"none",background:pBoardTab===id?"rgba(255,255,255,.12)":"transparent",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:pBoardTab===id?"#fff":"rgba(255,255,255,.45)",cursor:"pointer",borderBottom:pBoardTab===id?"2.5px solid #fff":"2.5px solid transparent",transition:"all .12s",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
                   {label}
                 </button>
@@ -2968,8 +2968,8 @@ function CoinmasterView({ session: init, onBack }) {
               {hasGrps && (
                 <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`,flexShrink:0,background:"#fff"}}>
                   {[
-                    ["individual",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</>],
-                    ["groups",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</>]
+                    ["individual",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</span>],
+                    ["groups",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</span>]
                   ].map(([id,label])=>(
                     <button key={id} onClick={()=>setBoardSubTab(id)}
                       style={{padding:"9px 14px",border:"none",background:"none",display:"flex",alignItems:"center",gap:5,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:boardSubTab===id?PINK:SUB,cursor:"pointer",borderBottom:boardSubTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
@@ -3901,8 +3901,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   {hasGrps && (
                     <div style={{display:"flex",background:ses.boardVisible?"rgba(255,255,255,.08)":"#fff",border:`1.5px solid ${ses.boardVisible?"rgba(255,255,255,.15)":BORDER}`,borderRadius:11,overflow:"hidden",flexShrink:0}}>
                       {[
-                        ["individual",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</>],
-                        ["groups",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</>]
+                        ["individual",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</span>],
+                        ["groups",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</span>]
                       ].map(([id,label])=>(
                         <button key={id} onClick={()=>setBoardSubTab(id)}
                           style={{flex:1,padding:"9px 0",border:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:5,background:boardSubTab===id?(ses.boardVisible?"rgba(255,255,255,.12)":SOFT):(ses.boardVisible?"transparent":"#fff"),fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:boardSubTab===id?(ses.boardVisible?"#fff":PINK):(ses.boardVisible?"rgba(255,255,255,.45)":SUB),cursor:"pointer",borderBottom:boardSubTab===id?`2.5px solid ${ses.boardVisible?"#fff":PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
@@ -4897,7 +4897,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
               <div style={{background:`${pd.color}18`,border:`1.5px solid ${pd.color}44`,borderRadius:99,padding:"3px 12px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:pd.color}}>{isBetaPlan?"Beta Access":"Active"}</div>
             </div>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:TEXT,marginBottom:4,lineHeight:1}}>
-              {isBetaPlan?<span style={{fontSize:18,fontWeight:700,color:GREEN}}>Full Pro — Complimentary</span>:<>{pd.price}{!isFree&&pd.renewal!=="one-time"&&<span style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</span>}</>}
+              {isBetaPlan?<span style={{fontSize:18,fontWeight:700,color:GREEN}}>Full Pro — Complimentary</span>:<span style={{display:"contents"}}>{pd.price}{!isFree&&pd.renewal!=="one-time"&&<span style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</span>}</span>}
             </div>
             {pd.next && <div style={{fontSize:12,color:isBetaPlan?"#16A34A":SUB,fontWeight:600,marginTop:6}}>Beta access until {pd.next}</div>}
             {isFree && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>No time limit · No card required</div>}
@@ -5467,7 +5467,7 @@ function SuperAdminDashboard({ onClose }) {
                   onMouseOver={e=>{ if(!inviteBusy&&inviteEmail.trim()) e.currentTarget.style.opacity="0.85"; }}
                   onMouseOut={e=>{ e.currentTarget.style.opacity="1"; }}>
                   {inviteBusy ? (
-                    <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Adding…</>
+                    <span style={{display:"contents"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Adding…</span>
                   ) : "Add to Beta"}
                 </button>
               </div>
@@ -5823,8 +5823,8 @@ function BadgePickerModal({ participant, sessionName, hostName, onAward, onClose
             <button onClick={()=>fileRef.current?.click()}
               style={{width:"100%",padding:"12px",border:`1.5px dashed ${uploadErr?'#EF4444':BORDER}`,borderRadius:12,background:customFile?"#F0FDF4":SOFT,cursor:"pointer",fontSize:13,color:SUB,fontFamily:"Poppins,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
               {customFile
-                ? <><img src={customFile} alt="custom" style={{width:28,height:28}}/><span style={{color:GREEN,fontWeight:600}}>SVG uploaded ✓</span></>
-                : <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>.svg only · max 10KB · 48×48px recommended</span></>
+                ? <span style={{display:"contents"}}><img src={customFile} alt="custom" style={{width:28,height:28}}/><span style={{color:GREEN,fontWeight:600}}>SVG uploaded ✓</span></span>
+                : <span style={{display:"contents"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>.svg only · max 10KB · 48×48px recommended</span></span>
               }
             </button>
             <input ref={fileRef} type="file" accept=".svg,image/svg+xml" style={{display:"none"}} onChange={handleSvgUpload}/>
