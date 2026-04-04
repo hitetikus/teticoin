@@ -1493,6 +1493,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   useEffect(() => {
     if (step !== "joined" || !init?.code) return;
     const t = setInterval(async () => {
+      if (loginModal) return; // don't re-render while login modal is open
       const s = await sgSession(init.code);
       if (!s) return;
       if (myId) {
@@ -2068,7 +2069,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   // Scoreboard view — host pushed boardVisible=true
   if (step === "joined" && live?.boardVisible) return (
     <div style={{minHeight:"100vh",background:"#0D0008",fontFamily:"Poppins,sans-serif",color:"#fff",padding:"24px 20px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-      {loginModal && <OptionalLoginModal/>}
+      {loginModal && <OptionalLoginModal key="opt-login-board"/>}
       <BadgeClaimPrompt/>
       <Confetti active/>
       <Ham size={56}/>
@@ -2168,39 +2169,83 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   // Main participant dashboard
   if (step === "joined") return (
     <div style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
-      {loginModal && <OptionalLoginModal/>}
+      {loginModal && <OptionalLoginModal key="opt-login"/>}
       {showEarnings && linkedUid && (
         <EarningsPage uid={linkedUid} name={me?.name||"You"} onClose={()=>setShowEarnings(false)}/>
       )}
       <BadgeClaimPrompt/>
+
+      {/* ── Top nav bar ── */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10,flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <Ham size={28}/>
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          {/* Earnings snippet — only shown when logged in */}
-          {linkedUid && (
-            <button onClick={()=>setShowEarnings(true)}
-              title="My total earnings across all sessions"
-              style={{display:"flex",alignItems:"center",gap:4,background:"none",border:`1px solid ${BORDER}`,borderRadius:9,padding:"5px 10px",cursor:"pointer",position:"relative",gap:6}}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:PINK}}>{me?.total||0}</span>
-              <span style={{fontSize:10,color:SUB,fontWeight:600}}>coins</span>
-            </button>
-          )}
           <button onClick={()=>setShowMyQR(v=>!v)}
             style={{display:"flex",alignItems:"center",gap:5,background:showMyQR?SOFT:"none",border:`1px solid ${showMyQR?PINK:BORDER}`,borderRadius:9,padding:"5px 10px",fontSize:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,color:showMyQR?PINK:SUB,cursor:"pointer"}}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
             My QR
           </button>
-          <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:8,padding:"3px 10px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:PINK,letterSpacing:1}}>
-            {me ? pNum(me.num) : "—"}
-          </div>
+          {linkedUid ? (
+            <button onClick={async()=>{
+              try { await signOut(auth); } catch(e){}
+              await switchBackToGuestName();
+              setLoginModal(false);
+            }} style={{display:"flex",alignItems:"center",gap:5,background:"none",border:`1px solid ${BORDER}`,borderRadius:9,padding:"5px 10px",fontSize:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,color:SUB,cursor:"pointer"}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Logout
+            </button>
+          ) : (
+            <button onClick={()=>setLoginModal(true)} style={{display:"flex",alignItems:"center",gap:5,background:SOFT,border:`1px solid ${MID}`,borderRadius:9,padding:"5px 12px",fontSize:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,color:PINK,cursor:"pointer"}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              Login
+            </button>
+          )}
         </div>
       </div>
 
-      <div style={{flex:1,overflowY:"auto",padding:"20px 16px",display:"flex",flexDirection:"column",alignItems:"center",gap:12,maxWidth:420,margin:"0 auto",width:"100%"}}>
+      {/* ── Identity header row — different bg for logged-in vs guest ── */}
+      <div style={{background:linkedUid?"linear-gradient(135deg,#1A0A14,#2D1040)":"#F8F8FA",borderBottom:`1px solid ${linkedUid?"rgba(233,30,140,.2)":BORDER}`,padding:"10px 16px",flexShrink:0}}>
+        <div style={{maxWidth:420,margin:"0 auto",display:"flex",alignItems:"center",gap:10}}>
+          <div style={{background:linkedUid?"rgba(233,30,140,.2)":SOFT,border:`1.5px solid ${linkedUid?"rgba(233,30,140,.4)":MID}`,borderRadius:10,padding:"4px 14px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:linkedUid?"#FF4FB8":PINK,letterSpacing:2,flexShrink:0}}>
+            {me ? pNum(me.num) : "—"}
+          </div>
+          {editingName ? (
+            <div style={{display:"flex",gap:6,flex:1,minWidth:0}}>
+              <input autoFocus value={editNameVal} onChange={e=>setEditNameVal(e.target.value)}
+                onKeyDown={e=>{
+                  if(e.key==="Enter"&&editNameVal.trim()){
+                    const newName=editNameVal.trim();
+                    const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
+                    setLive(u); ssSession(init.code,u); setEditingName(false);
+                  }
+                  if(e.key==="Escape") setEditingName(false);
+                }}
+                style={{flex:1,minWidth:0,padding:"5px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#1A0A14",background:"#fff",outline:"none",caretColor:"#1A0A14"}}/>
+              <button onClick={()=>{
+                if(!editNameVal.trim()){setEditingName(false);return;}
+                const newName=editNameVal.trim();
+                const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
+                setLive(u); ssSession(init.code,u); setEditingName(false);
+              }} style={{padding:"0 12px",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",flexShrink:0}}>Save</button>
+              <button onClick={()=>setEditingName(false)} style={{padding:"0 8px",background:"none",border:`1px solid ${linkedUid?"rgba(255,255,255,.2)":BORDER}`,borderRadius:9,fontSize:13,color:linkedUid?"rgba(255,255,255,.5)":SUB,cursor:"pointer",flexShrink:0}}>✕</button>
+            </div>
+          ) : (
+            <div style={{display:"flex",alignItems:"center",gap:6,flex:1,minWidth:0}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:linkedUid?"#fff":TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{me?.name||"—"}</div>
+              <button onClick={()=>{setEditNameVal(me?.name||"");setEditingName(true);}}
+                title="Edit name"
+                style={{background:"none",border:"none",cursor:"pointer",color:linkedUid?"rgba(255,255,255,.4)":SUB,padding:"2px 4px",flexShrink:0,lineHeight:1}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              {linkedUid && <span style={{fontSize:10,background:"rgba(233,30,140,.25)",color:"#FF4FB8",borderRadius:99,padding:"1px 8px",fontWeight:700,flexShrink:0}}>Logged in</span>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={{flex:1,overflowY:"auto",padding:"16px 16px",display:"flex",flexDirection:"column",alignItems:"center",gap:12,maxWidth:420,margin:"0 auto",width:"100%"}}>
 
         {showMyQR && me && (
           <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center"}}>
@@ -2211,55 +2256,6 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             <div style={{fontSize:11,color:SUB,marginTop:6,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
           </div>
         )}
-
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,width:"100%"}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,flex:1,minWidth:0}}>
-            <div style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:12,padding:"6px 18px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:PINK,letterSpacing:3,flexShrink:0}}>
-              {me ? pNum(me.num) : "—"}
-            </div>
-            {editingName ? (
-              <div style={{display:"flex",gap:6,flex:1,minWidth:0}}>
-                <input autoFocus value={editNameVal} onChange={e=>setEditNameVal(e.target.value)}
-                  onKeyDown={e=>{
-                    if(e.key==="Enter"&&editNameVal.trim()){
-                      const newName=editNameVal.trim();
-                      const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
-                      setLive(u); ssSession(init.code,u); setEditingName(false);
-                    }
-                    if(e.key==="Escape") setEditingName(false);
-                  }}
-                  style={{flex:1,minWidth:0,padding:"6px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:TEXT,outline:"none"}}/>
-                <button onClick={()=>{
-                  if(!editNameVal.trim()){setEditingName(false);return;}
-                  const newName=editNameVal.trim();
-                  const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
-                  setLive(u); ssSession(init.code,u); setEditingName(false);
-                }} style={{padding:"0 12px",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>Save</button>
-                <button onClick={()=>setEditingName(false)} style={{padding:"0 10px",background:"none",border:`1px solid ${BORDER}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
-              </div>
-            ) : (
-              <div style={{display:"flex",alignItems:"center",gap:6,flex:1,minWidth:0}}>
-                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:18,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{me?.name||"—"}</div>
-                <button onClick={()=>{setEditNameVal(me?.name||"");setEditingName(true);}}
-                  title="Edit name"
-                  style={{background:"none",border:"none",cursor:"pointer",color:SUB,padding:"2px 4px",flexShrink:0,lineHeight:1}}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                </button>
-              </div>
-            )}
-          </div>
-          {!editingName && (linkedUid ? (
-            <button onClick={switchBackToGuestName} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:10,padding:"8px 10px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",flexShrink:0}}>
-              Use typed name
-            </button>
-          ) : (
-            <button onClick={()=>setLoginModal(true)} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:10,padding:"8px 10px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:PINK,cursor:"pointer",flexShrink:0}}>
-              Log in
-            </button>
-          ))}
-        </div>
-
-        <LoginBanner/>
 
         {/* Earned badges — shown if logged in */}
         {linkedUid && <ParticipantBadges uid={linkedUid}/>}
@@ -2287,6 +2283,34 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         <div style={{fontSize:12,color:SUB,textAlign:"center",lineHeight:1.8,marginTop:4}}>
           {sorted.length <= 1 ? "Waiting for others to join..." : "Scoreboard will appear when host shares it"}
         </div>
+
+        {/* ── Bottom banner: logged-in confirmation or guest warning ── */}
+        {linkedUid ? (
+          <div style={{width:"100%",background:`${GREEN}10`,border:`1.5px solid ${GREEN}25`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,marginTop:4}}>
+            <div style={{width:30,height:30,borderRadius:8,background:`${GREEN}20`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Logged in as {linkedName}</div>
+              <div style={{fontSize:11,color:SUB,marginTop:1}}>Your coins & badges are saved to your account</div>
+            </div>
+          </div>
+        ) : (
+          <div style={{width:"100%",background:"#FFFBF0",border:"1.5px solid #F59E0B30",borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"flex-start",gap:12,marginTop:4}}>
+            <div style={{width:30,height:30,borderRadius:8,background:"#FEF3C7",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#92400E"}}>Guest mode — coins not saved</div>
+              <div style={{fontSize:11,color:"#78350F",marginTop:2,lineHeight:1.5}}>Your coins are only visible in this session and will not be accumulated.{" "}
+                <button onClick={()=>setLoginModal(true)} style={{background:"none",border:"none",padding:0,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:PINK,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:2}}>
+                  Login or register free
+                </button>
+                {" "}to save & grow your coins.
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
