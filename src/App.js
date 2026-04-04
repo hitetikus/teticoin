@@ -2076,7 +2076,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:4,marginBottom:2,lineHeight:1.1}}>Scoreboard</div>
       <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:6,flexWrap:"wrap"}}>
         <span>{live?.name}</span>
-        {init?.code && <><span style={{color:"rgba(255,255,255,.15)"}}>|</span><span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,letterSpacing:1}}>{init.code}</span></>}
+        {init?.code && <span style={{display:"contents"}}><span style={{color:"rgba(255,255,255,.15)"}}>|</span><span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,letterSpacing:1}}>{init.code}</span></span>}
       </div>
       {(() => {
         const hasGroups = (live.groups||[]).length>0 && sorted.some(p=>p.gid!=null);
