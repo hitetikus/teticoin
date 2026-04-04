@@ -3866,21 +3866,22 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 mut(s=>{s.boardVisible=!s.boardVisible;});
                 if (!ses.boardVisible) { setRightTab("board"); setTab("board"); }
               }}
-                style={{background:ses.boardVisible?"#1A1A2E":"#fff",border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .3s"}}>
-                <div>
-                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?"#fff":TEXT}}>{ses.boardVisible?"Scoreboard is LIVE to participants":"Show Scoreboard to Participants"}</div>
-                  <div style={{fontSize:12,color:ses.boardVisible?"rgba(255,255,255,.55)":SUB,marginTop:2,fontWeight:500}}>Tap to {ses.boardVisible?"hide":"show"} scoreboard on participant screens</div>
+                style={{background:ses.boardVisible?GREEN:"#fff",border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .3s"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,flex:1}}>
+                  {ses.boardVisible && (
+                    <div style={{width:32,height:32,borderRadius:9,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </div>
+                  )}
+                  <div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?"#fff":TEXT}}>{ses.boardVisible?"Scoreboard is LIVE":"Show Scoreboard to Participants"}</div>
+                    <div style={{fontSize:12,color:ses.boardVisible?"rgba(255,255,255,.8)":SUB,marginTop:1,fontWeight:500}}>{ses.boardVisible?"Participants can now view on their devices — tap to hide":"Tap to show scoreboard on participant screens"}</div>
+                  </div>
                 </div>
-                <div style={{width:44,height:26,borderRadius:13,background:ses.boardVisible?GREEN:BORDER,position:"relative",transition:"all .2s",flexShrink:0,marginLeft:12}}>
+                <div style={{width:44,height:26,borderRadius:13,background:ses.boardVisible?"rgba(255,255,255,.3)":BORDER,position:"relative",transition:"all .2s",flexShrink:0,marginLeft:12}}>
                   <div style={{position:"absolute",top:3,left:ses.boardVisible?21:3,width:20,height:20,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
                 </div>
               </div>
-              {ses.boardVisible && (
-                <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:"rgba(0,196,140,.1)",border:"1.5px solid rgba(0,196,140,.25)",borderRadius:12}}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:GREEN}}>Participants can now view the scoreboard on their devices</span>
-                </div>
-              )}
               {/* Lucky Draw button — disabled, phase 2 feature */}
               {false && ses.boardVisible && (
                 <button onClick={()=>setShowLuckyDraw(true)}
