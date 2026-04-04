@@ -2770,9 +2770,10 @@ function CoinmasterView({ session: init, onBack }) {
       </div>
 
       {/* COINMASTER BADGE BAR */}
-      <div style={{background:"#1A0A14",padding:"8px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5A623" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:"#F5A623",letterSpacing:1.5}}>YOU ARE A COINMASTER</span>
+      <div style={{background:"#1A0A14",padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"center",gap:10,flexShrink:0}}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#F5A623" stroke="#F5A623" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:"#F5A623",letterSpacing:2}}>YOU ARE A COINMASTER</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#F5A623" stroke="#F5A623" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       </div>
 
       {/* TABS */}
@@ -2822,8 +2823,8 @@ function CoinmasterView({ session: init, onBack }) {
                 )}
               </button>
             </div>
-            {/* Top scrollable: Give Coins + Bulk */}
-          <div style={{overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,flexShrink:0,maxHeight:"55vh"}}>
+            {/* Single scroll container — Give Coins + Bulk + Quick Coins all continuous */}
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
               {/* Give Coins */}
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
                 <SL style={{marginBottom:10}}>Give Coins</SL>
@@ -2843,57 +2844,55 @@ function CoinmasterView({ session: init, onBack }) {
                 </div>
                 <div style={{display:"flex",gap:8}}>
                   <input type="number" placeholder="Custom amount" value={cAmt} onChange={e=>setCAmt(e.target.value)}
-                    style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",caretColor:"#1A0A14"}}/>
+                    style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#1A0A14",outline:"none",caretColor:"#1A0A14"}}/>
                   <button onClick={e=>{if(!cAmt||isNaN(cAmt))return;awardGuarded("token",Number(cAmt),e);setCAmt("");}}
                     style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Award</button>
                 </div>
               </div>
               {/* Bulk Give */}
-              <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:"#1A0A14",border:"2px solid #F5A623",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#F5A623",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,flexShrink:0}}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F5A623" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Bulk Give Coins
               </button>
-          </div>
-          {/* Bottom: Quick Coins list — independently scrollable */}
-          {sorted.length > 0 && (
-            <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",borderTop:`1px solid ${BORDER}`}}>
-              <div style={{padding:"8px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8,background:"#fff",flexShrink:0}}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}}>Quick Coins</span>
-                <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
-                  style={{height:26,padding:"0 8px",border:`1.5px solid ${BORDER}`,borderRadius:7,fontFamily:"Poppins,sans-serif",fontSize:11,color:"#1A0A14",outline:"none",width:100,background:"#fff",caretColor:"#1A0A14"}}/>
-              </div>
-              <div style={{flex:1,overflowY:"auto",background:"#fff"}}>
-                {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
-                  .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
-                  .map((p,i,arr) => {
-                    const grp = ses.groups.find(g=>g.id===p.gid);
-                    const coins = ses.otherCoins||TV_DEFAULT;
-                    return (
-                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
-                        <Av s={p.av} color={grp?.color||PINK} size={28}/>
-                        <div style={{width:100,flexShrink:0}}>
-                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
-                          <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
-                        </div>
-                        <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
-                          <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:4}}>
-                            {coins.map((v,ci) => (
-                              <button key={ci}
-                                onClick={e=>{e.stopPropagation();setSelId(p.id);award(p.id,"token",v,e.clientX,e.clientY);}}
-                                style={{minWidth:Math.abs(v)>=100?38:30,height:30,borderRadius:7,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?9:11,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
-                                {v>0?"+":""}{v}
-                              </button>
-                            ))}
+              {/* Quick Coins — continuous list, no inner scroll box */}
+              {sorted.length > 0 && (<>
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 2px"}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}}>Quick Coins</span>
+                  <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
+                    style={{height:28,padding:"0 10px",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Poppins,sans-serif",fontSize:12,color:"#1A0A14",outline:"none",width:110,background:"#fff",caretColor:"#1A0A14"}}/>
+                </div>
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                  {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
+                    .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
+                    .map((p,i,arr) => {
+                      const grp = ses.groups.find(g=>g.id===p.gid);
+                      const coins = ses.otherCoins||TV_DEFAULT;
+                      return (
+                        <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
+                          <Av s={p.av} color={grp?.color||PINK} size={32}/>
+                          <div style={{width:110,flexShrink:0}}>
+                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                            <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
+                          </div>
+                          <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
+                            <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:5}}>
+                              {coins.map((v,ci) => (
+                                <button key={ci}
+                                  onClick={e=>{e.stopPropagation();setSelId(p.id);award(p.id,"token",v,e.clientX,e.clientY);}}
+                                  style={{minWidth:Math.abs(v)>=100?40:34,height:34,borderRadius:8,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?9:11,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
+                                  {v>0?"+":""}{v}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-              </div>
+                      );
+                    })}
+                </div>
+              </>)}
+              <div style={{height:20}}/>
             </div>
-          )}
-          </div>
         )}
 
         {/* ── PARTICIPANTS TAB ── */}
@@ -6033,6 +6032,8 @@ export default function App() {
   const [showSuperAdmin, setShowSuperAdmin] = useState(false);
   const [showHostEarnings, setShowHostEarnings] = useState(false);
   const [homeEarnings, setHomeEarnings] = useState(null); // {totalCoins, totalSessions}
+  const [recentJoined, setRecentJoined] = useState([]); // [{code,name,coins,joinedAt,lastUpdated}]
+  const [homeRightTab, setHomeRightTab] = useState("created"); // "created" | "joined"
   const [limitModal, setLimitModal] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -6257,6 +6258,9 @@ export default function App() {
       const snap = await getDoc(doc(db, "users", uid, "data", "earnings"));
       const list = snap.exists() ? (snap.data().value || []) : [];
       setHomeEarnings({ totalCoins: list.reduce((s,e)=>s+e.coins,0), totalSessions: list.length });
+      // Sort by most recent and keep for "Recently Joined" section
+      const sorted = [...list].sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0));
+      setRecentJoined(sorted);
     } catch { setHomeEarnings({ totalCoins:0, totalSessions:0 }); }
   }
 
@@ -6643,12 +6647,21 @@ export default function App() {
 
           {/* RIGHT col: recent sessions */}
           <div className="tc-home-right" style={{padding:"20px"}}>
-            {/* Desktop section label */}
-            <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1.2,fontFamily:"Poppins,sans-serif",marginBottom:12}}>Recent Sessions Created</div>
+            {/* Tabs: Created | Joined */}
+            <div style={{display:"flex",gap:0,marginBottom:16,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,overflow:"hidden"}}>
+              {[["created","Sessions Created"],["joined","Sessions Joined"]].map(([id,label])=>(
+                <button key={id} onClick={()=>setHomeRightTab(id)}
+                  style={{flex:1,padding:"9px 0",border:"none",background:homeRightTab===id?SOFT:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:homeRightTab===id?PINK:SUB,cursor:"pointer",borderBottom:homeRightTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
+                  {label}
+                </button>
+              ))}
+            </div>
 
-            {(() => {
+            {homeRightTab==="created" && (() => {
               const active = sessions.filter(s=>!s.archived);
               const archived = sessions.filter(s=>s.archived);
+              const showAll = showArchived;
+              const displayed = (showAll ? sessions : active).slice(0,showAll?999:5);
               return (
                 <>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:8,flexWrap:"wrap"}}>
@@ -6669,7 +6682,7 @@ export default function App() {
                   )}
 
                   <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                    {(showArchived ? sessions : active).map(s => (
+                    {displayed.map(s => (
                       <div key={s.code} style={{background:"#fff",border:`1.5px solid ${s.archived?"#E5E7EB":BORDER}`,borderRadius:14,display:"flex",alignItems:"center",overflow:"hidden",opacity:s.archived?.7:1}}>
                         <button onClick={()=>handleOpen(s.code)} style={{flex:1,display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left",transition:"background .12s"}}
                           onMouseOver={e=>e.currentTarget.style.background=SOFT}
@@ -6727,7 +6740,66 @@ export default function App() {
                       </div>
                     ))}
                   </div>
+                  {/* View full list button if more than 5 */}
+                  {active.length > 5 && !showArchived && (
+                    <button onClick={()=>setShowArchived(false)} style={{width:"100%",padding:"10px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",marginTop:2}}>
+                      View all {active.length} sessions →
+                    </button>
+                  )}
                 </>
+              );
+            })()}
+
+            {homeRightTab==="joined" && (() => {
+              const list = recentJoined.slice(0,10);
+              return (
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {list.length === 0 ? (
+                    <div style={{border:`1.5px dashed ${BORDER}`,borderRadius:14,padding:"36px",textAlign:"center"}}>
+                      <div style={{fontSize:13,color:SUB,lineHeight:1.7}}>No sessions joined yet.<br/>Join a session as a participant to see it here.</div>
+                    </div>
+                  ) : list.map((s,i) => (
+                    <div key={s.code+i} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,display:"flex",alignItems:"center",overflow:"hidden"}}>
+                      <button onClick={async()=>{
+                        // Try to rejoin as participant
+                        const live = await sgSession(s.code);
+                        if (!live) { alert("Session not found or has ended."); return; }
+                        setScreen("join");
+                        // Pass code to join screen
+                        setTimeout(()=>{ const el=document.querySelector("input[placeholder*='code']"); if(el){el.value=s.code;el.dispatchEvent(new Event("input",{bubbles:true}));} }, 100);
+                      }} style={{flex:1,display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left",transition:"background .12s"}}
+                        onMouseOver={e=>e.currentTarget.style.background=SOFT}
+                        onMouseOut={e=>e.currentTarget.style.background="transparent"}>
+                        <div style={{width:44,height:44,borderRadius:10,background:SOFT,border:`1.5px solid ${MID}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          <div style={{fontFamily:"Poppins,sans-serif",fontWeight:500,fontSize:9,color:PINK,letterSpacing:.5}}>{s.code}</div>
+                        </div>
+                        <div style={{flex:1,textAlign:"left"}}>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,lineHeight:1.2,marginBottom:2}}>{s.name}</div>
+                          <div style={{display:"flex",alignItems:"center",gap:8,fontSize:11,color:SUB}}>
+                            <span>{s.joinedAt ? new Date(s.joinedAt).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : ""}</span>
+                            {(s.coins||0) > 0 && <>
+                              <span style={{color:BORDER}}>·</span>
+                              <span style={{color:PINK,fontWeight:600}}>{s.coins} coins earned</span>
+                            </>}
+                          </div>
+                        </div>
+                      </button>
+                      <button onClick={async()=>{
+                        const live = await sgSession(s.code);
+                        if (!live) { alert("This session is no longer available."); return; }
+                        if (!live.live) { alert("This session is currently offline."); return; }
+                        setScreen("join");
+                        setTimeout(()=>{ const el=document.querySelector("input[placeholder*='code'],input[placeholder*='CODE']"); if(el){el.value=s.code;el.dispatchEvent(new Event("input",{bubbles:true}));} }, 150);
+                      }} title="Rejoin session" style={{padding:"0 14px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,gap:5,color:PINK,flexShrink:0}}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.5" strokeLinecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11}}>Rejoin</span>
+                      </button>
+                    </div>
+                  ))}
+                  {recentJoined.length > 10 && (
+                    <div style={{textAlign:"center",fontSize:11,color:SUB,padding:"8px 0"}}>Showing 10 most recent · older sessions in your earnings history</div>
+                  )}
+                </div>
               );
             })()}
             <div style={{height:48}}/>
