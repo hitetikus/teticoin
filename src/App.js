@@ -3729,7 +3729,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </div>
               {/* Participant list */}
               {isPro && (
-                <div onClick={()=>mut(s=>{s.coinmasterEnabled=!s.coinmasterEnabled;if(!s.coinmasterEnabled)s.coinmasterUids=[];return s;})}
+                <div onClick={()=>mut(s=>{s.coinmasterEnabled=!s.coinmasterEnabled;return s;})}
                   style={{background:ses.coinmasterEnabled?"#1A0A14":"#F9FAFB",border:`1.5px solid ${ses.coinmasterEnabled?"#F5A623":BORDER}`,borderRadius:12,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",userSelect:"none"}}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ses.coinmasterEnabled?"#F5A623":SUB} strokeWidth="2.2" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                   <div style={{flex:1}}>
@@ -3738,8 +3738,10 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     </div>
                     <div style={{fontSize:11,color:ses.coinmasterEnabled?"rgba(245,166,35,.65)":SUB,marginTop:1}}>
                       {ses.coinmasterEnabled
-                        ? `${(ses.coinmasterUids||[]).length} assigned — participants marked "logged in" can be assigned`
-                        : "Enable so participants can be assigned as co-hosts"}
+                        ? `${(ses.coinmasterUids||[]).length} assigned — tap ⋯ on a "logged in" participant`
+                        : (ses.coinmasterUids||[]).length > 0
+                          ? `${ses.coinmasterUids.length} saved — re-enable to activate them`
+                          : "Enable so participants can be assigned as co-hosts"}
                     </div>
                   </div>
                   <div style={{width:36,height:20,borderRadius:10,background:ses.coinmasterEnabled?"#F5A623":BORDER,position:"relative",flexShrink:0,transition:"background .2s"}}>
@@ -3756,7 +3758,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 {sorted.map(p => {
                   const grp = ses.groups.find(g=>g.id===p.gid);
                   const isEditing = editingPid === p.id;
-                  const isCM = isPro && ses.coinmasterEnabled && (ses.coinmasterUids||[]).includes(p.uid);
+                  const isCM = isPro && (ses.coinmasterUids||[]).includes(p.uid);
+                  const canAssignCM = isPro && ses.coinmasterEnabled && !!p.uid;
                   const menuOpen = pMenuOpen === p.id;
                   return (
                     <div key={p.id} style={{borderBottom:`1px solid ${BORDER}`,position:"relative"}}>
@@ -3780,10 +3783,10 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                           <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:36,flexShrink:0}}>{pNum(p.num)}</span>
                           <Av s={p.av} color={isCM?"#7C3AED":grp?.color||PINK} size={32}/>
                           <div style={{flex:1,minWidth:0}}>
-                            <div style={{display:"flex",alignItems:"center",gap:5}}>
+                            <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
                               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
-                              {isCM && <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#7C3AED",borderRadius:99,padding:"1px 6px",flexShrink:0}}>CM</span>}
-                              {ses.coinmasterEnabled && !isCM && p.uid && <span style={{fontSize:9,fontWeight:700,color:"#16A34A",background:"#DCFCE7",border:"1px solid #86EFAC",borderRadius:99,padding:"1px 6px",flexShrink:0}}>● logged in</span>}
+                              {isCM && <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#7C3AED",borderRadius:99,padding:"1px 6px",flexShrink:0}}>★ CM</span>}
+                              {!isCM && p.uid && <span style={{fontSize:9,fontWeight:700,color:"#16A34A",background:"#DCFCE7",border:"1px solid #86EFAC",borderRadius:99,padding:"1px 6px",flexShrink:0}}>● logged in</span>}
                             </div>
                             <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                           </div>
@@ -3811,7 +3814,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                   Rename
                                 </button>
-                                {isPro && ses.coinmasterEnabled && p.uid && (
+                                {canAssignCM && (
                                   <button onClick={()=>{isCM?mut(s=>{s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;}):mut(s=>{s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==p.uid),p.uid];return s;});setPMenuOpen(null);}}
                                     style={{width:"100%",padding:"10px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:isCM?"#7C3AED":TEXT,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
                                     onMouseOver={e=>e.currentTarget.style.background="#FAF5FF"} onMouseOut={e=>e.currentTarget.style.background="none"}>
