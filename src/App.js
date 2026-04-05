@@ -1982,7 +1982,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
   // If assigned as coinmaster, show CoinmasterView instead of normal participant view
   if (step === "joined" && isMeAssignedCM) {
-    return <CoinmasterView session={live} onBack={()=>{ setMyId(null); setStep("name"); }}/>;
+    return <CoinmasterView session={live} selfId={myId} onBack={()=>{ setMyId(null); setStep("name"); }}/>;
   }
 
   function PinPad({ value, onChange, length=4 }) {
@@ -2723,7 +2723,7 @@ function InlineCoinBtn({ value, bg, border, col, disabled, onAward, onEdit, circ
 
 // ── Coinmaster View ──
 // Same award UI as host but read-only for settings/live/coin values
-function CoinmasterView({ session: init, onBack }) {
+function CoinmasterView({ session: init, selfId, onBack }) {
   const [ses, setSes] = useState(init);
   const [tab, setTab] = useState("award");
   const [selId, setSelId] = useState(null);
@@ -2778,12 +2778,12 @@ function CoinmasterView({ session: init, onBack }) {
     award(selId, type, pts, e?.clientX, e?.clientY);
   }
 
-  const sorted = [...ses.participants].sort((a,b)=>b.total-a.total);
+  const sorted = [...ses.participants].filter(p => p.id !== selfId).sort((a,b)=>b.total-a.total);
   const selP = ses.participants.find(x=>x.id===selId);
   const IB = {background:"none",border:`1px solid ${BORDER}`,borderRadius:9,width:34,height:34,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0};
 
   return (
-    <div style={{height:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{height:"100dvh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <Confetti active={confetti}/>
       {anims.map(a => <FloatAnim key={a.id} {...a} onDone={()=>setAnims(p=>p.filter(x=>x.id!==a.id))}/>)}
       {toast && (
@@ -3794,6 +3794,22 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                             </div>
                             <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                           </div>
+                          {/* Inline CM assign button — visible when coinmaster mode on */}
+                          {canAssignCM && (
+                            <button onClick={e=>{
+                              e.stopPropagation();
+                              if (isCM) {
+                                mut(s=>{s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);return s;});
+                              } else {
+                                mut(s=>{if(p.uid)s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==p.uid),p.uid];s.coinmasterPids=[...(s.coinmasterPids||[]).filter(x=>x!==p.id),p.id];return s;});
+                              }
+                            }}
+                              title={isCM?"Remove Coinmaster":"Make Coinmaster"}
+                              style={{flexShrink:0,padding:"4px 10px",height:28,borderRadius:8,border:`1.5px solid ${isCM?"#7C3AED":"#DDD6FE"}`,background:isCM?"#7C3AED":"#FAF5FF",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:isCM?"#fff":"#7C3AED",display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                              {isCM?"CM ✕":"Set CM"}
+                            </button>
+                          )}
                           {(ses.groups.length > 0) && (
                             <select value={p.gid??""} onChange={e=>mut(s=>{const px=s.participants.find(x=>x.id===p.id);if(px)px.gid=e.target.value===""?null:Number(e.target.value);return s;})}
                               style={{background:SOFT,border:`1.5px solid ${grp?.color||MID}`,color:grp?.color||SUB,borderRadius:8,padding:"4px 6px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:90,flexShrink:0,fontWeight:700}}>
@@ -3818,29 +3834,6 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                   Rename
                                 </button>
-                                {canAssignCM && (
-                                  <button onClick={()=>{
-                                    if (isCM) {
-                                      mut(s=>{
-                                        s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);
-                                        s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);
-                                        return s;
-                                      });
-                                    } else {
-                                      mut(s=>{
-                                        if (p.uid) s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==p.uid),p.uid];
-                                        s.coinmasterPids=[...(s.coinmasterPids||[]).filter(x=>x!==p.id),p.id];
-                                        return s;
-                                      });
-                                    }
-                                    setPMenuOpen(null);
-                                  }}
-                                    style={{width:"100%",padding:"10px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:isCM?"#7C3AED":TEXT,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
-                                    onMouseOver={e=>e.currentTarget.style.background="#FAF5FF"} onMouseOut={e=>e.currentTarget.style.background="none"}>
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={isCM?"#7C3AED":SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
-                                    {isCM?"Remove Coinmaster":"Make Coinmaster"}
-                                  </button>
-                                )}
                                 <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`)){mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;});}setPMenuOpen(null);}}
                                   style={{width:"100%",padding:"10px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#EF4444",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
                                   onMouseOver={e=>e.currentTarget.style.background="#FEF2F2"} onMouseOut={e=>e.currentTarget.style.background="none"}>
