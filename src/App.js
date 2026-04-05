@@ -1498,15 +1498,61 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   // Pre-warm AudioContext on first user interaction so polling-triggered sound works on mobile
   const audioCtxRef = useRef(null);
   const soundOnRef = useRef(false); // mirrors participantSoundOn but readable inside intervals
+  const playCoinSoundRef = useRef(null); // ref so interval always calls latest version
+
   function getAudioCtx() {
     if (!audioCtxRef.current) {
       try { audioCtxRef.current = new (window.AudioContext||window.webkitAudioContext)(); } catch(e) {}
     }
-    if (audioCtxRef.current?.state === "suspended") {
-      audioCtxRef.current.resume().catch(()=>{});
-    }
     return audioCtxRef.current;
   }
+
+  function playCoinSound(gained) {
+    try {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      // Resume must complete before scheduling — use promise chain
+      const play = () => {
+        const g = ctx.createGain();
+        g.connect(ctx.destination);
+        const negative = gained < 0;
+        const big = gained >= 100;
+        if (negative) {
+          [[300,.0],[220,.14]].forEach(([f,t]) => {
+            const o = ctx.createOscillator(); o.connect(g);
+            o.type = "sine"; o.frequency.value = f;
+            o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.22);
+          });
+          g.gain.setValueAtTime(.35, ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.45);
+        } else if (big) {
+          [[523,.0],[659,.1],[784,.2],[1047,.32]].forEach(([f,t]) => {
+            const o = ctx.createOscillator(); o.connect(g);
+            o.type = "sine"; o.frequency.value = f;
+            o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.22);
+          });
+          g.gain.setValueAtTime(.22, ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.65);
+        } else {
+          [[880,.0],[1100,.09],[1320,.18]].forEach(([f,t]) => {
+            const o = ctx.createOscillator(); o.connect(g);
+            o.type = "sine"; o.frequency.value = f;
+            o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.14);
+          });
+          g.gain.setValueAtTime(.18, ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.42);
+        }
+      };
+      if (ctx.state === "suspended") {
+        ctx.resume().then(play).catch(()=>{});
+      } else {
+        play();
+      }
+    } catch(e) {}
+  }
+
+  // Keep ref current so the polling interval always calls the latest version
+  playCoinSoundRef.current = playCoinSound;
   useEffect(() => {
     const unlock = () => { getAudioCtx(); };
     window.addEventListener("touchstart", unlock, {once:true, passive:true});
@@ -1516,48 +1562,6 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       window.removeEventListener("click", unlock);
     };
   }, []);
-
-  function playCoinSound(gained) {
-    try {
-      const ctx = getAudioCtx();
-      if (!ctx) return;
-      const big = gained >= 100;
-      const negative = gained < 0;
-      const g = ctx.createGain();
-      g.connect(ctx.destination);
-      if (negative) {
-        // Deduction — descending two-tone thud
-        [[300,.0],[220,.12]].forEach(([f,t]) => {
-          const o = ctx.createOscillator(); o.connect(g);
-          o.type = "sine";
-          o.frequency.value = f;
-          o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.18);
-        });
-        g.gain.setValueAtTime(.18, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.38);
-      } else if (big) {
-        // Big award — celebratory 4-note arpeggio
-        [[523,.0],[659,.1],[784,.2],[1047,.32]].forEach(([f,t]) => {
-          const o = ctx.createOscillator(); o.connect(g);
-          o.type = "sine";
-          o.frequency.value = f;
-          o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.22);
-        });
-        g.gain.setValueAtTime(.22, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.65);
-      } else {
-        // Normal award — bright rising chime
-        [[880,.0],[1100,.09],[1320,.18]].forEach(([f,t]) => {
-          const o = ctx.createOscillator(); o.connect(g);
-          o.type = "sine";
-          o.frequency.value = f;
-          o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.14);
-        });
-        g.gain.setValueAtTime(.18, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.42);
-      }
-    } catch(e) {}
-  }
 
   // Poll for live updates every 2s once joined — detect coin gain for sound
   useEffect(() => {
@@ -1571,7 +1575,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         if (me) {
           if (prevTotalRef.current !== null && me.total !== prevTotalRef.current) {
             const gained = me.total - prevTotalRef.current;
-            if (soundOnRef.current) playCoinSound(gained);
+            if (soundOnRef.current) playCoinSoundRef.current(gained);
             setCoinFlash({ pts: gained, key: Date.now() });
             setTimeout(() => setCoinFlash(null), 1500);
           }
@@ -2393,7 +2397,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             // Unlock AudioContext on this gesture
             getAudioCtx();
             // Play a tiny test beep when unmuting so user knows it worked
-            if (next) playCoinSound(10);
+            if (next) playCoinSoundRef.current(10);
           }}
             style={{position:"absolute",bottom:10,right:12,background:"none",border:"none",cursor:"pointer",color:participantSoundOn?PINK:"#D1D5DB",padding:4,lineHeight:0,zIndex:3}}
             title={participantSoundOn?"Mute sounds":"Unmute sounds"}>
