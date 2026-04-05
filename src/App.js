@@ -2225,6 +2225,19 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       )}
       <BadgeClaimPrompt/>
 
+      {/* ── Session inactive overlay ── */}
+      {live?.live === false && (
+        <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(10,10,15,0.92)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24}}>
+          <div style={{background:"#fff",borderRadius:24,padding:"40px 32px",maxWidth:320,width:"100%",textAlign:"center",boxShadow:"0 32px 80px rgba(0,0,0,.4)"}}>
+            <div style={{width:64,height:64,borderRadius:20,background:"#FEF2F2",border:"1.5px solid #EF444430",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+            </div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,marginBottom:8}}>Session Paused</div>
+            <div style={{fontSize:14,color:SUB,lineHeight:1.7}}>The host has paused this session. Hang tight — it'll resume shortly.</div>
+          </div>
+        </div>
+      )}
+
       {/* ── Top nav bar ── */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10,flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -2748,6 +2761,11 @@ function CoinmasterView({ session: init, selfId, onBack }) {
     return () => clearInterval(t);
   }, [ses.code]);
 
+  // Auto-exit coinmaster view when session goes offline
+  useEffect(() => {
+    if (ses.live === false) onBack();
+  }, [ses.live]);
+
   function mut(fn) {
     setSes(prev => {
       const s = JSON.parse(JSON.stringify(prev));
@@ -3242,6 +3260,26 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       }));
     }, 3000);
     return () => clearInterval(t);
+  }, [ses.code]);
+
+  // ── Auto-offline when host closes/navigates away from the tab ──
+  useEffect(() => {
+    const code = ses.code;
+    async function setOffline() {
+      try {
+        const fresh = await sgSession(code);
+        if (fresh && fresh.live !== false) await ssSession(code, {...fresh, live:false});
+      } catch(e) {}
+    }
+    function onVisibility() { if (document.visibilityState === "hidden") setOffline(); }
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("beforeunload", setOffline);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("beforeunload", setOffline);
+      // Also go offline when navigating away within the app (onBack)
+      setOffline();
+    };
   }, [ses.code]);
 
   // ── Quick tour: show once per user on first session entry — desktop only ──
