@@ -1469,8 +1469,22 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         prevTotalRef.current = existingByUid.total ?? 0;
         setMyId(existingByUid.id);
         setStep("joined");
+        return;
       }
     }
+    // Restore from localStorage (handles refresh on /join/CODE)
+    try {
+      const saved = JSON.parse(localStorage.getItem("tc_pjoin")||"null");
+      if (saved && saved.code === init.code && saved.pid) {
+        const existingP = (init.participants||[]).find(p=>p.id===saved.pid);
+        if (existingP) {
+          prevTotalRef.current = existingP.total ?? 0;
+          setMyId(existingP.id);
+          setGuestName(existingP.guestName||existingP.name||"");
+          setStep("joined");
+        }
+      }
+    } catch(e) {}
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function playCoinSound() {
@@ -1553,6 +1567,22 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     prevTotalRef.current = 0;
     const u = {...live,participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
+    // Persist so refresh restores the session
+    try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
+    // Write earnings entry on join (0 coins, session appears in history immediately)
+    if (currentUid) {
+      const now = Date.now();
+      import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
+        const db2 = getFirestore();
+        const ref = doc(db2,"users",currentUid,"data","earnings");
+        getDoc(ref).then(snap=>{
+          const prev = snap.exists() ? (snap.data().value||[]) : [];
+          if (!prev.find(e=>e.code===init.code)) {
+            setDoc(ref,{value:[{code:init.code,name:live.name,coins:0,joinedAt:now,lastUpdated:now},...prev],updatedAt:now});
+          }
+        }).catch(()=>{});
+      }).catch(()=>{});
+    }
   }
 
   function confirmReturn() {
@@ -1582,6 +1612,20 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     prevTotalRef.current = 0;
     const u = {...live,participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
+    try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
+    if (np.uid) {
+      const now = Date.now();
+      import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
+        const db2 = getFirestore();
+        const ref = doc(db2,"users",np.uid,"data","earnings");
+        getDoc(ref).then(snap=>{
+          const prev = snap.exists() ? (snap.data().value||[]) : [];
+          if (!prev.find(e=>e.code===init.code)) {
+            setDoc(ref,{value:[{code:init.code,name:live.name,coins:0,joinedAt:now,lastUpdated:now},...prev],updatedAt:now});
+          }
+        }).catch(()=>{});
+      }).catch(()=>{});
+    }
   }
 
   function skipPin() { directJoin(); }
@@ -1935,7 +1979,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
   // If assigned as coinmaster, show CoinmasterView instead of normal participant view
   if (step === "joined" && isMeAssignedCM) {
-    return <CoinmasterView session={live} cmUid={myUid} cmPid={myId} onBack={()=>{ setMyId(null); setStep("name"); }}/>;
+    return <CoinmasterView session={live} onBack={()=>{ setMyId(null); setStep("name"); }}/>;
   }
 
   function PinPad({ value, onChange, length=4 }) {
@@ -2676,7 +2720,7 @@ function InlineCoinBtn({ value, bg, border, col, disabled, onAward, onEdit, circ
 
 // ── Coinmaster View ──
 // Same award UI as host but read-only for settings/live/coin values
-function CoinmasterView({ session: init, cmUid = null, cmPid = null, onBack }) {
+function CoinmasterView({ session: init, onBack }) {
   const [ses, setSes] = useState(init);
   const [tab, setTab] = useState("award");
   const [selId, setSelId] = useState(null);
@@ -2731,15 +2775,8 @@ function CoinmasterView({ session: init, cmUid = null, cmPid = null, onBack }) {
     award(selId, type, pts, e?.clientX, e?.clientY);
   }
 
-  // Exclude the coinmaster themselves from all participant lists
-  const isSelf = (p) => (cmPid && p.id === cmPid) || (cmUid && p.uid === cmUid);
-  const awardable = ses.participants.filter(p => !isSelf(p));
-  const sorted = [...awardable].sort((a,b)=>b.total-a.total);
-  const selP = awardable.find(x=>x.id===selId);
-  // If selId was pointing to self, clear it
-  if (selId && !selP && ses.participants.find(x=>x.id===selId)) {
-    // selId belongs to self — will be auto-cleared on next render via selP being undefined
-  }
+  const sorted = [...ses.participants].sort((a,b)=>b.total-a.total);
+  const selP = ses.participants.find(x=>x.id===selId);
   const IB = {background:"none",border:`1px solid ${BORDER}`,borderRadius:9,width:34,height:34,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0};
 
   return (
@@ -2756,8 +2793,8 @@ function CoinmasterView({ session: init, cmUid = null, cmPid = null, onBack }) {
           {toast.type==="warn"?"⚠️ ":""}{toast.m}
         </div>
       )}
-      {picker && <Picker participants={awardable} groups={ses.groups} selId={selId} onSelect={setSelId} onClose={()=>setPicker(false)}/>}
-      {mass && <MassGive participants={awardable} groups={ses.groups} onAward={award} onClose={()=>setMass(false)}/>}
+      {picker && <Picker participants={sorted} groups={ses.groups} selId={selId} onSelect={setSelId} onClose={()=>setPicker(false)}/>}
+      {mass && <MassGive participants={ses.participants} groups={ses.groups} onAward={award} onClose={()=>setMass(false)}/>}
 
       {/* TOP BAR */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 12px",display:"flex",alignItems:"center",gap:8,height:56,flexShrink:0}}>
@@ -2857,7 +2894,7 @@ function CoinmasterView({ session: init, cmUid = null, cmPid = null, onBack }) {
                 </div>
               </div>
               {/* Bulk Give */}
-              <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+              <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Bulk Give Coins
               </button>
@@ -2915,60 +2952,52 @@ function CoinmasterView({ session: init, cmUid = null, cmPid = null, onBack }) {
                 + Add
               </button>
             </div>
-            <div style={{flex:1,overflowY:"auto"}}>
-              {ses.participants.length===0 ? (
+            <div style={{flex:1,overflowY:"auto",padding:"10px 14px"}}>
+              {sorted.length===0 ? (
                 <div style={{textAlign:"center",padding:"32px 16px",color:SUB,fontSize:13}}><Ham size={48}/><div style={{marginTop:10}}>No participants yet</div></div>
               ) : (
-                [...ses.participants].sort((a,b)=>b.total-a.total).map(p => {
-                  const grp = ses.groups.find(g=>g.id===p.gid);
-                  const self = isSelf(p);
-                  const isEditing = editingPid === p.id;
-                  const isLoggedIn = !!p.uid;
-                  return (
-                    <div key={p.id} style={{borderBottom:`1px solid ${BORDER}`,opacity:self?0.45:1,background:self?"#F9FAFB":"#fff"}}>
-                      {isEditing && !self ? (
-                        <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px"}}>
-                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
-                          <input autoFocus value={editingPName} onChange={e=>setEditingPName(e.target.value)}
-                            onKeyDown={e=>{
-                              if(e.key==="Enter"&&editingPName.trim()){const n=editingPName.trim();mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}
-                              if(e.key==="Escape") setEditingPid(null);
-                            }}
-                            style={{flex:1,padding:"7px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,outline:"none"}}/>
-                          <button onClick={()=>{const n=editingPName.trim();if(!n)return;mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}}
-                            style={{padding:"0 12px",height:34,background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",flexShrink:0}}>Save</button>
-                          <button onClick={()=>setEditingPid(null)}
-                            style={{padding:"0 10px",height:34,background:"none",border:`1px solid ${BORDER}`,borderRadius:9,fontSize:13,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
-                        </div>
-                      ) : (
-                        <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px"}}>
-                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
-                          <Av s={p.av} color={self?"#9CA3AF":grp?.color||PINK} size={32}/>
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
-                              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:self?"#9CA3AF":TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</span>
-                              {self && <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"1px 6px",flexShrink:0}}>YOU</span>}
-                              {!self && isLoggedIn && <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#10B981",borderRadius:99,padding:"1px 6px",flexShrink:0}}>● Logged in</span>}
-                            </div>
-                            <div style={{fontSize:11,color:self?"#9CA3AF":PINK,fontWeight:600}}>{p.total} coins</div>
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"visible"}}>
+                  {sorted.map(p => {
+                    const grp = ses.groups.find(g=>g.id===p.gid);
+                    const isEditing = editingPid === p.id;
+                    return (
+                      <div key={p.id} style={{borderBottom:`1px solid ${BORDER}`}}>
+                        {isEditing ? (
+                          <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px"}}>
+                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
+                            <input autoFocus value={editingPName} onChange={e=>setEditingPName(e.target.value)}
+                              onKeyDown={e=>{
+                                if(e.key==="Enter"&&editingPName.trim()){const n=editingPName.trim();mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}
+                                if(e.key==="Escape") setEditingPid(null);
+                              }}
+                              style={{flex:1,padding:"7px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,outline:"none"}}/>
+                            <button onClick={()=>{const n=editingPName.trim();if(!n)return;mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}}
+                              style={{padding:"0 12px",height:34,background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",flexShrink:0}}>Save</button>
+                            <button onClick={()=>setEditingPid(null)}
+                              style={{padding:"0 10px",height:34,background:"none",border:`1px solid ${BORDER}`,borderRadius:9,fontSize:13,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
                           </div>
-                          {!self && (
-                            <>
-                              <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);}}
-                                title="Rename" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                              </button>
-                              <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;});}}
-                                title="Remove" style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
+                        ) : (
+                          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px"}}>
+                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
+                            <Av s={p.av} color={grp?.color||PINK} size={32}/>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                              <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
+                            </div>
+                            <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);}}
+                              title="Rename" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;});}}
+                              title="Remove" style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>
@@ -3600,8 +3629,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
             {/* ── Bulk Give Coins button ── */}
             {isPro ? (
-              <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:"#1A0A14",border:"2px solid #F5A623",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#F5A623",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F5A623" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Bulk Give Coins
               </button>
             ) : (
@@ -3703,7 +3732,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     </div>
                     <div style={{fontSize:11,color:ses.coinmasterEnabled?"rgba(245,166,35,.65)":SUB,marginTop:1}}>
                       {ses.coinmasterEnabled
-                        ? `${(ses.coinmasterUids||[]).length} assigned — ${ses.participants.filter(p=>p.uid&&!(ses.coinmasterUids||[]).includes(p.uid)).length} logged-in participants eligible`
+                        ? `${(ses.coinmasterUids||[]).length} assigned — tap ⋯ on a logged-in participant to assign`
                         : "Enable so participants can be assigned as co-hosts"}
                     </div>
                   </div>
@@ -6129,6 +6158,16 @@ export default function App() {
       sgSession(code).then(s => {
         if (s) {
           setCur(s);
+          // Restore participant state from localStorage if they already joined
+          try {
+            const saved = JSON.parse(localStorage.getItem("tc_pjoin")||"null");
+            if (saved && saved.code === code && saved.pid && (s.participants||[]).find(p=>p.id===saved.pid)) {
+              // They already joined — go straight to joined view via participant screen
+              setScreen("participantJoin");
+              setLoading(false);
+              return;
+            }
+          } catch(e) {}
           // If user is already logged in, skip participantJoin name prompt and go straight in
           const currentUser = auth.currentUser;
           if (currentUser) {
@@ -6347,11 +6386,11 @@ export default function App() {
   if (screen==="auth") return <><style>{CSS}</style><Auth onDone={handleAuth} onBack={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }} initialView={authInitialView}/></>;
   // participantJoin = loaded from /join/CODE URL — always show participant view, never host view
   if (screen==="participantJoin") {
-    if (cur) return <><style>{CSS}</style><ParticipantView session={cur} onBack={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
+    if (cur) return <><style>{CSS}</style><ParticipantView session={cur} onBack={()=>{ try{localStorage.removeItem("tc_pjoin");}catch(e){} window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
     return <div style={{minHeight:"100vh",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}><style>{CSS}</style><HamLoading/></div>;
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur} onBack={()=>{ window.history.replaceState({},"","/app"); setScreen("home"); }}/></>;
-  if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} cmUid={auth.currentUser?.uid||null} cmPid={null} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
+  if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
   if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onBack={()=>{
     // Navigate immediately — sync sessions_index in background
     window.history.replaceState({},"","/app"); setScreen("home");
