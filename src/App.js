@@ -1082,7 +1082,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
   const sorted = [...session.participants].sort((a,b) => a.num - b.num);
   function addP() { if (!np.trim()) return; const n=(session.participants.reduce((m,p)=>Math.max(m,p.num),0))+1; onUpdate(s=>{s.participants.push({id:Date.now(),name:np.trim(),av:mkAv(np),total:0,bk:{},gid:null,num:n});return s;}); setNp(""); }
   function addG() { if (!ng.trim()) return; onUpdate(s=>{s.groups.push({id:Date.now(),name:ng.trim(),color:ngc});return s;}); setNg(""); }
-  function remP(pid) { onUpdate(s=>{s.participants=s.participants.filter(x=>x.id!==pid);return s;}); }
+  function remP(pid) { const p=session.participants.find(x=>x.id===pid); onUpdate(s=>{s.participants=s.participants.filter(x=>x.id!==pid);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==pid);if(p?.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;}); }
   function asgG(pid,gid) { onUpdate(s=>{const p=s.participants.find(x=>x.id===pid);if(p)p.gid=gid===""?null:(isNaN(Number(gid))?null:Number(gid));return s;}); }
   function assignCM(uid) { onUpdate(s=>{ s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==uid),uid]; return s; }); }
   function removeCM(uid) { onUpdate(s=>{ s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==uid); return s; }); }
@@ -1991,7 +1991,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
               style={{width:"100%",padding:"13px 0",background:loginEmail.trim()&&loginPass?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:loginEmail.trim()&&loginPass?"#fff":SUB,cursor:loginEmail.trim()&&loginPass?"pointer":"not-allowed",marginBottom:10,opacity:loginBusy ? 0.6 : 1}}>
               {loginBusy ? "Logging in…" : "Log in"}
             </button>
-            {loginErr && <div style={{fontSize:12,color:SUB,textAlign:"center"}}><a href="https://teticoin.tetikus.com.my" target="_blank" rel="noopener noreferrer" style={{color:PINK}}>Don't have an account? Sign up →</a></div>}
+            {loginErr && <div style={{fontSize:12,color:SUB,textAlign:"center"}}><a href="https://teticoin.com" target="_blank" rel="noopener noreferrer" style={{color:PINK}}>Don't have an account? Sign up →</a></div>}
             <button onClick={()=>setLoginModal(false)} style={{width:"100%",marginTop:6,padding:"10px 0",background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>Skip for now</button>
           </>
         )}
@@ -2033,7 +2033,10 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const me = live?.participants?.find(p => p.id === myId);
-  const sorted = [...(live?.participants||[])].sort((a,b) => b.total - a.total);
+  const _cmPids = live?.coinmasterEnabled ? (live?.coinmasterPids||[]) : [];
+  const _cmUids = live?.coinmasterEnabled ? (live?.coinmasterUids||[]) : [];
+  const _isCMp = (p) => _cmPids.includes(p.id) || (p.uid && _cmUids.includes(p.uid));
+  const sorted = [...(live?.participants||[])].filter(p=>!_isCMp(p)).sort((a,b) => b.total - a.total);
   const myRank = sorted.findIndex(p => p.id === myId) + 1;
   const myUid = linkedUid || auth.currentUser?.uid || null;
   const isMeAssignedCM = live?.coinmasterEnabled && (
@@ -2248,16 +2251,16 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             {[
               {name:"WhatsApp", color:"#25D366", bg:"#25D366",
                icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>,
-               url:`https://wa.me/?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.tetikus.com.my`)}`},
+               url:`https://wa.me/?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.com`)}`},
               {name:"Facebook", color:"#1877F2", bg:"#1877F2",
                icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>,
-               url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.tetikus.com.my")}&quote=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉`)}`},
+               url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.com")}&quote=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉`)}`},
               {name:"X", color:"#000", bg:"#000",
                icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L2.146 2.25H8.32l4.273 5.647L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>,
-               url:`https://x.com/intent/tweet?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.tetikus.com.my`)}`},
+               url:`https://x.com/intent/tweet?text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.com`)}`},
               {name:"Telegram", color:"#229ED9", bg:"#229ED9",
                icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>,
-               url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.tetikus.com.my")}&text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉`)}`},
+               url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.com")}&text=${encodeURIComponent(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉`)}`},
               {name:"Copy", color:"#6B7280", bg:"#374151",
                icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
                url:null},
@@ -2265,7 +2268,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
               <button key={s.name} title={s.name}
                 onClick={()=>{
                   if(s.url) window.open(s.url,"_blank");
-                  else { navigator.clipboard?.writeText(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.tetikus.com.my`); }
+                  else { navigator.clipboard?.writeText(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.com`); }
                 }}
                 style={{width:48,height:48,borderRadius:"50%",background:s.bg,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:`0 2px 8px ${s.bg}66`}}>
                 {s.icon}
@@ -2487,8 +2490,11 @@ function ParticipantBadges({ uid }) {
 
 // ── Projector ──
 function Projector({ session, onBack }) {
-  const sorted = [...session.participants].sort((a,b)=>b.total-a.total);
-  const gs = session.groups.map(g=>({...g,total:session.participants.filter(p=>p.gid===g.id).reduce((s,p)=>s+p.total,0),members:session.participants.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
+  const cmPids = session.coinmasterEnabled ? (session.coinmasterPids||[]) : [];
+  const cmUids = session.coinmasterEnabled ? (session.coinmasterUids||[]) : [];
+  const isCMp = (p) => cmPids.includes(p.id) || (p.uid && cmUids.includes(p.uid));
+  const sorted = [...session.participants].filter(p=>!isCMp(p)).sort((a,b)=>b.total-a.total);
+  const gs = session.groups.map(g=>({...g,total:sorted.filter(p=>p.gid===g.id).reduce((s,p)=>s+p.total,0),members:sorted.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
   return (
     <div style={{minHeight:"100vh",background:"#0D0008",color:"#fff",fontFamily:"Poppins,sans-serif",padding:"28px 24px"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:32}}>
@@ -2616,8 +2622,11 @@ function QRModal({ session, onClose }) {
 
 // ── Scoreboard sheet ──
 function LeaderSheet({ session, onToggleBoard, onClose }) {
-  const sorted = [...session.participants].sort((a,b)=>b.total-a.total);
-  const gs = session.groups.map(g=>({...g,total:session.participants.filter(p=>p.gid===g.id).reduce((s,p)=>s+p.total,0),members:session.participants.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
+  const cmPids = session.coinmasterEnabled ? (session.coinmasterPids||[]) : [];
+  const cmUids = session.coinmasterEnabled ? (session.coinmasterUids||[]) : [];
+  const isCMp = (p) => cmPids.includes(p.id) || (p.uid && cmUids.includes(p.uid));
+  const sorted = [...session.participants].filter(p=>!isCMp(p)).sort((a,b)=>b.total-a.total);
+  const gs = session.groups.map(g=>({...g,total:sorted.filter(p=>p.gid===g.id).reduce((s,p)=>s+p.total,0),members:sorted.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
   const maxP = sorted[0]?.total||1;
   const hasGroups = session.participants.some(p=>p.gid!=null) && gs.length > 0;
   const [scoreTab, setScoreTab] = useState("individual");
@@ -3090,7 +3099,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                               title="Rename" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </button>
-                            <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;});}}
+                            <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);if(p.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;});}}
                               title="Remove" style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                             </button>
@@ -3108,7 +3117,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
         {/* ── BOARD TAB ── */}
         {tab==="board" && (() => {
           const hasGrps = ses.participants.some(p=>p.gid!=null) && ses.groups.length>0;
-          const grpScores = ses.groups.map(g=>({...g,total:ses.participants.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0),members:ses.participants.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
+          const grpScores = ses.groups.map(g=>({...g,total:boardSorted.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0),members:boardSorted.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
           const maxGrp = grpScores[0]?.total||1;
           return (
             <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -3128,9 +3137,9 @@ function CoinmasterView({ session: init, selfId, onBack }) {
               <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
                 {(!hasGrps || boardSubTab==="individual") && (
                   <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                    {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
-                    {sorted.map((p,i) => {
-                      const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
+                    {boardSorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
+                    {boardSorted.map((p,i) => {
+                      const grp = ses.groups.find(g=>g.id===p.gid); const maxP = boardSorted[0]?.total||1;
                       return (
                         <div key={p.id} onClick={()=>{setSelId(p.id);setTab("award");}} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,cursor:"pointer",background:i===0?SOFT:"#fff",transition:".1s"}}>
                           <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -3464,8 +3473,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   }
 
   const sorted = [...ses.participants].sort((a,b)=>b.total-a.total);
+  // Scoreboard excludes participants currently assigned as coinmasters — their coins
+  // are preserved but they're hidden from rankings while acting as co-hosts.
+  const isCMp = (p) => isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid) || (ses.coinmasterPids||[]).includes(p.id));
+  const boardSorted = sorted.filter(p => !isCMp(p));
   const selP = ses.participants.find(x=>x.id===selId);
-  const gs = ses.groups.map(g=>({...g,total:ses.participants.filter(p=>p.gid===g.id).reduce((s,p)=>s+p.total,0),members:ses.participants.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
+  const gs = ses.groups.map(g=>({...g,total:boardSorted.filter(p=>p.gid===g.id).reduce((s,p)=>s+p.total,0),members:boardSorted.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
 
   if (proj) return <Projector session={ses} onBack={()=>setProj(false)}/>;
 
@@ -3501,7 +3514,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Rename
             </button>
-            <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`)){mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;});}setPMenuOpen(null);}}
+            <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`)){mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);if(p.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;});}setPMenuOpen(null);}}
               style={{width:"100%",padding:"11px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#EF4444",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
               onMouseOver={e=>e.currentTarget.style.background="#FEF2F2"} onMouseOut={e=>e.currentTarget.style.background="none"}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
@@ -4083,7 +4096,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               )}
               {(() => {
                 const hasGrps = ses.participants.some(p=>p.gid!=null) && ses.groups.length>0;
-                const grpScores = ses.groups.map(g=>({...g,total:ses.participants.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0),members:ses.participants.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
+                const grpScores = ses.groups.map(g=>({...g,total:boardSorted.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0),members:boardSorted.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
                 const maxGrp = grpScores[0]?.total||1;
                 return (<>
                   {hasGrps && (
@@ -4101,9 +4114,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   )}
                   {(!hasGrps || boardSubTab==="individual") && (
                     <div style={{background:"transparent",border:"none",display:"flex",flexDirection:"column",gap:6}}>
-                      {sorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:ses.boardVisible?"rgba(255,255,255,.5)":SUB}}>No participants yet</div></div>}
-                      {sorted.map((p,i) => {
-                        const grp = ses.groups.find(g=>g.id===p.gid); const maxP = sorted[0]?.total||1;
+                      {boardSorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:ses.boardVisible?"rgba(255,255,255,.5)":SUB}}>No participants yet</div></div>}
+                      {boardSorted.map((p,i) => {
+                        const grp = ses.groups.find(g=>g.id===p.gid); const maxP = boardSorted[0]?.total||1;
                         return (
                           <div key={p.id} style={{padding:"13px 16px",borderRadius:14,border:ses.boardVisible?(i===0?"1.5px solid rgba(233,30,140,.4)":"1.5px solid rgba(255,255,255,.07)"):`1.5px solid ${BORDER}`,background:ses.boardVisible?(i===0?"rgba(233,30,140,.12)":"rgba(255,255,255,.05)"):(i===0?SOFT:"#fff"),cursor:"pointer",transition:"background .1s"}}
                             onClick={()=>{setSelId(p.id);setTab("award");}}>
@@ -5751,12 +5764,12 @@ function EarningsPage({ uid, name, onClose }) {
   const totalSessions = (earnings||[]).length;
 
   function shareText() {
-    return `I've earned ${totalCoins} coins across ${totalSessions} session${totalSessions!==1?"s":""} on Teticoin! 🏆 https://teticoin.tetikus.com.my`;
+    return `I've earned ${totalCoins} coins across ${totalSessions} session${totalSessions!==1?"s":""} on Teticoin! 🏆 https://teticoin.com`;
   }
 
   const shareLinks = [
     {name:"WhatsApp", color:"#25D366", url:`https://wa.me/?text=${encodeURIComponent(shareText())}`},
-    {name:"Facebook", color:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.tetikus.com.my")}&quote=${encodeURIComponent(shareText())}`},
+    {name:"Facebook", color:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.com")}&quote=${encodeURIComponent(shareText())}`},
     {name:"Threads",  color:"#000",    url:`https://www.threads.net/intent/post?text=${encodeURIComponent(shareText())}`},
   ];
 
@@ -5836,11 +5849,11 @@ function EarningsPage({ uid, name, onClose }) {
               {[
                 {name:"WhatsApp", bg:"#25D366", url:`https://wa.me/?text=${encodeURIComponent(shareText())}`,
                  icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>},
-                {name:"Facebook", bg:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.tetikus.com.my")}&quote=${encodeURIComponent(shareText())}`,
+                {name:"Facebook", bg:"#1877F2", url:`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent("https://teticoin.com")}&quote=${encodeURIComponent(shareText())}`,
                  icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>},
                 {name:"X", bg:"#000", url:`https://x.com/intent/tweet?text=${encodeURIComponent(shareText())}`,
                  icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L2.146 2.25H8.32l4.273 5.647L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>},
-                {name:"Telegram", bg:"#229ED9", url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.tetikus.com.my")}&text=${encodeURIComponent(shareText())}`,
+                {name:"Telegram", bg:"#229ED9", url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.com")}&text=${encodeURIComponent(shareText())}`,
                  icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>},
               ].map(s=>(
                 <button key={s.name} onClick={()=>window.open(s.url,"_blank")} title={s.name}
