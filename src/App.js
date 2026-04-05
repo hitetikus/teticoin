@@ -1938,8 +1938,9 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     );
   };
 
-  // Optional login modal
-  const OptionalLoginModal = () => (
+  // Optional login modal — rendered as JSX variable (NOT a sub-component) to prevent
+  // React unmounting/remounting on every parent re-render, which wiped input state.
+  const optionalLoginModalJSX = loginModal ? (
     <div style={{position:"fixed",inset:0,zIndex:600,display:"flex",alignItems:"flex-end",justifyContent:"center",background:"rgba(26,10,20,.5)",backdropFilter:"blur(4px)"}}>
       <div style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:420,padding:"24px 24px 40px",animation:"slideUp .25s ease"}}>
         <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>
@@ -1996,7 +1997,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         )}
       </div>
     </div>
-  );
+  ) : null;
 
   // Login banner shown in joined view
   const LoginBanner = () => linkedUid ? (
@@ -2073,7 +2074,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
   const card = (content) => (
     <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 20px",fontFamily:"Poppins,sans-serif"}}>
-      {loginModal && <OptionalLoginModal/>}
+      {optionalLoginModalJSX}
       <BadgeClaimPrompt/>
       <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,padding:"32px 24px",maxWidth:380,width:"100%",textAlign:"center"}}>
         {content}
@@ -2176,7 +2177,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   // Scoreboard view — host pushed boardVisible=true
   if (step === "joined" && live?.boardVisible) return (
     <div style={{minHeight:"100vh",background:"#0D0008",fontFamily:"Poppins,sans-serif",color:"#fff",padding:"24px 20px",display:"flex",flexDirection:"column",alignItems:"center"}}>
-      {loginModal && <OptionalLoginModal key="opt-login-board"/>}
+      {optionalLoginModalJSX}
       <BadgeClaimPrompt/>
       <Confetti active/>
       <Ham size={56}/>
@@ -2279,7 +2280,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   // Main participant dashboard
   if (step === "joined") return (
     <div style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
-      {loginModal && <OptionalLoginModal key="opt-login"/>}
+      {optionalLoginModalJSX}
       {showEarnings && linkedUid && (
         <EarningsPage uid={linkedUid} name={me?.name||"You"} onClose={()=>setShowEarnings(false)}/>
       )}
@@ -3298,6 +3299,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   const [editingPid, setEditingPid] = useState(null);   // participant id being renamed
   const [editingPName, setEditingPName] = useState(""); // current edit value
   const [pMenuOpen, setPMenuOpen] = useState(null);     // participant id whose ⋯ menu is open
+  const [pMenuPos, setPMenuPos]   = useState({top:0,right:0}); // fixed position of ⋯ dropdown
   const [boardSubTab, setBoardSubTab] = useState("individual"); // board tab: individual | groups
 
   // Close ⋯ menu when clicking outside
@@ -3486,6 +3488,28 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           {toast.type==="warn" ? "⚠️ " : ""}{toast.m}
         </div>
       )}
+      {/* ⋯ participant context menu — fixed portal so it's never clipped by overflow */}
+      {pMenuOpen && (() => {
+        const p = ses.participants.find(x=>x.id===pMenuOpen);
+        if (!p) return null;
+        return (
+          <div style={{position:"fixed",top:pMenuPos.top,right:pMenuPos.right,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,.14)",zIndex:9990,minWidth:170,overflow:"hidden"}}
+            onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()}>
+            <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);setPMenuOpen(null);}}
+              style={{width:"100%",padding:"11px 14px",background:"none",border:"none",textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
+              onMouseOver={e=>e.currentTarget.style.background=SOFT} onMouseOut={e=>e.currentTarget.style.background="none"}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Rename
+            </button>
+            <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`)){mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;});}setPMenuOpen(null);}}
+              style={{width:"100%",padding:"11px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#EF4444",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
+              onMouseOver={e=>e.currentTarget.style.background="#FEF2F2"} onMouseOut={e=>e.currentTarget.style.background="none"}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              Remove
+            </button>
+          </div>
+        );
+      })()}
       {picker && <Picker participants={sorted} groups={ses.groups} selId={selId} onSelect={setSelId} onClose={()=>setPicker(false)}/>}
       {manage && <Manage session={ses} plan={plan} paxLimit={paxLimit} onUpdate={fn=>mut(fn)} onClose={()=>setManage(false)} onShowQR={()=>{setManage(false);setShowQR(true);}} onExport={()=>{}} onReset={()=>{}} onRename={renameSession} onToggleLive={toggleLive}/>}
       {showCoinCustomizer && <CoinCustomizer session={ses}
@@ -3933,29 +3957,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                           )}
                           {/* ⋯ context menu */}
                           <div style={{position:"relative",flexShrink:0}}>
-                            <button onClick={()=>setPMenuOpen(menuOpen?null:p.id)}
+                            <button onClick={e=>{e.stopPropagation();if(menuOpen){setPMenuOpen(null);}else{const r=e.currentTarget.getBoundingClientRect();setPMenuPos({top:r.bottom+4,right:window.innerWidth-r.right});setPMenuOpen(p.id);}}}
                               style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center",color:SUB}}
                               onMouseOver={e=>e.currentTarget.style.borderColor=PINK}
                               onMouseOut={e=>e.currentTarget.style.borderColor=BORDER}>
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
                             </button>
-                            {menuOpen && (
-                              <div style={{position:"absolute",right:0,top:"calc(100% + 4px)",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,.12)",zIndex:200,minWidth:170,overflow:"hidden"}}
-                                onClick={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()}>
-                                <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);setPMenuOpen(null);}}
-                                  style={{width:"100%",padding:"10px 14px",background:"none",border:"none",textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
-                                  onMouseOver={e=>e.currentTarget.style.background=SOFT} onMouseOut={e=>e.currentTarget.style.background="none"}>
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                  Rename
-                                </button>
-                                <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`)){mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);return s;});}setPMenuOpen(null);}}
-                                  style={{width:"100%",padding:"10px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#EF4444",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
-                                  onMouseOver={e=>e.currentTarget.style.background="#FEF2F2"} onMouseOut={e=>e.currentTarget.style.background="none"}>
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                                  Remove
-                                </button>
-                              </div>
-                            )}
                           </div>
                         </div>
                       )}
