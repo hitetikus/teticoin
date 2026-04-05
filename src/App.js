@@ -5882,6 +5882,7 @@ function HomeJoinSection({ setCur, setScreen }) {
         const s = await sgSession(code);
         if (s) {
           setCur(s);
+          window.history.pushState({}, "", `/join/${code}`);
           setScreen(auth.currentUser ? "participant" : "participant");
         }
       }, ()=>{}).catch(()=>{ setShowJoinScanner(false); });
@@ -5900,7 +5901,7 @@ function HomeJoinSection({ setCur, setScreen }) {
       <div style={{fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>Join a Session</div>
       <JoinSessionField onJoin={async(code)=>{
         const s = await sgSession(code.toUpperCase().trim());
-        if (s) { setCur(s); setScreen("participant"); return null; }
+        if (s) { setCur(s); window.history.pushState({}, "", `/join/${code.toUpperCase().trim()}`); setScreen("participant"); return null; }
         return "Session not found. Check the code and try again.";
       }}/>
       <button onClick={()=>setShowJoinScanner(v=>!v)} style={{marginTop:10,width:"100%",padding:"10px 0",background:showJoinScanner?"#E2E8F0":"#fff",border:"1.5px solid #E2E8F0",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#475569",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:7}}>
@@ -6986,6 +6987,7 @@ export default function App() {
                           (myPart && (live.coinmasterPids||[]).includes(myPart.id))
                         );
                         setCur(live);
+                        window.history.pushState({}, "", `/join/${s.code}`);
                         if (isCM) {
                           setCmSession(live);
                           setScreen("coinmaster");
