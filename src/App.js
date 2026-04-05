@@ -1487,19 +1487,55 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     } catch(e) {}
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function playCoinSound() {
+  // Pre-warm AudioContext on first user interaction so polling-triggered sound works on mobile
+  const audioCtxRef = useRef(null);
+  function getAudioCtx() {
+    if (!audioCtxRef.current) {
+      try { audioCtxRef.current = new (window.AudioContext||window.webkitAudioContext)(); } catch(e) {}
+    }
+    if (audioCtxRef.current?.state === "suspended") {
+      audioCtxRef.current.resume().catch(()=>{});
+    }
+    return audioCtxRef.current;
+  }
+  useEffect(() => {
+    const unlock = () => { getAudioCtx(); };
+    window.addEventListener("touchstart", unlock, {once:true, passive:true});
+    window.addEventListener("click", unlock, {once:true});
+    return () => {
+      window.removeEventListener("touchstart", unlock);
+      window.removeEventListener("click", unlock);
+    };
+  }, []);
+
+  function playCoinSound(gained) {
     try {
-      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const big = gained >= 100;
       const g = ctx.createGain();
       g.connect(ctx.destination);
-      [[880,0],[1100,.09],[1320,.18]].forEach(([f,t]) => {
-        const o = ctx.createOscillator();
-        o.connect(g); o.type = "sine";
-        o.frequency.value = f;
-        o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.13);
-      });
-      g.gain.setValueAtTime(.15, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.42);
+      if (big) {
+        // Big award — celebratory 4-note arpeggio
+        [[523,.0],[659,.1],[784,.2],[1047,.32]].forEach(([f,t]) => {
+          const o = ctx.createOscillator(); o.connect(g);
+          o.type = "sine";
+          o.frequency.value = f;
+          o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.22);
+        });
+        g.gain.setValueAtTime(.22, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.65);
+      } else {
+        // Normal award — bright rising chime
+        [[880,.0],[1100,.09],[1320,.18]].forEach(([f,t]) => {
+          const o = ctx.createOscillator(); o.connect(g);
+          o.type = "sine";
+          o.frequency.value = f;
+          o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.14);
+        });
+        g.gain.setValueAtTime(.18, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.42);
+      }
     } catch(e) {}
   }
 
@@ -1515,7 +1551,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         if (me) {
           if (prevTotalRef.current !== null && me.total > prevTotalRef.current) {
             const gained = me.total - prevTotalRef.current;
-            playCoinSound();
+            playCoinSound(gained);
             setCoinFlash({ pts: gained, key: Date.now() });
             setTimeout(() => setCoinFlash(null), 1500);
           }
