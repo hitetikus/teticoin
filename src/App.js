@@ -1975,7 +1975,10 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const sorted = [...(live?.participants||[])].sort((a,b) => b.total - a.total);
   const myRank = sorted.findIndex(p => p.id === myId) + 1;
   const myUid = linkedUid || auth.currentUser?.uid || null;
-  const isMeAssignedCM = myUid && live?.coinmasterEnabled && (live?.coinmasterUids||[]).includes(myUid);
+  const isMeAssignedCM = live?.coinmasterEnabled && (
+    (myUid && (live?.coinmasterUids||[]).includes(myUid)) ||
+    (myId && (live?.coinmasterPids||[]).includes(myId))
+  );
 
   // If assigned as coinmaster, show CoinmasterView instead of normal participant view
   if (step === "joined" && isMeAssignedCM) {
@@ -2910,7 +2913,7 @@ function CoinmasterView({ session: init, onBack }) {
                   .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
                   .map((p) => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
-                    const isCMp = ses.coinmasterEnabled && (ses.coinmasterUids||[]).includes(p.uid);
+                    const isCMp = ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid) || (ses.coinmasterPids||[]).includes(p.id));
                     const coins = ses.otherCoins||TV_DEFAULT;
                     return (
                       <div key={p.id} style={{background:"#fff",border:`1.5px solid ${isCMp?"#DDD6FE":BORDER}`,borderRadius:14,padding:"10px 12px",display:"flex",flexDirection:"column",gap:8}}>
@@ -3235,6 +3238,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         live: fresh.live ?? prev.live,
         coinmasterEnabled: fresh.coinmasterEnabled ?? prev.coinmasterEnabled,
         coinmasterUids: fresh.coinmasterUids ?? prev.coinmasterUids,
+        coinmasterPids: fresh.coinmasterPids ?? prev.coinmasterPids,
       }));
     }, 3000);
     return () => clearInterval(t);
@@ -3656,7 +3660,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
                   .map((p,i,arr) => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
-                    const isCMp = isPro && ses.coinmasterEnabled && (ses.coinmasterUids||[]).includes(p.uid);
+                    const isCMp = isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid) || (ses.coinmasterPids||[]).includes(p.id));
                     const coins = ses.otherCoins||TV_DEFAULT;
                     return (
                       <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",opacity:isCMp?0.55:1}}>
@@ -3738,9 +3742,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     </div>
                     <div style={{fontSize:11,color:ses.coinmasterEnabled?"rgba(245,166,35,.65)":SUB,marginTop:1}}>
                       {ses.coinmasterEnabled
-                        ? `${(ses.coinmasterUids||[]).length} assigned — tap ⋯ on a "logged in" participant`
-                        : (ses.coinmasterUids||[]).length > 0
-                          ? `${ses.coinmasterUids.length} saved — re-enable to activate them`
+                        ? `${(ses.coinmasterPids||ses.coinmasterUids||[]).length} assigned — tap ⋯ on any participant to assign`
+                        : (ses.coinmasterPids||ses.coinmasterUids||[]).length > 0
+                          ? `${(ses.coinmasterPids||ses.coinmasterUids||[]).length} saved — re-enable to activate them`
                           : "Enable so participants can be assigned as co-hosts"}
                     </div>
                   </div>
@@ -3758,8 +3762,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 {sorted.map(p => {
                   const grp = ses.groups.find(g=>g.id===p.gid);
                   const isEditing = editingPid === p.id;
-                  const isCM = isPro && (ses.coinmasterUids||[]).includes(p.uid);
-                  const canAssignCM = isPro && ses.coinmasterEnabled && !!p.uid;
+                  const isCM = isPro && ((ses.coinmasterUids||[]).includes(p.uid) || (ses.coinmasterPids||[]).includes(p.id));
+                  const canAssignCM = isPro && ses.coinmasterEnabled;
                   const menuOpen = pMenuOpen === p.id;
                   return (
                     <div key={p.id} style={{borderBottom:`1px solid ${BORDER}`,position:"relative"}}>
@@ -3815,7 +3819,22 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                                   Rename
                                 </button>
                                 {canAssignCM && (
-                                  <button onClick={()=>{isCM?mut(s=>{s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;}):mut(s=>{s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==p.uid),p.uid];return s;});setPMenuOpen(null);}}
+                                  <button onClick={()=>{
+                                    if (isCM) {
+                                      mut(s=>{
+                                        s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);
+                                        s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);
+                                        return s;
+                                      });
+                                    } else {
+                                      mut(s=>{
+                                        if (p.uid) s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==p.uid),p.uid];
+                                        s.coinmasterPids=[...(s.coinmasterPids||[]).filter(x=>x!==p.id),p.id];
+                                        return s;
+                                      });
+                                    }
+                                    setPMenuOpen(null);
+                                  }}
                                     style={{width:"100%",padding:"10px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:isCM?"#7C3AED":TEXT,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
                                     onMouseOver={e=>e.currentTarget.style.background="#FAF5FF"} onMouseOut={e=>e.currentTarget.style.background="none"}>
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={isCM?"#7C3AED":SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polygon points="22 8 22 14 16 11"/></svg>
