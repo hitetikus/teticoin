@@ -184,11 +184,18 @@ const mkAv = n => n.trim().split(/\s+/).map(w=>w[0]).join("").toUpperCase().slic
 const pNum = n => `P${String(n).padStart(3,"0")}`;
 const rankColor = i => [YELLOW,"#94A3B8","#CD7C2E"][i] || SUB;
 
-function playSound(big) {
+function playSound(big, negative=false) {
   try {
     const ctx = new (window.AudioContext||window.webkitAudioContext)();
     const g = ctx.createGain(); g.connect(ctx.destination);
-    if (big) {
+    if (negative) {
+      [[300,0],[220,.12]].forEach(([f,t]) => {
+        const o = ctx.createOscillator(); o.connect(g);
+        o.type = "sine"; o.frequency.value = f;
+        o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.18);
+      });
+      g.gain.setValueAtTime(.18,ctx.currentTime); g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.38);
+    } else if (big) {
       [[440,0],[554,.1],[659,.2],[880,.32]].forEach(([f,t]) => {
         const o = ctx.createOscillator(); o.connect(g);
         o.frequency.value = f; o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.2);
@@ -1454,6 +1461,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const isPro = hostPlan !== "free";
   const prevTotalRef = useRef(null);
   const [coinFlash, setCoinFlash] = useState(null); // {pts, key}
+  const [participantSoundOn, setParticipantSoundOn] = useState(false); // default muted — user taps to unmute
 
   // Auto-populate from already-logged-in Firebase user on mount
   useEffect(() => {
@@ -1513,9 +1521,20 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       const ctx = getAudioCtx();
       if (!ctx) return;
       const big = gained >= 100;
+      const negative = gained < 0;
       const g = ctx.createGain();
       g.connect(ctx.destination);
-      if (big) {
+      if (negative) {
+        // Deduction — descending two-tone thud
+        [[300,.0],[220,.12]].forEach(([f,t]) => {
+          const o = ctx.createOscillator(); o.connect(g);
+          o.type = "sine";
+          o.frequency.value = f;
+          o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.18);
+        });
+        g.gain.setValueAtTime(.18, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.38);
+      } else if (big) {
         // Big award — celebratory 4-note arpeggio
         [[523,.0],[659,.1],[784,.2],[1047,.32]].forEach(([f,t]) => {
           const o = ctx.createOscillator(); o.connect(g);
@@ -1549,9 +1568,9 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       if (myId) {
         const me = (s.participants||[]).find(p => p.id === myId);
         if (me) {
-          if (prevTotalRef.current !== null && me.total > prevTotalRef.current) {
+          if (prevTotalRef.current !== null && me.total !== prevTotalRef.current) {
             const gained = me.total - prevTotalRef.current;
-            playCoinSound(gained);
+            if (participantSoundOn) playCoinSound(gained);
             setCoinFlash({ pts: gained, key: Date.now() });
             setTimeout(() => setCoinFlash(null), 1500);
           }
@@ -2361,10 +2380,27 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
         <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"28px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",overflow:"hidden"}}>
           {coinFlash && (
-            <div key={coinFlash.key} style={{position:"absolute",top:10,right:18,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
-              +{coinFlash.pts}
+            <div key={coinFlash.key} style={{position:"absolute",top:10,right:18,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:coinFlash.pts<0?"#EF4444":PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
+              {coinFlash.pts>0?"+":""}{coinFlash.pts}
             </div>
           )}
+          {/* Sound toggle — bottom right, no text */}
+          <button onClick={()=>{
+            const next = !participantSoundOn;
+            setParticipantSoundOn(next);
+            // Unlock AudioContext on this gesture
+            getAudioCtx();
+            // Play a tiny test beep when unmuting so user knows it worked
+            if (next) playCoinSound(10);
+          }}
+            style={{position:"absolute",bottom:10,right:12,background:"none",border:"none",cursor:"pointer",color:participantSoundOn?PINK:"#D1D5DB",padding:4,lineHeight:0,zIndex:3}}
+            title={participantSoundOn?"Mute sounds":"Unmute sounds"}>
+            {participantSoundOn ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+            )}
+          </button>
           <div style={{fontSize:11,fontWeight:700,color:SUB,marginBottom:6,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:80,lineHeight:1,color:PINK,letterSpacing:-4,transition:"transform .18s ease",transform:coinFlash?"scale(1.07)":"scale(1)"}}>{me?.total||0}</div>
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
@@ -2815,7 +2851,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
   function award(pid, type, pts, mx = window.innerWidth/2, my = 300) {
     if (!pid) { notify("Select a participant first","warn"); return; }
     if (ses.live === false) { notify("Session is offline","warn"); return; }
-    if (pts > 0) playSound(pts >= 100);
+    if (pts > 0) playSound(pts >= 100); else if (pts < 0) playSound(false, true);
     if (pts >= 100) { setConfetti(true); setTimeout(()=>setConfetti(false), 3000); }
     mut(s => {
       const p = s.participants.find(x=>x.id===pid); if (!p) return;
@@ -3379,7 +3415,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   function award(pid, type, pts, mx = window.innerWidth/2, my = 300) {
     if (!pid) { notify("Select a participant first","warn"); return; }
     if (!isLive) { notify("Session is offline — go live first","warn"); return; }
-    if (snd && pts > 0) playSound(pts >= 100);
+    if (snd && pts > 0) playSound(pts >= 100); else if (snd && pts < 0) playSound(false, true);
     if (pts >= 100) { setConfetti(true); setTimeout(()=>setConfetti(false), 3000); }
     mut(s => {
       const p = s.participants.find(x=>x.id===pid); if (!p) return;
