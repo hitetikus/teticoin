@@ -4743,7 +4743,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
           <div style={{display:"flex",gap:8}}>
             <Inp value={displayName} onChange={e=>setDisplayName(e.target.value)} placeholder="Your name" style={{flex:1,margin:0}}/>
             <button onClick={saveName} disabled={busy||displayName.trim()===trainer?.name}
-              style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",opacity:busy||displayName.trim()===trainer?.name?.6:1,flexShrink:0}}>
+              style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",opacity:(busy||displayName.trim()===trainer?.name) ? 0.6 : 1,flexShrink:0}}>
               {busy?"Saving...":"Save"}
             </button>
           </div>
@@ -4778,7 +4778,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
             </div>
             {!linked && (
               <button onClick={linkGoogle} disabled={linkBusy}
-                style={{padding:"8px 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",opacity:linkBusy?.6:1}}>
+                style={{padding:"8px 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",opacity:linkBusy ? 0.6 : 1}}>
                 {linkBusy?"Linking...":"Link"}
               </button>
             )}
