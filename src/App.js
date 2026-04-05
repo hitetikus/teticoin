@@ -2893,6 +2893,7 @@ function CoinmasterView({ session: init, onBack }) {
               </>)}
               <div style={{height:20}}/>
             </div>
+          </div>
         )}
 
         {/* ── PARTICIPANTS TAB ── */}
