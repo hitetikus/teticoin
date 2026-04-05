@@ -192,9 +192,9 @@ function playSound(big, negative=false) {
       [[300,0],[220,.12]].forEach(([f,t]) => {
         const o = ctx.createOscillator(); o.connect(g);
         o.type = "sine"; o.frequency.value = f;
-        o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.18);
+        o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.22);
       });
-      g.gain.setValueAtTime(.18,ctx.currentTime); g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.38);
+      g.gain.setValueAtTime(.45,ctx.currentTime); g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.45);
     } else if (big) {
       [[440,0],[554,.1],[659,.2],[880,.32]].forEach(([f,t]) => {
         const o = ctx.createOscillator(); o.connect(g);
@@ -1497,6 +1497,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
   // Pre-warm AudioContext on first user interaction so polling-triggered sound works on mobile
   const audioCtxRef = useRef(null);
+  const soundOnRef = useRef(false); // mirrors participantSoundOn but readable inside intervals
   function getAudioCtx() {
     if (!audioCtxRef.current) {
       try { audioCtxRef.current = new (window.AudioContext||window.webkitAudioContext)(); } catch(e) {}
@@ -1570,7 +1571,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         if (me) {
           if (prevTotalRef.current !== null && me.total !== prevTotalRef.current) {
             const gained = me.total - prevTotalRef.current;
-            if (participantSoundOn) playCoinSound(gained);
+            if (soundOnRef.current) playCoinSound(gained);
             setCoinFlash({ pts: gained, key: Date.now() });
             setTimeout(() => setCoinFlash(null), 1500);
           }
@@ -2388,6 +2389,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           <button onClick={()=>{
             const next = !participantSoundOn;
             setParticipantSoundOn(next);
+            soundOnRef.current = next;
             // Unlock AudioContext on this gesture
             getAudioCtx();
             // Play a tiny test beep when unmuting so user knows it worked
