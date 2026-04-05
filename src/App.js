@@ -2838,11 +2838,11 @@ function CoinmasterView({ session: init, selfId, onBack }) {
         </div>
       </div>
 
-      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0}}>
 
         {/* ── COINS TAB ── */}
         {tab==="award" && (
-          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0}}>
             {/* Participant selector */}
             <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0}}>
               <button onClick={()=>setPicker(true)} style={{width:"100%",display:"flex",alignItems:"center",gap:10,background:selP?SOFT:BG,border:`1.5px solid ${selP?PINK:BORDER}`,borderRadius:13,padding:"10px 14px",cursor:"pointer",textAlign:"left",transition:"all .12s"}}>
@@ -2871,7 +2871,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
               </button>
             </div>
             {/* Single scroll container — Give Coins + Bulk + Quick Coins all continuous */}
-            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,minHeight:0}}>
               {/* Give Coins */}
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
                 <SL style={{marginBottom:10}}>Give Coins</SL>
@@ -3763,7 +3763,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   const grp = ses.groups.find(g=>g.id===p.gid);
                   const isEditing = editingPid === p.id;
                   const isCM = isPro && ((ses.coinmasterUids||[]).includes(p.uid) || (ses.coinmasterPids||[]).includes(p.id));
-                  const canAssignCM = isPro && ses.coinmasterEnabled;
+                  const canAssignCM = isPro && ses.coinmasterEnabled && !!p.uid;
                   const menuOpen = pMenuOpen === p.id;
                   return (
                     <div key={p.id} style={{borderBottom:`1px solid ${BORDER}`,position:"relative"}}>
@@ -3794,7 +3794,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                             </div>
                             <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                           </div>
-                          {/* Inline CM assign button — visible when coinmaster mode on */}
+                          {/* Inline CM assign — visible when coinmaster mode on and participant is logged in */}
                           {canAssignCM && (
                             <button onClick={e=>{
                               e.stopPropagation();
@@ -3804,10 +3804,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                                 mut(s=>{if(p.uid)s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==p.uid),p.uid];s.coinmasterPids=[...(s.coinmasterPids||[]).filter(x=>x!==p.id),p.id];return s;});
                               }
                             }}
-                              title={isCM?"Remove Coinmaster":"Make Coinmaster"}
-                              style={{flexShrink:0,padding:"4px 10px",height:28,borderRadius:8,border:`1.5px solid ${isCM?"#7C3AED":"#DDD6FE"}`,background:isCM?"#7C3AED":"#FAF5FF",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:isCM?"#fff":"#7C3AED",display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                              {isCM?"CM ✕":"Set CM"}
+                              style={{flexShrink:0,background:"none",border:"none",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:isCM?"#7C3AED":"#9CA3AF",whiteSpace:"nowrap",padding:"0 4px",textDecoration:"underline",textUnderlineOffset:2}}>
+                              {isCM?"Remove Coinmaster":"Assign Coinmaster"}
                             </button>
                           )}
                           {(ses.groups.length > 0) && (
