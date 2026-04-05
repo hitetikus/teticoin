@@ -1982,7 +1982,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
   // If assigned as coinmaster, show CoinmasterView instead of normal participant view
   if (step === "joined" && isMeAssignedCM) {
-    return <CoinmasterView session={live} selfId={myId} onBack={()=>{ setMyId(null); setStep("name"); }}/>;
+    return <CoinmasterView session={live} selfId={myId} onBack={()=>{ /* stay joined, just drop CM view — session must be offline */ }}/>;
   }
 
   function PinPad({ value, onChange, length=4 }) {
@@ -3271,13 +3271,13 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         if (fresh && fresh.live !== false) await ssSession(code, {...fresh, live:false});
       } catch(e) {}
     }
-    function onVisibility() { if (document.visibilityState === "hidden") setOffline(); }
-    document.addEventListener("visibilitychange", onVisibility);
+    // pagehide fires reliably on mobile; beforeunload on desktop
+    window.addEventListener("pagehide", setOffline);
     window.addEventListener("beforeunload", setOffline);
     return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", setOffline);
       window.removeEventListener("beforeunload", setOffline);
-      // Also go offline when navigating away within the app (onBack)
+      // Go offline when navigating back to home within the app
       setOffline();
     };
   }, [ses.code]);
@@ -6900,9 +6900,20 @@ export default function App() {
                       <button onClick={async()=>{
                         const live = await sgSession(s.code);
                         if (!live) { alert("This session is no longer available."); return; }
-                        if (!live.live) { alert("This session is currently offline."); return; }
-                        setScreen("join");
-                        setTimeout(()=>{ const el=document.querySelector("input[placeholder*='code'],input[placeholder*='CODE']"); if(el){el.value=s.code;el.dispatchEvent(new Event("input",{bubbles:true}));} }, 150);
+                        // Check if this user is assigned as coinmaster
+                        const uid = auth.currentUser?.uid;
+                        const myPart = uid ? (live.participants||[]).find(p=>p.uid===uid) : null;
+                        const isCM = live.coinmasterEnabled && uid && (
+                          (live.coinmasterUids||[]).includes(uid) ||
+                          (myPart && (live.coinmasterPids||[]).includes(myPart.id))
+                        );
+                        setCur(live);
+                        if (isCM) {
+                          setCmSession(live);
+                          setScreen("coinmaster");
+                        } else {
+                          setScreen("participant");
+                        }
                       }} title="Rejoin session" style={{padding:"0 14px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,gap:5,color:PINK,flexShrink:0}}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.5" strokeLinecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                         <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11}}>Rejoin</span>
