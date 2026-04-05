@@ -435,7 +435,7 @@ function Inp({ placeholder, value, onChange, type="text", onKeyDown, autoFocus, 
 function PBtn({ children, onClick, disabled, full, style: sx = {} }) {
   return (
     <button onClick={onClick} disabled={disabled}
-      style={{background:disabled?BG:GRAD,border:"none",borderRadius:13,padding:"13px 22px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:disabled?SUB:"#fff",cursor:disabled?"not-allowed":"pointer",opacity:disabled?.5:1,transition:"all .15s",width:full?"100%":"auto",...sx}}
+      style={{background:disabled?BG:GRAD,border:"none",borderRadius:13,padding:"13px 22px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:disabled?SUB:"#fff",cursor:disabled?"not-allowed":"pointer",opacity:disabled ? 0.5 : 1,transition:"all .15s",width:full?"100%":"auto",...sx}}
       onMouseOver={e=>{ if(!disabled){ e.currentTarget.style.filter="brightness(1.08)"; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow=`0 4px 14px rgba(233,30,140,.35)`; }}}
       onMouseOut={e=>{ e.currentTarget.style.filter="none"; e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.boxShadow="none"; }}
       onMouseDown={e=>{ if(!disabled){ e.currentTarget.style.transform="translateY(1px)"; e.currentTarget.style.filter="brightness(.95)"; }}}
@@ -1807,7 +1807,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             <Inp type="email" placeholder="your@email.com" value={claimEmail} onChange={e=>{setClaimEmail(e.target.value);setClaimEmailErr("");}} style={{marginBottom:claimEmailErr?6:12}} onKeyDown={e=>e.key==="Enter"&&handleEmailClaim()}/>
             {claimEmailErr && <div style={{fontSize:12,color:"#EF4444",marginBottom:10,fontWeight:600}}>{claimEmailErr}</div>}
             <button onClick={handleEmailClaim} disabled={!claimEmail.trim()||claimEmailBusy}
-              style={{width:"100%",padding:"13px 0",background:claimEmail.trim()?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:claimEmail.trim()?"#fff":SUB,cursor:claimEmail.trim()?"pointer":"not-allowed",marginBottom:10,opacity:claimEmailBusy?.6:1}}>
+              style={{width:"100%",padding:"13px 0",background:claimEmail.trim()?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:claimEmail.trim()?"#fff":SUB,cursor:claimEmail.trim()?"pointer":"not-allowed",marginBottom:10,opacity:claimEmailBusy ? 0.6 : 1}}>
               {claimEmailBusy?"Sending…":"Send Claim Link →"}
             </button>
             <button onClick={()=>setBadgeClaimStep("prompt")} style={{width:"100%",padding:"10px 0",background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>← Back</button>
@@ -1858,7 +1858,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:4}}>Save your progress</div>
             <div style={{fontSize:13,color:SUB,lineHeight:1.6,marginBottom:20}}>Log in to keep your coins and number across sessions.</div>
             <button onClick={(e)=>handleOptionalLogin(e,"google")} disabled={loginBusy}
-              style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"12px 0",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,cursor:loginBusy?"not-allowed":"pointer",marginBottom:10,opacity:loginBusy?.6:1}}>
+              style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"12px 0",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,cursor:loginBusy?"not-allowed":"pointer",marginBottom:10,opacity:loginBusy ? 0.6 : 1}}>
               <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
               {loginBusy ? "Logging in…" : "Continue with Google"}
             </button>
@@ -1883,7 +1883,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             </div>
             {loginErr && <div style={{fontSize:12,color:"#EF4444",fontWeight:600,marginBottom:10}}>{loginErr}</div>}
             <button onClick={(e)=>handleOptionalLogin(e,"email")} disabled={loginBusy||!loginEmail.trim()||!loginPass}
-              style={{width:"100%",padding:"13px 0",background:loginEmail.trim()&&loginPass?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:loginEmail.trim()&&loginPass?"#fff":SUB,cursor:loginEmail.trim()&&loginPass?"pointer":"not-allowed",marginBottom:10,opacity:loginBusy?.6:1}}>
+              style={{width:"100%",padding:"13px 0",background:loginEmail.trim()&&loginPass?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:loginEmail.trim()&&loginPass?"#fff":SUB,cursor:loginEmail.trim()&&loginPass?"pointer":"not-allowed",marginBottom:10,opacity:loginBusy ? 0.6 : 1}}>
               {loginBusy ? "Logging in…" : "Log in"}
             </button>
             {loginErr && <div style={{fontSize:12,color:SUB,textAlign:"center"}}><a href="https://teticoin.tetikus.com.my" target="_blank" rel="noopener noreferrer" style={{color:PINK}}>Don't have an account? Sign up →</a></div>}
@@ -2076,7 +2076,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:4,marginBottom:2,lineHeight:1.1}}>Scoreboard</div>
       <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:6,flexWrap:"wrap"}}>
         <span>{live?.name}</span>
-        {init?.code && <><span style={{color:"rgba(255,255,255,.15)"}}>|</span><span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,letterSpacing:1}}>{init.code}</span></>}
+        {init?.code && <span style={{display:"contents"}}><span style={{color:"rgba(255,255,255,.15)"}}>|</span><span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,letterSpacing:1}}>{init.code}</span></span>}
       </div>
       {(() => {
         const hasGroups = (live.groups||[]).length>0 && sorted.some(p=>p.gid!=null);
@@ -2086,7 +2086,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         return (<>
           {hasGroups && (
             <div style={{display:"flex",background:"rgba(255,255,255,.08)",borderRadius:11,overflow:"hidden",marginBottom:16,width:"100%",maxWidth:400}}>
-              {[["individual",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</>],["groups",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</>]].map(([id,label])=>(
+              {[["individual",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</span>],["groups",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</span>]].map(([id,label])=>(
                 <button key={id} onClick={()=>setPBoardTab(id)} style={{flex:1,padding:"9px 0",border:"none",background:pBoardTab===id?"rgba(255,255,255,.12)":"transparent",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:pBoardTab===id?"#fff":"rgba(255,255,255,.45)",cursor:"pointer",borderBottom:pBoardTab===id?"2.5px solid #fff":"2.5px solid transparent",transition:"all .12s",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
                   {label}
                 </button>
@@ -2770,9 +2770,10 @@ function CoinmasterView({ session: init, onBack }) {
       </div>
 
       {/* COINMASTER BADGE BAR */}
-      <div style={{background:"#1A0A14",padding:"8px 14px",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5A623" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:"#F5A623",letterSpacing:1.5}}>YOU ARE A COINMASTER</span>
+      <div style={{background:"#1A0A14",padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"center",gap:10,flexShrink:0}}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#F5A623" stroke="#F5A623" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:"#F5A623",letterSpacing:2}}>YOU ARE A COINMASTER</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#F5A623" stroke="#F5A623" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       </div>
 
       {/* TABS */}
@@ -2822,8 +2823,8 @@ function CoinmasterView({ session: init, onBack }) {
                 )}
               </button>
             </div>
-            {/* Top scrollable: Give Coins + Bulk */}
-          <div style={{overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,flexShrink:0,maxHeight:"55vh"}}>
+            {/* Single scroll container — Give Coins + Bulk + Quick Coins all continuous */}
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
               {/* Give Coins */}
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
                 <SL style={{marginBottom:10}}>Give Coins</SL>
@@ -2843,56 +2844,55 @@ function CoinmasterView({ session: init, onBack }) {
                 </div>
                 <div style={{display:"flex",gap:8}}>
                   <input type="number" placeholder="Custom amount" value={cAmt} onChange={e=>setCAmt(e.target.value)}
-                    style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",caretColor:"#1A0A14"}}/>
+                    style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#1A0A14",outline:"none",caretColor:"#1A0A14"}}/>
                   <button onClick={e=>{if(!cAmt||isNaN(cAmt))return;awardGuarded("token",Number(cAmt),e);setCAmt("");}}
                     style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Award</button>
                 </div>
               </div>
               {/* Bulk Give */}
-              <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:"#1A0A14",border:"2px solid #F5A623",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#F5A623",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,flexShrink:0}}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F5A623" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Bulk Give Coins
               </button>
-          </div>
-          {/* Bottom: Quick Coins list — independently scrollable */}
-          {sorted.length > 0 && (
-            <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",borderTop:`1px solid ${BORDER}`}}>
-              <div style={{padding:"8px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8,background:"#fff",flexShrink:0}}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}}>Quick Coins</span>
-                <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
-                  style={{height:26,padding:"0 8px",border:`1.5px solid ${BORDER}`,borderRadius:7,fontFamily:"Poppins,sans-serif",fontSize:11,color:"#1A0A14",outline:"none",width:100,background:"#fff",caretColor:"#1A0A14"}}/>
-              </div>
-              <div style={{flex:1,overflowY:"auto",background:"#fff"}}>
-                {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
-                  .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
-                  .map((p,i,arr) => {
-                    const grp = ses.groups.find(g=>g.id===p.gid);
-                    const coins = ses.otherCoins||TV_DEFAULT;
-                    return (
-                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
-                        <Av s={p.av} color={grp?.color||PINK} size={28}/>
-                        <div style={{width:100,flexShrink:0}}>
-                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
-                          <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
-                        </div>
-                        <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
-                          <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:4}}>
-                            {coins.map((v,ci) => (
-                              <button key={ci}
-                                onClick={e=>{e.stopPropagation();setSelId(p.id);award(p.id,"token",v,e.clientX,e.clientY);}}
-                                style={{minWidth:Math.abs(v)>=100?38:30,height:30,borderRadius:7,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?9:11,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
-                                {v>0?"+":""}{v}
-                              </button>
-                            ))}
+              {/* Quick Coins — continuous list, no inner scroll box */}
+              {sorted.length > 0 && (<>
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 2px"}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}}>Quick Coins</span>
+                  <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
+                    style={{height:28,padding:"0 10px",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Poppins,sans-serif",fontSize:12,color:"#1A0A14",outline:"none",width:110,background:"#fff",caretColor:"#1A0A14"}}/>
+                </div>
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+                  {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
+                    .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
+                    .map((p,i,arr) => {
+                      const grp = ses.groups.find(g=>g.id===p.gid);
+                      const coins = ses.otherCoins||TV_DEFAULT;
+                      return (
+                        <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
+                          <Av s={p.av} color={grp?.color||PINK} size={32}/>
+                          <div style={{width:110,flexShrink:0}}>
+                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                            <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
+                          </div>
+                          <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
+                            <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:5}}>
+                              {coins.map((v,ci) => (
+                                <button key={ci}
+                                  onClick={e=>{e.stopPropagation();setSelId(p.id);award(p.id,"token",v,e.clientX,e.clientY);}}
+                                  style={{minWidth:Math.abs(v)>=100?40:34,height:34,borderRadius:8,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?9:11,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
+                                  {v>0?"+":""}{v}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-              </div>
+                      );
+                    })}
+                </div>
+              </>)}
+              <div style={{height:20}}/>
             </div>
-          )}
           </div>
         )}
 
@@ -2969,8 +2969,8 @@ function CoinmasterView({ session: init, onBack }) {
               {hasGrps && (
                 <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`,flexShrink:0,background:"#fff"}}>
                   {[
-                    ["individual",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</>],
-                    ["groups",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</>]
+                    ["individual",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</span>],
+                    ["groups",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</span>]
                   ].map(([id,label])=>(
                     <button key={id} onClick={()=>setBoardSubTab(id)}
                       style={{padding:"9px 14px",border:"none",background:"none",display:"flex",alignItems:"center",gap:5,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:boardSubTab===id?PINK:SUB,cursor:"pointer",borderBottom:boardSubTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
@@ -3902,8 +3902,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   {hasGrps && (
                     <div style={{display:"flex",background:ses.boardVisible?"rgba(255,255,255,.08)":"#fff",border:`1.5px solid ${ses.boardVisible?"rgba(255,255,255,.15)":BORDER}`,borderRadius:11,overflow:"hidden",flexShrink:0}}>
                       {[
-                        ["individual",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</>],
-                        ["groups",<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</>]
+                        ["individual",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</span>],
+                        ["groups",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</span>]
                       ].map(([id,label])=>(
                         <button key={id} onClick={()=>setBoardSubTab(id)}
                           style={{flex:1,padding:"9px 0",border:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:5,background:boardSubTab===id?(ses.boardVisible?"rgba(255,255,255,.12)":SOFT):(ses.boardVisible?"transparent":"#fff"),fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:boardSubTab===id?(ses.boardVisible?"#fff":PINK):(ses.boardVisible?"rgba(255,255,255,.45)":SUB),cursor:"pointer",borderBottom:boardSubTab===id?`2.5px solid ${ses.boardVisible?"#fff":PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
@@ -4270,7 +4270,7 @@ function LuckyDraw({ participants, badgeAwarded, onClose }) {
             <div style={{width:160,borderLeft:"1px solid rgba(255,79,184,.12)",padding:"12px 10px",overflowY:"auto",flexShrink:0}}>
               <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",letterSpacing:1,textTransform:"uppercase",marginBottom:10}}>Results</div>
               {winners.map((h,i)=>(
-                <div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:8,opacity:h.status==="skipped"?.5:1}}>
+                <div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:8,opacity:h.status==="skipped" ? 0.5 : 1}}>
                   <Av s={h.av} color={PINK} size={24}/>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{h.name}</div>
@@ -4744,7 +4744,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
           <div style={{display:"flex",gap:8}}>
             <Inp value={displayName} onChange={e=>setDisplayName(e.target.value)} placeholder="Your name" style={{flex:1,margin:0}}/>
             <button onClick={saveName} disabled={busy||displayName.trim()===trainer?.name}
-              style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",opacity:busy||displayName.trim()===trainer?.name?.6:1,flexShrink:0}}>
+              style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",opacity:(busy||displayName.trim()===trainer?.name) ? 0.6 : 1,flexShrink:0}}>
               {busy?"Saving...":"Save"}
             </button>
           </div>
@@ -4779,7 +4779,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
             </div>
             {!linked && (
               <button onClick={linkGoogle} disabled={linkBusy}
-                style={{padding:"8px 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",opacity:linkBusy?.6:1}}>
+                style={{padding:"8px 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",opacity:linkBusy ? 0.6 : 1}}>
                 {linkBusy?"Linking...":"Link"}
               </button>
             )}
@@ -4898,7 +4898,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
               <div style={{background:`${pd.color}18`,border:`1.5px solid ${pd.color}44`,borderRadius:99,padding:"3px 12px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:pd.color}}>{isBetaPlan?"Beta Access":"Active"}</div>
             </div>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:TEXT,marginBottom:4,lineHeight:1}}>
-              {isBetaPlan?<span style={{fontSize:18,fontWeight:700,color:GREEN}}>Full Pro — Complimentary</span>:<>{pd.price}{!isFree&&pd.renewal!=="one-time"&&<span style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</span>}</>}
+              {isBetaPlan?<span style={{fontSize:18,fontWeight:700,color:GREEN}}>Full Pro — Complimentary</span>:<span style={{display:"contents"}}>{pd.price}{!isFree&&pd.renewal!=="one-time"&&<span style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</span>}</span>}
             </div>
             {pd.next && <div style={{fontSize:12,color:isBetaPlan?"#16A34A":SUB,fontWeight:600,marginTop:6}}>Beta access until {pd.next}</div>}
             {isFree && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>No time limit · No card required</div>}
@@ -5468,7 +5468,7 @@ function SuperAdminDashboard({ onClose }) {
                   onMouseOver={e=>{ if(!inviteBusy&&inviteEmail.trim()) e.currentTarget.style.opacity="0.85"; }}
                   onMouseOut={e=>{ e.currentTarget.style.opacity="1"; }}>
                   {inviteBusy ? (
-                    <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Adding…</>
+                    <span style={{display:"contents"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Adding…</span>
                   ) : "Add to Beta"}
                 </button>
               </div>
@@ -5824,8 +5824,8 @@ function BadgePickerModal({ participant, sessionName, hostName, onAward, onClose
             <button onClick={()=>fileRef.current?.click()}
               style={{width:"100%",padding:"12px",border:`1.5px dashed ${uploadErr?'#EF4444':BORDER}`,borderRadius:12,background:customFile?"#F0FDF4":SOFT,cursor:"pointer",fontSize:13,color:SUB,fontFamily:"Poppins,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
               {customFile
-                ? <><img src={customFile} alt="custom" style={{width:28,height:28}}/><span style={{color:GREEN,fontWeight:600}}>SVG uploaded ✓</span></>
-                : <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>.svg only · max 10KB · 48×48px recommended</span></>
+                ? <span style={{display:"contents"}}><img src={customFile} alt="custom" style={{width:28,height:28}}/><span style={{color:GREEN,fontWeight:600}}>SVG uploaded ✓</span></span>
+                : <span style={{display:"contents"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>.svg only · max 10KB · 48×48px recommended</span></span>
               }
             </button>
             <input ref={fileRef} type="file" accept=".svg,image/svg+xml" style={{display:"none"}} onChange={handleSvgUpload}/>
@@ -6033,6 +6033,8 @@ export default function App() {
   const [showSuperAdmin, setShowSuperAdmin] = useState(false);
   const [showHostEarnings, setShowHostEarnings] = useState(false);
   const [homeEarnings, setHomeEarnings] = useState(null); // {totalCoins, totalSessions}
+  const [recentJoined, setRecentJoined] = useState([]); // [{code,name,coins,joinedAt,lastUpdated}]
+  const [homeRightTab, setHomeRightTab] = useState("created"); // "created" | "joined"
   const [limitModal, setLimitModal] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -6257,6 +6259,9 @@ export default function App() {
       const snap = await getDoc(doc(db, "users", uid, "data", "earnings"));
       const list = snap.exists() ? (snap.data().value || []) : [];
       setHomeEarnings({ totalCoins: list.reduce((s,e)=>s+e.coins,0), totalSessions: list.length });
+      // Sort by most recent and keep for "Recently Joined" section
+      const sorted = [...list].sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0));
+      setRecentJoined(sorted);
     } catch { setHomeEarnings({ totalCoins:0, totalSessions:0 }); }
   }
 
@@ -6643,12 +6648,21 @@ export default function App() {
 
           {/* RIGHT col: recent sessions */}
           <div className="tc-home-right" style={{padding:"20px"}}>
-            {/* Desktop section label */}
-            <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1.2,fontFamily:"Poppins,sans-serif",marginBottom:12}}>Recent Sessions Created</div>
+            {/* Tabs: Created | Joined */}
+            <div style={{display:"flex",gap:0,marginBottom:16,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,overflow:"hidden"}}>
+              {[["created","Sessions Created"],["joined","Sessions Joined"]].map(([id,label])=>(
+                <button key={id} onClick={()=>setHomeRightTab(id)}
+                  style={{flex:1,padding:"9px 0",border:"none",background:homeRightTab===id?SOFT:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:homeRightTab===id?PINK:SUB,cursor:"pointer",borderBottom:homeRightTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
+                  {label}
+                </button>
+              ))}
+            </div>
 
-            {(() => {
+            {homeRightTab==="created" && (() => {
               const active = sessions.filter(s=>!s.archived);
               const archived = sessions.filter(s=>s.archived);
+              const showAll = showArchived;
+              const displayed = (showAll ? sessions : active).slice(0,showAll?999:5);
               return (
                 <>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:8,flexWrap:"wrap"}}>
@@ -6669,8 +6683,8 @@ export default function App() {
                   )}
 
                   <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                    {(showArchived ? sessions : active).map(s => (
-                      <div key={s.code} style={{background:"#fff",border:`1.5px solid ${s.archived?"#E5E7EB":BORDER}`,borderRadius:14,display:"flex",alignItems:"center",overflow:"hidden",opacity:s.archived?.7:1}}>
+                    {displayed.map(s => (
+                      <div key={s.code} style={{background:"#fff",border:`1.5px solid ${s.archived?"#E5E7EB":BORDER}`,borderRadius:14,display:"flex",alignItems:"center",overflow:"hidden",opacity:s.archived ? 0.7 : 1}}>
                         <button onClick={()=>handleOpen(s.code)} style={{flex:1,display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left",transition:"background .12s"}}
                           onMouseOver={e=>e.currentTarget.style.background=SOFT}
                           onMouseOut={e=>e.currentTarget.style.background="transparent"}>
@@ -6727,7 +6741,66 @@ export default function App() {
                       </div>
                     ))}
                   </div>
+                  {/* View full list button if more than 5 */}
+                  {active.length > 5 && !showArchived && (
+                    <button onClick={()=>setShowArchived(false)} style={{width:"100%",padding:"10px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",marginTop:2}}>
+                      View all {active.length} sessions →
+                    </button>
+                  )}
                 </>
+              );
+            })()}
+
+            {homeRightTab==="joined" && (() => {
+              const list = recentJoined.slice(0,10);
+              return (
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {list.length === 0 ? (
+                    <div style={{border:`1.5px dashed ${BORDER}`,borderRadius:14,padding:"36px",textAlign:"center"}}>
+                      <div style={{fontSize:13,color:SUB,lineHeight:1.7}}>No sessions joined yet.<br/>Join a session as a participant to see it here.</div>
+                    </div>
+                  ) : list.map((s,i) => (
+                    <div key={s.code+i} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,display:"flex",alignItems:"center",overflow:"hidden"}}>
+                      <button onClick={async()=>{
+                        // Try to rejoin as participant
+                        const live = await sgSession(s.code);
+                        if (!live) { alert("Session not found or has ended."); return; }
+                        setScreen("join");
+                        // Pass code to join screen
+                        setTimeout(()=>{ const el=document.querySelector("input[placeholder*='code']"); if(el){el.value=s.code;el.dispatchEvent(new Event("input",{bubbles:true}));} }, 100);
+                      }} style={{flex:1,display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:"none",border:"none",cursor:"pointer",textAlign:"left",transition:"background .12s"}}
+                        onMouseOver={e=>e.currentTarget.style.background=SOFT}
+                        onMouseOut={e=>e.currentTarget.style.background="transparent"}>
+                        <div style={{width:44,height:44,borderRadius:10,background:SOFT,border:`1.5px solid ${MID}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          <div style={{fontFamily:"Poppins,sans-serif",fontWeight:500,fontSize:9,color:PINK,letterSpacing:.5}}>{s.code}</div>
+                        </div>
+                        <div style={{flex:1,textAlign:"left"}}>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,lineHeight:1.2,marginBottom:2}}>{s.name}</div>
+                          <div style={{display:"flex",alignItems:"center",gap:8,fontSize:11,color:SUB}}>
+                            <span>{s.joinedAt ? new Date(s.joinedAt).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : ""}</span>
+                            {(s.coins||0) > 0 && <>
+                              <span style={{color:BORDER}}>·</span>
+                              <span style={{color:PINK,fontWeight:600}}>{s.coins} coins earned</span>
+                            </>}
+                          </div>
+                        </div>
+                      </button>
+                      <button onClick={async()=>{
+                        const live = await sgSession(s.code);
+                        if (!live) { alert("This session is no longer available."); return; }
+                        if (!live.live) { alert("This session is currently offline."); return; }
+                        setScreen("join");
+                        setTimeout(()=>{ const el=document.querySelector("input[placeholder*='code'],input[placeholder*='CODE']"); if(el){el.value=s.code;el.dispatchEvent(new Event("input",{bubbles:true}));} }, 150);
+                      }} title="Rejoin session" style={{padding:"0 14px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,gap:5,color:PINK,flexShrink:0}}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.5" strokeLinecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11}}>Rejoin</span>
+                      </button>
+                    </div>
+                  ))}
+                  {recentJoined.length > 10 && (
+                    <div style={{textAlign:"center",fontSize:11,color:SUB,padding:"8px 0"}}>Showing 10 most recent · older sessions in your earnings history</div>
+                  )}
+                </div>
               );
             })()}
             <div style={{height:48}}/>
