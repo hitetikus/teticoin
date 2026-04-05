@@ -2898,42 +2898,44 @@ function CoinmasterView({ session: init, onBack }) {
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Bulk Give Coins
               </button>
-              {/* Quick Coins — continuous list, no inner scroll box */}
+              {/* Quick Coins — flat cards, no wrapper container */}
               {sorted.length > 0 && (<>
-                <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 2px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 2px"}}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                   <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}}>Quick Coins</span>
                   <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
                     style={{height:28,padding:"0 10px",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Poppins,sans-serif",fontSize:12,color:"#1A0A14",outline:"none",width:110,background:"#fff",caretColor:"#1A0A14"}}/>
                 </div>
-                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                  {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
-                    .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
-                    .map((p,i,arr) => {
-                      const grp = ses.groups.find(g=>g.id===p.gid);
-                      const coins = ses.otherCoins||TV_DEFAULT;
-                      return (
-                        <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
-                          <Av s={p.av} color={grp?.color||PINK} size={32}/>
-                          <div style={{width:110,flexShrink:0}}>
-                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
-                            <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
-                          </div>
-                          <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
-                            <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:5}}>
-                              {coins.map((v,ci) => (
-                                <button key={ci}
-                                  onClick={e=>{e.stopPropagation();setSelId(p.id);award(p.id,"token",v,e.clientX,e.clientY);}}
-                                  style={{minWidth:Math.abs(v)>=100?40:34,height:34,borderRadius:8,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?9:11,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
-                                  {v>0?"+":""}{v}
-                                </button>
-                              ))}
+                {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
+                  .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
+                  .map((p) => {
+                    const grp = ses.groups.find(g=>g.id===p.gid);
+                    const isCMp = ses.coinmasterEnabled && (ses.coinmasterUids||[]).includes(p.uid);
+                    const coins = ses.otherCoins||TV_DEFAULT;
+                    return (
+                      <div key={p.id} style={{background:"#fff",border:`1.5px solid ${isCMp?"#DDD6FE":BORDER}`,borderRadius:14,padding:"10px 12px",display:"flex",flexDirection:"column",gap:8}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <Av s={p.av} color={isCMp?"#9CA3AF":grp?.color||PINK} size={32}/>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:isCMp?"#9CA3AF":TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",display:"flex",alignItems:"center",gap:5}}>
+                              {p.name}
+                              {isCMp && <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"1px 6px",flexShrink:0}}>CM</span>}
                             </div>
+                            <div style={{fontSize:10,color:isCMp?"#9CA3AF":PINK,fontWeight:700}}>{p.total} pts</div>
                           </div>
                         </div>
-                      );
-                    })}
-                </div>
+                        <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:6}}>
+                          {coins.map((v,ci) => (
+                            <button key={ci}
+                              onClick={e=>{e.stopPropagation();setSelId(p.id);award(p.id,"token",v,e.clientX,e.clientY);}}
+                              style={{minWidth:Math.abs(v)>=100?44:36,height:36,borderRadius:9,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?10:12,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
+                              {v>0?"+":""}{v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
               </>)}
               <div style={{height:20}}/>
             </div>
@@ -3634,10 +3636,10 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 Bulk Give Coins
               </button>
             ) : (
-              <button onClick={()=>setProGateHint("massgive")} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PINK},${PINK2})`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <button onClick={()=>setProGateHint("massgive")} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,opacity:0.7}}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span>Bulk Give Coins</span>
-                <svg width="14" height="12" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
+                <span style={{fontSize:10,background:"rgba(255,255,255,0.2)",borderRadius:99,padding:"2px 8px",fontWeight:700}}>PRO</span>
               </button>
             )}
 
@@ -3654,13 +3656,17 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
                   .map((p,i,arr) => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
+                    const isCMp = isPro && ses.coinmasterEnabled && (ses.coinmasterUids||[]).includes(p.uid);
                     const coins = ses.otherCoins||TV_DEFAULT;
                     return (
-                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
-                        <Av s={p.av} color={grp?.color||PINK} size={28}/>
+                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",opacity:isCMp?0.55:1}}>
+                        <Av s={p.av} color={isCMp?"#9CA3AF":grp?.color||PINK} size={28}/>
                         <div style={{width:100,flexShrink:0}}>
-                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
-                          <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:isCMp?"#9CA3AF":TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",display:"flex",alignItems:"center",gap:4}}>
+                            {p.name}
+                            {isCMp && <span style={{fontSize:8,fontWeight:800,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"1px 5px",flexShrink:0}}>CM</span>}
+                          </div>
+                          <div style={{fontSize:10,color:isCMp?"#9CA3AF":PINK,fontWeight:700}}>{p.total} pts</div>
                         </div>
                         <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
                           <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:4}}>
@@ -3732,7 +3738,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     </div>
                     <div style={{fontSize:11,color:ses.coinmasterEnabled?"rgba(245,166,35,.65)":SUB,marginTop:1}}>
                       {ses.coinmasterEnabled
-                        ? `${(ses.coinmasterUids||[]).length} assigned — tap ⋯ on a logged-in participant to assign`
+                        ? `${(ses.coinmasterUids||[]).length} assigned — participants marked "logged in" can be assigned`
                         : "Enable so participants can be assigned as co-hosts"}
                     </div>
                   </div>
@@ -3777,6 +3783,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                             <div style={{display:"flex",alignItems:"center",gap:5}}>
                               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
                               {isCM && <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#7C3AED",borderRadius:99,padding:"1px 6px",flexShrink:0}}>CM</span>}
+                              {ses.coinmasterEnabled && !isCM && p.uid && <span style={{fontSize:9,fontWeight:700,color:"#16A34A",background:"#DCFCE7",border:"1px solid #86EFAC",borderRadius:99,padding:"1px 6px",flexShrink:0}}>● logged in</span>}
                             </div>
                             <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                           </div>
