@@ -5936,49 +5936,67 @@ function EarningsPage({ uid, name, onClose }) {
 function HomeJoinSection({ setCur, setScreen }) {
   const [showJoinScanner, setShowJoinScanner] = useState(false);
   const [joinScanErr, setJoinScanErr] = useState("");
-  const joinScannerRef = useRef(null);
   const joinHtml5QrRef = useRef(null);
 
-  useEffect(() => {
-    if (!showJoinScanner) {
-      if (joinHtml5QrRef.current) { joinHtml5QrRef.current.stop().catch(()=>{}); joinHtml5QrRef.current = null; }
-      setJoinScanErr("");
-      return;
+  function closeScanner() {
+    // Stop the scanner and clean up the container element to prevent DOM leaks
+    if (joinHtml5QrRef.current) {
+      joinHtml5QrRef.current.stop().catch(()=>{});
+      joinHtml5QrRef.current = null;
     }
+    // Nuke any leftover DOM Html5Qrcode injected into the container
+    try {
+      const el = document.getElementById("tc-home-join-scanner");
+      if (el) el.innerHTML = "";
+    } catch(e) {}
+    setJoinScanErr("");
+    setShowJoinScanner(false);
+  }
+
+  useEffect(() => {
+    if (!showJoinScanner) return;
     const cid = "tc-home-join-scanner";
-    // Small delay to let the DOM element mount before initialising
     const timer = setTimeout(() => {
       function initScan() {
         if (!window.Html5Qrcode) { setJoinScanErr("Camera library failed to load."); return; }
-        // Clean up any previous instance on the same container
-        if (joinHtml5QrRef.current) { joinHtml5QrRef.current.stop().catch(()=>{}); joinHtml5QrRef.current = null; }
-        const sc = new window.Html5Qrcode(cid);
-        joinHtml5QrRef.current = sc;
-        sc.start({facingMode:"environment"},{fps:15,qrbox:(vw)=>({width:Math.min(vw*0.85,400),height:Math.min(vw*0.85,400)}),aspectRatio:window.innerHeight/window.innerWidth}, async(text) => {
-          sc.stop().catch(()=>{}); joinHtml5QrRef.current = null; setShowJoinScanner(false);
-          const raw = text.replace(/.*\/join\//i,"").replace(/[^A-Z0-9]/gi,"").toUpperCase();
-          const code = raw.slice(0,8);
-          if (!code) return;
-          const s = await sgSession(code);
-          if (s) {
-            setCur(s);
-            window.history.pushState({}, "", `/join/${code}`);
-            setScreen(auth.currentUser ? "participant" : "participant");
-          }
-        }, ()=>{}).catch(()=>{ setJoinScanErr("Camera access denied. Please allow camera access in your browser settings and try again."); });
+        try {
+          const sc = new window.Html5Qrcode(cid);
+          joinHtml5QrRef.current = sc;
+          sc.start(
+            {facingMode:"environment"},
+            {fps:15,qrbox:(vw)=>({width:Math.min(vw*0.85,400),height:Math.min(vw*0.85,400)}),aspectRatio:window.innerHeight/window.innerWidth},
+            async(text) => {
+              sc.stop().catch(()=>{}); joinHtml5QrRef.current = null;
+              setShowJoinScanner(false);
+              const raw = text.replace(/.*\/join\//i,"").replace(/[^A-Z0-9]/gi,"").toUpperCase();
+              const code = raw.slice(0,8);
+              if (!code) return;
+              const s = await sgSession(code);
+              if (s) { setCur(s); window.history.pushState({}, "", `/join/${code}`); setScreen("participant"); }
+            },
+            ()=>{}
+          ).catch(()=>{
+            joinHtml5QrRef.current = null;
+            setJoinScanErr("Camera access denied. Tap Back and allow camera access in your browser settings.");
+          });
+        } catch(e) {
+          setJoinScanErr("Could not start camera. Tap Back and try again.");
+        }
       }
       if (window.Html5Qrcode) { initScan(); }
       else {
-        const sc = document.createElement("script");
-        sc.src = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
-        sc.onload = initScan; sc.onerror = ()=>setJoinScanErr("Failed to load camera library."); document.head.appendChild(sc);
+        const s = document.createElement("script");
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
+        s.onload = initScan;
+        s.onerror = ()=>setJoinScanErr("Failed to load camera library.");
+        document.head.appendChild(s);
       }
     }, 100);
     return () => {
       clearTimeout(timer);
       if (joinHtml5QrRef.current) { joinHtml5QrRef.current.stop().catch(()=>{}); joinHtml5QrRef.current = null; }
     };
-  }, [showJoinScanner]); // re-runs when scanner is opened/closed
+  }, [showJoinScanner]);
 
   return (
     <div style={{background:"#F8FAFC",border:"1.5px solid #E2E8F0",borderRadius:16,padding:"18px 16px",marginBottom:16}}>
@@ -5994,7 +6012,7 @@ function HomeJoinSection({ setCur, setScreen }) {
       </button>
       {showJoinScanner && (
         <div style={{position:"fixed",inset:0,zIndex:9999,background:"#000",display:"flex",flexDirection:"column"}}>
-          {!joinScanErr && <div id="tc-home-join-scanner" ref={joinScannerRef} style={{flex:1,width:"100%"}}/>}
+          {!joinScanErr && <div id="tc-home-join-scanner" style={{flex:1,width:"100%"}}/>}
           {joinScanErr && (
             <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32,gap:16}}>
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -6006,8 +6024,8 @@ function HomeJoinSection({ setCur, setScreen }) {
           )}
           <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,.75)",backdropFilter:"blur(10px)",padding:"16px 20px 32px",display:"flex",flexDirection:"column",gap:10}}>
             {!joinScanErr && <div style={{textAlign:"center",fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:600}}>Point camera at a Teticoin session QR code</div>}
-            {joinScanErr && <div style={{textAlign:"center",fontSize:13,color:"rgba(255,255,255,.6)"}}>Check your browser settings to allow camera access, then tap Back and try again.</div>}
-            <button onClick={()=>{ setShowJoinScanner(false); if(joinScanErr) window.location.reload(); }}
+            {joinScanErr && <div style={{textAlign:"center",fontSize:13,color:"rgba(255,255,255,.7)",lineHeight:1.5}}>{joinScanErr}</div>}
+            <button onClick={closeScanner}
               style={{width:"100%",padding:"13px 0",background:"rgba(255,255,255,.12)",border:"1.5px solid rgba(255,255,255,.25)",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:"#fff",cursor:"pointer"}}>
               Back
             </button>
