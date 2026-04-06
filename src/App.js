@@ -2113,45 +2113,44 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     <div style={{minHeight:"100vh",background:`linear-gradient(160deg,#FFF0F7 0%,#F3E8FF 100%)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",fontFamily:"Poppins,sans-serif"}}>
       {optionalLoginModalJSX}
       <BadgeClaimPrompt/>
-      {/* Session badge at top */}
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:24}}>
         <Ham size={36}/>
         <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</span>
       </div>
 
-      <div style={{background:"#fff",borderRadius:24,padding:"28px 24px 32px",maxWidth:380,width:"100%",boxShadow:`0 8px 40px rgba(233,30,140,.12)`}}>
-        {/* Session code pill */}
-        <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
-          <div style={{background:GRAD,borderRadius:12,padding:"8px 20px",display:"inline-flex",flexDirection:"column",alignItems:"center",gap:2}}>
-            <div style={{fontSize:10,color:"rgba(255,255,255,.8)",fontWeight:600,letterSpacing:1.5,textTransform:"uppercase"}}>Joining session</div>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,letterSpacing:5,color:"#fff"}}>{live?.code}</div>
+      <div style={{background:"#fff",borderRadius:24,overflow:"hidden",maxWidth:380,width:"100%",boxShadow:`0 8px 40px rgba(233,30,140,.12)`}}>
+        {/* Session code — full width pink banner */}
+        <div style={{background:GRAD,padding:"16px 24px",textAlign:"center"}}>
+          <div style={{fontSize:10,color:"rgba(255,255,255,.8)",fontWeight:600,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>Joining session</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:28,letterSpacing:6,color:"#fff"}}>{live?.code}</div>
+        </div>
+
+        <div style={{padding:"28px 24px 32px"}}>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,textAlign:"center",marginBottom:20}}>What's your name?</div>
+
+          <div style={{marginBottom:6}}>
+            <input
+              placeholder="e.g. Jimmy"
+              value={name}
+              onChange={e=>setName(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&checkName()}
+              autoFocus
+              style={{width:"100%",boxSizing:"border-box",padding:"14px 16px",border:`2px solid ${name.trim()?PINK:BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:400,fontSize:16,color:TEXT,outline:"none",transition:"border-color .15s",background:"#fff",caretColor:PINK,textAlign:"center"}}
+            />
           </div>
-        </div>
+          <div style={{fontSize:11,color:SUB,textAlign:"center",marginBottom:20,lineHeight:1.6}}>
+            Please remember this name if you want to join this session again as the same person.
+          </div>
 
-        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,textAlign:"center",marginBottom:6}}>What's your name?</div>
-        <div style={{fontSize:13,color:SUB,textAlign:"center",marginBottom:20,lineHeight:1.5}}>This is how you'll appear on the scoreboard.</div>
+          <PBtn full onClick={checkName} disabled={!name.trim()}>
+            Join Session
+          </PBtn>
 
-        {/* Name field with explicit label */}
-        <div style={{marginBottom:16}}>
-          <div style={{fontSize:11,fontWeight:700,color:PINK,textTransform:"uppercase",letterSpacing:1.5,marginBottom:6,textAlign:"left"}}>Your display name</div>
-          <input
-            placeholder="e.g. Ahmad Faris"
-            value={name}
-            onChange={e=>setName(e.target.value)}
-            onKeyDown={e=>e.key==="Enter"&&checkName()}
-            autoFocus
-            style={{width:"100%",boxSizing:"border-box",padding:"14px 16px",border:`2px solid ${name.trim()?PINK:BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:16,color:TEXT,outline:"none",transition:"border-color .15s",background:"#fff",caretColor:PINK}}
-          />
-        </div>
-
-        <PBtn full onClick={checkName} disabled={!name.trim()}>
-          Let's go! →
-        </PBtn>
-
-        <div style={{marginTop:16,borderTop:`1px solid ${BORDER}`,paddingTop:16,textAlign:"center"}}>
-          <button onClick={()=>setLoginModal(true)} style={{background:"none",border:"none",fontSize:12,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif",fontWeight:600}}>
-            Have an account? <span style={{color:PINK,textDecoration:"underline",textUnderlineOffset:2}}>Log in to save progress</span>
-          </button>
+          <div style={{marginTop:16,borderTop:`1px solid ${BORDER}`,paddingTop:16,textAlign:"center"}}>
+            <button onClick={()=>setLoginModal(true)} style={{background:"none",border:"none",fontSize:12,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif",fontWeight:600}}>
+              Have an account? <span style={{color:PINK,textDecoration:"underline",textUnderlineOffset:2}}>Log in to save progress</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -2369,16 +2368,11 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
       {/* ── Top nav bar ── */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10,flexShrink:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <Ham size={28}/>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
+        <div style={{display:"flex",flexDirection:"column",justifyContent:"center"}}>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,lineHeight:1.2}}>{live?.name||"Session"}</div>
+          <div style={{fontSize:11,color:SUB,fontWeight:600,letterSpacing:1}}>{live?.code}</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <button onClick={()=>setShowMyQR(v=>!v)}
-            style={{display:"flex",alignItems:"center",gap:5,background:showMyQR?SOFT:"none",border:`1px solid ${showMyQR?PINK:BORDER}`,borderRadius:9,padding:"5px 10px",fontSize:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,color:showMyQR?PINK:SUB,cursor:"pointer"}}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
-            My QR
-          </button>
           {linkedUid ? (
             <button onClick={async()=>{
               try { await signOut(auth); } catch(e){}
@@ -2397,79 +2391,94 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         </div>
       </div>
 
-      {/* ── Identity header row — different bg for logged-in vs guest ── */}
-      <div style={{background:linkedUid?"linear-gradient(135deg,#1A0A14,#2D1040)":"#F8F8FA",borderBottom:`1px solid ${linkedUid?"rgba(233,30,140,.2)":BORDER}`,padding:"10px 16px",flexShrink:0}}>
-        <div style={{maxWidth:420,margin:"0 auto",display:"flex",alignItems:"center",gap:10}}>
-          <div style={{background:linkedUid?"rgba(233,30,140,.2)":SOFT,border:`1.5px solid ${linkedUid?"rgba(233,30,140,.4)":MID}`,borderRadius:10,padding:"4px 14px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:linkedUid?"#FF4FB8":PINK,letterSpacing:2,flexShrink:0}}>
-            {me ? pNum(me.num) : "—"}
-          </div>
-          {editingName ? (
-            <div style={{display:"flex",gap:6,flex:1,minWidth:0}}>
-              <input autoFocus value={editNameVal} onChange={e=>setEditNameVal(e.target.value)}
-                onKeyDown={e=>{
-                  if(e.key==="Enter"&&editNameVal.trim()){
-                    const newName=editNameVal.trim();
-                    const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
-                    setLive(u); ssSession(init.code,u); setEditingName(false);
-                  }
-                  if(e.key==="Escape") setEditingName(false);
-                }}
-                style={{flex:1,minWidth:0,padding:"5px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#1A0A14",background:"#fff",outline:"none",caretColor:"#1A0A14"}}/>
-              <button onClick={()=>{
-                if(!editNameVal.trim()){setEditingName(false);return;}
-                const newName=editNameVal.trim();
-                const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
-                setLive(u); ssSession(init.code,u); setEditingName(false);
-              }} style={{padding:"0 12px",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",flexShrink:0}}>Save</button>
-              <button onClick={()=>setEditingName(false)} style={{padding:"0 8px",background:"none",border:`1px solid ${linkedUid?"rgba(255,255,255,.2)":BORDER}`,borderRadius:9,fontSize:13,color:linkedUid?"rgba(255,255,255,.5)":SUB,cursor:"pointer",flexShrink:0}}>✕</button>
-            </div>
-          ) : (
-            <div style={{display:"flex",alignItems:"center",gap:6,flex:1,minWidth:0}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:linkedUid?"#fff":TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{me?.name||"—"}</div>
-              <button onClick={()=>{setEditNameVal(me?.name||"");setEditingName(true);}}
-                title="Edit display name"
-                style={{background:linkedUid?"rgba(255,255,255,.15)":"none",border:linkedUid?`1px solid rgba(255,255,255,.25)`:"none",borderRadius:7,cursor:"pointer",color:linkedUid?"rgba(255,255,255,.9)":SUB,padding:"3px 6px",flexShrink:0,lineHeight:1,display:"flex",alignItems:"center"}}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-              {linkedUid && <span style={{fontSize:10,background:"rgba(233,30,140,.25)",color:"#FF4FB8",borderRadius:99,padding:"1px 8px",fontWeight:700,flexShrink:0}}>Logged in</span>}
-            </div>
-          )}
-        </div>
-      </div>
+
 
       <div style={{flex:1,overflowY:"auto",padding:"16px 16px",display:"flex",flexDirection:"column",alignItems:"center",gap:12,maxWidth:420,margin:"0 auto",width:"100%"}}>
 
+        {/* Earned badges — shown if logged in */}
+        {linkedUid && <ParticipantBadges uid={linkedUid}/>}
+
+        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",overflow:"hidden"}}>
+          {coinFlash && (
+            <div key={coinFlash.key} style={{position:"absolute",top:10,right:18,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:coinFlash.pts<0?"#EF4444":PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
+              {coinFlash.pts>0?"+":""}{coinFlash.pts}
+            </div>
+          )}
+          {/* Sound toggle */}
+          <button onClick={()=>{
+            const next = !participantSoundOn;
+            setParticipantSoundOn(next);
+            soundOnRef.current = next;
+            getAudioCtx();
+            if (next) playCoinSoundRef.current(10);
+          }}
+            style={{position:"absolute",bottom:10,right:12,background:"none",border:"none",cursor:"pointer",color:participantSoundOn?PINK:"#D1D5DB",padding:4,lineHeight:0,zIndex:3}}
+            title={participantSoundOn?"Mute sounds":"Unmute sounds"}>
+            {participantSoundOn ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+            )}
+          </button>
+          {/* Name + participant number + edit */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+            <span style={{background:SOFT,border:`1.5px solid ${MID}`,borderRadius:8,padding:"3px 10px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:PINK,letterSpacing:1.5,flexShrink:0}}>
+              {me ? pNum(me.num) : "—"}
+            </span>
+            {editingName ? (
+              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                <input autoFocus value={editNameVal} onChange={e=>setEditNameVal(e.target.value)}
+                  onKeyDown={e=>{
+                    if(e.key==="Enter"&&editNameVal.trim()){
+                      const newName=editNameVal.trim();
+                      const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
+                      setLive(u); ssSession(init.code,u); setEditingName(false);
+                    }
+                    if(e.key==="Escape") setEditingName(false);
+                  }}
+                  style={{padding:"5px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",caretColor:PINK,maxWidth:150}}/>
+                <button onClick={()=>{
+                  if(!editNameVal.trim()){setEditingName(false);return;}
+                  const newName=editNameVal.trim();
+                  const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
+                  setLive(u); ssSession(init.code,u); setEditingName(false);
+                }} style={{padding:"0 10px",height:30,background:GRAD,border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
+                <button onClick={()=>setEditingName(false)} style={{padding:"0 8px",height:30,background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:13,color:SUB,cursor:"pointer"}}>✕</button>
+              </div>
+            ) : (
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:TEXT}}>{me?.name||"—"}</span>
+                <button onClick={()=>{setEditNameVal(me?.name||"");setEditingName(true);}}
+                  title="Edit display name"
+                  style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,cursor:"pointer",color:SUB,padding:"3px 6px",lineHeight:1,display:"flex",alignItems:"center"}}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                {linkedUid && <span style={{fontSize:10,background:`${GREEN}18`,color:GREEN,borderRadius:99,padding:"1px 8px",fontWeight:700}}>Logged in</span>}
+              </div>
+            )}
+          </div>
+          <div style={{fontSize:11,fontWeight:700,color:SUB,marginBottom:4,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:80,lineHeight:1,color:PINK,letterSpacing:-4,transition:"transform .18s ease",transform:coinFlash?"scale(1.07)":"scale(1)"}}>{me?.total||0}</div>
+          <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
+        </div>
+
+        {/* My QR button — compact, below coin card */}
+        {me && (
+          <button onClick={()=>setShowMyQR(v=>!v)}
+            style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",background:showMyQR?SOFT:"#fff",border:`1.5px solid ${showMyQR?PINK:BORDER}`,borderRadius:12,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:showMyQR?PINK:SUB,transition:"all .15s"}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
+            {showMyQR ? "Hide My QR" : "Show My QR"}
+          </button>
+        )}
+
         {showMyQR && me && (
           <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center"}}>
-            <div style={{fontSize:11,color:SUB,fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>My QR Code</div>
             <PQR p={me} code={init.code} size={160}/>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:10,letterSpacing:2}}>{pNum(me.num)}</div>
             <div style={{fontSize:12,color:SUB,marginTop:2}}>{me.name}</div>
             <div style={{fontSize:11,color:SUB,marginTop:6,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
           </div>
         )}
-
-        {/* Earned badges — shown if logged in */}
-        {linkedUid && <ParticipantBadges uid={linkedUid}/>}
-
-        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"28px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",overflow:"hidden"}}>
-          {coinFlash && (
-            <div key={coinFlash.key} style={{position:"absolute",top:10,right:18,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:coinFlash.pts<0?"#EF4444":PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
-              {coinFlash.pts>0?"+":""}{coinFlash.pts}
-            </div>
-          )}
-          {/* Sound toggle — bottom right, no text */}
-          <button onClick={()=>{
-            const next = !participantSoundOn;
-            setParticipantSoundOn(next);
-            soundOnRef.current = next;
-            // Unlock AudioContext on this gesture
-            getAudioCtx();
-            // Play a tiny test beep when unmuting so user knows it worked
-            if (next) playCoinSoundRef.current(10);
-          }}
-            style={{position:"absolute",bottom:10,right:12,background:"none",border:"none",cursor:"pointer",color:participantSoundOn?PINK:"#D1D5DB",padding:4,lineHeight:0,zIndex:3}}
-            title={participantSoundOn?"Mute sounds":"Unmute sounds"}>
             {participantSoundOn ? (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
             ) : (
@@ -2481,16 +2490,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
         </div>
 
-        <div style={{width:"100%",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-          {ACTS.map(a => (
-            <div key={a.id} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"12px 8px",textAlign:"center"}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:a.col}}>{me?.bk?.[a.id]||0}</div>
-              <div style={{fontSize:10,color:SUB,fontWeight:600,lineHeight:1.3,marginTop:2}}>{a.label}</div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{fontSize:12,color:SUB,textAlign:"center",lineHeight:1.8,marginTop:4}}>
+        <div style={{fontSize:12,color:SUB,textAlign:"center",lineHeight:1.8}}>
           {sorted.length <= 1 ? "Waiting for others to join..." : "Scoreboard will appear when host shares it"}
         </div>
 
