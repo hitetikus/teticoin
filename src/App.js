@@ -2109,20 +2109,57 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     </div>
   );
 
-  if (step === "name") return card(<>
-    <Ham size={60}/>
-    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginTop:6,marginBottom:4,lineHeight:1.1}}>Join Session</div>
-    <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:10,padding:"6px 16px",margin:"10px auto 20px",display:"inline-block"}}>
-      <div style={{fontSize:10,color:SUB,fontWeight:600}}>Session</div>
-      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,letterSpacing:4,color:PINK}}>{live?.code}</div>
+  if (step === "name") return (
+    <div style={{minHeight:"100vh",background:`linear-gradient(160deg,#FFF0F7 0%,#F3E8FF 100%)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",fontFamily:"Poppins,sans-serif"}}>
+      {optionalLoginModalJSX}
+      <BadgeClaimPrompt/>
+      {/* Session badge at top */}
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:24}}>
+        <Ham size={36}/>
+        <span style={{fontFamily:"Nunito,sans-serif",fontWeight:900,fontSize:18,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</span>
+      </div>
+
+      <div style={{background:"#fff",borderRadius:24,padding:"28px 24px 32px",maxWidth:380,width:"100%",boxShadow:`0 8px 40px rgba(233,30,140,.12)`}}>
+        {/* Session code pill */}
+        <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
+          <div style={{background:GRAD,borderRadius:12,padding:"8px 20px",display:"inline-flex",flexDirection:"column",alignItems:"center",gap:2}}>
+            <div style={{fontSize:10,color:"rgba(255,255,255,.8)",fontWeight:600,letterSpacing:1.5,textTransform:"uppercase"}}>Joining session</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,letterSpacing:5,color:"#fff"}}>{live?.code}</div>
+          </div>
+        </div>
+
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,textAlign:"center",marginBottom:6}}>What's your name?</div>
+        <div style={{fontSize:13,color:SUB,textAlign:"center",marginBottom:20,lineHeight:1.5}}>This is how you'll appear on the scoreboard.</div>
+
+        {/* Name field with explicit label */}
+        <div style={{marginBottom:16}}>
+          <div style={{fontSize:11,fontWeight:700,color:PINK,textTransform:"uppercase",letterSpacing:1.5,marginBottom:6,textAlign:"left"}}>Your display name</div>
+          <input
+            placeholder="e.g. Ahmad Faris"
+            value={name}
+            onChange={e=>setName(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&checkName()}
+            autoFocus
+            style={{width:"100%",boxSizing:"border-box",padding:"14px 16px",border:`2px solid ${name.trim()?PINK:BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:16,color:TEXT,outline:"none",transition:"border-color .15s",background:"#fff",caretColor:PINK}}
+          />
+        </div>
+
+        <PBtn full onClick={checkName} disabled={!name.trim()}>
+          Let's go! →
+        </PBtn>
+
+        <div style={{marginTop:16,borderTop:`1px solid ${BORDER}`,paddingTop:16,textAlign:"center"}}>
+          <button onClick={()=>setLoginModal(true)} style={{background:"none",border:"none",fontSize:12,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif",fontWeight:600}}>
+            Have an account? <span style={{color:PINK,textDecoration:"underline",textUnderlineOffset:2}}>Log in to save progress</span>
+          </button>
+        </div>
+      </div>
+
+      <div style={{marginTop:20,fontSize:11,color:"rgba(157,80,255,.6)",textAlign:"center"}}>
+        Powered by Teticoin · No account needed
+      </div>
     </div>
-    <Inp placeholder="Your full name" value={name} onChange={e=>setName(e.target.value)}
-      onKeyDown={e=>e.key==="Enter"&&checkName()} style={{textAlign:"center",marginBottom:12}}/>
-    <PBtn full onClick={checkName} disabled={!name.trim()}>Continue</PBtn>
-    <button onClick={()=>setLoginModal(true)} style={{marginTop:12,background:"none",border:"none",fontSize:12,color:PINK,cursor:"pointer",fontFamily:"Poppins,sans-serif",fontWeight:600,textDecoration:"underline",textUnderlineOffset:3}}>
-      Log in / Register to save progress
-    </button>
-  </>);
+  );
 
   if (step === "hostblocked") return card(<>
     <div style={{width:64,height:64,borderRadius:20,background:"#FFF7ED",border:"2px solid #FED7AA",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
