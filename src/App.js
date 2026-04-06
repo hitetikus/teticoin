@@ -2479,10 +2479,6 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             <div style={{fontSize:11,color:SUB,marginTop:6,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
           </div>
         )}
-          <div style={{fontSize:11,fontWeight:700,color:SUB,marginBottom:6,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:80,lineHeight:1,color:PINK,letterSpacing:-4,transition:"transform .18s ease",transform:coinFlash?"scale(1.07)":"scale(1)"}}>{me?.total||0}</div>
-          <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
-        </div>
 
         <div style={{fontSize:12,color:SUB,textAlign:"center",lineHeight:1.8}}>
           {sorted.length <= 1 ? "Waiting for others to join..." : "Scoreboard will appear when host shares it"}
