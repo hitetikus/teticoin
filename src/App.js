@@ -2208,7 +2208,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     </div>
     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Name already in use</div>
     <div style={{fontSize:14,color:SUB,marginBottom:6,lineHeight:1.6}}>
-      Someone named <strong style={{color:TEXT}}>{returnMatch.name}</strong> is already in this session{returnMatch.total > 0 ? ` with ${returnMatch.total} coins` : ""}.
+      Someone named <strong style={{color:TEXT}}>{returnMatch.name}</strong> (<span style={{color:PINK,fontWeight:700}}>{pNum(returnMatch.num)}</span>) is already in this session{returnMatch.total > 0 ? ` with ${returnMatch.total} coins` : ""}.
     </div>
     <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
       <button onClick={()=>setStep("name")} style={{padding:"13px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
@@ -2231,7 +2231,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       style={{width:"100%",marginTop:16,padding:"13px 0",background:pinInput.length===4?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:pinInput.length===4?"#fff":SUB,cursor:pinInput.length===4?"pointer":"not-allowed"}}>
       Confirm PIN
     </button>
-    <button onClick={()=>setStep("name")} style={{marginTop:8,background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>\u2190 Back</button>
+    <button onClick={()=>setStep("name")} style={{marginTop:8,background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>← Back</button>
   </>);
 
   if (step === "newpin") return card(<>
@@ -2245,10 +2245,10 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     <PinPad value={pin} onChange={setPin} length={4}/>
     <button onClick={setNewPin} disabled={pin.length<4}
       style={{width:"100%",marginTop:16,padding:"13px 0",background:pin.length===4?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:pin.length===4?"#fff":SUB,cursor:pin.length===4?"pointer":"not-allowed"}}>
-      Set PIN &amp; Join
+      Set PIN & Join
     </button>
     <button onClick={skipPin} style={{marginTop:10,background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif",textDecoration:"underline"}}>
-      Skip \u2014 join without PIN
+      Skip — join without PIN
     </button>
   </>);
 
@@ -2480,7 +2480,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             )}
           </div>
           <div style={{fontSize:11,fontWeight:700,color:SUB,marginBottom:4,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:80,lineHeight:1,color:PINK,letterSpacing:-4,transition:"transform .18s ease",transform:coinFlash?"scale(1.07)":"scale(1)"}}>{me?.total||0}</div>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.max(60,160-((String(me?.total||0).length-1)*30)),lineHeight:1,color:PINK,letterSpacing:-4,transition:"font-size .2s ease, transform .18s ease",transform:coinFlash?"scale(1.07)":"scale(1)",whiteSpace:"nowrap"}}>{me?.total||0}</div>
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
         </div>
 
