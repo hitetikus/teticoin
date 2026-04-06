@@ -674,25 +674,80 @@ function MassGive({ participants, groups, onAward, onClose }) {
 
           <SL>Step 2 — Choose Method</SL>
 
-          {/* Give All */}
+          {/* QR Scan — first option */}
           <div>
-            {methodBtn("all",
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={mode==="all"?"#fff":PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-              "Give to Everyone", `All ${participants.length} participants get coins`
+            {methodBtn("scan",
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={mode==="scan"?"#fff":PINK} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill={mode==="scan"?"#fff":PINK}/><rect x="16" y="5" width="3" height="3" fill={mode==="scan"?"#fff":PINK}/><rect x="5" y="16" width="3" height="3" fill={mode==="scan"?"#fff":PINK}/><path d="M14 14h3v3"/><path d="M17 14v3h3"/><path d="M14 17h3"/></svg>,
+              "Scan Participant's QR", `Scan participant's screen · ${scanLog.length} scanned`
             )}
-            {mode==="all" && ok && (
-              <button onClick={doAll} style={{width:"100%",padding:"12px 0",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
-                Give +{finalAmt} to All {participants.length}
-              </button>
+            {mode==="scan" && (
+              <div onClick={e=>e.stopPropagation()}>
+                {!ok && <div style={{textAlign:"center",padding:"10px 0 12px",fontSize:13,color:SUB}}>Select an amount above first</div>}
+                {ok && scanning && (
+                  <div style={{position:"fixed",inset:0,zIndex:9999,background:"#000",display:"flex",flexDirection:"column"}}>
+                    {/* Full-screen camera — fills viewport, native pinch-to-zoom works on the video element */}
+                    <div id="tc-qr-scanner" style={{flex:1,width:"100%"}}/>
+                    {/* Bottom bar */}
+                    <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,.75)",backdropFilter:"blur(10px)",padding:"16px 20px 32px",display:"flex",flexDirection:"column",gap:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div style={{fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:600}}>
+                          {scanLog.length===0?"Point camera at participant's QR code":`✓ ${scanLog.length} scanned · +${finalAmt} each`}
+                        </div>
+                        <div style={{fontSize:13,color:PINK,fontWeight:800}}>+{finalAmt}</div>
+                      </div>
+                      <button onClick={stopScanner}
+                        style={{width:"100%",padding:"13px 0",background:"rgba(255,255,255,.12)",border:"1.5px solid rgba(255,255,255,.25)",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:"#fff",cursor:"pointer"}}>
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {ok && !scanning && scannerErr && (
+                  <div style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:12,padding:"14px 16px",marginBottom:10,display:"flex",flexDirection:"column",gap:8}}>
+                    <div style={{fontSize:13,color:"#EF4444",fontWeight:700}}>{scannerErr}</div>
+                    <div style={{display:"flex",gap:8}}>
+                      <button onClick={()=>{ setScannerErr(""); setScanning(true); }}
+                        style={{flex:1,padding:"9px 0",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#fff",cursor:"pointer"}}>
+                        Try Again
+                      </button>
+                      <button onClick={()=>{ setScannerErr(""); setMode(null); }}
+                        style={{flex:1,padding:"9px 0",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Scan log */}
+                {scanLog.length > 0 && (
+                  <div style={{borderRadius:12,border:`1px solid ${BORDER}`,overflow:"hidden"}}>
+                    <div style={{padding:"8px 12px",background:BG,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,color:SUB,textTransform:"uppercase",letterSpacing:1,borderBottom:`1px solid ${BORDER}`}}>
+                      Scanned ({scanLog.length})
+                    </div>
+                    {scanLog.map((p,i) => {
+                      const grp = groups.find(g=>g.id===p.gid);
+                      return (
+                        <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff"}}>
+                          <div style={{width:6,height:6,borderRadius:"50%",background:GREEN,flexShrink:0}}/>
+                          <span style={{fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,color:PINK,minWidth:36}}>{pNum(p.num)}</span>
+                          <Av s={p.av} color={grp?.color||PINK} size={26}/>
+                          <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>{p.name}</span>
+                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:GREEN}}>+{finalAmt}</span>
+                          <span style={{fontSize:10,color:SUB}}>{p.t}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             )}
-            {mode==="all" && !ok && <div style={{textAlign:"center",fontSize:13,color:SUB,padding:"8px 0 10px"}}>Select an amount above first</div>}
           </div>
 
-          {/* Multi select */}
+          {/* Multi select — second */}
           <div>
             {methodBtn("multi",
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={mode==="multi"?"#fff":PINK} strokeWidth="2.2" strokeLinecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
-              "Select Participants", mode==="multi"?`${sel.size} selected`:"Pick specific people"
+              "Select Multiple Participants", mode==="multi"?`${sel.size} selected`:"Pick specific people"
             )}
             {mode==="multi" && (
               <div onClick={e=>e.stopPropagation()}>
@@ -725,67 +780,18 @@ function MassGive({ participants, groups, onAward, onClose }) {
             )}
           </div>
 
-          {/* QR Scan — real camera */}
+          {/* Give All — third */}
           <div>
-            {methodBtn("scan",
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={mode==="scan"?"#fff":PINK} strokeWidth="2.2" strokeLinecap="round"><polyline points="23 7 23 1 17 1"/><line x1="16" y1="8" x2="23" y2="1"/><polyline points="1 17 1 23 7 23"/><line x1="8" y1="16" x2="1" y2="23"/><polyline points="23 17 23 23 17 23"/><line x1="16" y1="16" x2="23" y2="23"/><polyline points="1 7 1 1 7 1"/><line x1="8" y1="8" x2="1" y2="1"/></svg>,
-              "Scan QR One by One", `Scan participant's screen · ${scanLog.length} scanned`
+            {methodBtn("all",
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={mode==="all"?"#fff":PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+              "Give to Everyone", `All ${participants.length} participants get coins`
             )}
-            {mode==="scan" && (
-              <div onClick={e=>e.stopPropagation()}>
-                {!ok && <div style={{textAlign:"center",padding:"10px 0 12px",fontSize:13,color:SUB}}>Select an amount above first</div>}
-                {ok && scanning && (
-                  <div style={{position:"fixed",inset:0,zIndex:9999,background:"#000",display:"flex",flexDirection:"column"}}>
-                    {/* Full-screen camera — fills viewport, native pinch-to-zoom works on the video element */}
-                    <div id="tc-qr-scanner" style={{flex:1,width:"100%"}}/>
-                    {/* Bottom bar */}
-                    <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,.75)",backdropFilter:"blur(10px)",padding:"16px 20px 32px",display:"flex",flexDirection:"column",gap:10}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <div style={{fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:600}}>
-                          {scanLog.length===0?"Point camera at participant's QR code":`✓ ${scanLog.length} scanned · +${finalAmt} each`}
-                        </div>
-                        <div style={{fontSize:13,color:PINK,fontWeight:800}}>+{finalAmt}</div>
-                      </div>
-                      <button onClick={stopScanner}
-                        style={{width:"100%",padding:"13px 0",background:"rgba(255,255,255,.12)",border:"1.5px solid rgba(255,255,255,.25)",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:"#fff",cursor:"pointer"}}>
-                        Back
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {ok && !scanning && scannerErr && (
-                  <div style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:12,padding:"14px 16px",marginBottom:10,display:"flex",flexDirection:"column",gap:8}}>
-                    <div style={{fontSize:13,color:"#EF4444",fontWeight:700}}>{scannerErr}</div>
-                    <button onClick={()=>{setScannerErr("");startScanner();}}
-                      style={{padding:"9px 0",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#fff",cursor:"pointer"}}>
-                      Try Again
-                    </button>
-                  </div>
-                )}
-
-                {/* Scan log */}
-                {scanLog.length > 0 && (
-                  <div style={{borderRadius:12,border:`1px solid ${BORDER}`,overflow:"hidden"}}>
-                    <div style={{padding:"8px 12px",background:BG,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,color:SUB,textTransform:"uppercase",letterSpacing:1,borderBottom:`1px solid ${BORDER}`}}>
-                      Scanned ({scanLog.length})
-                    </div>
-                    {scanLog.map((p,i) => {
-                      const grp = groups.find(g=>g.id===p.gid);
-                      return (
-                        <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff"}}>
-                          <div style={{width:6,height:6,borderRadius:"50%",background:GREEN,flexShrink:0}}/>
-                          <span style={{fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,color:PINK,minWidth:36}}>{pNum(p.num)}</span>
-                          <Av s={p.av} color={grp?.color||PINK} size={26}/>
-                          <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>{p.name}</span>
-                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:GREEN}}>+{finalAmt}</span>
-                          <span style={{fontSize:10,color:SUB}}>{p.t}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+            {mode==="all" && ok && (
+              <button onClick={doAll} style={{width:"100%",padding:"12px 0",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
+                Give +{finalAmt} to All {participants.length}
+              </button>
             )}
+            {mode==="all" && !ok && <div style={{textAlign:"center",fontSize:13,color:SUB,padding:"8px 0 10px"}}>Select an amount above first</div>}
           </div>
         </div>
       </div>
@@ -5929,6 +5935,7 @@ function EarningsPage({ uid, name, onClose }) {
 function HomeJoinSection({ setCur, setScreen }) {
   const [showJoinScanner, setShowJoinScanner] = useState(false);
   const [joinScanErr, setJoinScanErr] = useState("");
+  const [retryKey, setRetryKey] = useState(0); // increment to force scanner restart
   const joinScannerRef = useRef(null);
   const joinHtml5QrRef = useRef(null);
 
@@ -5939,31 +5946,39 @@ function HomeJoinSection({ setCur, setScreen }) {
       return;
     }
     const cid = "tc-home-join-scanner";
-    function initScan() {
-      if (!window.Html5Qrcode) { setJoinScanErr("Camera library failed to load."); return; }
-      const sc = new window.Html5Qrcode(cid);
-      joinHtml5QrRef.current = sc;
-      sc.start({facingMode:"environment"},{fps:15,qrbox:(vw)=>({width:Math.min(vw*0.85,400),height:Math.min(vw*0.85,400)}),aspectRatio:window.innerHeight/window.innerWidth}, async(text) => {
-        sc.stop().catch(()=>{}); joinHtml5QrRef.current = null; setShowJoinScanner(false);
-        const raw = text.replace(/.*\/join\//i,"").replace(/[^A-Z0-9]/gi,"").toUpperCase();
-        const code = raw.slice(0,8);
-        if (!code) return;
-        const s = await sgSession(code);
-        if (s) {
-          setCur(s);
-          window.history.pushState({}, "", `/join/${code}`);
-          setScreen(auth.currentUser ? "participant" : "participant");
-        }
-      }, ()=>{}).catch(()=>{ setJoinScanErr("Camera access denied. Please allow camera access and try again."); });
-    }
-    if (window.Html5Qrcode) { initScan(); }
-    else {
-      const sc = document.createElement("script");
-      sc.src = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
-      sc.onload = initScan; sc.onerror = ()=>setJoinScanErr("Failed to load camera library."); document.head.appendChild(sc);
-    }
-    return () => { if (joinHtml5QrRef.current) { joinHtml5QrRef.current.stop().catch(()=>{}); joinHtml5QrRef.current = null; } };
-  }, [showJoinScanner]);
+    // Small delay to let the DOM element mount before initialising
+    const timer = setTimeout(() => {
+      function initScan() {
+        if (!window.Html5Qrcode) { setJoinScanErr("Camera library failed to load."); return; }
+        // Clean up any previous instance on the same container
+        if (joinHtml5QrRef.current) { joinHtml5QrRef.current.stop().catch(()=>{}); joinHtml5QrRef.current = null; }
+        const sc = new window.Html5Qrcode(cid);
+        joinHtml5QrRef.current = sc;
+        sc.start({facingMode:"environment"},{fps:15,qrbox:(vw)=>({width:Math.min(vw*0.85,400),height:Math.min(vw*0.85,400)}),aspectRatio:window.innerHeight/window.innerWidth}, async(text) => {
+          sc.stop().catch(()=>{}); joinHtml5QrRef.current = null; setShowJoinScanner(false);
+          const raw = text.replace(/.*\/join\//i,"").replace(/[^A-Z0-9]/gi,"").toUpperCase();
+          const code = raw.slice(0,8);
+          if (!code) return;
+          const s = await sgSession(code);
+          if (s) {
+            setCur(s);
+            window.history.pushState({}, "", `/join/${code}`);
+            setScreen(auth.currentUser ? "participant" : "participant");
+          }
+        }, ()=>{}).catch(()=>{ setJoinScanErr("Camera access denied. Please allow camera access in your browser settings and try again."); });
+      }
+      if (window.Html5Qrcode) { initScan(); }
+      else {
+        const sc = document.createElement("script");
+        sc.src = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
+        sc.onload = initScan; sc.onerror = ()=>setJoinScanErr("Failed to load camera library."); document.head.appendChild(sc);
+      }
+    }, 100);
+    return () => {
+      clearTimeout(timer);
+      if (joinHtml5QrRef.current) { joinHtml5QrRef.current.stop().catch(()=>{}); joinHtml5QrRef.current = null; }
+    };
+  }, [showJoinScanner, retryKey]); // retryKey forces effect to re-run for "Try Again"
 
   return (
     <div style={{background:"#F8FAFC",border:"1.5px solid #E2E8F0",borderRadius:16,padding:"18px 16px",marginBottom:16}}>
@@ -5991,7 +6006,7 @@ function HomeJoinSection({ setCur, setScreen }) {
           )}
           <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,.75)",backdropFilter:"blur(10px)",padding:"16px 20px 32px",display:"flex",flexDirection:"column",gap:10}}>
             {!joinScanErr && <div style={{textAlign:"center",fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:600}}>Point camera at a Teticoin session QR code</div>}
-            {joinScanErr && <button onClick={()=>{setJoinScanErr("");setShowJoinScanner(false);setTimeout(()=>setShowJoinScanner(true),100);}}
+            {joinScanErr && <button onClick={()=>{setJoinScanErr(""); setRetryKey(k=>k+1);}}
               style={{width:"100%",padding:"13px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:"#fff",cursor:"pointer"}}>
               Try Again
             </button>}
