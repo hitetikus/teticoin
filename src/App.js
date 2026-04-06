@@ -584,6 +584,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
       html5QrRef.current = null;
     }
     setScanning(false);
+    setMode(null);
   }
 
   useEffect(() => {
@@ -677,7 +678,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
           {/* QR Scan — first option */}
           <div>
             {methodBtn("scan",
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={mode==="scan"?"#fff":PINK} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill={mode==="scan"?"#fff":PINK}/><rect x="16" y="5" width="3" height="3" fill={mode==="scan"?"#fff":PINK}/><rect x="5" y="16" width="3" height="3" fill={mode==="scan"?"#fff":PINK}/><path d="M14 14h3v3"/><path d="M17 14v3h3"/><path d="M14 17h3"/></svg>,
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={mode==="scan"?"#fff":PINK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="14.01"/><line x1="17" y1="14" x2="17" y2="14.01"/><line x1="20" y1="14" x2="20" y2="14.01"/><line x1="14" y1="17" x2="14" y2="17.01"/><line x1="17" y1="17" x2="20" y2="17"/><line x1="20" y1="17" x2="20" y2="20"/><line x1="14" y1="20" x2="17" y2="20"/></svg>,
               "Scan Participant's QR", `Scan participant's screen · ${scanLog.length} scanned`
             )}
             {mode==="scan" && (
@@ -5935,7 +5936,6 @@ function EarningsPage({ uid, name, onClose }) {
 function HomeJoinSection({ setCur, setScreen }) {
   const [showJoinScanner, setShowJoinScanner] = useState(false);
   const [joinScanErr, setJoinScanErr] = useState("");
-  const [retryKey, setRetryKey] = useState(0); // increment to force scanner restart
   const joinScannerRef = useRef(null);
   const joinHtml5QrRef = useRef(null);
 
@@ -5978,7 +5978,7 @@ function HomeJoinSection({ setCur, setScreen }) {
       clearTimeout(timer);
       if (joinHtml5QrRef.current) { joinHtml5QrRef.current.stop().catch(()=>{}); joinHtml5QrRef.current = null; }
     };
-  }, [showJoinScanner, retryKey]); // retryKey forces effect to re-run for "Try Again"
+  }, [showJoinScanner]); // re-runs when scanner is opened/closed
 
   return (
     <div style={{background:"#F8FAFC",border:"1.5px solid #E2E8F0",borderRadius:16,padding:"18px 16px",marginBottom:16}}>
@@ -6006,11 +6006,8 @@ function HomeJoinSection({ setCur, setScreen }) {
           )}
           <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,.75)",backdropFilter:"blur(10px)",padding:"16px 20px 32px",display:"flex",flexDirection:"column",gap:10}}>
             {!joinScanErr && <div style={{textAlign:"center",fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:600}}>Point camera at a Teticoin session QR code</div>}
-            {joinScanErr && <button onClick={()=>{setJoinScanErr(""); setRetryKey(k=>k+1);}}
-              style={{width:"100%",padding:"13px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:"#fff",cursor:"pointer"}}>
-              Try Again
-            </button>}
-            <button onClick={()=>setShowJoinScanner(false)}
+            {joinScanErr && <div style={{textAlign:"center",fontSize:13,color:"rgba(255,255,255,.6)"}}>Check your browser settings to allow camera access, then tap Back and try again.</div>}
+            <button onClick={()=>{ setShowJoinScanner(false); if(joinScanErr) window.location.reload(); }}
               style={{width:"100%",padding:"13px 0",background:"rgba(255,255,255,.12)",border:"1.5px solid rgba(255,255,255,.25)",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:"#fff",cursor:"pointer"}}>
               Back
             </button>
