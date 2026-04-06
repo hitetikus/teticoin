@@ -1469,6 +1469,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [showLoginPw, setShowLoginPw] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editNameVal, setEditNameVal] = useState("");
+  const [editNameErr, setEditNameErr] = useState("");
   const [returnMatch, setReturnMatch] = useState(null);
   const [pBoardTab, setPBoardTab] = useState("individual"); // participant scoreboard tab
   const [linkedUid, setLinkedUid] = useState(null);       // set after optional login
@@ -1631,8 +1632,13 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     const existing = (live.participants||[]).find(
       p => p.name.toLowerCase().trim() === name.toLowerCase().trim()
     );
-    if (existing) { setReturnMatch(existing); setStep("returning"); }
-    else { setStep(isPro ? "newpin" : "directjoin"); }
+    if (existing) {
+      // If the existing participant is a logged-in user — hard block, guest cannot claim this name
+      if (existing.uid) { setStep("nameTaken"); return; }
+      // Guest name match — show "is this you?" screen
+      setReturnMatch(existing); setStep("returning");
+    }
+    else { setStep("newpin"); }
   }
 
   function directJoin(overrideName) {
@@ -1678,7 +1684,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     }
   }
 
-  function notMe() { setStep(isPro ? "newpin" : "directjoin_new"); }
+  function notMe() { setStep("newpin"); }
 
   function setNewPin() {
     if (pin.length !== 4) return;
@@ -2185,22 +2191,31 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     <div style={{fontSize:13,color:SUB,textAlign:"center",lineHeight:1.7}}>This session has reached its participant limit. Please ask the host to upgrade to Pro for more spots.</div>
   </>);
 
+  if (step === "nameTaken") return card(<>
+    <div style={{width:64,height:64,borderRadius:20,background:"#FEF2F2",border:"2px solid #EF444430",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    </div>
+    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:8}}>Name already taken</div>
+    <div style={{fontSize:13,color:SUB,lineHeight:1.7,marginBottom:20}}>
+      <strong style={{color:TEXT}}>{name.trim()}</strong> is already registered in this session by another user. Please choose a different name.
+    </div>
+    <PBtn full onClick={()=>setStep("name")}>← Choose a Different Name</PBtn>
+  </>);
+
   if (step === "returning") return card(<>
     <div style={{width:64,height:64,borderRadius:20,background:SOFT,border:`2px solid ${MID}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
       <Av s={returnMatch.av} color={PINK} size={44}/>
     </div>
-    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Welcome back!</div>
+    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Name already in use</div>
     <div style={{fontSize:14,color:SUB,marginBottom:6,lineHeight:1.6}}>
-      We found <strong style={{color:TEXT}}>{returnMatch.name}</strong> in this session.
+      Someone named <strong style={{color:TEXT}}>{returnMatch.name}</strong> is already in this session{returnMatch.total > 0 ? ` with ${returnMatch.total} coins` : ""}.
     </div>
-    <div style={{background:SOFT,border:`1px solid ${MID}`,borderRadius:12,padding:"10px 16px",marginBottom:20,display:"inline-flex",alignItems:"center",gap:10}}>
-      <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:PINK}}>{pNum(returnMatch.num)}</span>
-      <span style={{fontSize:13,color:TEXT,fontWeight:600}}>{returnMatch.total} coins</span>
-    </div>
-    <div style={{display:"flex",flexDirection:"column",gap:8}}>
-      <PBtn full onClick={confirmReturn}>Yes, that's me →</PBtn>
-      <button onClick={notMe} style={{padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
-        Not me — I'm someone else
+    <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
+      <button onClick={()=>setStep("name")} style={{padding:"13px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
+        ← Use a Different Name
+      </button>
+      <button onClick={confirmReturn} style={{padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
+        That's me — rejoin
       </button>
     </div>
   </>);
@@ -2426,24 +2441,31 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
               {me ? pNum(me.num) : "—"}
             </span>
             {editingName ? (
-              <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                <input autoFocus value={editNameVal} onChange={e=>setEditNameVal(e.target.value)}
-                  onKeyDown={e=>{
-                    if(e.key==="Enter"&&editNameVal.trim()){
-                      const newName=editNameVal.trim();
-                      const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
-                      setLive(u); ssSession(init.code,u); setEditingName(false);
-                    }
-                    if(e.key==="Escape") setEditingName(false);
-                  }}
-                  style={{padding:"5px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",caretColor:PINK,maxWidth:150}}/>
-                <button onClick={()=>{
-                  if(!editNameVal.trim()){setEditingName(false);return;}
-                  const newName=editNameVal.trim();
-                  const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
-                  setLive(u); ssSession(init.code,u); setEditingName(false);
-                }} style={{padding:"0 10px",height:30,background:GRAD,border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
-                <button onClick={()=>setEditingName(false)} style={{padding:"0 8px",height:30,background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:13,color:SUB,cursor:"pointer"}}>✕</button>
+              <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"stretch"}}>
+                <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                  <input autoFocus value={editNameVal} onChange={e=>{setEditNameVal(e.target.value);setEditNameErr("");}}
+                    onKeyDown={e=>{
+                      if(e.key==="Enter"&&editNameVal.trim()){
+                        const newName=editNameVal.trim();
+                        const taken = (live.participants||[]).some(p=>p.id!==myId&&p.name.trim().toLowerCase()===newName.toLowerCase());
+                        if(taken){setEditNameErr("That name is already taken. Please choose a different name.");return;}
+                        const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
+                        setLive(u); ssSession(init.code,u); setEditingName(false); setEditNameErr("");
+                      }
+                      if(e.key==="Escape"){setEditingName(false);setEditNameErr("");}
+                    }}
+                    style={{padding:"5px 10px",border:`1.5px solid ${editNameErr?"#EF4444":PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",caretColor:PINK,maxWidth:150}}/>
+                  <button onClick={()=>{
+                    if(!editNameVal.trim()){setEditingName(false);setEditNameErr("");return;}
+                    const newName=editNameVal.trim();
+                    const taken = (live.participants||[]).some(p=>p.id!==myId&&p.name.trim().toLowerCase()===newName.toLowerCase());
+                    if(taken){setEditNameErr("That name is already taken. Please choose a different name.");return;}
+                    const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
+                    setLive(u); ssSession(init.code,u); setEditingName(false); setEditNameErr("");
+                  }} style={{padding:"0 10px",height:30,background:GRAD,border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
+                  <button onClick={()=>{setEditingName(false);setEditNameErr("");}} style={{padding:"0 8px",height:30,background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:13,color:SUB,cursor:"pointer"}}>✕</button>
+                </div>
+                {editNameErr && <div style={{fontSize:11,color:"#EF4444",fontWeight:600,lineHeight:1.4}}>{editNameErr}</div>}
               </div>
             ) : (
               <div style={{display:"flex",alignItems:"center",gap:6}}>
