@@ -2836,12 +2836,27 @@ function InlineCoinBtn({ value, bg, border, col, disabled, onAward, onEdit, circ
 // ── Coinmaster View ──
 // Same award UI as host but read-only for settings/live/coin values
 // Standalone board tab for CoinmasterView — needs its own state for the individual/groups sub-tab
-function CMBoardTab({ ses, cmBoardSorted, hasGrps, grpScores, maxGrp, setSelId, setTab }) {
-  const [subTab, setSubTab] = React.useState("individual");
+function CMBoardTab({ ses, cmBoardSorted, hasGrps, grpScores, maxGrp, setSelId, setTab, onToggleBoard }) {
+  const [subTab, setSubTab] = useState("individual");
+  const GREEN = "#22C55E";
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {/* Scoreboard visibility toggle */}
+      <div onClick={onToggleBoard}
+        style={{margin:"10px 14px 0",background:ses.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:13,padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .2s",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ses.boardVisible?GREEN:SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:ses.boardVisible?GREEN:TEXT}}>{ses.boardVisible?"Scoreboard visible to participants":"Show scoreboard to participants"}</div>
+            <div style={{fontSize:11,color:ses.boardVisible?"#16A34A":SUB,marginTop:1}}>{ses.boardVisible?"Tap to hide":"Tap to push scoreboard to participant screens"}</div>
+          </div>
+        </div>
+        <div style={{width:38,height:22,borderRadius:11,background:ses.boardVisible?GREEN:BORDER,position:"relative",transition:"all .2s",flexShrink:0,marginLeft:10}}>
+          <div style={{position:"absolute",top:3,left:ses.boardVisible?19:3,width:16,height:16,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,.2)",transition:"left .2s"}}/>
+        </div>
+      </div>
       {hasGrps && (
-        <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`,flexShrink:0,background:"#fff"}}>
+        <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`,flexShrink:0,background:"#fff",marginTop:10}}>
           {[
             ["individual",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</span>],
             ["groups",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</span>]
@@ -2853,7 +2868,7 @@ function CMBoardTab({ ses, cmBoardSorted, hasGrps, grpScores, maxGrp, setSelId, 
           ))}
         </div>
       )}
-      <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+      <div style={{flex:1,overflowY:"auto",padding:"10px 14px",display:"flex",flexDirection:"column",gap:10}}>
         {(!hasGrps || subTab==="individual") && (
           <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
             {cmBoardSorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
@@ -3206,7 +3221,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
           const hasGrps = ses.participants.some(p=>p.gid!=null) && ses.groups.length>0;
           const grpScores = ses.groups.map(g=>({...g,total:cmBoardSorted.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0),members:cmBoardSorted.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
           const maxGrp = grpScores[0]?.total||1;
-          return <CMBoardTab ses={ses} cmBoardSorted={cmBoardSorted} hasGrps={hasGrps} grpScores={grpScores} maxGrp={maxGrp} setSelId={setSelId} setTab={setTab}/>;
+          return <CMBoardTab ses={ses} cmBoardSorted={cmBoardSorted} hasGrps={hasGrps} grpScores={grpScores} maxGrp={maxGrp} setSelId={setSelId} setTab={setTab} onToggleBoard={()=>mut(s=>{s.boardVisible=!s.boardVisible;})}/>;
         })()}
 
         {/* ── LOG TAB ── */}
