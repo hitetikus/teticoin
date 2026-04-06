@@ -3028,7 +3028,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
 
       {/* TABS */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
-        {[["award","Coins"],["people","Participants"],["board","Board"],["log","Log"]].map(([id,l]) => (
+        {[["award","Coins"],["people","Participants"],["board","Scoreboard"],["log","Log"]].map(([id,l]) => (
           <button key={id} onClick={()=>setTab(id)}
             style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
               color:tab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
@@ -3212,17 +3212,26 @@ function CoinmasterView({ session: init, selfId, onBack }) {
           </div>
         )}
 
-        {/* ── BOARD TAB ── */}
-        {tab==="board" && (() => {
-          // Local versions — boardSorted/boardSubTab don't exist in this scope
-          const cmPids = ses.coinmasterEnabled ? (ses.coinmasterPids||[]) : [];
-          const cmUids = ses.coinmasterEnabled ? (ses.coinmasterUids||[]) : [];
-          const cmBoardSorted = [...ses.participants].filter(p => !(cmPids.includes(p.id)||(p.uid&&cmUids.includes(p.uid)))).sort((a,b)=>b.total-a.total);
-          const hasGrps = ses.participants.some(p=>p.gid!=null) && ses.groups.length>0;
-          const grpScores = ses.groups.map(g=>({...g,total:cmBoardSorted.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0),members:cmBoardSorted.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
-          const maxGrp = grpScores[0]?.total||1;
-          return <CMBoardTab ses={ses} cmBoardSorted={cmBoardSorted} hasGrps={hasGrps} grpScores={grpScores} maxGrp={maxGrp} setSelId={setSelId} setTab={setTab} onToggleBoard={()=>mut(s=>{s.boardVisible=!s.boardVisible;})}/>;
-        })()}
+        {/* ── SCOREBOARD TAB ── */}
+        {tab==="board" && <CMBoardTab
+          ses={ses}
+          cmBoardSorted={[...ses.participants].filter(p=>{
+            const cmPids=ses.coinmasterEnabled?(ses.coinmasterPids||[]):[];
+            const cmUids=ses.coinmasterEnabled?(ses.coinmasterUids||[]):[];
+            return !(cmPids.includes(p.id)||(p.uid&&cmUids.includes(p.uid)));
+          }).sort((a,b)=>b.total-a.total)}
+          hasGrps={ses.participants.some(p=>p.gid!=null)&&ses.groups.length>0}
+          grpScores={ses.groups.map(g=>{
+            const cmPids=ses.coinmasterEnabled?(ses.coinmasterPids||[]):[];
+            const cmUids=ses.coinmasterEnabled?(ses.coinmasterUids||[]):[];
+            const members=ses.participants.filter(p=>p.gid===g.id&&!(cmPids.includes(p.id)||(p.uid&&cmUids.includes(p.uid))));
+            return {...g,total:members.reduce((s,p)=>s+(p.total||0),0),members};
+          }).sort((a,b)=>b.total-a.total)}
+          maxGrp={Math.max(1,...ses.groups.map(g=>ses.participants.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0)))}
+          setSelId={setSelId}
+          setTab={setTab}
+          onToggleBoard={()=>mut(s=>{s.boardVisible=!s.boardVisible;})}
+        />}
 
         {/* ── LOG TAB ── */}
         {tab==="log" && (
