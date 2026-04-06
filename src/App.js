@@ -717,18 +717,21 @@ function MassGive({ participants, groups, onAward, onClose }) {
                   </div>
                 )}
                 {ok && !scanning && scannerErr && (
-                  <div style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:12,padding:"14px 16px",marginBottom:10,display:"flex",flexDirection:"column",gap:10}}>
-                    <div style={{fontSize:13,color:"#EF4444",fontWeight:600,lineHeight:1.5}}>{scannerErr}</div>
-                    <div style={{display:"flex",gap:8}}>
-                      <button onClick={()=>{ setScannerErr(""); startScanner(); }}
-                        style={{flex:1,padding:"9px 0",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#fff",cursor:"pointer"}}>
-                        Try Again
-                      </button>
-                      <button onClick={()=>{ setScannerErr(""); setMode(null); }}
-                        style={{flex:1,padding:"9px 0",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>
-                        Back
-                      </button>
+                  <div style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:12,padding:"16px",marginBottom:10,display:"flex",flexDirection:"column",gap:12}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#EF4444"}}>Camera access denied</div>
                     </div>
+                    <div style={{fontSize:12,color:"#7F1D1D",lineHeight:1.7}}>
+                      To enable camera access:<br/>
+                      1. Tap the <strong>lock/info icon</strong> in your browser's address bar<br/>
+                      2. Find <strong>Camera</strong> and set it to <strong>Allow</strong><br/>
+                      3. Reload the page and try again
+                    </div>
+                    <button onClick={()=>{ setScannerErr(""); setMode(null); }}
+                      style={{width:"100%",padding:"10px 0",background:"#EF4444",border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#fff",cursor:"pointer"}}>
+                      Back
+                    </button>
                   </div>
                 )}
 
@@ -5986,7 +5989,7 @@ function HomeJoinSection({ setCur, setScreen }) {
             ()=>{}
           ).catch(()=>{
             joinHtml5QrRef.current = null;
-            setJoinScanErr("Camera access denied. Tap 'Try Again' to re-request access, or check your browser settings.");
+            setJoinScanErr("denied");
           });
         } catch(e) {
           setJoinScanErr("Could not start camera. Tap Back and try again.");
@@ -6023,22 +6026,21 @@ function HomeJoinSection({ setCur, setScreen }) {
         <div style={{position:"fixed",inset:0,zIndex:9999,background:"#000",display:"flex",flexDirection:"column"}}>
           {!joinScanErr && <div id={`tc-home-join-scanner-${joinScanAttempt}`} style={{flex:1,width:"100%"}}/>}
           {joinScanErr && (
-            <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32,gap:16}}>
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-              <div style={{textAlign:"center",color:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif"}}>
-                <div style={{fontWeight:800,fontSize:16,marginBottom:6}}>{joinScanErr}</div>
-                <div style={{fontSize:13,color:"rgba(255,255,255,.6)"}}>You may need to allow camera access in your browser settings first.</div>
+            <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32,gap:20}}>
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              <div style={{textAlign:"center",color:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",maxWidth:280}}>
+                <div style={{fontWeight:800,fontSize:18,marginBottom:12}}>Camera access denied</div>
+                <div style={{fontSize:13,color:"rgba(255,255,255,.75)",lineHeight:1.8,textAlign:"left"}}>
+                  To enable camera access:<br/>
+                  1. Tap the <strong style={{color:"#fff"}}>lock / info icon</strong> in your browser's address bar<br/>
+                  2. Find <strong style={{color:"#fff"}}>Camera</strong> and set it to <strong style={{color:"#fff"}}>Allow</strong><br/>
+                  3. Reload the page and try scanning again
+                </div>
               </div>
             </div>
           )}
           <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,.75)",backdropFilter:"blur(10px)",padding:"16px 20px 32px",display:"flex",flexDirection:"column",gap:10}}>
             {!joinScanErr && <div style={{textAlign:"center",fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:600}}>Point camera at a Teticoin session QR code</div>}
-            {joinScanErr && (
-              <button onClick={()=>{ setJoinScanErr(""); setJoinScanAttempt(n=>n+1); }}
-                style={{width:"100%",padding:"13px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:"#fff",cursor:"pointer"}}>
-                Try Again
-              </button>
-            )}
             <button onClick={closeScanner}
               style={{width:"100%",padding:"13px 0",background:"rgba(255,255,255,.12)",border:"1.5px solid rgba(255,255,255,.25)",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:"#fff",cursor:"pointer"}}>
               Back
