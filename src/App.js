@@ -552,7 +552,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
   const [scanLine, setScanLine] = useState(false);
 
   const finalAmt = amt === "custom" ? Number(cAmt) : amt;
-  const ok = finalAmt > 0 && !isNaN(finalAmt);
+  const ok = finalAmt !== 0 && !isNaN(finalAmt);
   const sorted = [...participants].sort((a,b) => a.num - b.num);
 
   // Refs to avoid stale closures inside the QR scanner callback
@@ -662,7 +662,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
             {TV_DEFAULT.map(v => (
               <button key={v} onClick={()=>{setAmt(v);setCAmt("");}}
                 style={{padding:"12px 8px",borderRadius:12,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:17,background:amt===v?GRAD:"transparent",border:amt===v?"2px solid transparent":`1.5px solid ${BORDER}`,color:amt===v?"#fff":TEXT,transition:"all .12s"}}>
-                +{v}
+                {v>0?"+":""}{v}
               </button>
             ))}
           </div>
@@ -1568,6 +1568,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     if (step !== "joined" || !init?.code) return;
     const t = setInterval(async () => {
       if (loginModal) return; // don't re-render while login modal is open
+      if (editingName) return; // don't overwrite live state while user is typing a new name
       const s = await sgSession(init.code);
       if (!s) return;
       if (myId) {
@@ -2297,7 +2298,11 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
             </div>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,marginBottom:8}}>Session Paused</div>
-            <div style={{fontSize:14,color:SUB,lineHeight:1.7}}>The host has paused this session. Hang tight — it'll resume shortly.</div>
+            <div style={{fontSize:14,color:SUB,lineHeight:1.7,marginBottom:24}}>The host has paused this session. Hang tight — it'll resume shortly.</div>
+            <button onClick={onBack}
+              style={{width:"100%",padding:"12px 0",background:"#F9FAFB",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
+              ← Back to Home
+            </button>
           </div>
         </div>
       )}
@@ -2362,8 +2367,8 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             <div style={{display:"flex",alignItems:"center",gap:6,flex:1,minWidth:0}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:linkedUid?"#fff":TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{me?.name||"—"}</div>
               <button onClick={()=>{setEditNameVal(me?.name||"");setEditingName(true);}}
-                title="Edit name"
-                style={{background:"none",border:"none",cursor:"pointer",color:linkedUid?"rgba(255,255,255,.4)":SUB,padding:"2px 4px",flexShrink:0,lineHeight:1}}>
+                title="Edit display name"
+                style={{background:linkedUid?"rgba(255,255,255,.15)":"none",border:linkedUid?`1px solid rgba(255,255,255,.25)`:"none",borderRadius:7,cursor:"pointer",color:linkedUid?"rgba(255,255,255,.9)":SUB,padding:"3px 6px",flexShrink:0,lineHeight:1,display:"flex",alignItems:"center"}}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
               {linkedUid && <span style={{fontSize:10,background:"rgba(233,30,140,.25)",color:"#FF4FB8",borderRadius:99,padding:"1px 8px",fontWeight:700,flexShrink:0}}>Logged in</span>}
@@ -2591,7 +2596,13 @@ function QRModal({ session, onClose }) {
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 16px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Share Session</div>
-            <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{display:"flex",alignItems:"center",gap:5,background:SOFT,border:`1px solid ${MID}`,borderRadius:99,padding:"4px 10px"}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:PINK}}>{session.participants?.length||0}</span>
+              </div>
+              <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            </div>
           </div>
           <div style={{fontSize:13,color:SUB,marginBottom:20}}>Participants scan or open the link to join. No account needed.</div>
         </div>
@@ -2824,6 +2835,77 @@ function InlineCoinBtn({ value, bg, border, col, disabled, onAward, onEdit, circ
 
 // ── Coinmaster View ──
 // Same award UI as host but read-only for settings/live/coin values
+// Standalone board tab for CoinmasterView — needs its own state for the individual/groups sub-tab
+function CMBoardTab({ ses, cmBoardSorted, hasGrps, grpScores, maxGrp, setSelId, setTab }) {
+  const [subTab, setSubTab] = React.useState("individual");
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {hasGrps && (
+        <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`,flexShrink:0,background:"#fff"}}>
+          {[
+            ["individual",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</span>],
+            ["groups",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</span>]
+          ].map(([id,label])=>(
+            <button key={id} onClick={()=>setSubTab(id)}
+              style={{padding:"9px 14px",border:"none",background:"none",display:"flex",alignItems:"center",gap:5,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:subTab===id?PINK:SUB,cursor:"pointer",borderBottom:subTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+        {(!hasGrps || subTab==="individual") && (
+          <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+            {cmBoardSorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
+            {cmBoardSorted.map((p,i) => {
+              const grp = ses.groups.find(g=>g.id===p.gid); const maxP = cmBoardSorted[0]?.total||1;
+              return (
+                <div key={p.id} onClick={()=>{setSelId(p.id);setTab("award");}} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,cursor:"pointer",background:i===0?SOFT:"#fff",transition:".1s"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
+                    <Av s={p.av} color={grp?.color||PINK} size={34}/>
+                    <div style={{flex:1}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
+                      {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
+                      <div style={{fontSize:10,color:SUB}}>coins</div>
+                    </div>
+                  </div>
+                  <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                    <div style={{height:4,background:GRAD,width:`${(p.total/maxP)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {hasGrps && subTab==="groups" && grpScores.map((g,i)=>(
+          <div key={g.id} style={{padding:"13px 16px",borderRadius:14,border:i===0?`1.5px solid ${g.color}55`:`1.5px solid ${BORDER}`,background:i===0?`${g.color}10`:"#fff"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
+              <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:g.color}}>{g.name}</div>
+                <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
+              </div>
+              <div style={{textAlign:"right",minWidth:56}}>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</div>
+                <div style={{fontSize:10,color:SUB}}>coins</div>
+              </div>
+            </div>
+            <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+              <div style={{height:4,background:g.color,width:`${(g.total/maxGrp)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function CoinmasterView({ session: init, selfId, onBack }) {
   const [ses, setSes] = useState(init);
   const [tab, setTab] = useState("award");
@@ -3022,7 +3104,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                     const isCMp = ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid) || (ses.coinmasterPids||[]).includes(p.id));
                     const coins = ses.otherCoins||TV_DEFAULT;
                     return (
-                      <div key={p.id} style={{background:"#fff",border:`1.5px solid ${isCMp?"#DDD6FE":BORDER}`,borderRadius:14,padding:"10px 12px",display:"flex",flexDirection:"column",gap:8}}>
+                      <div key={p.id} style={{background:"#fff",border:`1.5px solid ${isCMp?"#DDD6FE":BORDER}`,borderRadius:14,padding:"10px 12px",display:"flex",flexDirection:"column",gap:8,opacity:isCMp?0.5:1}}>
                         <div style={{display:"flex",alignItems:"center",gap:8}}>
                           <Av s={p.av} color={isCMp?"#9CA3AF":grp?.color||PINK} size={32}/>
                           <div style={{flex:1,minWidth:0}}>
@@ -3036,8 +3118,9 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                         <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:6}}>
                           {coins.map((v,ci) => (
                             <button key={ci}
-                              onClick={e=>{e.stopPropagation();setSelId(p.id);award(p.id,"token",v,e.clientX,e.clientY);}}
-                              style={{minWidth:Math.abs(v)>=100?44:36,height:36,borderRadius:9,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?10:12,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
+                              disabled={isCMp}
+                              onClick={e=>{e.stopPropagation();if(isCMp)return;setSelId(p.id);award(p.id,"token",v,e.clientX,e.clientY);}}
+                              style={{minWidth:Math.abs(v)>=100?44:36,height:36,borderRadius:9,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:isCMp?"not-allowed":"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?10:12,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0,opacity:isCMp?0.3:1}}>
                               {v>0?"+":""}{v}
                             </button>
                           ))}
@@ -3116,75 +3199,14 @@ function CoinmasterView({ session: init, selfId, onBack }) {
 
         {/* ── BOARD TAB ── */}
         {tab==="board" && (() => {
+          // Local versions — boardSorted/boardSubTab don't exist in this scope
+          const cmPids = ses.coinmasterEnabled ? (ses.coinmasterPids||[]) : [];
+          const cmUids = ses.coinmasterEnabled ? (ses.coinmasterUids||[]) : [];
+          const cmBoardSorted = [...ses.participants].filter(p => !(cmPids.includes(p.id)||(p.uid&&cmUids.includes(p.uid)))).sort((a,b)=>b.total-a.total);
           const hasGrps = ses.participants.some(p=>p.gid!=null) && ses.groups.length>0;
-          const grpScores = ses.groups.map(g=>({...g,total:boardSorted.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0),members:boardSorted.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
+          const grpScores = ses.groups.map(g=>({...g,total:cmBoardSorted.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0),members:cmBoardSorted.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
           const maxGrp = grpScores[0]?.total||1;
-          return (
-            <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-              {hasGrps && (
-                <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`,flexShrink:0,background:"#fff"}}>
-                  {[
-                    ["individual",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>&nbsp;Individual</span>],
-                    ["groups",<span style={{display:"contents"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>&nbsp;Groups</span>]
-                  ].map(([id,label])=>(
-                    <button key={id} onClick={()=>setBoardSubTab(id)}
-                      style={{padding:"9px 14px",border:"none",background:"none",display:"flex",alignItems:"center",gap:5,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:boardSubTab===id?PINK:SUB,cursor:"pointer",borderBottom:boardSubTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
-                {(!hasGrps || boardSubTab==="individual") && (
-                  <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                    {boardSorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:SUB}}>No participants yet</div></div>}
-                    {boardSorted.map((p,i) => {
-                      const grp = ses.groups.find(g=>g.id===p.gid); const maxP = boardSorted[0]?.total||1;
-                      return (
-                        <div key={p.id} onClick={()=>{setSelId(p.id);setTab("award");}} style={{padding:"12px 14px",borderBottom:`1px solid ${BORDER}`,cursor:"pointer",background:i===0?SOFT:"#fff",transition:".1s"}}>
-                          <div style={{display:"flex",alignItems:"center",gap:10}}>
-                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
-                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
-                            <Av s={p.av} color={grp?.color||PINK} size={34}/>
-                            <div style={{flex:1}}>
-                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
-                              {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
-                            </div>
-                            <div style={{textAlign:"right"}}>
-                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:i===0?PINK:TEXT}}>{p.total}</div>
-                              <div style={{fontSize:10,color:SUB}}>coins</div>
-                            </div>
-                          </div>
-                          <div style={{marginTop:8,height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
-                            <div style={{height:4,background:GRAD,width:`${(p.total/maxP)*100}%`,borderRadius:4,transition:"width .5s ease"}}/>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {hasGrps && boardSubTab==="groups" && grpScores.map((g,i)=>(
-                  <div key={g.id} style={{padding:"13px 16px",borderRadius:14,border:i===0?`1.5px solid ${g.color}55`:"1.5px solid rgba(255,255,255,.07)",background:i===0?`${g.color}14`:"rgba(255,255,255,.05)"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
-                      <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
-                      <div style={{flex:1}}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff"}}>{g.name}</div>
-                        <div style={{fontSize:11,color:"rgba(255,255,255,.4)"}}>{g.members.length} members</div>
-                      </div>
-                      <div style={{textAlign:"right",minWidth:56}}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:g.color}}>{g.total}</div>
-                        <div style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>coins</div>
-                      </div>
-                    </div>
-                    <div style={{marginTop:8,height:4,background:"rgba(255,255,255,.1)",borderRadius:4,overflow:"hidden"}}>
-                      <div style={{height:4,background:g.color,width:`${(g.total/maxGrp)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
+          return <CMBoardTab ses={ses} cmBoardSorted={cmBoardSorted} hasGrps={hasGrps} grpScores={grpScores} maxGrp={maxGrp} setSelId={setSelId} setTab={setTab}/>;
         })()}
 
         {/* ── LOG TAB ── */}
@@ -4066,8 +4088,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           {rightTab==="board" && (
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,background:ses.boardVisible?"#1A1A2E":"transparent",transition:"background .4s"}}>
               <div onClick={()=>{
-                mut(s=>{s.boardVisible=!s.boardVisible;});
-                if (!ses.boardVisible) { setRightTab("board"); setTab("board"); }
+                const turningOn = !ses.boardVisible;
+                mut(s=>{s.boardVisible=turningOn;});
+                if (turningOn) { setRightTab("board"); setTab("board"); }
               }}
                 style={{background:ses.boardVisible?GREEN:"#fff",border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .3s"}}>
                 <div style={{display:"flex",alignItems:"center",gap:10,flex:1}}>
@@ -6236,6 +6259,8 @@ export default function App() {
   const [homeEarnings, setHomeEarnings] = useState(null); // {totalCoins, totalSessions}
   const [recentJoined, setRecentJoined] = useState([]); // [{code,name,coins,joinedAt,lastUpdated}]
   const [homeRightTab, setHomeRightTab] = useState("created"); // "created" | "joined"
+  const [homeToast, setHomeToast] = useState(null);
+  function homeNotify(m) { setHomeToast(m); setTimeout(()=>setHomeToast(null), 3000); }
   const [limitModal, setLimitModal] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -6686,6 +6711,13 @@ export default function App() {
         </div>
       )}
 
+      {/* ── Home toast ── */}
+      {homeToast && (
+        <div style={{position:"fixed",bottom:28,left:"50%",transform:"translateX(-50%)",background:TEXT,color:"#fff",padding:"10px 22px",borderRadius:12,fontSize:13,fontWeight:600,zIndex:9997,fontFamily:"Poppins,sans-serif",boxShadow:"0 8px 32px rgba(0,0,0,.22)",whiteSpace:"nowrap",animation:"slideUp .2s ease"}}>
+          {homeToast}
+        </div>
+      )}
+
       {/* ── HOME: desktop two-column, mobile single column ── */}
       <div className="tc-home-wrap" style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column"}}>
 
@@ -6998,7 +7030,12 @@ export default function App() {
                       </button>
                       <button onClick={async()=>{
                         const live = await sgSession(s.code);
-                        if (!live) { alert("This session is no longer available."); return; }
+                        if (!live) { homeNotify("This session is no longer available."); return; }
+                        if (!live.live) {
+                          // Session is paused — don't navigate, show toast
+                          homeNotify("This session is paused. Wait for the host to go live again.");
+                          return;
+                        }
                         // Check if this user is assigned as coinmaster
                         const uid = auth.currentUser?.uid;
                         const myPart = uid ? (live.participants||[]).find(p=>p.uid===uid) : null;
