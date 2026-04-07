@@ -411,7 +411,7 @@ function FloatAnim({ x, y, text, color, onDone }) {
 }
 
 // ── Avatar ──
-function Av({ s, color = PINK, size = 36 }) {
+function Av({ s, color = BLUE, size = 36 }) {
   return (
     <div style={{width:size,height:size,borderRadius:size*.22,flexShrink:0,background:`linear-gradient(135deg,${color},${color}99)`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:size*.34,color:"#fff"}}>
       {s}
@@ -3469,7 +3469,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
   );
 }
 
-// ── Session screen ── 
+// ── Session screen ──
 // ── GroupSessionCard — editable group card in Session right panel ──
 function GroupSessionCard({ g, i, mut, ses, pNum }) {
   const [editing, setEditing] = useState(false);
@@ -4016,13 +4016,16 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             {/* ── Quick Coins — all otherCoins, scrollable, white+pink-border ── */}
             {sorted.length > 0 && (
               <div className="tc-mobile-qc" style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                <div style={{padding:"10px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
+                <div style={{padding:"10px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8,background:"#2D2D2D",borderRadius:"14px 14px 0 0"}}>
                   <div style={{width:28,height:28,borderRadius:"50%",background:PINK,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                   </div>
-                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,flex:1}} data-tour="quick-coins">Quick Coins</span>
+                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",flex:1}} data-tour="quick-coins">Quick Coins</span>
                   <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
-                    style={{height:28,padding:"0 12px",border:`1.5px solid ${BORDER}`,borderRadius:999,fontFamily:"Poppins,sans-serif",fontSize:11,color:TEXT,outline:"none",width:"46%",background:BG}}/>
+                    style={{height:28,padding:"0 12px",border:"1.5px solid rgba(255,255,255,0.2)",borderRadius:999,fontFamily:"Poppins,sans-serif",fontSize:11,color:"#fff",outline:"none",width:"46%",background:"rgba(255,255,255,0.12)",caretColor:"#fff"}}
+                    onFocus={e=>{e.target.style.border="1.5px solid rgba(255,255,255,0.5)";}}
+                    onBlur={e=>{e.target.style.border="1.5px solid rgba(255,255,255,0.2)";}}
+                  />
                 </div>
                 {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
                   .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
