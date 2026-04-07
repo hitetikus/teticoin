@@ -546,57 +546,37 @@ function PRow({ p, groups, sel, onSelect }) {
 function MassGive({ participants, groups, onAward, onClose }) {
   const [amt, setAmt] = useState(null);
   const [cAmt, setCAmt] = useState("");
-  const [mode, setMode] = useState(null);
-  const [sel, setSel] = useState(new Set());
   const [scanLog, setScanLog] = useState([]);
-  const [scanLine, setScanLine] = useState(false);
-
-  const finalAmt = amt === "custom" ? Number(cAmt) : amt;
-  const ok = finalAmt !== 0 && !isNaN(finalAmt);
-  const sorted = [...participants].sort((a,b) => a.num - b.num);
-
-  // Refs to avoid stale closures inside the QR scanner callback
+  const [scanning, setScanning] = useState(false);
+  const [scanAttempt, setScanAttempt] = useState(0);
+  const [scannerErr, setScannerErr] = useState("");
+  const html5QrRef = useRef(null);
   const participantsRef = useRef(participants);
   const scanLogRef = useRef([]);
-  const finalAmtRef = useRef(finalAmt);
+  const finalAmtRef = useRef(null);
+
+  const finalAmt = amt === "custom" ? Number(cAmt) : amt;
+  const ok = finalAmt !== null && finalAmt !== 0 && !isNaN(finalAmt);
+
   useEffect(() => { participantsRef.current = participants; }, [participants]);
   useEffect(() => { finalAmtRef.current = finalAmt; }, [finalAmt]);
-
-  function toggleSel(id) { setSel(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; }); }
-  function doAll() { if (!ok) return; participants.forEach(p => onAward(p.id, "token", finalAmt)); onClose(); }
-  function doSel() { if (!ok || sel.size===0) return; sel.forEach(id => onAward(id, "token", finalAmt)); onClose(); }
-
-  const [scanning, setScanning] = useState(false);
-  const [scanAttempt, setScanAttempt] = useState(0); // increments each attempt → fresh container ID
-  const [scannerErr, setScannerErr] = useState("");
-  const scannerRef = useRef(null);
-  const html5QrRef = useRef(null);
-
-  function cleanScannerDom(id) {
-    try { const el = document.getElementById(id||`tc-qr-scanner-${scanAttempt}`); if (el) el.innerHTML = ""; } catch(e) {}
-  }
 
   function startScanner() {
     if (!ok) return;
     setScannerErr("");
-    scanLogRef.current = []; // reset dedup list on each new scan session
-    setScanAttempt(n => n + 1); // new attempt = new container ID = fresh Html5Qrcode instance
+    scanLogRef.current = [];
+    setScanAttempt(n => n + 1);
     setScanning(true);
   }
 
   function stopScanner() {
-    if (html5QrRef.current) {
-      html5QrRef.current.stop().catch(()=>{});
-      html5QrRef.current = null;
-    }
+    if (html5QrRef.current) { html5QrRef.current.stop().catch(()=>{}); html5QrRef.current = null; }
     setScanning(false);
-    setMode(null);
   }
 
   useEffect(() => {
     if (!scanning) return;
     const containerId = `tc-qr-scanner-${scanAttempt}`;
-
     function initScanner() {
       if (!window.Html5Qrcode) { setScannerErr("Camera library failed to load."); setScanning(false); return; }
       try {
@@ -614,52 +594,27 @@ function MassGive({ participants, groups, onAward, onClose }) {
             if (scanLogRef.current.find(l => l.id === p.id)) return;
             const entry = {...p, t: new Date().toLocaleTimeString()};
             scanLogRef.current = [entry, ...scanLogRef.current];
-            setScanLine(true); setTimeout(()=>setScanLine(false), 350);
             onAward(p.id, "token", finalAmtRef.current);
             setScanLog(prev => [entry, ...prev]);
           },
           () => {}
         ).catch(() => {
           html5QrRef.current = null;
-          setScannerErr("Camera access denied. Tap the button below to try again — you may need to allow camera access in your browser settings.");
+          setScannerErr("Camera access denied. Allow camera access in your browser settings and try again.");
           setScanning(false);
         });
-      } catch(e) {
-        setScannerErr("Could not start camera. Tap the button below to try again.");
-        setScanning(false);
-      }
+      } catch(e) { setScannerErr("Could not start camera. Tap Open Camera to try again."); setScanning(false); }
     }
-
-    if (window.Html5Qrcode) {
-      initScanner();
-    } else {
+    if (window.Html5Qrcode) { initScanner(); }
+    else {
       const s = document.createElement("script");
       s.src = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
       s.onload = initScanner;
       s.onerror = () => { setScannerErr("Failed to load camera library."); setScanning(false); };
       document.head.appendChild(s);
     }
-
-    return () => {
-      if (html5QrRef.current) { html5QrRef.current.stop().catch(()=>{}); html5QrRef.current = null; }
-    };
+    return () => { if (html5QrRef.current) { html5QrRef.current.stop().catch(()=>{}); html5QrRef.current = null; } };
   }, [scanning, scanAttempt]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const methodBtn = (id, icon, title, sub) => (
-    <div onClick={()=>{
-      if(mode===id){stopScanner();setMode(null);}
-      else{stopScanner();setMode(id);if(id==="scan"&&ok){startScanner();}}
-    }}
-      style={{padding:"14px 16px",borderRadius:14,border:`1.5px solid ${mode===id?PINK:BORDER}`,background:mode===id?SOFT:"#fff",cursor:"pointer",transition:"all .12s",marginBottom:10}}>
-      <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <div style={{width:38,height:38,borderRadius:10,background:mode===id?GRAD:`${PINK}14`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
-        <div>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:mode===id?PINK:TEXT}}>{title}</div>
-          <div style={{fontSize:12,color:SUB,marginTop:1}}>{sub}</div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:450}}>
@@ -667,151 +622,84 @@ function MassGive({ participants, groups, onAward, onClose }) {
       <div className="tc-modal-sheet" style={{background:"#fff",maxHeight:"90vh",display:"flex",flexDirection:"column",animation:"slideUp .25s ease"}}>
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Bulk Give Coins</div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Scan QR to Give</div>
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
-          <div style={{fontSize:13,color:SUB,marginBottom:16}}>Award the same amount to multiple participants.</div>
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"0 20px 32px"}}>
-          <SL>Step 1 — Choose Amount</SL>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8}}>
-            {TV_DEFAULT.map(v => (
+          {/* Step 1 — coin amount */}
+          <SL style={{marginBottom:8}}>Choose amount to give</SL>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
+            {(TV_DEFAULT).map(v => (
               <button key={v} onClick={()=>{setAmt(v);setCAmt("");}}
-                style={{padding:"12px 8px",borderRadius:12,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:17,background:amt===v?GRAD:"transparent",border:amt===v?"2px solid transparent":`1.5px solid ${BORDER}`,color:amt===v?"#fff":TEXT,transition:"all .12s"}}>
+                style={{padding:"16px 8px",borderRadius:12,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,background:amt===v?GRAD:"#fff",border:amt===v?`2px solid transparent`:`1.5px solid ${BORDER}`,color:amt===v?"#fff":v<0?"#EF4444":PINK,transition:"all .12s"}}>
                 {v>0?"+":""}{v}
               </button>
             ))}
           </div>
-          <input type="number" placeholder="Custom amount..." value={cAmt} onChange={e=>{setCAmt(e.target.value);setAmt("custom");}}
-            style={{width:"100%",background:BG,border:`1.5px solid ${amt==="custom"?PINK:BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",marginBottom:20}}/>
+          <input type="number" placeholder="Custom amount…" value={cAmt} onChange={e=>{setCAmt(e.target.value);setAmt("custom");}}
+            style={{width:"100%",background:BG,border:`1.5px solid ${amt==="custom"?PINK:BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",marginBottom:16}}/>
 
-          <SL>Step 2 — Choose Method</SL>
+          {/* Open Camera button */}
+          {!scanning && (
+            <button onClick={()=>{ if(!ok){return;} startScanner(); }}
+              style={{width:"100%",padding:"14px 0",background:ok?GRAD:"#F3F4F6",border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:ok?"#fff":"#9CA3AF",cursor:ok?"pointer":"default",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:ok?0:0}}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              {ok ? `Open Camera · +${finalAmt} per scan` : "Select an amount first"}
+            </button>
+          )}
 
-          {/* QR Scan — first option */}
-          <div>
-            {methodBtn("scan",
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={mode==="scan"?"#fff":PINK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="14.01"/><line x1="17" y1="14" x2="17" y2="14.01"/><line x1="20" y1="14" x2="20" y2="14.01"/><line x1="14" y1="17" x2="14" y2="17.01"/><line x1="17" y1="17" x2="20" y2="17"/><line x1="20" y1="17" x2="20" y2="20"/><line x1="14" y1="20" x2="17" y2="20"/></svg>,
-              "Scan Participant's QR", `Scan participant's screen · ${scanLog.length} scanned`
-            )}
-            {mode==="scan" && (
-              <div onClick={e=>e.stopPropagation()}>
-                {!ok && <div style={{textAlign:"center",padding:"10px 0 12px",fontSize:13,color:SUB}}>Select an amount above first</div>}
-                {ok && scanning && (
-                  <div style={{position:"fixed",inset:0,zIndex:9999,background:"#000",display:"flex",flexDirection:"column"}}>
-                    {/* Full-screen camera — fresh container ID per attempt so Html5Qrcode never reuses a blocked element */}
-                    <div id={`tc-qr-scanner-${scanAttempt}`} style={{flex:1,width:"100%"}}/>
-                    {/* Bottom bar */}
-                    <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,.75)",backdropFilter:"blur(10px)",padding:"16px 20px 32px",display:"flex",flexDirection:"column",gap:10}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <div style={{fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:600}}>
-                          {scanLog.length===0?"Point camera at participant's QR code":`✓ ${scanLog.length} scanned · +${finalAmt} each`}
-                        </div>
-                        <div style={{fontSize:13,color:PINK,fontWeight:800}}>+{finalAmt}</div>
-                      </div>
-                      <button onClick={stopScanner}
-                        style={{width:"100%",padding:"13px 0",background:"rgba(255,255,255,.12)",border:"1.5px solid rgba(255,255,255,.25)",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:"#fff",cursor:"pointer"}}>
-                        Back
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {ok && !scanning && scannerErr && (
-                  <div style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:12,padding:"16px",marginBottom:10,display:"flex",flexDirection:"column",gap:12}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#EF4444"}}>Camera access denied</div>
-                    </div>
-                    <div style={{fontSize:12,color:"#7F1D1D",lineHeight:1.7}}>
-                      To enable camera access:<br/>
-                      1. Tap the <strong>lock/info icon</strong> in your browser's address bar<br/>
-                      2. Find <strong>Camera</strong> and set it to <strong>Allow</strong><br/>
-                      3. Reload the page and try again
-                    </div>
-                    <button onClick={()=>{ setScannerErr(""); setMode(null); }}
-                      style={{width:"100%",padding:"10px 0",background:"#EF4444",border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#fff",cursor:"pointer"}}>
-                      Back
-                    </button>
-                  </div>
-                )}
+          {/* Camera error */}
+          {scannerErr && (
+            <div style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:12,padding:"14px",marginTop:10,fontSize:12,color:"#7F1D1D",lineHeight:1.7}}>
+              {scannerErr}
+              <button onClick={()=>{ setScannerErr(""); }} style={{display:"block",marginTop:8,padding:"8px 16px",background:"#EF4444",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>Back</button>
+            </div>
+          )}
 
-                {/* Scan log */}
-                {scanLog.length > 0 && (
-                  <div style={{borderRadius:12,border:`1px solid ${BORDER}`,overflow:"hidden"}}>
-                    <div style={{padding:"8px 12px",background:BG,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,color:SUB,textTransform:"uppercase",letterSpacing:1,borderBottom:`1px solid ${BORDER}`}}>
-                      Scanned ({scanLog.length})
-                    </div>
-                    {scanLog.map((p,i) => {
-                      const grp = groups.find(g=>g.id===p.gid);
-                      return (
-                        <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff"}}>
-                          <div style={{width:6,height:6,borderRadius:"50%",background:GREEN,flexShrink:0}}/>
-                          <span style={{fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,color:PINK,minWidth:36}}>{pNum(p.num)}</span>
-                          <Av s={p.av} color={grp?.color||PINK} size={26}/>
-                          <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>{p.name}</span>
-                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:GREEN}}>+{finalAmt}</span>
-                          <span style={{fontSize:10,color:SUB}}>{p.t}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+          {/* Scan log */}
+          {scanLog.length > 0 && (
+            <div style={{borderRadius:12,border:`1px solid ${BORDER}`,overflow:"hidden",marginTop:14}}>
+              <div style={{padding:"8px 12px",background:BG,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,color:SUB,textTransform:"uppercase",letterSpacing:1,borderBottom:`1px solid ${BORDER}`}}>
+                Scanned ({scanLog.length})
               </div>
-            )}
-          </div>
-
-          {/* Multi select — second */}
-          <div>
-            {methodBtn("multi",
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={mode==="multi"?"#fff":PINK} strokeWidth="2.2" strokeLinecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
-              "Select Multiple Participants", mode==="multi"?`${sel.size} selected`:"Pick specific people"
-            )}
-            {mode==="multi" && (
-              <div onClick={e=>e.stopPropagation()}>
-                <div style={{display:"flex",gap:8,marginBottom:10}}>
-                  <button onClick={()=>setSel(new Set(participants.map(p=>p.id)))} style={{padding:"6px 12px",background:BG,border:`1px solid ${BORDER}`,borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,cursor:"pointer"}}>Select All</button>
-                  <button onClick={()=>setSel(new Set())} style={{padding:"6px 12px",background:BG,border:`1px solid ${BORDER}`,borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:TEXT,cursor:"pointer"}}>Clear</button>
-                </div>
-                <div style={{maxHeight:200,overflowY:"auto",borderRadius:12,border:`1px solid ${BORDER}`,overflow:"hidden",marginBottom:10}}>
-                  {sorted.map(p => {
-                    const grp = groups.find(g=>g.id===p.gid); const on = sel.has(p.id);
-                    return (
-                      <button key={p.id} onClick={()=>toggleSel(p.id)} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 12px",border:"none",borderBottom:`1px solid ${BORDER}`,background:on?SOFT:"#fff",cursor:"pointer",textAlign:"left"}}>
-                        <div style={{width:20,height:20,borderRadius:6,flexShrink:0,border:`2px solid ${on?PINK:BORDER}`,background:on?PINK:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:".12s"}}>
-                          {on && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>}
-                        </div>
-                        <span style={{fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,color:SUB,minWidth:32}}>{pNum(p.num)}</span>
-                        <Av s={p.av} color={grp?.color||PINK} size={28}/>
-                        <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>{p.name}</span>
-                        <span style={{fontSize:11,color:PINK,fontWeight:700}}>{p.total}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {sel.size > 0 && ok && (
-                  <button onClick={doSel} style={{width:"100%",padding:"12px 0",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
-                    Give +{finalAmt} to {sel.size} Participant{sel.size>1?"s":""}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Give All — third */}
-          <div>
-            {methodBtn("all",
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={mode==="all"?"#fff":PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-              "Give to Everyone", `All ${participants.length} participants get coins`
-            )}
-            {mode==="all" && ok && (
-              <button onClick={doAll} style={{width:"100%",padding:"12px 0",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>
-                Give +{finalAmt} to All {participants.length}
-              </button>
-            )}
-            {mode==="all" && !ok && <div style={{textAlign:"center",fontSize:13,color:SUB,padding:"8px 0 10px"}}>Select an amount above first</div>}
-          </div>
+              {scanLog.map((p,i) => {
+                const grp = groups.find(g=>g.id===p.gid);
+                return (
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff"}}>
+                    <div style={{width:6,height:6,borderRadius:"50%",background:GREEN,flexShrink:0}}/>
+                    <span style={{fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,color:PINK,minWidth:36}}>{pNum(p.num)}</span>
+                    <Av s={p.av} color={grp?.color||PINK} size={26}/>
+                    <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>{p.name}</span>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:GREEN}}>+{finalAmt}</span>
+                    <span style={{fontSize:10,color:SUB}}>{p.t}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Full-screen camera overlay */}
+      {scanning && (
+        <div style={{position:"fixed",inset:0,zIndex:9999,background:"#000",display:"flex",flexDirection:"column"}}>
+          <div id={`tc-qr-scanner-${scanAttempt}`} style={{flex:1,width:"100%"}}/>
+          <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,.75)",backdropFilter:"blur(10px)",padding:"16px 20px 40px",display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:600}}>
+                {scanLog.length===0?"Point camera at participant's QR code":`✓ ${scanLog.length} scanned · +${finalAmt} each`}
+              </div>
+              <div style={{fontSize:14,color:PINK,fontWeight:900}}>+{finalAmt}</div>
+            </div>
+            <button onClick={stopScanner}
+              style={{width:"100%",padding:"14px 0",background:"rgba(255,255,255,.12)",border:"1.5px solid rgba(255,255,255,.25)",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:"#fff",cursor:"pointer"}}>
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3406,7 +3294,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
   const coins = ses.otherCoins || TV_DEF;
   const posCoins = coins.filter(v=>v>0).slice(0,5);
   const negCoin = coins.find(v=>v<0) ?? -10;
-  const [confirmed, setConfirmed] = useState(false); // for "give everyone" confirm step
+  const [confirmAmt, setConfirmAmt] = useState(null); // for "give everyone" — stores the tapped amount pending confirm
 
   function doAward(v) {
     if (mode==="all") {
@@ -3427,46 +3315,78 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
     .sort((a,b) => a.name.localeCompare(b.name))
     .filter(p => !indivSearch.trim() || p.name.toLowerCase().includes(indivSearch.toLowerCase()));
 
-  const sheetTitle = mode==="all" ? "Give everyone" : mode==="multi" ? "Select multiple" : "Give individual";
+  const CoinButtons = ({onTap}) => (
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,flexShrink:0}}>
+      {posCoins.map((v,i) => (
+        <button key={i} onClick={()=>onTap(v)}
+          style={{border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"16px 4px",textAlign:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:20,color:PINK,background:"#fff",cursor:"pointer"}}>
+          {v>0?"+":""}{v}
+        </button>
+      ))}
+      <button onClick={()=>onTap(negCoin)}
+        style={{border:"1.5px solid #FCA5A5",borderRadius:12,padding:"16px 4px",textAlign:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:20,color:"#EF4444",background:"#fff",cursor:"pointer"}}>
+        {negCoin}
+      </button>
+    </div>
+  );
 
-  return (
-    <div onClick={e=>{ if(e.target===e.currentTarget) onClose(); }}
-      style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1200,display:"flex",alignItems:"flex-end"}}>
-      <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"16px 14px 32px",width:"100%",maxWidth:480,margin:"0 auto",maxHeight:"85vh",display:"flex",flexDirection:"column"}}>
-        <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px",flexShrink:0}}/>
-        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:12,flexShrink:0}}>{sheetTitle}</div>
+  // ── INDIVIDUAL: keyboard-aware layout — list above keyboard, coins pinned above it ──
+  if (mode==="individual") {
+    return (
+      <div onClick={e=>{ if(e.target===e.currentTarget) onClose(); }}
+        style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
+        <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"14px 14px 20px",display:"flex",flexDirection:"column",maxHeight:"90vh"}}>
+          <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px",flexShrink:0}}/>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:10,flexShrink:0}}>Give individual</div>
 
-        {/* ── INDIVIDUAL: search box + scrollable list, then coins ── */}
-        {mode==="individual" && (
-          <>
-            <div style={{position:"relative",marginBottom:8,flexShrink:0}}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.5" strokeLinecap="round" style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)"}}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input placeholder="Search participant…" value={indivSearch} onChange={e=>setIndivSearch(e.target.value)} autoFocus
-                style={{width:"100%",border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"9px 12px 9px 30px",fontFamily:"Poppins,sans-serif",fontSize:12,color:TEXT,outline:"none",background:SOFT}}/>
-            </div>
-            <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:4,marginBottom:12}}>
-              {filteredParts.map(p => {
-                const isCMp = isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid)||(ses.coinmasterPids||[]).includes(p.id));
-                if (isCMp) return null;
-                const grp = ses.groups.find(g=>g.id===p.gid);
-                const sel = indivId===p.id;
-                return (
-                  <div key={p.id} onClick={()=>setIndivId(p.id)}
-                    style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,cursor:"pointer",background:sel?"#FFF0F7":"#FAFAFA",border:`1px solid ${sel?BORDER:"transparent"}`,flexShrink:0}}>
-                    <Av s={p.av} color={grp?.color||PINK} size={26}/>
-                    <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:TEXT}}>{p.name}</span>
-                    <span style={{fontSize:10,color:"#ccc"}}>{p.total} pts</span>
-                    {p.num != null && <span style={{fontSize:9,color:"#ddd"}}>P{String(p.num).padStart(3,"0")}</span>}
-                    {sel && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
+          {/* Search */}
+          <div style={{position:"relative",marginBottom:8,flexShrink:0}}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.5" strokeLinecap="round" style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)"}}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input placeholder="Search participant…" value={indivSearch} onChange={e=>setIndivSearch(e.target.value)} autoFocus
+              style={{width:"100%",border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"9px 12px 9px 30px",fontFamily:"Poppins,sans-serif",fontSize:12,color:TEXT,outline:"none",background:SOFT}}/>
+          </div>
 
-        {/* ── MULTI: checklist ── */}
-        {mode==="multi" && (
+          {/* Scrollable list — shrinks when keyboard appears */}
+          <div style={{overflowY:"auto",display:"flex",flexDirection:"column",gap:4,marginBottom:12,minHeight:48,maxHeight:220}}>
+            {filteredParts.map(p => {
+              const isCMp = isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid)||(ses.coinmasterPids||[]).includes(p.id));
+              if (isCMp) return null;
+              const grp = ses.groups.find(g=>g.id===p.gid);
+              const sel = indivId===p.id;
+              return (
+                <div key={p.id} onClick={()=>setIndivId(p.id)}
+                  style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,cursor:"pointer",background:sel?"#FFF0F7":"#FAFAFA",border:`1px solid ${sel?BORDER:"transparent"}`,flexShrink:0}}>
+                  <Av s={p.av} color={grp?.color||PINK} size={26}/>
+                  <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:TEXT}}>{p.name}</span>
+                  <span style={{fontSize:10,color:"#ccc"}}>{p.total} pts</span>
+                  {p.num != null && <span style={{fontSize:9,color:"#ddd",marginLeft:2}}>P{String(p.num).padStart(3,"0")}</span>}
+                  {sel && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Coin buttons — always visible above keyboard */}
+          <CoinButtons onTap={doAward}/>
+          <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4,flexShrink:0}}>✕ Cancel</button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── MULTI: fixed coins at bottom, scrollable list above ──
+  if (mode==="multi") {
+    return (
+      <div onClick={e=>{ if(e.target===e.currentTarget) onClose(); }}
+        style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1200,display:"flex",alignItems:"flex-end"}}>
+        <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"14px 14px 24px",width:"100%",maxWidth:480,margin:"0 auto",maxHeight:"85vh",display:"flex",flexDirection:"column"}}>
+          <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px",flexShrink:0}}/>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,flexShrink:0}}>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>Select multiple</div>
+            {multiSel.length > 0 && <div style={{fontSize:12,color:PINK,fontWeight:700}}>{multiSel.length} selected</div>}
+          </div>
+
+          {/* Scrollable list */}
           <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:4,marginBottom:12}}>
             {[...sorted].sort((a,b)=>a.name.localeCompare(b.name)).map(p => {
               const isCMp = isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid)||(ses.coinmasterPids||[]).includes(p.id));
@@ -3482,62 +3402,56 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
                   <Av s={p.av} color={grp?.color||PINK} size={26}/>
                   <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:TEXT}}>{p.name}</span>
                   <span style={{fontSize:10,color:"#ccc"}}>{p.total} pts</span>
-                  {p.num != null && <span style={{fontSize:9,color:"#ddd"}}>P{String(p.num).padStart(3,"0")}</span>}
+                  {p.num != null && <span style={{fontSize:9,color:"#ddd",marginLeft:2}}>P{String(p.num).padStart(3,"0")}</span>}
                 </div>
               );
             })}
           </div>
-        )}
 
-        {/* ── ALL: confirm step ── */}
-        {mode==="all" && !confirmed && (
-          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,paddingBottom:8}}>
-            <div style={{width:52,height:52,borderRadius:16,background:"#E0F2FE",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </div>
-            <div style={{textAlign:"center"}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,marginBottom:4}}>Give everyone?</div>
-              <div style={{fontSize:12,color:"#6B7280"}}>This will award coins to all <strong>{ses.participants.length}</strong> participants.</div>
-            </div>
-            <button onClick={()=>setConfirmed(true)}
-              style={{padding:"11px 32px",background:`linear-gradient(135deg,${PINK},#E91E8C)`,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#fff",cursor:"pointer"}}>
-              Yes, continue
-            </button>
-            <button onClick={onClose} style={{background:"none",border:"none",color:"#aaa",fontSize:12,cursor:"pointer"}}>Cancel</button>
-          </div>
-        )}
+          {/* Fixed coin buttons */}
+          <CoinButtons onTap={doAward}/>
+          <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4,flexShrink:0}}>✕ Cancel</button>
+        </div>
+      </div>
+    );
+  }
 
-        {/* Coin buttons — shown for all modes (after confirm for "all") */}
-        {(mode!=="all" || confirmed) && (
-          <div style={{flexShrink:0}}>
-            {mode==="all" && (
-              <div style={{background:"#E0F2FE",borderRadius:8,padding:"6px 12px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:10}}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                <span style={{fontSize:12,fontWeight:700,color:"#0284C7"}}>All {ses.participants.length} participants</span>
-              </div>
-            )}
-            {mode==="multi" && multiSel.length > 0 && (
-              <div style={{fontSize:11,color:PINK,fontWeight:700,marginBottom:8}}>{multiSel.length} selected</div>
-            )}
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
-              {posCoins.map((v,i) => (
-                <button key={i} onClick={()=>doAward(v)}
-                  style={{border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"14px 4px",textAlign:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:17,color:PINK,background:"#fff",cursor:"pointer"}}>
-                  {v>0?"+":""}{v}
-                </button>
-              ))}
-              <button onClick={()=>doAward(negCoin)}
-                style={{border:"1.5px solid #FCA5A5",borderRadius:10,padding:"14px 4px",textAlign:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:17,color:"#EF4444",background:"#fff",cursor:"pointer"}}>
-                {negCoin}
+  // ── ALL: coin buttons shown directly, confirm popup on tap ──
+  return (
+    <div onClick={e=>{ if(e.target===e.currentTarget&&!confirmAmt) onClose(); }}
+      style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1200,display:"flex",alignItems:"flex-end"}}>
+      <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"14px 14px 28px",width:"100%",maxWidth:480,margin:"0 auto"}}>
+        <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px"}}/>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>Give everyone</div>
+        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#E0F2FE",borderRadius:8,padding:"5px 10px",marginBottom:14}}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span style={{fontSize:11,fontWeight:700,color:"#0284C7"}}>All {ses.participants.length} participants</span>
+        </div>
+        <CoinButtons onTap={v=>setConfirmAmt(v)}/>
+        <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
+      </div>
+
+      {/* Confirm popup */}
+      {confirmAmt !== null && (
+        <div onClick={e=>e.stopPropagation()} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.3)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+          <div style={{background:"#fff",borderRadius:20,padding:"28px 24px",width:"100%",maxWidth:320,textAlign:"center"}}>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:TEXT,marginBottom:8}}>
+              Give {confirmAmt>0?"+":""}{confirmAmt} to everyone?
+            </div>
+            <div style={{fontSize:13,color:"#6B7280",marginBottom:24}}>All <strong>{ses.participants.length}</strong> participants will receive this.</div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setConfirmAmt(null)}
+                style={{flex:1,padding:"11px 0",background:"#F3F4F6",border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,cursor:"pointer"}}>
+                Cancel
+              </button>
+              <button onClick={()=>doAward(confirmAmt)}
+                style={{flex:1,padding:"11px 0",background:`linear-gradient(135deg,${PINK},#E91E8C)`,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#fff",cursor:"pointer"}}>
+                Confirm
               </button>
             </div>
-            <button onClick={onClose}
-              style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>
-              ✕ Cancel
-            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -4065,22 +3979,22 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 {[
                   { mode:"qr",    label:"Scan QR\nto give",
-                    icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill={PINK}/><rect x="16" y="5" width="3" height="3" fill={PINK}/><rect x="5" y="16" width="3" height="3" fill={PINK}/></svg> },
+                    icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad)" strokeWidth="2.2" strokeLinecap="round"><defs><linearGradient id="btnGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#FF4FB8"/><stop offset="100%" stopColor="#9D50FF"/></linearGradient></defs><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> },
                   { mode:"all",   label:"Give\neveryone",
-                    icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+                    icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad)" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
                   { mode:"multi", label:"Select\nmultiple",
-                    icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="5" width="13" height="13" rx="2"/><path d="M7 12l3 3 5-5"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/></svg> },
+                    icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad)" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="5" width="13" height="13" rx="2"/><path d="M7 12l3 3 5-5"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/></svg> },
                   { mode:"individual", label:"Give\nindividual",
-                    icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
+                    icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad)" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
                 ].map(({mode,label,icon}) => (
                   <button key={mode} onClick={()=>{
                     if (mode==="multi" && !isPro) { setProGateHint("massgive"); return; }
                     if (mode==="qr") { setMass(true); return; }
                     setGsMultiSel([]); setGsIndivId(null); setGsIndivSearch("");
                     setGiveSheet({mode});
-                  }} style={{border:`1px solid ${BORDER}`,borderRadius:14,background:SOFT,cursor:"pointer",display:"flex",alignItems:"center",gap:10,padding:"14px 12px",textAlign:"left",width:"100%"}}>
-                    <div style={{width:38,height:38,borderRadius:10,background:"#FFE4F3",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
-                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:PINK,lineHeight:1.4,whiteSpace:"pre-line"}}>{label}</span>
+                  }} style={{border:"none",borderRadius:14,background:PINK,cursor:"pointer",display:"flex",alignItems:"center",gap:10,padding:"14px 12px",textAlign:"left",width:"100%"}}>
+                    <div style={{width:38,height:38,borderRadius:10,background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",lineHeight:1.4,whiteSpace:"pre-line"}}>{label}</span>
                   </button>
                 ))}
               </div>
