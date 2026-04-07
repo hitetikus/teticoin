@@ -1043,7 +1043,8 @@ function SessionSettings({ session, isPro=false, onRename, onToggleLive, onExpor
 
           <div style={{height:1,background:BORDER,margin:"4px 0"}}/>
 
-          {/* Archive */}
+          {/* Archive — Pro only: free users cannot archive or delete to prevent session limit loophole */}
+          {isPro && (
           <div style={{background:"#F8F8FA",border:`1px solid ${BORDER}`,borderRadius:13,padding:"14px 16px"}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Archive Session</div>
             <div style={{fontSize:12,color:SUB,marginBottom:12,lineHeight:1.6}}>
@@ -1054,6 +1055,7 @@ function SessionSettings({ session, isPro=false, onRename, onToggleLive, onExpor
               Archive Session
             </button>
           </div>
+          )}
         </div>
       </div>
     </div>
@@ -1177,7 +1179,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                     </select>
                   ); })()}
                   <button onClick={()=>{
-                    if(!isManagePro && p.total>0){setShowUpgradeHint(p.name+" has "+p.total+" coins. Free plan cannot remove participants who have earned coins. Upgrade to Pro to manage participants freely.");return;}
+                    if(!isManagePro && p.total>0){setShowUpgradeHint(p.name+" has "+p.total+" coins — free plan cannot remove participants who have earned coins. Upgrade to Pro to manage participants freely.");return;}
                     if(p.total>0||p.uid){if(!window.confirm(`Remove ${p.name}? They have ${p.total} coins. This cannot be undone.`))return;}
                     remP(p.id);
                   }} title="Remove participant"
@@ -3726,7 +3728,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               Rename
             </button>
             <button onClick={()=>{
-              if(!isPro && p.total>0){notify(p.name+" has "+p.total+" coins. Upgrade to Pro to remove participants with coins.","warn");setPMenuOpen(null);return;}
+              if(!isPro && p.total>0){notify(p.name+" has "+p.total+" coins — upgrade to Pro to remove participants who have earned coins.","warn");setPMenuOpen(null);return;}
               if(window.confirm(`Remove ${p.name}?`)){mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);if(p.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;});}setPMenuOpen(null);}}
               style={{width:"100%",padding:"11px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#EF4444",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
               onMouseOver={e=>e.currentTarget.style.background="#FEF2F2"} onMouseOut={e=>e.currentTarget.style.background="none"}>
@@ -4724,7 +4726,7 @@ function CreateModal({ onConfirm, onClose }) {
 // PLAN CONSTANTS
 // ─────────────────────────────────────────────
 const SUPERADMIN_EMAIL = "hi.tetikus@gmail.com";
-const FREE_SESSION_LIMIT = 3;
+const FREE_SESSION_LIMIT = 5;
 const FREE_PAX_LIMIT = 30;
 const PRO_PAX_LIMIT = 200;
 
@@ -4855,7 +4857,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
       id:"free", name:"Free",
       color:SUB, borderColor:BORDER, bg:"#fff",
       tagline:"Try it out, no card needed",
-      features:["3 sessions","Up to 20 participants","Live scoreboard","QR join — no app needed","Basic features"],
+      features:["5 sessions","Up to 30 participants","Live scoreboard","QR join — no app needed","Basic features"],
     },
     {
       id:"oneTime", name:"One Time",
@@ -5017,7 +5019,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
 
 // ── 2. Upgrade Banner (home screen) ──────────
 function UpgradeBanner({ sessionCount, onUpgrade }) {
-  const nearLimit = sessionCount >= FREE_SESSION_LIMIT - 1; // show when 2 or more sessions
+  const nearLimit = sessionCount >= FREE_SESSION_LIMIT - 1; // show when 4 or more sessions
   const atLimit   = sessionCount >= FREE_SESSION_LIMIT;
   if (!nearLimit) return null;
   return (
@@ -5045,7 +5047,7 @@ function LimitModal({ type, onUpgrade, onClose }) {
     sessions: {
       icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
       title:"Session limit reached",
-      body:"Free plan allows 3 sessions. Upgrade to Pro for unlimited sessions, participants, and more.",
+      body:"Free plan allows 5 sessions. Upgrade to Pro for unlimited sessions, participants, and more.",
       cta:"Unlock Unlimited Sessions",
     },
     participants: {
@@ -5368,7 +5370,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
             {isFree ? (
               <>
                 {[
-                  {label:"3 active sessions",ok:true},
+                  {label:"5 active sessions",ok:true},
                   {label:"Up to 30 participants per session",ok:true},
                   {label:"Award coins in real time",ok:true},
                   {label:"Live scoreboard",ok:true},
@@ -6895,7 +6897,7 @@ export default function App() {
           onRename={async(name)=>{ const s={...cur,name}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,name}:x); setSessions(idx); await ss("sessions_index",idx); }}
           onToggleLive={async()=>{ const goingLive = cur.live===false; const s={...cur, live:goingLive, ...(goingLive&&cur.archived?{archived:false}:{})}; await ssSession(s.code, s); setCur(s); }}
           onDuplicate={async()=>{ const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
-          onArchive={async()=>{ if(!window.confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
+          onArchive={async()=>{ if(!isPro){homeNotify("Upgrade to Pro to archive sessions");return;} if(!window.confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onExport={()=>{ triggerCsvDownload(buildParticipantsCsv(cur), `teticoin-${cur.code}-participants.csv`); }}
           onExportLog={()=>{ triggerCsvDownload(buildLogCsv(cur), `teticoin-${cur.code}-log.csv`); }}
           onReset={async()=>{ if(!window.confirm("Reset all coins?")) return; const s={...cur,participants:(cur.participants||[]).map(p=>({...p,total:0,bk:{},hist:[]})),log:[]}; await ssSession(s.code, s); setCur(s); }}
@@ -7255,6 +7257,7 @@ export default function App() {
                         </button>
                         {s.archived ? (
                           <div style={{display:"flex",flexShrink:0,borderLeft:`1px solid ${BORDER}`}}>
+                            {isPro && (<>
                             <button onClick={async()=>{
                               if(!window.confirm("Unarchive this session? It will move to inactive sessions.")) return;
                               const full = await sgSession(s.code);
@@ -7264,11 +7267,19 @@ export default function App() {
                             </button>
                             <button onClick={async()=>{
                               if(!window.confirm("Permanently delete this session? This cannot be undone.")) return;
-                              await fsDel(null, s.code, true);
+                              const { getFirestore, doc, deleteDoc } = await import("firebase/firestore");
+                              await deleteDoc(doc(getFirestore(), "sessions", s.code));
                               setSessions(prev=>prev.filter(x=>x.code!==s.code));
+                              await ss("sessions_index", sessions.filter(x=>x.code!==s.code));
                             }} title="Delete permanently" style={{padding:"0 12px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",color:"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,fontSize:11,fontWeight:700,fontFamily:"Plus Jakarta Sans,sans-serif"}}>
                               Delete
                             </button>
+                            </>)}
+                            {!isPro && (
+                            <div style={{padding:"0 14px",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,fontSize:11,color:SUB,fontFamily:"Plus Jakarta Sans,sans-serif"}}>
+                              Upgrade to manage
+                            </div>
+                            )}
                           </div>
                         ) : (
                           <button onClick={async()=>{const full=await sgSession(s.code);if(full){setCur(full);setScreen("sessionSettings");}}}
