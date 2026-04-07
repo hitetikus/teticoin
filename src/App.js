@@ -6665,6 +6665,14 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // Reload joined-sessions list every time the user lands on the home screen
+  // (covers returning from a participant session, coinmaster, or any other screen)
+  useEffect(() => {
+    if (screen === "home" && currentUid) {
+      loadHomeEarnings(currentUid);
+    }
+  }, [screen, currentUid]);
+
   async function loadHomeEarnings(uid) {
     try {
       const { getFirestore, doc, getDoc } = await import("firebase/firestore");
