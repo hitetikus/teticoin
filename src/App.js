@@ -1699,25 +1699,26 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     }
   }
 
-  function directJoin(overrideName) {
-    const currentPax = (live.participants||[]).length;
+  async function directJoin(overrideName) {
+    const currentUid = auth.currentUser?.uid || linkedUid || null;
+    // Fetch fresh session so we don't overwrite host changes with stale data
+    const fresh = await sgSession(init.code);
+    const base = fresh || live;
+    const currentPax = (base.participants||[]).length;
     const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
     if (currentPax >= limit) { setStep("full"); return; }
-    // Block host from joining their own session
-    const currentUid = auth.currentUser?.uid || linkedUid || null;
-    if (currentUid && live.hostUid && currentUid === live.hostUid) { setStep("hostblocked"); return; }
-    const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+    if (currentUid && base.hostUid && currentUid === base.hostUid) { setStep("hostblocked"); return; }
     const joinName = overrideName || name.trim();
-    const baseGuestName = name.trim() || joinName;
+    if (!joinName) return; // safety — no empty names
+    const n = ((base.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+    const baseGuestName = joinName;
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,uid:currentUid,guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
     prevTotalRef.current = 0;
-    const u = {...live,participants:[...(live.participants||[]),np]};
+    const u = {...base,participants:[...(base.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
-    // Persist so refresh restores the session
     try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
-    // Write earnings entry on join (0 coins, session appears in history immediately)
     if (currentUid) {
       const now = Date.now();
       import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
@@ -1726,7 +1727,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         getDoc(ref).then(snap=>{
           const prev = snap.exists() ? (snap.data().value||[]) : [];
           if (!prev.find(e=>e.code===init.code)) {
-            setDoc(ref,{value:[{code:init.code,name:live.name,coins:0,joinedAt:now,lastUpdated:now},...prev],updatedAt:now});
+            setDoc(ref,{value:[{code:init.code,name:base.name,coins:0,joinedAt:now,lastUpdated:now},...prev],updatedAt:now});
           }
         }).catch(()=>{});
       }).catch(()=>{});
@@ -1751,15 +1752,21 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     if (currentPax >= limit) { setStep("full"); return; }
     const currentUid = auth.currentUser?.uid || linkedUid || null;
     if (currentUid && live.hostUid && currentUid === live.hostUid) { setStep("hostblocked"); return; }
-    const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const joinName = linkedName || name.trim();
-    const baseGuestName = name.trim() || joinName;
+    if (!joinName) return;
+    const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+    const baseGuestName = joinName;
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,pin,uid:(auth.currentUser?.uid || linkedUid || null),guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
     prevTotalRef.current = 0;
-    const u = {...live,participants:[...(live.participants||[]),np]};
-    setLive(u); ssSession(init.code, u); setStep("joined");
+    // Fetch fresh session to avoid overwriting host changes
+    sgSession(init.code).then(fresh => {
+      const base = fresh || live;
+      const u = {...base,participants:[...(base.participants||[]).filter(p=>p.id!==np.id),np]};
+      setLive(u); ssSession(init.code, u);
+    });
+    setStep("joined");
     try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
     if (np.uid) {
       const now = Date.now();
@@ -1769,7 +1776,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         getDoc(ref).then(snap=>{
           const prev = snap.exists() ? (snap.data().value||[]) : [];
           if (!prev.find(e=>e.code===init.code)) {
-            setDoc(ref,{value:[{code:init.code,name:live.name,coins:0,joinedAt:now,lastUpdated:now},...prev],updatedAt:now});
+            setDoc(ref,{value:[{code:init.code,name:init.name,coins:0,joinedAt:now,lastUpdated:now},...prev],updatedAt:now});
           }
         }).catch(()=>{});
       }).catch(()=>{});
