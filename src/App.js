@@ -1644,26 +1644,29 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   // Poll for live updates every 2s once joined — detect coin gain for sound
   useEffect(() => {
     if (step !== "joined" || !init?.code) return;
-    const t = setInterval(async () => {
-      if (loginModal) return; // don't re-render while login modal is open
-      if (editingName) return; // don't overwrite live state while user is typing a new name
-      const s = await sgSession(init.code);
-      if (!s) return;
-      if (myId) {
-        const me = (s.participants||[]).find(p => p.id === myId);
-        if (me) {
-          if (prevTotalRef.current !== null && me.total !== prevTotalRef.current) {
-            const gained = me.total - prevTotalRef.current;
-            if (soundOnRef.current) playCoinSoundRef.current(gained);
-            setCoinFlash({ pts: gained, key: Date.now() });
-            setTimeout(() => setCoinFlash(null), 1500);
+    let unsub = null;
+    import("firebase/firestore").then(({ getFirestore, doc, onSnapshot }) => {
+      const ref = doc(getFirestore(), "sessions", init.code);
+      unsub = onSnapshot(ref, (snap) => {
+        if (!snap.exists()) return;
+        if (loginModal || editingName) return;
+        const s = snap.data();
+        if (myId) {
+          const me = (s.participants||[]).find(p => p.id === myId);
+          if (me) {
+            if (prevTotalRef.current !== null && me.total !== prevTotalRef.current) {
+              const gained = me.total - prevTotalRef.current;
+              if (soundOnRef.current) playCoinSoundRef.current(gained);
+              setCoinFlash({ pts: gained, key: Date.now() });
+              setTimeout(() => setCoinFlash(null), 1500);
+            }
+            prevTotalRef.current = me.total;
           }
-          prevTotalRef.current = me.total;
         }
-      }
-      setLive(s);
-    }, 2000);
-    return () => clearInterval(t);
+        setLive(s);
+      }, () => {}); // ignore errors silently
+    }).catch(() => {});
+    return () => { if (unsub) unsub(); };
   }, [step, init?.code, myId]);
 
   function checkName() {
@@ -3093,13 +3096,16 @@ function CoinmasterView({ session: init, selfId, onBack }) {
   const [inlineAddName, setInlineAddName] = useState("");
   const aid = useRef(0);
 
-  // Poll session every 3s — get full fresh copy
+  // Real-time session listener via onSnapshot
   useEffect(() => {
-    const t = setInterval(async () => {
-      const fresh = await sgSession(ses.code);
-      if (fresh) setSes(fresh);
-    }, 3000);
-    return () => clearInterval(t);
+    let unsub = null;
+    import("firebase/firestore").then(({ getFirestore, doc, onSnapshot }) => {
+      const ref = doc(getFirestore(), "sessions", ses.code);
+      unsub = onSnapshot(ref, (snap) => {
+        if (snap.exists()) setSes(snap.data());
+      }, () => {});
+    }).catch(() => {});
+    return () => { if (unsub) unsub(); };
   }, [ses.code]);
 
   // Auto-exit coinmaster view when session goes offline
@@ -3534,23 +3540,26 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
   // ── Live poll: pull participant updates from Firebase every 3s ──
   useEffect(() => {
-    const t = setInterval(async () => {
-      const fresh = await sgSession(ses.code);
-      if (!fresh) return;
-      // Sync participants, log, boardVisible and live from remote so both
-      // mobile and desktop host views stay in sync with each other
-      setSes(prev => ({
-        ...prev,
-        participants: fresh.participants||prev.participants,
-        log: fresh.log||prev.log,
-        boardVisible: fresh.boardVisible ?? prev.boardVisible,
-        live: fresh.live ?? prev.live,
-        coinmasterEnabled: fresh.coinmasterEnabled ?? prev.coinmasterEnabled,
-        coinmasterUids: fresh.coinmasterUids ?? prev.coinmasterUids,
-        coinmasterPids: fresh.coinmasterPids ?? prev.coinmasterPids,
-      }));
-    }, 3000);
-    return () => clearInterval(t);
+    let unsub = null;
+    import("firebase/firestore").then(({ getFirestore, doc, onSnapshot }) => {
+      const ref = doc(getFirestore(), "sessions", ses.code);
+      unsub = onSnapshot(ref, (snap) => {
+        if (!snap.exists()) return;
+        const fresh = snap.data();
+        // Sync from remote — keeps host in sync with participant joins and coinmaster awards
+        setSes(prev => ({
+          ...prev,
+          participants: fresh.participants||prev.participants,
+          log: fresh.log||prev.log,
+          boardVisible: fresh.boardVisible ?? prev.boardVisible,
+          live: fresh.live ?? prev.live,
+          coinmasterEnabled: fresh.coinmasterEnabled ?? prev.coinmasterEnabled,
+          coinmasterUids: fresh.coinmasterUids ?? prev.coinmasterUids,
+          coinmasterPids: fresh.coinmasterPids ?? prev.coinmasterPids,
+        }));
+      }, () => {});
+    }).catch(() => {});
+    return () => { if (unsub) unsub(); };
   }, [ses.code]);
 
   // ── Auto-offline when host closes/navigates away from the tab ──
