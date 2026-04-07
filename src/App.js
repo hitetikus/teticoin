@@ -6672,10 +6672,10 @@ export default function App() {
   // Reload joined-sessions list every time the user lands on the home screen
   // (covers returning from a participant session, coinmaster, or any other screen)
   useEffect(() => {
-    if (screen === "home" && currentUid) {
-      loadHomeEarnings(currentUid);
+    if (screen === "home" && trainer?.uid) {
+      loadHomeEarnings(trainer.uid);
     }
-  }, [screen, currentUid]);
+  }, [screen, trainer]);
 
   async function loadHomeEarnings(uid) {
     try {
