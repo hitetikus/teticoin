@@ -3469,7 +3469,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
   );
 }
 
-// ── Session screen ──
+// ── Session screen ── 
 // ── GroupSessionCard — editable group card in Session right panel ──
 function GroupSessionCard({ g, i, mut, ses, pNum }) {
   const [editing, setEditing] = useState(false);
