@@ -2082,15 +2082,14 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   function PinPad({ value, onChange, length=4, reveal=false }) {
     return (
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
-        <div style={{display:"flex",gap:12,marginBottom:4}}>
+        <div style={{display:"flex",gap:10,marginBottom:4}}>
           {Array.from({length}).map((_,i)=>(
-            reveal && value.length > i ? (
-              <div key={i} style={{width:28,height:28,borderRadius:8,border:`2px solid ${PURPLE}`,background:`${PURPLE}15`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:PURPLE,transition:"all .15s"}}>
-                {value[i]}
-              </div>
-            ) : (
-              <div key={i} style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${value.length>i?PINK:BORDER}`,background:value.length>i?PINK:"transparent",transition:"all .15s"}}/>
-            )
+            <div key={i} style={{width:36,height:44,borderRadius:8,background:value.length>i?"#F3F4F6":"#F3F4F6",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,transition:"all .15s"}}>
+              {reveal
+                ? (value.length > i ? value[i] : "")
+                : (value.length > i ? <div style={{width:10,height:10,borderRadius:"50%",background:PINK}}/> : "")
+              }
+            </div>
           ))}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,width:"100%",maxWidth:260}}>
@@ -2246,7 +2245,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     </div>
     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:6}}>Set a PIN</div>
     <div style={{fontSize:13,color:SUB,marginBottom:20,lineHeight:1.6}}>
-      Create a 4-digit PIN so you can rejoin and keep your coins &amp; number.
+      Create a 4-digit PIN so you can rejoin and keep your coins.
     </div>
     <PinPad value={pin} onChange={setPin} length={4} reveal={true}/>
     <button onClick={setNewPin} disabled={pin.length<4}
