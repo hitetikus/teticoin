@@ -1471,7 +1471,9 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [editNameVal, setEditNameVal] = useState("");
   const [editNameErr, setEditNameErr] = useState("");
   const [returnMatch, setReturnMatch] = useState(null);
-  const [pBoardTab, setPBoardTab] = useState("individual"); // participant scoreboard tab
+  const [pBoardTab, setPBoardTab] = useState("individual");
+  const [participantMenuOpen, setParticipantMenuOpen] = useState(false);
+  const [participantEarnings, setParticipantEarnings] = useState(null); // {totalCoins, totalSessions}
   const [linkedUid, setLinkedUid] = useState(null);       // set after optional login
   const [linkedName, setLinkedName] = useState(null);     // display name from linked account
   const [guestName, setGuestName] = useState("");         // original typed name before optional login
@@ -1586,6 +1588,20 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       window.removeEventListener("click", unlock);
     };
   }, []);
+
+  // Load earnings summary when linkedUid is set
+  useEffect(() => {
+    if (!linkedUid) { setParticipantEarnings(null); return; }
+    import("firebase/firestore").then(({getFirestore,doc,getDoc})=>{
+      getDoc(doc(getFirestore(),"users",linkedUid,"data","earnings")).then(snap=>{
+        const arr = snap.exists() ? (snap.data().value||[]) : [];
+        setParticipantEarnings({
+          totalCoins: arr.reduce((s,e)=>s+(e.coins||0),0),
+          totalSessions: arr.length
+        });
+      }).catch(()=>{});
+    }).catch(()=>{});
+  }, [linkedUid]);
 
   // Poll for live updates every 2s once joined — detect coin gain for sound
   useEffect(() => {
@@ -2084,7 +2100,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
         <div style={{display:"flex",gap:10,marginBottom:4}}>
           {Array.from({length}).map((_,i)=>(
-            <div key={i} style={{width:36,height:44,borderRadius:8,background:value.length>i?"#F3F4F6":"#F3F4F6",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,transition:"all .15s"}}>
+            <div key={i} style={{width:36,height:44,borderRadius:8,background:"#F3F4F6",border:reveal&&value.length>i?`1.5px solid ${PURPLE}`:"1.5px solid transparent",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,transition:"all .15s"}}>
               {reveal
                 ? (value.length > i ? value[i] : "")
                 : (value.length > i ? <div style={{width:10,height:10,borderRadius:"50%",background:PINK}}/> : "")
@@ -2392,16 +2408,40 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,lineHeight:1.2}}>{live?.name||"Session"}</div>
           <div style={{fontSize:11,color:SUB,fontWeight:600,letterSpacing:1}}>{live?.code}</div>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,position:"relative"}}>
           {linkedUid ? (
-            <button onClick={async()=>{
-              try { await signOut(auth); } catch(e){}
-              await switchBackToGuestName();
-              setLoginModal(false);
-            }} style={{display:"flex",alignItems:"center",gap:5,background:"none",border:`1px solid ${BORDER}`,borderRadius:9,padding:"5px 10px",fontSize:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,color:SUB,cursor:"pointer"}}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-              Logout
-            </button>
+            <>
+              <button onClick={()=>setParticipantMenuOpen(v=>!v)}
+                style={{display:"flex",alignItems:"center",gap:8,background:participantMenuOpen?SOFT:"#fff",border:`1px solid ${participantMenuOpen?PINK:BORDER}`,borderRadius:12,padding:"5px 10px 5px 6px",cursor:"pointer",transition:"all .15s"}}>
+                <div style={{width:26,height:26,borderRadius:8,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
+                  {(linkedName||"?")[0].toUpperCase()}
+                </div>
+                <div style={{display:"flex",gap:6,alignItems:"center",fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700}}>
+                  <span style={{color:PINK}}>{participantEarnings?.totalCoins ?? "…"}</span>
+                  <span style={{color:"#E5E7EB"}}>|</span>
+                  <span style={{color:PURPLE}}>{participantEarnings?.totalSessions ?? "…"}</span>
+                </div>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round" style={{transform:participantMenuOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform .2s"}}><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              {participantMenuOpen && (
+                <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,background:"#fff",border:`1px solid ${BORDER}`,borderRadius:14,boxShadow:"0 8px 32px rgba(0,0,0,.12)",zIndex:100,minWidth:180,overflow:"hidden"}}>
+                  <button onClick={()=>{setParticipantMenuOpen(false);setShowEarnings(true);}}
+                    style={{width:"100%",padding:"13px 16px",background:"none",border:"none",borderBottom:`1px solid ${BORDER}`,textAlign:"left",display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    My Coins
+                  </button>
+                  <button onClick={async()=>{
+                    setParticipantMenuOpen(false);
+                    try { await signOut(auth); } catch(e){}
+                    await switchBackToGuestName();
+                    setLoginModal(false);
+                  }} style={{width:"100%",padding:"13px 16px",background:"none",border:"none",textAlign:"left",display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#EF4444"}}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Logout
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <button onClick={()=>setLoginModal(true)} style={{display:"flex",alignItems:"center",gap:5,background:SOFT,border:`1px solid ${MID}`,borderRadius:9,padding:"5px 12px",fontSize:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,color:PINK,cursor:"pointer"}}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
@@ -2511,18 +2551,8 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           {sorted.length <= 1 ? "Waiting for others to join..." : "Scoreboard will appear when host shares it"}
         </div>
 
-        {/* ── Bottom banner: logged-in confirmation or guest warning ── */}
-        {linkedUid ? (
-          <div style={{width:"100%",background:`${GREEN}10`,border:`1.5px solid ${GREEN}25`,borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,marginTop:4}}>
-            <div style={{width:30,height:30,borderRadius:8,background:`${GREEN}20`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
-            <div style={{flex:1}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Logged in as {linkedName}</div>
-              <div style={{fontSize:11,color:SUB,marginTop:1}}>Your coins & badges are saved to your account</div>
-            </div>
-          </div>
-        ) : (
+        {/* guest warning banner */}
+        {!linkedUid && (
           <div style={{width:"100%",background:"#FFFBF0",border:"1.5px solid #F59E0B30",borderRadius:14,padding:"12px 16px",display:"flex",alignItems:"flex-start",gap:12,marginTop:4}}>
             <div style={{width:30,height:30,borderRadius:8,background:"#FEF3C7",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
