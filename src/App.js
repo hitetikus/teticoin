@@ -1654,7 +1654,11 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       // Guest name match — show "is this you?" screen
       setReturnMatch(existing); setStep("returning");
     }
-    else { setStep("newpin"); }
+    else {
+      // Logged-in users don't need a PIN — their UID is their identity
+      if (currentUid) { directJoin(); }
+      else { setStep("newpin"); }
+    }
   }
 
   function directJoin(overrideName) {
