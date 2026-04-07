@@ -1498,11 +1498,38 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       setLinkedName(displayName);
       setShowLoginBanner(false);
       if (!name.trim()) setName(displayName);
+      // Block host from joining their own session
+      if (u.uid && init.hostUid && u.uid === init.hostUid) { setStep("hostblocked"); return; }
       const existingByUid = (init.participants||[]).find(p => p.uid === u.uid);
       if (existingByUid) {
         prevTotalRef.current = existingByUid.total ?? 0;
         setMyId(existingByUid.id);
         setStep("joined");
+        return;
+      }
+      // Logged-in user not yet in session — auto-join directly, no name screen needed
+      const currentPax = (init.participants||[]).length;
+      const limit = hostPlan !== "free" ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
+      if (currentPax < limit && displayName.trim()) {
+        const n = ((init.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+        const np = {id:Date.now(),name:displayName,av:mkAv(displayName),total:0,bk:{},gid:null,num:n,uid:u.uid,guestName:displayName};
+        prevTotalRef.current = 0;
+        setMyId(np.id);
+        const updated = {...init,participants:[...(init.participants||[]),np]};
+        setLive(updated); ssSession(init.code, updated); setStep("joined");
+        try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
+        // Write earnings entry
+        const now = Date.now();
+        import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
+          const db2 = getFirestore();
+          const ref = doc(db2,"users",u.uid,"data","earnings");
+          getDoc(ref).then(snap=>{
+            const prev = snap.exists() ? (snap.data().value||[]) : [];
+            if (!prev.find(e=>e.code===init.code)) {
+              setDoc(ref,{value:[{code:init.code,name:init.name,coins:0,joinedAt:now,lastUpdated:now},...prev],updatedAt:now});
+            }
+          }).catch(()=>{});
+        }).catch(()=>{});
         return;
       }
     }
@@ -6671,9 +6698,11 @@ export default function App() {
 
   // Reload joined-sessions list every time the user lands on the home screen
   // (covers returning from a participant session, coinmaster, or any other screen)
+  // Small delay ensures any Firestore earnings writes from the session have completed
   useEffect(() => {
     if (screen === "home" && trainer?.uid) {
-      loadHomeEarnings(trainer.uid);
+      const t = setTimeout(() => loadHomeEarnings(trainer.uid), 1500);
+      return () => clearTimeout(t);
     }
   }, [screen, trainer]);
 
