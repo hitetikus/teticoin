@@ -1043,8 +1043,7 @@ function SessionSettings({ session, isPro=false, onRename, onToggleLive, onExpor
 
           <div style={{height:1,background:BORDER,margin:"4px 0"}}/>
 
-          {/* Archive — Pro only: free users cannot archive or delete to prevent session limit loophole */}
-          {isPro && (
+          {/* Archive */}
           <div style={{background:"#F8F8FA",border:`1px solid ${BORDER}`,borderRadius:13,padding:"14px 16px"}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Archive Session</div>
             <div style={{fontSize:12,color:SUB,marginBottom:12,lineHeight:1.6}}>
@@ -1055,7 +1054,6 @@ function SessionSettings({ session, isPro=false, onRename, onToggleLive, onExpor
               Archive Session
             </button>
           </div>
-          )}
         </div>
       </div>
     </div>
@@ -1105,14 +1103,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
   const [nameVal, setNameVal] = useState(session.name); // eslint-disable-line
 
   const sorted = [...session.participants].sort((a,b) => a.num - b.num);
-  function addP() {
-    const nm = np.trim(); if (!nm) return;
-    if (session.participants.length >= paxLimit) { setShowUpgradeHint("Participant limit reached (" + paxLimit + "). Upgrade to Pro for up to 200 participants."); return; }
-    if (session.participants.find(p => p.name.toLowerCase() === nm.toLowerCase())) { setShowUpgradeHint("'" + nm + "' is already in this session. Please use a different name."); return; }
-    const n=(session.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;
-    onUpdate(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});
-    setNp("");
-  }
+  function addP() { if (!np.trim()) return; const n=(session.participants.reduce((m,p)=>Math.max(m,p.num),0))+1; onUpdate(s=>{s.participants.push({id:Date.now(),name:np.trim(),av:mkAv(np),total:0,bk:{},gid:null,num:n});return s;}); setNp(""); }
   function addG() { if (!ng.trim()) return; onUpdate(s=>{s.groups.push({id:Date.now(),name:ng.trim(),color:ngc});return s;}); setNg(""); }
   function remP(pid) { const p=session.participants.find(x=>x.id===pid); onUpdate(s=>{s.participants=s.participants.filter(x=>x.id!==pid);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==pid);if(p?.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;}); }
   function asgG(pid,gid) { onUpdate(s=>{const p=s.participants.find(x=>x.id===pid);if(p)p.gid=gid===""?null:(isNaN(Number(gid))?null:Number(gid));return s;}); }
@@ -1178,11 +1169,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                       {session.groups.map(g=><option key={g.id} value={g.id} style={{color:g.color}}>● {g.name}</option>)}
                     </select>
                   ); })()}
-                  <button onClick={()=>{
-                    if(!isManagePro && p.total>0){setShowUpgradeHint(p.name+" has "+p.total+" coins — free plan cannot remove participants who have earned coins. Upgrade to Pro to manage participants freely.");return;}
-                    if(p.total>0||p.uid){if(!window.confirm(`Remove ${p.name}? They have ${p.total} coins. This cannot be undone.`))return;}
-                    remP(p.id);
-                  }} title="Remove participant"
+                  <button onClick={()=>{ if(p.total>0||p.uid){if(!window.confirm(`Remove ${p.name}? They have ${p.total} coins. This cannot be undone.`))return;} remP(p.id); }} title="Remove participant"
                     style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"4px 9px",fontSize:11,color:SUB,cursor:"pointer"}}>✕</button>
                 </div>
               );
@@ -1646,29 +1633,26 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   // Poll for live updates every 2s once joined — detect coin gain for sound
   useEffect(() => {
     if (step !== "joined" || !init?.code) return;
-    let unsub = null;
-    import("firebase/firestore").then(({ getFirestore, doc, onSnapshot }) => {
-      const ref = doc(getFirestore(), "sessions", init.code);
-      unsub = onSnapshot(ref, (snap) => {
-        if (!snap.exists()) return;
-        if (loginModal || editingName) return;
-        const s = snap.data();
-        if (myId) {
-          const me = (s.participants||[]).find(p => p.id === myId);
-          if (me) {
-            if (prevTotalRef.current !== null && me.total !== prevTotalRef.current) {
-              const gained = me.total - prevTotalRef.current;
-              if (soundOnRef.current) playCoinSoundRef.current(gained);
-              setCoinFlash({ pts: gained, key: Date.now() });
-              setTimeout(() => setCoinFlash(null), 1500);
-            }
-            prevTotalRef.current = me.total;
+    const t = setInterval(async () => {
+      if (loginModal) return; // don't re-render while login modal is open
+      if (editingName) return; // don't overwrite live state while user is typing a new name
+      const s = await sgSession(init.code);
+      if (!s) return;
+      if (myId) {
+        const me = (s.participants||[]).find(p => p.id === myId);
+        if (me) {
+          if (prevTotalRef.current !== null && me.total !== prevTotalRef.current) {
+            const gained = me.total - prevTotalRef.current;
+            if (soundOnRef.current) playCoinSoundRef.current(gained);
+            setCoinFlash({ pts: gained, key: Date.now() });
+            setTimeout(() => setCoinFlash(null), 1500);
           }
+          prevTotalRef.current = me.total;
         }
-        setLive(s);
-      }, () => {}); // ignore errors silently
-    }).catch(() => {});
-    return () => { if (unsub) unsub(); };
+      }
+      setLive(s);
+    }, 2000);
+    return () => clearInterval(t);
   }, [step, init?.code, myId]);
 
   function checkName() {
@@ -1704,26 +1688,25 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     }
   }
 
-  async function directJoin(overrideName) {
-    const currentUid = auth.currentUser?.uid || linkedUid || null;
-    // Fetch fresh session so we don't overwrite host changes with stale data
-    const fresh = await sgSession(init.code);
-    const base = fresh || live;
-    const currentPax = (base.participants||[]).length;
+  function directJoin(overrideName) {
+    const currentPax = (live.participants||[]).length;
     const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
     if (currentPax >= limit) { setStep("full"); return; }
-    if (currentUid && base.hostUid && currentUid === base.hostUid) { setStep("hostblocked"); return; }
+    // Block host from joining their own session
+    const currentUid = auth.currentUser?.uid || linkedUid || null;
+    if (currentUid && live.hostUid && currentUid === live.hostUid) { setStep("hostblocked"); return; }
+    const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const joinName = overrideName || name.trim();
-    if (!joinName) return; // safety — no empty names
-    const n = ((base.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
-    const baseGuestName = joinName;
+    const baseGuestName = name.trim() || joinName;
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,uid:currentUid,guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
     prevTotalRef.current = 0;
-    const u = {...base,participants:[...(base.participants||[]),np]};
+    const u = {...live,participants:[...(live.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
+    // Persist so refresh restores the session
     try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
+    // Write earnings entry on join (0 coins, session appears in history immediately)
     if (currentUid) {
       const now = Date.now();
       import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
@@ -1732,7 +1715,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         getDoc(ref).then(snap=>{
           const prev = snap.exists() ? (snap.data().value||[]) : [];
           if (!prev.find(e=>e.code===init.code)) {
-            setDoc(ref,{value:[{code:init.code,name:base.name,coins:0,joinedAt:now,lastUpdated:now},...prev],updatedAt:now});
+            setDoc(ref,{value:[{code:init.code,name:live.name,coins:0,joinedAt:now,lastUpdated:now},...prev],updatedAt:now});
           }
         }).catch(()=>{});
       }).catch(()=>{});
@@ -1757,21 +1740,15 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     if (currentPax >= limit) { setStep("full"); return; }
     const currentUid = auth.currentUser?.uid || linkedUid || null;
     if (currentUid && live.hostUid && currentUid === live.hostUid) { setStep("hostblocked"); return; }
-    const joinName = linkedName || name.trim();
-    if (!joinName) return;
     const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
-    const baseGuestName = joinName;
+    const joinName = linkedName || name.trim();
+    const baseGuestName = name.trim() || joinName;
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,pin,uid:(auth.currentUser?.uid || linkedUid || null),guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
     prevTotalRef.current = 0;
-    // Fetch fresh session to avoid overwriting host changes
-    sgSession(init.code).then(fresh => {
-      const base = fresh || live;
-      const u = {...base,participants:[...(base.participants||[]).filter(p=>p.id!==np.id),np]};
-      setLive(u); ssSession(init.code, u);
-    });
-    setStep("joined");
+    const u = {...live,participants:[...(live.participants||[]),np]};
+    setLive(u); ssSession(init.code, u); setStep("joined");
     try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
     if (np.uid) {
       const now = Date.now();
@@ -1781,7 +1758,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         getDoc(ref).then(snap=>{
           const prev = snap.exists() ? (snap.data().value||[]) : [];
           if (!prev.find(e=>e.code===init.code)) {
-            setDoc(ref,{value:[{code:init.code,name:init.name,coins:0,joinedAt:now,lastUpdated:now},...prev],updatedAt:now});
+            setDoc(ref,{value:[{code:init.code,name:live.name,coins:0,joinedAt:now,lastUpdated:now},...prev],updatedAt:now});
           }
         }).catch(()=>{});
       }).catch(()=>{});
@@ -3098,16 +3075,13 @@ function CoinmasterView({ session: init, selfId, onBack }) {
   const [inlineAddName, setInlineAddName] = useState("");
   const aid = useRef(0);
 
-  // Real-time session listener via onSnapshot
+  // Poll session every 3s — get full fresh copy
   useEffect(() => {
-    let unsub = null;
-    import("firebase/firestore").then(({ getFirestore, doc, onSnapshot }) => {
-      const ref = doc(getFirestore(), "sessions", ses.code);
-      unsub = onSnapshot(ref, (snap) => {
-        if (snap.exists()) setSes(snap.data());
-      }, () => {});
-    }).catch(() => {});
-    return () => { if (unsub) unsub(); };
+    const t = setInterval(async () => {
+      const fresh = await sgSession(ses.code);
+      if (fresh) setSes(fresh);
+    }, 3000);
+    return () => clearInterval(t);
   }, [ses.code]);
 
   // Auto-exit coinmaster view when session goes offline
@@ -3318,9 +3292,9 @@ function CoinmasterView({ session: init, selfId, onBack }) {
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
               <Inp placeholder="Add participant name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
-                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=PRO_PAX_LIMIT){notify("Participant limit reached (200 max)","warn");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){notify("'"+nm+"' is already in this session","warn");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
+                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
                 style={{flex:1,margin:0}}/>
-              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=PRO_PAX_LIMIT){notify("Participant limit reached (200 max)","warn");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){notify("'"+nm+"' is already in this session","warn");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
+              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
                 style={{padding:"0 14px",height:40,background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
                 + Add
               </button>
@@ -3361,7 +3335,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                               title="Rename" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </button>
-                            <button onClick={()=>{if(p.total>0){notify(p.name+" has "+p.total+" coins and cannot be removed","warn");return;}if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);if(p.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;});}}
+                            <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);if(p.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;});}}
                               title="Remove" style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                             </button>
@@ -3426,8 +3400,8 @@ function CoinmasterView({ session: init, selfId, onBack }) {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── GiveSheet — bottom sheet for all give-coin modes ──
-function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, multiSel, setMultiSel, indivId, setIndivId, indivSearch, setIndivSearch, onAward, onClose, notify }) {
+// ── GiveSheet — bottom sheet for give-coin modes (individual, multi, all) ──
+function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, multiSel, setMultiSel, indivId, setIndivId, indivSearch, setIndivSearch, onAward, onClose, notify }) {
   const TV_DEF = [10,30,50,100,150,200];
   const coins = ses.otherCoins || TV_DEF;
   const posCoins = coins.filter(v=>v>0).slice(0,5);
@@ -3463,7 +3437,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, multiSe
         </div>
 
         {/* Individual — search + pick list */}
-        {(mode==="individual"||mode==="quick") && (
+        {mode==="individual" && (
           <div style={{marginBottom:12}}>
             <input placeholder="Search participant…" value={indivSearch} onChange={e=>setIndivSearch(e.target.value)}
               style={{width:"100%",border:`1px solid ${BORDER}`,borderRadius:9,padding:"8px 12px",fontFamily:"Poppins,sans-serif",fontSize:12,color:TEXT,outline:"none",background:SOFT,marginBottom:8}}/>
@@ -3477,7 +3451,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, multiSe
                     style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:9,cursor:"pointer",background:indivId===p.id?"#FFF0F7":"#FAFAFA",border:indivId===p.id?`1px solid ${BORDER}`:"1px solid transparent"}}>
                     <Av s={p.av} color={grp?.color||PINK} size={22}/>
                     <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:12,color:TEXT}}>{p.name}</span>
-                    {p.num && <span style={{fontSize:9,color:"#ccc"}}>P{String(p.num).padStart(3,"0")}</span>}
+                    {p.num != null && <span style={{fontSize:9,color:"#ccc"}}>P{String(p.num).padStart(3,"0")}</span>}
                   </div>
                 );
               })}
@@ -3501,7 +3475,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, multiSe
                   </div>
                   <Av s={p.av} color={grp?.color||PINK} size={22}/>
                   <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:12,color:TEXT}}>{p.name}</span>
-                  {p.num && <span style={{fontSize:9,color:"#ccc"}}>P{String(p.num).padStart(3,"0")}</span>}
+                  {p.num != null && <span style={{fontSize:9,color:"#ccc"}}>P{String(p.num).padStart(3,"0")}</span>}
                 </div>
               );
             })}
@@ -3632,7 +3606,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   const [pMenuOpen, setPMenuOpen] = useState(null);     // participant id whose ⋯ menu is open
   const [pMenuPos, setPMenuPos]   = useState({top:0,right:0}); // fixed position of ⋯ dropdown
   const [boardSubTab, setBoardSubTab] = useState("individual"); // board tab: individual | groups
-  const [giveSheet, setGiveSheet] = useState(null); // null | {mode:"qr"|"all"|"multi"|"individual"|"quick", pid?:string}
+  const [giveSheet, setGiveSheet] = useState(null); // null | {mode:"all"|"multi"|"individual"}
   const [gsMultiSel, setGsMultiSel] = useState([]);
   const [gsIndivId, setGsIndivId] = useState(null);
   const [gsIndivSearch, setGsIndivSearch] = useState("");
@@ -3658,26 +3632,23 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
   // ── Live poll: pull participant updates from Firebase every 3s ──
   useEffect(() => {
-    let unsub = null;
-    import("firebase/firestore").then(({ getFirestore, doc, onSnapshot }) => {
-      const ref = doc(getFirestore(), "sessions", ses.code);
-      unsub = onSnapshot(ref, (snap) => {
-        if (!snap.exists()) return;
-        const fresh = snap.data();
-        // Sync from remote — keeps host in sync with participant joins and coinmaster awards
-        setSes(prev => ({
-          ...prev,
-          participants: fresh.participants||prev.participants,
-          log: fresh.log||prev.log,
-          boardVisible: fresh.boardVisible ?? prev.boardVisible,
-          live: fresh.live ?? prev.live,
-          coinmasterEnabled: fresh.coinmasterEnabled ?? prev.coinmasterEnabled,
-          coinmasterUids: fresh.coinmasterUids ?? prev.coinmasterUids,
-          coinmasterPids: fresh.coinmasterPids ?? prev.coinmasterPids,
-        }));
-      }, () => {});
-    }).catch(() => {});
-    return () => { if (unsub) unsub(); };
+    const t = setInterval(async () => {
+      const fresh = await sgSession(ses.code);
+      if (!fresh) return;
+      // Sync participants, log, boardVisible and live from remote so both
+      // mobile and desktop host views stay in sync with each other
+      setSes(prev => ({
+        ...prev,
+        participants: fresh.participants||prev.participants,
+        log: fresh.log||prev.log,
+        boardVisible: fresh.boardVisible ?? prev.boardVisible,
+        live: fresh.live ?? prev.live,
+        coinmasterEnabled: fresh.coinmasterEnabled ?? prev.coinmasterEnabled,
+        coinmasterUids: fresh.coinmasterUids ?? prev.coinmasterUids,
+        coinmasterPids: fresh.coinmasterPids ?? prev.coinmasterPids,
+      }));
+    }, 3000);
+    return () => clearInterval(t);
   }, [ses.code]);
 
   // ── Auto-offline when host closes/navigates away from the tab ──
@@ -3843,9 +3814,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Rename
             </button>
-            <button onClick={()=>{
-              if(!isPro && p.total>0){notify(p.name+" has "+p.total+" coins — upgrade to Pro to remove participants who have earned coins.","warn");setPMenuOpen(null);return;}
-              if(window.confirm(`Remove ${p.name}?`)){mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);if(p.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;});}setPMenuOpen(null);}}
+            <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`)){mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);if(p.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;});}setPMenuOpen(null);}}
               style={{width:"100%",padding:"11px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#EF4444",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
               onMouseOver={e=>e.currentTarget.style.background="#FEF2F2"} onMouseOut={e=>e.currentTarget.style.background="none"}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
@@ -3896,7 +3865,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </div>
             </div>
             <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,padding:"12px 16px",marginBottom:20}}>
-              {[["Custom coin labels","✗","✓"],["Groups & teams","✗","✓"],["Mass give coins","✗","✓"],["Participants","30","200"],["Sessions","5","∞"]].map(([f,free,pro])=>(
+              {[["Custom coin labels","✗","✓"],["Groups & teams","✗","✓"],["Mass give coins","✗","✓"],["Participants","30","200"],["Sessions","3","∞"]].map(([f,free,pro])=>(
                 <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${BORDER}`}}>
                   <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
                   <div style={{display:"flex",gap:24}}>
@@ -4080,35 +4049,36 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           {/* Award content — flows directly, tc-session-left scrolls on mobile */}
           <div style={{padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
 
-            {/* ── Give Coins — 4 big buttons in 2×2 grid ── */}
+            {/* ── Give Coins — 2×2 big buttons ── */}
             <div>
               <SL style={{marginBottom:8}}>Give Coins</SL>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 {[
-                  { mode:"qr", label:"Scan QR to give", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill={PINK}/><rect x="16" y="5" width="3" height="3" fill={PINK}/><rect x="5" y="16" width="3" height="3" fill={PINK}/></svg> },
-                  { mode:"individual", label:"Give individual", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
-                  { mode:"all", label:"Give everyone", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> },
-                  { mode:"multi", label:"Select multiple", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+                  { mode:"qr",         label:"Scan QR\nto give",       icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill={PINK}/><rect x="16" y="5" width="3" height="3" fill={PINK}/><rect x="5" y="16" width="3" height="3" fill={PINK}/></svg> },
+                  { mode:"individual", label:"Give\nindividual",        icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
+                  { mode:"all",        label:"Give\neveryone",          icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> },
+                  { mode:"multi",      label:"Select\nmultiple",        icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
                 ].map(({mode,label,icon}) => (
                   <button key={mode} onClick={()=>{
-                    if(mode==="multi"&&!isPro){setProGateHint("massgive");return;}
-                    if(mode==="qr"){setShowQR(true);return;}
+                    if (mode==="multi" && !isPro) { setProGateHint("massgive"); return; }
+                    if (mode==="qr") { setShowQR(true); return; }
+                    setGsMultiSel([]); setGsIndivId(null); setGsIndivSearch("");
                     setGiveSheet({mode});
                   }} style={{border:`1px solid ${BORDER}`,borderRadius:14,background:SOFT,cursor:"pointer",display:"flex",alignItems:"center",gap:10,padding:"13px 12px",textAlign:"left",width:"100%"}}>
-                    <div style={{width:36,height:36,borderRadius:10,background:"#FFE4F3",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
-                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:PINK,lineHeight:1.3}}>{label}</span>
+                    <div style={{width:38,height:38,borderRadius:10,background:"#FFE4F3",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:PINK,lineHeight:1.4,whiteSpace:"pre-line"}}>{label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* ── Quick Coins — participant list ── */}
+            {/* ── Quick Coins — participant list with quickCoins buttons ── */}
             {sorted.length > 0 && (
               <div className="tc-mobile-qc" style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                 <div style={{padding:"8px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
                   <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}} data-tour="quick-coins">Quick Coins</span>
                   <button onClick={()=>{ if(!isPro){setProGateHint("customlabels");return;} setShowCoinCustomizer(true);}}
-                    title={isPro?"Customise coin labels":"Customise coin labels (Pro)"}
+                    title={isPro?"Customise coin values":"Customise coin values (Pro)"}
                     style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:26,height:26,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:4}}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
                   </button>
@@ -4119,7 +4089,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
                   .map((p,i,arr) => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
-                    const isCMp = isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid) || (ses.coinmasterPids||[]).includes(p.id));
+                    const isCMp = isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid)||(ses.coinmasterPids||[]).includes(p.id));
                     const qCoins = ses.quickCoins || ACTS_DEFAULT.map(x=>x.pts);
                     const palettes = [
                       {bg:"#FAF5FF",col:"#7C3AED"},
@@ -4136,7 +4106,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                           </div>
                           <div style={{display:"flex",alignItems:"center",gap:4}}>
                             <span style={{fontSize:10,color:isCMp?"#9CA3AF":PINK,fontWeight:700}}>{p.total} pts</span>
-                            {p.num && <span style={{fontSize:9,color:"#ccc",fontWeight:600}}>· P{String(p.num).padStart(3,"0")}</span>}
+                            {p.num != null && <span style={{fontSize:9,color:"#ccc",fontWeight:600}}>· P{String(p.num).padStart(3,"0")}</span>}
                           </div>
                         </div>
                         <div style={{display:"flex",gap:4,flexShrink:0}}>
@@ -4159,10 +4129,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           {/* ── Give Coins bottom sheet ── */}
           {giveSheet && <GiveSheet
             mode={giveSheet.mode}
-            ses={ses}
-            sorted={sorted}
-            isPro={isPro}
-            PINK={PINK} BORDER={BORDER} SOFT={SOFT} TEXT={TEXT}
+            ses={ses} sorted={sorted} isPro={isPro}
+            PINK={PINK} BORDER={BORDER} SOFT={SOFT} TEXT={TEXT} BG={BG}
             multiSel={gsMultiSel} setMultiSel={setGsMultiSel}
             indivId={gsIndivId} setIndivId={setGsIndivId}
             indivSearch={gsIndivSearch} setIndivSearch={setGsIndivSearch}
@@ -4200,9 +4168,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               {/* Inline add row */}
               <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"center"}}>
                 <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){notify("Participant limit reached ("+paxLimit+"). Upgrade to Pro for up to 200.","warn");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){notify(nm+" is already in this session","warn");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
+                  onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
                   style={{margin:0}}/>
-                <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){notify("Participant limit reached ("+paxLimit+"). Upgrade to Pro for up to 200.","warn");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){notify(nm+" is already in this session","warn");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
+                <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
                   style={{padding:"0 16px",height:42,background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
                   + Add
                 </button>
@@ -4839,7 +4807,7 @@ function CreateModal({ onConfirm, onClose }) {
 // PLAN CONSTANTS
 // ─────────────────────────────────────────────
 const SUPERADMIN_EMAIL = "hi.tetikus@gmail.com";
-const FREE_SESSION_LIMIT = 5;
+const FREE_SESSION_LIMIT = 3;
 const FREE_PAX_LIMIT = 30;
 const PRO_PAX_LIMIT = 200;
 
@@ -4855,47 +4823,22 @@ const PLANS = {
 // ── Payment config ────────────────────────────────────────────────
 // To update prices or links, edit PAYMENT_CONFIG only — nothing else needs changing
 const PAYMENT_CONFIG = {
+  fxRate: 4.70, // rough MYR→USD estimate for display only
   chip: {
-    pro: {
-      monthly: "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL", // RM 29 — valid 1 month
-      yearly:  "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl", // RM 269 — valid 1 year
-    },
+    pro:     { monthly: "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL", yearly: "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl" },
+    oneTime: { oneTime: "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL" }, // update with real one-time link
   },
   myr: {
-    pro: { monthly: 29, yearly: 269 },
+    pro:     { monthly: 29, yearly: 269, monthlyNote: "Early access price" },
+    oneTime: { oneTime: 29 },
   },
-  // Plan IDs used in return URL ?plan= parameter
-  // Both are one-time purchases (no auto-renewal via Chip yet)
+  // Plan IDs used in return URL ?plan=
   planMap: {
-    pro_monthly: { plan:"pro",  billing:"monthly" }, // 31 days
-    pro_yearly:  { plan:"proY", billing:"yearly"  }, // 366 days
+    pro_monthly:  { plan:"pro",     billing:"monthly"  },
+    pro_yearly:   { plan:"pro",     billing:"yearly"   },
+    one_time:     { plan:"oneTime", billing:"oneTime"  },
   },
 };
-
-// ── Payment token helpers ────────────────────────────────────────────────────
-// Option A security: store a nonce in sessionStorage when user clicks Pay.
-// On return, verify the nonce exists and matches before writing plan.
-// This stops casual URL-guessing (?payment=success&plan=pro_monthly) by
-// requiring proof the user actually initiated a payment from this browser tab.
-
-function generatePaymentNonce(planParam) {
-  // Simple random nonce stored in sessionStorage before redirect to Chip
-  const nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
-  try { sessionStorage.setItem("tc_pay_nonce_" + planParam, nonce); } catch(e) {}
-  return nonce;
-}
-
-function verifyPaymentNonce(planParam) {
-  // Returns true if a nonce was set for this plan (user clicked Pay in this tab)
-  try {
-    const stored = sessionStorage.getItem("tc_pay_nonce_" + planParam);
-    if (stored) {
-      sessionStorage.removeItem("tc_pay_nonce_" + planParam); // consume it
-      return true;
-    }
-  } catch(e) {}
-  return false;
-}
 
 // ── Handle payment return from Chip ──
 // Call this on app load to detect ?payment=success&plan=xxx in URL
@@ -4904,26 +4847,6 @@ async function handlePaymentReturn(onSuccess) {
   const payment = params.get("payment");
   const planParam = params.get("plan");
   if (payment === "success" && planParam && PAYMENT_CONFIG.planMap[planParam]) {
-    // Verify nonce — ensures this browser tab actually initiated the payment
-    const nonceOk = verifyPaymentNonce(planParam);
-    if (!nonceOk) {
-      // No nonce found — either URL was guessed or user opened in a new tab.
-      // Write a pending claim to Firestore for manual review instead of upgrading.
-      window.history.replaceState({}, "", window.location.pathname);
-      try {
-        const { getFirestore, doc, setDoc } = await import("firebase/firestore");
-        const db = getFirestore();
-        const { getAuth } = await import("firebase/auth");
-        const uid = getAuth().currentUser?.uid;
-        if (uid) {
-          await setDoc(doc(db, "paymentClaims", uid + "_" + planParam + "_" + Date.now()), {
-            uid, planParam, claimedAt: new Date().toISOString(), status: "pending_review",
-            note: "No payment nonce — possible URL guess or new-tab redirect"
-          });
-        }
-      } catch(e) {}
-      return false;
-    }
     const { plan, billing } = PAYMENT_CONFIG.planMap[planParam];
     // Compute expiry: monthly = 31 days, yearly = 366 days (extra day buffer)
     const expiry = new Date();
@@ -4960,9 +4883,13 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
   }
 
   function handlePay(planId) {
-    const planParam = billing === "yearly" ? planId + "_yearly" : planId + "_monthly";
+    if (planId === "oneTime") {
+      const url = chip.oneTime?.oneTime;
+      if (url) window.location.href = url;
+      return;
+    }
     const url = chip[planId]?.[billing];
-    if (url) { generatePaymentNonce(planParam); window.location.href = url; }
+    if (url) window.location.href = url;
   }
 
   const tiers = [
@@ -4970,20 +4897,20 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
       id:"free", name:"Free",
       color:SUB, borderColor:BORDER, bg:"#fff",
       tagline:"Try it out, no card needed",
-      features:["5 sessions","Up to 30 participants","Live scoreboard","QR join — no app needed","Session log","Export CSV"],
+      features:["3 sessions","Up to 20 participants","Live scoreboard","QR join — no app needed","Basic features"],
+    },
+    {
+      id:"oneTime", name:"One Time",
+      color:BLUE, borderColor:BLUE, bg:"#EFF6FF",
+      tagline:"Pay once, use forever",
+      features:["Unlimited sessions","Unlimited participants","Full features","No subscription needed","All future basic updates"],
     },
     {
       id:"pro", name:"Pro",
       color:PINK, borderColor:PINK, bg:SOFT,
       tagline:"For active facilitators",
-      badge:"⭐ Most popular",
-      features:["Unlimited sessions","Up to 200 participants","Groups & team scoring","Custom coin labels","Mass give coins","Projector / TV mode","Export CSV","Priority support"],
-    },
-    {
-      id:"enterprise", name:"Enterprise",
-      color:PURPLE, borderColor:"#DDD6FE", bg:"#FAFAFF",
-      tagline:"For teams and organisations",
-      features:["Everything in Pro","Multiple host accounts","Shared session library","Admin dashboard","Dedicated support"],
+      badge:"⭐ Best value",
+      features:["Unlimited sessions","Up to 200 participants","Groups & team scoring","Custom coin labels","Mass give coins","Priority support"],
     },
   ];
 
@@ -5049,10 +4976,14 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                   <div style={{marginBottom:16}}>
                     {!isPaid ? (
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:SUB}}>Free</div>
-                    ) : t.id === "enterprise" ? (
+                    ) : t.id === "oneTime" ? (
                       <>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:PURPLE,lineHeight:1}}>Contact us</div>
-                        <div style={{fontSize:12,color:SUB,marginTop:6}}>For teams and organisations</div>
+                        <div style={{display:"flex",alignItems:"baseline",gap:3}}>
+                          <span style={{fontSize:12,fontWeight:600,color:t.color}}>RM</span>
+                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:t.color,lineHeight:1}}>29</span>
+                        </div>
+                        <div style={{fontSize:12,color:SUB,marginTop:3}}>One-time payment</div>
+                        <div style={{fontSize:11,background:`${BLUE}15`,color:BLUE,fontWeight:700,borderRadius:6,padding:"2px 8px",marginTop:4,display:"inline-block"}}>No subscription</div>
                       </>
                     ) : billing === "yearly" ? (
                       <>
@@ -5097,16 +5028,11 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                         Downgrade to Free
                       </button>
                     ) : null
-                  ) : t.id === "enterprise" ? (
-                    <a href="mailto:hi.tetikus@gmail.com?subject=Teticoin Enterprise Enquiry"
-                      style={{width:"100%",padding:"14px 0",background:"none",border:`1.5px solid #DDD6FE`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:PURPLE,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,textDecoration:"none",boxSizing:"border-box"}}>
-                      Get in touch →
-                    </a>
                   ) : (
                     <button onClick={()=>handlePay(t.id)}
-                      style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:`0 4px 16px ${PINK}40`}}>
+                      style={{width:"100%",padding:"14px 0",background:t.id==="pro"?GRAD:t.id==="oneTime"?`linear-gradient(135deg,${BLUE},#2563EB)`:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:t.id==="pro"?`0 4px 16px ${PINK}40`:t.id==="oneTime"?`0 4px 16px ${BLUE}40`:`0 4px 16px ${PURPLE}40`}}>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                      {`Get Pro ${billing==="yearly"?"— Save RM 79":""} · RM ${myrPrice(t.id)}`}
+                      {t.id==="oneTime" ? "Get One Time · RM 29" : `Get ${t.name} ${billing==="yearly"?"— Save RM 79":""} · RM ${myrPrice(t.id)}`}
                     </button>
                   )}
                 </div>
@@ -5133,7 +5059,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
 
 // ── 2. Upgrade Banner (home screen) ──────────
 function UpgradeBanner({ sessionCount, onUpgrade }) {
-  const nearLimit = sessionCount >= FREE_SESSION_LIMIT - 1; // show when 4 or more sessions
+  const nearLimit = sessionCount >= FREE_SESSION_LIMIT - 1; // show when 2 or more sessions
   const atLimit   = sessionCount >= FREE_SESSION_LIMIT;
   if (!nearLimit) return null;
   return (
@@ -5161,13 +5087,13 @@ function LimitModal({ type, onUpgrade, onClose }) {
     sessions: {
       icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
       title:"Session limit reached",
-      body:"Free plan allows 5 sessions. Upgrade to Pro for unlimited sessions, participants, and more.",
+      body:"Free plan allows 3 sessions. Upgrade to Pro for unlimited sessions, participants, and more.",
       cta:"Unlock Unlimited Sessions",
     },
     participants: {
       icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
       title:"Participant limit reached",
-      body:"Free plan allows 30 participants per session. Upgrade to Pro for up to 200 participants.",
+      body:"Free plan allows 20 participants per session. Upgrade to Pro for unlimited participants.",
       cta:"Unlock Unlimited Participants",
     },
     branding: {
@@ -5484,7 +5410,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
             {isFree ? (
               <>
                 {[
-                  {label:"5 active sessions",ok:true},
+                  {label:"3 active sessions",ok:true},
                   {label:"Up to 30 participants per session",ok:true},
                   {label:"Award coins in real time",ok:true},
                   {label:"Live scoreboard",ok:true},
@@ -6691,8 +6617,9 @@ export default function App() {
     const planParam = params.get("plan");
     if (payment === "success" && planParam) {
       const planMap = {
-        pro_monthly: "pro",
-        pro_yearly:  "proY",
+        pro_monthly:  "pro",
+        pro_yearly:   "proY",
+        one_time:     "oneTime",
       };
       const newPlan = planMap[planParam];
       if (newPlan) {
@@ -6962,8 +6889,7 @@ export default function App() {
     const s = await sgSession(code); if (s) { setCur(s); window.history.pushState({}, "", `/session/${code}`); setScreen("session"); }
   }
   async function handleSelectPlan(id, billing) {
-    // Determine plan value: pro (monthly) or proY (yearly)
-    const newPlan = id === "pro" && billing === "yearly" ? "proY" : "pro";
+    const newPlan = id==="pro" && billing==="yearly" ? "proY" : id;
     setPlan(newPlan); await ss("plan", newPlan);
     setShowPricing(false);
   }
@@ -7011,7 +6937,7 @@ export default function App() {
           onRename={async(name)=>{ const s={...cur,name}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,name}:x); setSessions(idx); await ss("sessions_index",idx); }}
           onToggleLive={async()=>{ const goingLive = cur.live===false; const s={...cur, live:goingLive, ...(goingLive&&cur.archived?{archived:false}:{})}; await ssSession(s.code, s); setCur(s); }}
           onDuplicate={async()=>{ const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
-          onArchive={async()=>{ if(!isPro){homeNotify("Upgrade to Pro to archive sessions");return;} if(!window.confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
+          onArchive={async()=>{ if(!window.confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onExport={()=>{ triggerCsvDownload(buildParticipantsCsv(cur), `teticoin-${cur.code}-participants.csv`); }}
           onExportLog={()=>{ triggerCsvDownload(buildLogCsv(cur), `teticoin-${cur.code}-log.csv`); }}
           onReset={async()=>{ if(!window.confirm("Reset all coins?")) return; const s={...cur,participants:(cur.participants||[]).map(p=>({...p,total:0,bk:{},hist:[]})),log:[]}; await ssSession(s.code, s); setCur(s); }}
@@ -7021,7 +6947,7 @@ export default function App() {
     </>
   );
 
-  const planLabel = plan==="superadmin"?"Superadmin":plan==="beta"?"Beta Pro":plan==="free"?"Free Plan":"Pro Plan";
+  const planLabel = plan==="superadmin"?"Superadmin":plan==="beta"?"Beta Pro":plan==="free"?"Free Plan":plan.startsWith("pro")?"Pro Plan":"Team Plan";
 
   return (
     <div className="tc-app-shell" style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
@@ -7048,7 +6974,7 @@ export default function App() {
           </div>
           <div style={{flex:1}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,lineHeight:1.2}}>
-              🎉 Welcome to Pro!
+              🎉 Welcome to {paymentToast === "pro" ? "Pro" : "Team"}!
             </div>
             <div style={{fontSize:12,opacity:.9,marginTop:3}}>
               Your plan has been upgraded. All features are now unlocked.
@@ -7371,7 +7297,6 @@ export default function App() {
                         </button>
                         {s.archived ? (
                           <div style={{display:"flex",flexShrink:0,borderLeft:`1px solid ${BORDER}`}}>
-                            {isPro && (<>
                             <button onClick={async()=>{
                               if(!window.confirm("Unarchive this session? It will move to inactive sessions.")) return;
                               const full = await sgSession(s.code);
@@ -7381,19 +7306,11 @@ export default function App() {
                             </button>
                             <button onClick={async()=>{
                               if(!window.confirm("Permanently delete this session? This cannot be undone.")) return;
-                              const { getFirestore, doc, deleteDoc } = await import("firebase/firestore");
-                              await deleteDoc(doc(getFirestore(), "sessions", s.code));
+                              await fsDel(null, s.code, true);
                               setSessions(prev=>prev.filter(x=>x.code!==s.code));
-                              await ss("sessions_index", sessions.filter(x=>x.code!==s.code));
                             }} title="Delete permanently" style={{padding:"0 12px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",color:"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,fontSize:11,fontWeight:700,fontFamily:"Plus Jakarta Sans,sans-serif"}}>
                               Delete
                             </button>
-                            </>)}
-                            {!isPro && (
-                            <div style={{padding:"0 14px",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,fontSize:11,color:SUB,fontFamily:"Plus Jakarta Sans,sans-serif"}}>
-                              Upgrade to manage
-                            </div>
-                            )}
                           </div>
                         ) : (
                           <button onClick={async()=>{const full=await sgSession(s.code);if(full){setCur(full);setScreen("sessionSettings");}}}
