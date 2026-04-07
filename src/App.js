@@ -1103,7 +1103,14 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
   const [nameVal, setNameVal] = useState(session.name); // eslint-disable-line
 
   const sorted = [...session.participants].sort((a,b) => a.num - b.num);
-  function addP() { if (!np.trim()) return; const n=(session.participants.reduce((m,p)=>Math.max(m,p.num),0))+1; onUpdate(s=>{s.participants.push({id:Date.now(),name:np.trim(),av:mkAv(np),total:0,bk:{},gid:null,num:n});return s;}); setNp(""); }
+  function addP() {
+    const nm = np.trim(); if (!nm) return;
+    if (session.participants.length >= paxLimit) { setShowUpgradeHint("Participant limit reached (" + paxLimit + "). Upgrade to Pro for up to 200."); return; }
+    if (session.participants.find(p => p.name.toLowerCase() === nm.toLowerCase())) { setShowUpgradeHint("Name already exists: " + nm); return; }
+    const n=(session.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;
+    onUpdate(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});
+    setNp("");
+  }
   function addG() { if (!ng.trim()) return; onUpdate(s=>{s.groups.push({id:Date.now(),name:ng.trim(),color:ngc});return s;}); setNg(""); }
   function remP(pid) { const p=session.participants.find(x=>x.id===pid); onUpdate(s=>{s.participants=s.participants.filter(x=>x.id!==pid);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==pid);if(p?.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;}); }
   function asgG(pid,gid) { onUpdate(s=>{const p=s.participants.find(x=>x.id===pid);if(p)p.gid=gid===""?null:(isNaN(Number(gid))?null:Number(gid));return s;}); }
@@ -3292,9 +3299,9 @@ function CoinmasterView({ session: init, selfId, onBack }) {
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
               <Inp placeholder="Add participant name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
-                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
+                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=PRO_PAX_LIMIT){notify("Participant limit reached");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){notify("Name already exists");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
                 style={{flex:1,margin:0}}/>
-              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
+              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=PRO_PAX_LIMIT){notify("Participant limit reached");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){notify("Name already exists");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
                 style={{padding:"0 14px",height:40,background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
                 + Add
               </button>
@@ -4056,9 +4063,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               {/* Inline add row */}
               <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"center"}}>
                 <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
+                  onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached ("+paxLimit+")");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){setToast("Name already exists");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
                   style={{margin:0}}/>
-                <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
+                <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached ("+paxLimit+")");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){setToast("Name already exists");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
                   style={{padding:"0 16px",height:42,background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
                   + Add
                 </button>
@@ -4711,22 +4718,47 @@ const PLANS = {
 // ── Payment config ────────────────────────────────────────────────
 // To update prices or links, edit PAYMENT_CONFIG only — nothing else needs changing
 const PAYMENT_CONFIG = {
-  fxRate: 4.70, // rough MYR→USD estimate for display only
   chip: {
-    pro:     { monthly: "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL", yearly: "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl" },
-    oneTime: { oneTime: "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL" }, // update with real one-time link
+    pro: {
+      monthly: "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL", // RM 29 — valid 1 month
+      yearly:  "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl", // RM 269 — valid 1 year
+    },
   },
   myr: {
-    pro:     { monthly: 29, yearly: 269, monthlyNote: "Early access price" },
-    oneTime: { oneTime: 29 },
+    pro: { monthly: 29, yearly: 269 },
   },
-  // Plan IDs used in return URL ?plan=
+  // Plan IDs used in return URL ?plan= parameter
+  // Both are one-time purchases (no auto-renewal via Chip yet)
   planMap: {
-    pro_monthly:  { plan:"pro",     billing:"monthly"  },
-    pro_yearly:   { plan:"pro",     billing:"yearly"   },
-    one_time:     { plan:"oneTime", billing:"oneTime"  },
+    pro_monthly: { plan:"pro",  billing:"monthly" }, // 31 days
+    pro_yearly:  { plan:"proY", billing:"yearly"  }, // 366 days
   },
 };
+
+// ── Payment token helpers ────────────────────────────────────────────────────
+// Option A security: store a nonce in sessionStorage when user clicks Pay.
+// On return, verify the nonce exists and matches before writing plan.
+// This stops casual URL-guessing (?payment=success&plan=pro_monthly) by
+// requiring proof the user actually initiated a payment from this browser tab.
+
+function generatePaymentNonce(planParam) {
+  // Simple random nonce stored in sessionStorage before redirect to Chip
+  const nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  try { sessionStorage.setItem("tc_pay_nonce_" + planParam, nonce); } catch(e) {}
+  return nonce;
+}
+
+function verifyPaymentNonce(planParam) {
+  // Returns true if a nonce was set for this plan (user clicked Pay in this tab)
+  try {
+    const stored = sessionStorage.getItem("tc_pay_nonce_" + planParam);
+    if (stored) {
+      sessionStorage.removeItem("tc_pay_nonce_" + planParam); // consume it
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
 
 // ── Handle payment return from Chip ──
 // Call this on app load to detect ?payment=success&plan=xxx in URL
@@ -4735,6 +4767,26 @@ async function handlePaymentReturn(onSuccess) {
   const payment = params.get("payment");
   const planParam = params.get("plan");
   if (payment === "success" && planParam && PAYMENT_CONFIG.planMap[planParam]) {
+    // Verify nonce — ensures this browser tab actually initiated the payment
+    const nonceOk = verifyPaymentNonce(planParam);
+    if (!nonceOk) {
+      // No nonce found — either URL was guessed or user opened in a new tab.
+      // Write a pending claim to Firestore for manual review instead of upgrading.
+      window.history.replaceState({}, "", window.location.pathname);
+      try {
+        const { getFirestore, doc, setDoc } = await import("firebase/firestore");
+        const db = getFirestore();
+        const { getAuth } = await import("firebase/auth");
+        const uid = getAuth().currentUser?.uid;
+        if (uid) {
+          await setDoc(doc(db, "paymentClaims", uid + "_" + planParam + "_" + Date.now()), {
+            uid, planParam, claimedAt: new Date().toISOString(), status: "pending_review",
+            note: "No payment nonce — possible URL guess or new-tab redirect"
+          });
+        }
+      } catch(e) {}
+      return false;
+    }
     const { plan, billing } = PAYMENT_CONFIG.planMap[planParam];
     // Compute expiry: monthly = 31 days, yearly = 366 days (extra day buffer)
     const expiry = new Date();
@@ -4771,13 +4823,9 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
   }
 
   function handlePay(planId) {
-    if (planId === "oneTime") {
-      const url = chip.oneTime?.oneTime;
-      if (url) window.location.href = url;
-      return;
-    }
+    const planParam = billing === "yearly" ? planId + "_yearly" : planId + "_monthly";
     const url = chip[planId]?.[billing];
-    if (url) window.location.href = url;
+    if (url) { generatePaymentNonce(planParam); window.location.href = url; }
   }
 
   const tiers = [
@@ -6505,9 +6553,8 @@ export default function App() {
     const planParam = params.get("plan");
     if (payment === "success" && planParam) {
       const planMap = {
-        pro_monthly:  "pro",
-        pro_yearly:   "proY",
-        one_time:     "oneTime",
+        pro_monthly: "pro",
+        pro_yearly:  "proY",
       };
       const newPlan = planMap[planParam];
       if (newPlan) {
@@ -6777,7 +6824,8 @@ export default function App() {
     const s = await sgSession(code); if (s) { setCur(s); window.history.pushState({}, "", `/session/${code}`); setScreen("session"); }
   }
   async function handleSelectPlan(id, billing) {
-    const newPlan = id==="pro" && billing==="yearly" ? "proY" : id;
+    // Determine plan value: pro (monthly) or proY (yearly)
+    const newPlan = id === "pro" && billing === "yearly" ? "proY" : "pro";
     setPlan(newPlan); await ss("plan", newPlan);
     setShowPricing(false);
   }
