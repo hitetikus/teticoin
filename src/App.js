@@ -3991,12 +3991,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 {[
-                  { mode:"qr",    label:"Scan Participant's QR",
-                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="17" y2="14"/><line x1="14" y1="17" x2="14" y2="20"/><line x1="17" y1="17" x2="20" y2="17"/><line x1="20" y1="14" x2="20" y2="20"/><line x1="17" y1="20" x2="20" y2="20"/></svg> },
+                  { mode:"qr",    label:"Scan QR to Give",
+                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> },
                   { mode:"all",   label:"Give everyone",
                     icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
                   { mode:"multi", label:"Select multiple",
-                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="5" width="13" height="13" rx="2"/><path d="M7 12l3 3 5-5"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/></svg> },
+                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="7 12 10.5 15.5 17 9"/></svg> },
                   { mode:"individual", label:"Give individual",
                     icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
                 ].map(({mode,label,icon}) => (
@@ -4016,10 +4016,13 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             {/* ── Quick Coins — all otherCoins, scrollable, white+pink-border ── */}
             {sorted.length > 0 && (
               <div className="tc-mobile-qc" style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                <div style={{padding:"8px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}} data-tour="quick-coins">Quick Coins</span>
+                <div style={{padding:"10px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{width:28,height:28,borderRadius:"50%",background:PINK,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </div>
+                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,flex:1}} data-tour="quick-coins">Quick Coins</span>
                   <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
-                    style={{height:26,padding:"0 8px",border:`1.5px solid ${BORDER}`,borderRadius:7,fontFamily:"Poppins,sans-serif",fontSize:11,color:TEXT,outline:"none",width:90,background:BG}}/>
+                    style={{height:28,padding:"0 12px",border:`1.5px solid ${BORDER}`,borderRadius:999,fontFamily:"Poppins,sans-serif",fontSize:11,color:TEXT,outline:"none",width:"46%",background:BG}}/>
                 </div>
                 {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
                   .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
@@ -4028,15 +4031,15 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     const isCMp = isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid)||(ses.coinmasterPids||[]).includes(p.id));
                     const allCoins = ses.otherCoins || TV_DEFAULT;
                     return (
-                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",opacity:isCMp?0.55:1}}>
-                        <Av s={p.av} color={isCMp?"#9CA3AF":grp?.color||PINK} size={28}/>
-                        <div style={{width:100,flexShrink:0}}>
-                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:isCMp?"#9CA3AF":TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",display:"flex",alignItems:"center",gap:4}}>
+                      <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",opacity:isCMp?0.55:1}}>
+                        <Av s={p.av} color={isCMp?"#9CA3AF":grp?.color||PINK} size={32}/>
+                        <div style={{width:108,flexShrink:0}}>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:isCMp?"#9CA3AF":TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",display:"flex",alignItems:"center",gap:4}}>
                             {p.name}
                             {isCMp && <span style={{fontSize:8,fontWeight:800,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"1px 5px",flexShrink:0}}>CM</span>}
                           </div>
                           <div style={{display:"flex",alignItems:"center",gap:4}}>
-                            <span style={{fontSize:10,color:isCMp?"#9CA3AF":PINK,fontWeight:700}}>{p.total} pts</span>
+                            <span style={{fontSize:11,color:isCMp?"#9CA3AF":PINK,fontWeight:700}}>{p.total} pts</span>
                             {p.num != null && <span style={{fontSize:9,color:"#ccc",fontWeight:600}}>· P{String(p.num).padStart(3,"0")}</span>}
                           </div>
                         </div>
@@ -4045,7 +4048,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                             {allCoins.map((v,ci) => (
                               <button key={ci} disabled={isCMp}
                                 onClick={e=>{e.stopPropagation();if(isCMp)return;award(p.id,"token",v,e.clientX,e.clientY);}}
-                                style={{minWidth:v<0||Math.abs(v)>=100?38:32,height:30,borderRadius:7,border:`1.5px solid ${v<0?"#FCA5A5":BORDER}`,background:"#fff",cursor:isCMp?"default":"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?9:11,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
+                                style={{minWidth:v<0||Math.abs(v)>=100?42:36,height:34,borderRadius:8,border:`1.5px solid ${v<0?"#FCA5A5":BORDER}`,background:"#fff",cursor:isCMp?"default":"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?10:12,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
                                 {v>0?"+":""}{v}
                               </button>
                             ))}
