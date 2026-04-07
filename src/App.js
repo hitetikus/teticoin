@@ -3288,13 +3288,13 @@ function CoinmasterView({ session: init, selfId, onBack }) {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── GiveSheet — bottom sheet for give-coin modes (individual, multi, all) ──
+// ── GiveSheet — bottom sheet (mobile) / centered modal (desktop) for give-coin modes ──
 function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, multiSel, setMultiSel, indivId, setIndivId, indivSearch, setIndivSearch, onAward, onClose, notify }) {
   const TV_DEF = [10,30,50,100,150,200];
   const coins = ses.otherCoins || TV_DEF;
   const posCoins = coins.filter(v=>v>0).slice(0,5);
   const negCoin = coins.find(v=>v<0) ?? -10;
-  const [confirmAmt, setConfirmAmt] = useState(null); // for "give everyone" — stores the tapped amount pending confirm
+  const [confirmAmt, setConfirmAmt] = useState(null);
 
   function doAward(v) {
     if (mode==="all") {
@@ -3330,12 +3330,22 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
     </div>
   );
 
-  // ── INDIVIDUAL: keyboard-aware layout — list above keyboard, coins pinned above it ──
+  // Responsive wrapper: bottom-sheet on mobile, centered modal on desktop
+  const isDesktop = window.innerWidth >= 900;
+  const backdropStyle = {position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1200,display:"flex",
+    alignItems: isDesktop ? "center" : "flex-end", justifyContent: isDesktop ? "center" : "stretch"};
+  const sheetStyle = {background:"#fff",borderRadius: isDesktop ? 20 : "20px 20px 0 0",
+    padding:"16px 16px 28px",width:"100%",
+    maxWidth: isDesktop ? 460 : 480,
+    margin: isDesktop ? "0" : "0 auto",
+    maxHeight: isDesktop ? "85vh" : "88vh",
+    display:"flex",flexDirection:"column"};
+
+  // ── INDIVIDUAL ──
   if (mode==="individual") {
     return (
-      <div onClick={e=>{ if(e.target===e.currentTarget) onClose(); }}
-        style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1200,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-        <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"14px 14px 20px",display:"flex",flexDirection:"column",maxHeight:"90vh"}}>
+      <div onClick={e=>{ if(e.target===e.currentTarget) onClose(); }} style={backdropStyle}>
+        <div style={sheetStyle}>
           <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px",flexShrink:0}}/>
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:10,flexShrink:0}}>Give individual</div>
 
@@ -3346,8 +3356,11 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
               style={{width:"100%",border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"9px 12px 9px 30px",fontFamily:"Poppins,sans-serif",fontSize:12,color:TEXT,outline:"none",background:SOFT}}/>
           </div>
 
-          {/* Scrollable list — shrinks when keyboard appears */}
-          <div style={{overflowY:"auto",display:"flex",flexDirection:"column",gap:4,marginBottom:12,minHeight:48,maxHeight:220}}>
+          {/* Participant list — scrollable, shrinks with keyboard */}
+          <div style={{overflowY:"auto",display:"flex",flexDirection:"column",gap:4,marginBottom:12,flex:"1 1 auto",minHeight:0}}>
+            {filteredParts.length === 0 && (
+              <div style={{padding:"20px 0",textAlign:"center",fontSize:12,color:"#aaa"}}>No participants found</div>
+            )}
             {filteredParts.map(p => {
               const isCMp = isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid)||(ses.coinmasterPids||[]).includes(p.id));
               if (isCMp) return null;
@@ -3355,39 +3368,38 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
               const sel = indivId===p.id;
               return (
                 <div key={p.id} onClick={()=>setIndivId(p.id)}
-                  style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,cursor:"pointer",background:sel?"#FFF0F7":"#FAFAFA",border:`1px solid ${sel?BORDER:"transparent"}`,flexShrink:0}}>
-                  <Av s={p.av} color={grp?.color||PINK} size={26}/>
-                  <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:TEXT}}>{p.name}</span>
-                  <span style={{fontSize:10,color:"#ccc"}}>{p.total} pts</span>
-                  {p.num != null && <span style={{fontSize:9,color:"#ddd",marginLeft:2}}>P{String(p.num).padStart(3,"0")}</span>}
-                  {sel && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+                  style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,cursor:"pointer",background:sel?"#FFF0F7":"#FAFAFA",border:`1px solid ${sel?BORDER:"transparent"}`,flexShrink:0,transition:"background .1s"}}>
+                  <Av s={p.av} color={grp?.color||PINK} size={28}/>
+                  <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</span>
+                  <span style={{fontSize:10,color:"#bbb",flexShrink:0}}>{p.total} pts</span>
+                  {p.num != null && <span style={{fontSize:9,color:"#ddd",marginLeft:2,flexShrink:0}}>P{String(p.num).padStart(3,"0")}</span>}
+                  {sel && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.5" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>}
                 </div>
               );
             })}
           </div>
 
-          {/* Coin buttons — always visible above keyboard */}
-          <CoinButtons onTap={doAward}/>
-          <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4,flexShrink:0}}>✕ Cancel</button>
+          {/* Coin buttons — always pinned above keyboard */}
+          <div style={{flexShrink:0}}>
+            <CoinButtons onTap={doAward}/>
+            <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // ── MULTI: fixed coins at bottom, scrollable list above ──
+  // ── MULTI ──
   if (mode==="multi") {
     return (
-      <div onClick={e=>{ if(e.target===e.currentTarget) onClose(); }}
-        style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1200,display:"flex",alignItems:"flex-end"}}>
-        <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"14px 14px 24px",width:"100%",maxWidth:480,margin:"0 auto",maxHeight:"85vh",display:"flex",flexDirection:"column"}}>
+      <div onClick={e=>{ if(e.target===e.currentTarget) onClose(); }} style={backdropStyle}>
+        <div style={sheetStyle}>
           <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px",flexShrink:0}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,flexShrink:0}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>Select multiple</div>
             {multiSel.length > 0 && <div style={{fontSize:12,color:PINK,fontWeight:700}}>{multiSel.length} selected</div>}
           </div>
-
-          {/* Scrollable list */}
-          <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:4,marginBottom:12}}>
+          <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:4,marginBottom:12,minHeight:0}}>
             {[...sorted].sort((a,b)=>a.name.localeCompare(b.name)).map(p => {
               const isCMp = isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid)||(ses.coinmasterPids||[]).includes(p.id));
               if (isCMp) return null;
@@ -3400,35 +3412,36 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
                     {checked && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
                   </div>
                   <Av s={p.av} color={grp?.color||PINK} size={26}/>
-                  <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:TEXT}}>{p.name}</span>
-                  <span style={{fontSize:10,color:"#ccc"}}>{p.total} pts</span>
-                  {p.num != null && <span style={{fontSize:9,color:"#ddd",marginLeft:2}}>P{String(p.num).padStart(3,"0")}</span>}
+                  <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</span>
+                  <span style={{fontSize:10,color:"#bbb",flexShrink:0}}>{p.total} pts</span>
+                  {p.num != null && <span style={{fontSize:9,color:"#ddd",marginLeft:2,flexShrink:0}}>P{String(p.num).padStart(3,"0")}</span>}
                 </div>
               );
             })}
           </div>
-
-          {/* Fixed coin buttons */}
-          <CoinButtons onTap={doAward}/>
-          <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4,flexShrink:0}}>✕ Cancel</button>
+          <div style={{flexShrink:0}}>
+            <CoinButtons onTap={doAward}/>
+            <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // ── ALL: coin buttons shown directly, confirm popup on tap ──
+  // ── ALL: coin buttons shown, confirm popup on tap ──
   return (
-    <div onClick={e=>{ if(e.target===e.currentTarget&&!confirmAmt) onClose(); }}
-      style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1200,display:"flex",alignItems:"flex-end"}}>
-      <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"14px 14px 28px",width:"100%",maxWidth:480,margin:"0 auto"}}>
-        <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px"}}/>
-        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>Give everyone</div>
-        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#E0F2FE",borderRadius:8,padding:"5px 10px",marginBottom:14}}>
+    <div onClick={e=>{ if(e.target===e.currentTarget&&!confirmAmt) onClose(); }} style={backdropStyle}>
+      <div style={sheetStyle}>
+        <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px",flexShrink:0}}/>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6,flexShrink:0}}>Give everyone</div>
+        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#E0F2FE",borderRadius:8,padding:"5px 10px",marginBottom:14,flexShrink:0}}>
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span style={{fontSize:11,fontWeight:700,color:"#0284C7"}}>All {ses.participants.length} participants</span>
         </div>
-        <CoinButtons onTap={v=>setConfirmAmt(v)}/>
-        <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
+        <div style={{flexShrink:0}}>
+          <CoinButtons onTap={v=>setConfirmAmt(v)}/>
+          <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
+        </div>
       </div>
 
       {/* Confirm popup */}
@@ -3978,23 +3991,23 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 {[
-                  { mode:"qr",    label:"Scan QR\nto give",
-                    icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad)" strokeWidth="2.2" strokeLinecap="round"><defs><linearGradient id="btnGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#FF4FB8"/><stop offset="100%" stopColor="#9D50FF"/></linearGradient></defs><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> },
-                  { mode:"all",   label:"Give\neveryone",
-                    icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad)" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-                  { mode:"multi", label:"Select\nmultiple",
-                    icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad)" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="5" width="13" height="13" rx="2"/><path d="M7 12l3 3 5-5"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/></svg> },
-                  { mode:"individual", label:"Give\nindividual",
-                    icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad)" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
+                  { mode:"qr",    label:"Open Camera",
+                    icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad2)" strokeWidth="2.2" strokeLinecap="round"><defs><linearGradient id="btnGrad2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#FF4FB8"/><stop offset="100%" stopColor="#9D50FF"/></linearGradient></defs><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> },
+                  { mode:"all",   label:"Give everyone",
+                    icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad2)" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+                  { mode:"multi", label:"Select multiple",
+                    icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad2)" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="5" width="13" height="13" rx="2"/><path d="M7 12l3 3 5-5"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/></svg> },
+                  { mode:"individual", label:"Give individual",
+                    icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad2)" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
                 ].map(({mode,label,icon}) => (
                   <button key={mode} onClick={()=>{
                     if (mode==="multi" && !isPro) { setProGateHint("massgive"); return; }
                     if (mode==="qr") { setMass(true); return; }
                     setGsMultiSel([]); setGsIndivId(null); setGsIndivSearch("");
                     setGiveSheet({mode});
-                  }} style={{border:"none",borderRadius:14,background:PINK,cursor:"pointer",display:"flex",alignItems:"center",gap:10,padding:"14px 12px",textAlign:"left",width:"100%"}}>
-                    <div style={{width:38,height:38,borderRadius:10,background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
-                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",lineHeight:1.4,whiteSpace:"pre-line"}}>{label}</span>
+                  }} style={{border:`2px solid ${PINK}`,borderRadius:999,background:SOFT,cursor:"pointer",display:"flex",alignItems:"center",gap:10,padding:"12px 14px",textAlign:"left",width:"100%"}}>
+                    <div style={{width:36,height:36,borderRadius:"50%",background:"#fff",boxShadow:`0 0 0 1px ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:PINK,lineHeight:1.2}}>{label}</span>
                   </button>
                 ))}
               </div>
@@ -4017,7 +4030,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     return (
                       <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",opacity:isCMp?0.55:1}}>
                         <Av s={p.av} color={isCMp?"#9CA3AF":grp?.color||PINK} size={28}/>
-                        <div style={{flex:"0 0 auto",minWidth:0,maxWidth:110}}>
+                        <div style={{width:100,flexShrink:0}}>
                           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:isCMp?"#9CA3AF":TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",display:"flex",alignItems:"center",gap:4}}>
                             {p.name}
                             {isCMp && <span style={{fontSize:8,fontWeight:800,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"1px 5px",flexShrink:0}}>CM</span>}
