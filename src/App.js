@@ -1105,8 +1105,8 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
   const sorted = [...session.participants].sort((a,b) => a.num - b.num);
   function addP() {
     const nm = np.trim(); if (!nm) return;
-    if (session.participants.length >= paxLimit) { setShowUpgradeHint("Participant limit reached (" + paxLimit + "). Upgrade to Pro for up to 200."); return; }
-    if (session.participants.find(p => p.name.toLowerCase() === nm.toLowerCase())) { setShowUpgradeHint("Name already exists: " + nm); return; }
+    if (session.participants.length >= paxLimit) { setShowUpgradeHint("Participant limit reached (" + paxLimit + "). Upgrade to Pro for up to 200 participants."); return; }
+    if (session.participants.find(p => p.name.toLowerCase() === nm.toLowerCase())) { setShowUpgradeHint("'" + nm + "' is already in this session. Please use a different name."); return; }
     const n=(session.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;
     onUpdate(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});
     setNp("");
@@ -1176,7 +1176,11 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                       {session.groups.map(g=><option key={g.id} value={g.id} style={{color:g.color}}>● {g.name}</option>)}
                     </select>
                   ); })()}
-                  <button onClick={()=>{ if(p.total>0||p.uid){if(!window.confirm(`Remove ${p.name}? They have ${p.total} coins. This cannot be undone.`))return;} remP(p.id); }} title="Remove participant"
+                  <button onClick={()=>{
+                    if(!isManagePro && p.total>0){setShowUpgradeHint(p.name+" has "+p.total+" coins. Free plan cannot remove participants who have earned coins. Upgrade to Pro to manage participants freely.");return;}
+                    if(p.total>0||p.uid){if(!window.confirm(`Remove ${p.name}? They have ${p.total} coins. This cannot be undone.`))return;}
+                    remP(p.id);
+                  }} title="Remove participant"
                     style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"4px 9px",fontSize:11,color:SUB,cursor:"pointer"}}>✕</button>
                 </div>
               );
@@ -3299,9 +3303,9 @@ function CoinmasterView({ session: init, selfId, onBack }) {
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
               <Inp placeholder="Add participant name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
-                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=PRO_PAX_LIMIT){notify("Participant limit reached");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){notify("Name already exists");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
+                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=PRO_PAX_LIMIT){notify("Participant limit reached (200 max)","warn");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){notify("'"+nm+"' is already in this session","warn");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
                 style={{flex:1,margin:0}}/>
-              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=PRO_PAX_LIMIT){notify("Participant limit reached");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){notify("Name already exists");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
+              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=PRO_PAX_LIMIT){notify("Participant limit reached (200 max)","warn");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){notify("'"+nm+"' is already in this session","warn");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
                 style={{padding:"0 14px",height:40,background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
                 + Add
               </button>
@@ -3342,7 +3346,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                               title="Rename" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </button>
-                            <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);if(p.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;});}}
+                            <button onClick={()=>{if(p.total>0){notify(p.name+" has "+p.total+" coins and cannot be removed","warn");return;}if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);if(p.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;});}}
                               title="Remove" style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                             </button>
@@ -3705,7 +3709,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Rename
             </button>
-            <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`)){mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);if(p.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;});}setPMenuOpen(null);}}
+            <button onClick={()=>{
+              if(!isPro && p.total>0){notify(p.name+" has "+p.total+" coins. Upgrade to Pro to remove participants with coins.","warn");setPMenuOpen(null);return;}
+              if(window.confirm(`Remove ${p.name}?`)){mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);if(p.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;});}setPMenuOpen(null);}}
               style={{width:"100%",padding:"11px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#EF4444",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
               onMouseOver={e=>e.currentTarget.style.background="#FEF2F2"} onMouseOut={e=>e.currentTarget.style.background="none"}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
@@ -4063,9 +4069,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               {/* Inline add row */}
               <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"center"}}>
                 <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached ("+paxLimit+")");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){setToast("Name already exists");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
+                  onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setLimitModal("participants");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){notify("'"+nm+"' is already in this session","warn");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
                   style={{margin:0}}/>
-                <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached ("+paxLimit+")");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){setToast("Name already exists");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
+                <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setLimitModal("participants");return;}if(ses.participants.find(p=>p.name.toLowerCase()===nm.toLowerCase())){notify("'"+nm+"' is already in this session","warn");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
                   style={{padding:"0 16px",height:42,background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
                   + Add
                 </button>
@@ -5029,7 +5035,7 @@ function LimitModal({ type, onUpgrade, onClose }) {
     participants: {
       icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
       title:"Participant limit reached",
-      body:"Free plan allows 20 participants per session. Upgrade to Pro for unlimited participants.",
+      body:"Free plan allows 30 participants per session. Upgrade to Pro for up to 200 participants.",
       cta:"Unlock Unlimited Participants",
     },
     branding: {
