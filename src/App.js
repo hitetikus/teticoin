@@ -3780,7 +3780,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </div>
             </div>
             <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,padding:"12px 16px",marginBottom:20}}>
-              {[["Custom coin labels","✗","✓"],["Groups & teams","✗","✓"],["Mass give coins","✗","✓"],["Participants","30","200"],["Sessions","3","∞"]].map(([f,free,pro])=>(
+              {[["Custom coin labels","✗","✓"],["Groups & teams","✗","✓"],["Mass give coins","✗","✓"],["Participants","30","200"],["Sessions","5","∞"]].map(([f,free,pro])=>(
                 <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${BORDER}`}}>
                   <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
                   <div style={{display:"flex",gap:24}}>
@@ -4857,20 +4857,20 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
       id:"free", name:"Free",
       color:SUB, borderColor:BORDER, bg:"#fff",
       tagline:"Try it out, no card needed",
-      features:["5 sessions","Up to 30 participants","Live scoreboard","QR join — no app needed","Basic features"],
-    },
-    {
-      id:"oneTime", name:"One Time",
-      color:BLUE, borderColor:BLUE, bg:"#EFF6FF",
-      tagline:"Pay once, use forever",
-      features:["Unlimited sessions","Unlimited participants","Full features","No subscription needed","All future basic updates"],
+      features:["5 sessions","Up to 30 participants","Live scoreboard","QR join — no app needed","Session log","Export CSV"],
     },
     {
       id:"pro", name:"Pro",
       color:PINK, borderColor:PINK, bg:SOFT,
       tagline:"For active facilitators",
-      badge:"⭐ Best value",
-      features:["Unlimited sessions","Up to 200 participants","Groups & team scoring","Custom coin labels","Mass give coins","Priority support"],
+      badge:"⭐ Most popular",
+      features:["Unlimited sessions","Up to 200 participants","Groups & team scoring","Custom coin labels","Mass give coins","Projector / TV mode","Export CSV","Priority support"],
+    },
+    {
+      id:"enterprise", name:"Enterprise",
+      color:PURPLE, borderColor:"#DDD6FE", bg:"#FAFAFF",
+      tagline:"For teams and organisations",
+      features:["Everything in Pro","Multiple host accounts","Shared session library","Admin dashboard","Dedicated support"],
     },
   ];
 
@@ -4936,14 +4936,10 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                   <div style={{marginBottom:16}}>
                     {!isPaid ? (
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:SUB}}>Free</div>
-                    ) : t.id === "oneTime" ? (
+                    ) : t.id === "enterprise" ? (
                       <>
-                        <div style={{display:"flex",alignItems:"baseline",gap:3}}>
-                          <span style={{fontSize:12,fontWeight:600,color:t.color}}>RM</span>
-                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:t.color,lineHeight:1}}>29</span>
-                        </div>
-                        <div style={{fontSize:12,color:SUB,marginTop:3}}>One-time payment</div>
-                        <div style={{fontSize:11,background:`${BLUE}15`,color:BLUE,fontWeight:700,borderRadius:6,padding:"2px 8px",marginTop:4,display:"inline-block"}}>No subscription</div>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:PURPLE,lineHeight:1}}>Contact us</div>
+                        <div style={{fontSize:12,color:SUB,marginTop:6}}>For teams and organisations</div>
                       </>
                     ) : billing === "yearly" ? (
                       <>
@@ -4988,11 +4984,16 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                         Downgrade to Free
                       </button>
                     ) : null
+                  ) : t.id === "enterprise" ? (
+                    <a href="mailto:hi.tetikus@gmail.com?subject=Teticoin Enterprise Enquiry"
+                      style={{width:"100%",padding:"14px 0",background:"none",border:`1.5px solid #DDD6FE`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:PURPLE,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,textDecoration:"none",boxSizing:"border-box"}}>
+                      Get in touch →
+                    </a>
                   ) : (
                     <button onClick={()=>handlePay(t.id)}
-                      style={{width:"100%",padding:"14px 0",background:t.id==="pro"?GRAD:t.id==="oneTime"?`linear-gradient(135deg,${BLUE},#2563EB)`:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:t.id==="pro"?`0 4px 16px ${PINK}40`:t.id==="oneTime"?`0 4px 16px ${BLUE}40`:`0 4px 16px ${PURPLE}40`}}>
+                      style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:`0 4px 16px ${PINK}40`}}>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                      {t.id==="oneTime" ? "Get One Time · RM 29" : `Get ${t.name} ${billing==="yearly"?"— Save RM 79":""} · RM ${myrPrice(t.id)}`}
+                      {`Get Pro ${billing==="yearly"?"— Save RM 79":""} · RM ${myrPrice(t.id)}`}
                     </button>
                   )}
                 </div>
@@ -6907,7 +6908,7 @@ export default function App() {
     </>
   );
 
-  const planLabel = plan==="superadmin"?"Superadmin":plan==="beta"?"Beta Pro":plan==="free"?"Free Plan":plan.startsWith("pro")?"Pro Plan":"Team Plan";
+  const planLabel = plan==="superadmin"?"Superadmin":plan==="beta"?"Beta Pro":plan==="free"?"Free Plan":"Pro Plan";
 
   return (
     <div className="tc-app-shell" style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
@@ -6934,7 +6935,7 @@ export default function App() {
           </div>
           <div style={{flex:1}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,lineHeight:1.2}}>
-              🎉 Welcome to {paymentToast === "pro" ? "Pro" : "Team"}!
+              🎉 Welcome to Pro!
             </div>
             <div style={{fontSize:12,opacity:.9,marginTop:3}}>
               Your plan has been upgraded. All features are now unlocked.

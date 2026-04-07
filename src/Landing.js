@@ -294,7 +294,7 @@ export function PrivacyPage({ onBack }) {
           ["","By using Teticoin, you agree to the terms of this Privacy Policy. If you do not agree, please do not use the platform."],
           ["1. Information We Collect","Account holders (hosts): When you create an account, we collect your name, email address, and authentication credentials. We also store your session history and usage data.\n\nParticipants: Participants who join a session via QR code or link only provide a display name. No email or account is required. Participant data is stored as part of the session created by the host.\n\nUsage data: We may collect technical information such as browser type and IP address to improve platform performance."],
           ["2. How We Use Your Information","We use your information to provide the platform, authenticate host accounts, process payments via Chip, send transactional emails, and improve features. We do not sell your personal data or use participant data for advertising."],
-          ["3. Data Storage","Data is stored securely in Google Firebase (Firestore). Free plan session data is retained for 30 days after last activity. Pro and Team plan data is retained for the subscription lifetime plus 90 days after cancellation."],
+          ["3. Data Storage","Data is stored securely in Google Firebase (Firestore). Free plan session data is retained for 30 days after last activity. Pro and Enterprise plan data is retained for the subscription lifetime plus 90 days after cancellation."],
           ["4. Participant Data & Host Responsibility","Hosts are responsible for informing participants that their name and performance may be recorded. Hosts must not collect sensitive personal information from participants beyond what is needed to run a session."],
           ["5. Payments","Paid subscriptions are processed through Chip (chip-in.asia). We do not store card details. All payment data is handled by Chip in accordance with PCI DSS standards."],
           ["6. Cookies","Teticoin uses essential cookies to maintain your login session. We do not use advertising or tracking cookies."],
@@ -387,14 +387,10 @@ export default function LandingPage({ onGetStarted, onLogin }) {
     return () => observer.disconnect();
   }, []);
 
-  const proPrice  = billing === "monthly" ? "RM 16" : "RM 14";
-  const proPeriod = billing === "monthly" ? "/mo · Was RM 22/mo" : "/mo · Billed RM 169/year · Save RM 23";
-  const proBtn    = billing === "monthly" ? "Get Pro — RM 16/mo" : "Get Pro — RM 169/year";
-  const teamPrice = billing === "monthly" ? "RM 32" : "RM 27";
-  const teamPeriod= billing === "monthly" ? "/mo · up to 5 hosts" : "/mo · Billed RM 320/year · Save RM 64";
-  const teamBtn   = billing === "monthly" ? "Get Team — RM 32/mo" : "Get Team — RM 320/year";
+  const proPrice  = billing === "monthly" ? "RM 29" : "RM 22";
+  const proPeriod = billing === "monthly" ? "/mo · Charged once · valid for 1 month" : "/mo · Billed RM 269/year · Save RM 79";
+  const proBtn    = billing === "monthly" ? "Upgrade to Pro — RM 29/mo" : "Upgrade to Pro — RM 269/year";
   const proLink   = billing === "monthly" ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL" : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl";
-  const teamLink  = billing === "monthly" ? "https://pay.chip-in.asia/4PzNZvVfRlvVVl2N1Y" : "https://pay.chip-in.asia/X4yoJ2E6269tJoE6xt";
 
   const N = {fontFamily:"Nunito,sans-serif"};
 
@@ -791,7 +787,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               <div className="lp-plan-period">No time limit. No card required.</div>
               <div className="lp-plan-divider"/>
               <ul className="lp-plan-features">
-                {["Up to 5 sessions","30 participants per session","Live leaderboard","QR join — no app needed","1 group per session"].map(f => (
+                {["5 active sessions","Up to 30 participants","Award coins in real time","Live scoreboard","QR join — no app needed","Session log"].map(f => (
                   <li key={f}><Check color={NEUT}/>{f}</li>
                 ))}
               </ul>
@@ -804,25 +800,24 @@ export default function LandingPage({ onGetStarted, onLogin }) {
               <div className="lp-plan-period">{proPeriod}</div>
               <div className="lp-plan-divider" style={{background:"#FECDE8"}}/>
               <ul className="lp-plan-features">
-                {["Unlimited sessions","Unlimited participants","Up to 10 groups","Custom award labels","PIN rejoin for returning participants","Full session history","Coinmaster co-host mode"].map(f => (
+                {["Unlimited sessions","Up to 200 participants","Groups & team scoring","Custom coin labels","Mass give coins to everyone","Coinmaster co-host mode","Full session history","Priority support"].map(f => (
                   <li key={f}><Check/>{f}</li>
                 ))}
               </ul>
               <button className="lp-plan-btn primary" onClick={() => window.location.href = proLink}>{proBtn}</button>
-              <div style={{textAlign:"center",fontSize:11,color:NEUT,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>
+              <div style={{textAlign:"center",fontSize:11,color:NEUT,marginTop:10}}>One-time payment · FPX · Card · DuitNow</div>
             </div>
             <div className="lp-plan-card">
-              <div className="lp-plan-label" style={{color:PURPLE}}>Team</div>
-              <div className="lp-plan-price" style={{color:PURPLE}}>{teamPrice}</div>
-              <div className="lp-plan-period">{teamPeriod}</div>
+              <div className="lp-plan-label" style={{color:PURPLE}}>Enterprise</div>
+              <div className="lp-plan-price" style={{color:PURPLE,fontSize:32,fontWeight:800}}>Contact us</div>
+              <div className="lp-plan-period">For teams and organisations</div>
               <div className="lp-plan-divider" style={{background:"#DDD6FE"}}/>
               <ul className="lp-plan-features">
-                {["Everything in Pro","5 host accounts","Shared session library","Admin dashboard","Bulk participant import (CSV)"].map(f => (
+                {["Everything in Pro","Multiple host accounts","Shared session library","Admin dashboard","Dedicated support"].map(f => (
                   <li key={f}><Check color={PURPLE}/>{f}</li>
                 ))}
               </ul>
-              <button className="lp-plan-btn outline" style={{borderColor:"#DDD6FE",color:PURPLE}} onClick={() => window.location.href = teamLink}>{teamBtn}</button>
-              <div style={{textAlign:"center",fontSize:11,color:NEUT,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>
+              <a href="mailto:hi.tetikus@gmail.com?subject=Teticoin Enterprise Enquiry" className="lp-plan-btn outline" style={{borderColor:"#DDD6FE",color:PURPLE,textDecoration:"none",display:"block",textAlign:"center"}}>Get in touch →</a>
             </div>
           </div>
         </div>
