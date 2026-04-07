@@ -3426,118 +3426,6 @@ function CoinmasterView({ session: init, selfId, onBack }) {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── GiveSheet — bottom sheet for all give-coin modes ──
-function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, multiSel, setMultiSel, indivId, setIndivId, indivSearch, setIndivSearch, onAward, onClose, notify }) {
-  const TV_DEF = [10,30,50,100,150,200];
-  const coins = ses.otherCoins || TV_DEF;
-  const posCoins = coins.filter(v=>v>0).slice(0,5);
-  const negCoin = coins.find(v=>v<0) ?? -10;
-
-  function doAward(v) {
-    if (mode==="all") {
-      ses.participants.forEach(p => onAward(p.id, v));
-      onClose();
-    } else if (mode==="multi") {
-      if (!multiSel.length) { notify("Select at least one participant","warn"); return; }
-      multiSel.forEach(pid => onAward(pid, v));
-      onClose();
-    } else {
-      if (!indivId) { notify("Select a participant","warn"); return; }
-      onAward(indivId, v);
-      onClose();
-    }
-  }
-
-  const filteredParts = [...sorted]
-    .sort((a,b) => a.name.localeCompare(b.name))
-    .filter(p => !indivSearch.trim() || p.name.toLowerCase().includes(indivSearch.toLowerCase()));
-
-  return (
-    <div onClick={e=>{ if(e.target===e.currentTarget) onClose(); }}
-      style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1200,display:"flex",alignItems:"flex-end"}}>
-      <div style={{background:"#fff",borderRadius:"20px 20px 0 0",padding:"16px 14px 28px",width:"100%",maxWidth:480,margin:"0 auto"}}>
-        <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 16px"}}/>
-
-        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:12}}>
-          {mode==="all"?"Give everyone":mode==="multi"?"Select multiple":"Give individual"}
-        </div>
-
-        {/* Individual — search + pick list */}
-        {(mode==="individual"||mode==="quick") && (
-          <div style={{marginBottom:12}}>
-            <input placeholder="Search participant…" value={indivSearch} onChange={e=>setIndivSearch(e.target.value)}
-              style={{width:"100%",border:`1px solid ${BORDER}`,borderRadius:9,padding:"8px 12px",fontFamily:"Poppins,sans-serif",fontSize:12,color:TEXT,outline:"none",background:SOFT,marginBottom:8}}/>
-            <div style={{display:"flex",flexDirection:"column",gap:4,maxHeight:130,overflowY:"auto"}}>
-              {filteredParts.map(p => {
-                const isCMp = isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid)||(ses.coinmasterPids||[]).includes(p.id));
-                if (isCMp) return null;
-                const grp = ses.groups.find(g=>g.id===p.gid);
-                return (
-                  <div key={p.id} onClick={()=>setIndivId(p.id)}
-                    style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:9,cursor:"pointer",background:indivId===p.id?"#FFF0F7":"#FAFAFA",border:indivId===p.id?`1px solid ${BORDER}`:"1px solid transparent"}}>
-                    <Av s={p.av} color={grp?.color||PINK} size={22}/>
-                    <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:12,color:TEXT}}>{p.name}</span>
-                    {p.num && <span style={{fontSize:9,color:"#ccc"}}>P{String(p.num).padStart(3,"0")}</span>}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Multi — checklist */}
-        {mode==="multi" && (
-          <div style={{marginBottom:12,maxHeight:140,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}}>
-            {[...sorted].sort((a,b)=>a.name.localeCompare(b.name)).map(p => {
-              const isCMp = isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid)||(ses.coinmasterPids||[]).includes(p.id));
-              if (isCMp) return null;
-              const checked = multiSel.includes(p.id);
-              const grp = ses.groups.find(g=>g.id===p.gid);
-              return (
-                <div key={p.id} onClick={()=>setMultiSel(prev=>checked?prev.filter(x=>x!==p.id):[...prev,p.id])}
-                  style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:9,cursor:"pointer",background:checked?"#FFF0F7":"#FAFAFA",border:checked?`1px solid ${BORDER}`:"1px solid transparent"}}>
-                  <div style={{width:16,height:16,borderRadius:4,border:`1.5px solid ${checked?PINK:BORDER}`,background:checked?PINK:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    {checked && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
-                  </div>
-                  <Av s={p.av} color={grp?.color||PINK} size={22}/>
-                  <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:12,color:TEXT}}>{p.name}</span>
-                  {p.num && <span style={{fontSize:9,color:"#ccc"}}>P{String(p.num).padStart(3,"0")}</span>}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* All — pill */}
-        {mode==="all" && (
-          <div style={{background:"#E0F2FE",borderRadius:8,padding:"6px 12px",display:"inline-flex",alignItems:"center",gap:6,marginBottom:12}}>
-            <span style={{fontSize:12,fontWeight:700,color:"#0284C7"}}>⚡ All {ses.participants.length} participants</span>
-          </div>
-        )}
-
-        {/* Coin buttons — up to 5 positive + 1 negative */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
-          {posCoins.map((v,i) => (
-            <button key={i} onClick={()=>doAward(v)}
-              style={{border:`1px solid ${BORDER}`,borderRadius:10,padding:"14px 4px",textAlign:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:17,color:PINK,background:SOFT,cursor:"pointer"}}>
-              {v>0?"+":""}{v}
-            </button>
-          ))}
-          <button onClick={()=>doAward(negCoin)}
-            style={{border:"1px solid #FEE2E2",borderRadius:10,padding:"14px 4px",textAlign:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:17,color:"#EF4444",background:"#FFF8F8",cursor:"pointer"}}>
-            {negCoin}
-          </button>
-        </div>
-
-        <button onClick={onClose}
-          style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:13,padding:"12px",cursor:"pointer",marginTop:4}}>
-          ✕ Cancel
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ── Session screen ──
 // ── GroupSessionCard — editable group card in Session right panel ──
 function GroupSessionCard({ g, i, mut, ses, pNum }) {
@@ -3632,10 +3520,6 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   const [pMenuOpen, setPMenuOpen] = useState(null);     // participant id whose ⋯ menu is open
   const [pMenuPos, setPMenuPos]   = useState({top:0,right:0}); // fixed position of ⋯ dropdown
   const [boardSubTab, setBoardSubTab] = useState("individual"); // board tab: individual | groups
-  const [giveSheet, setGiveSheet] = useState(null); // null | {mode:"qr"|"all"|"multi"|"individual"|"quick", pid?:string}
-  const [gsMultiSel, setGsMultiSel] = useState([]);
-  const [gsIndivId, setGsIndivId] = useState(null);
-  const [gsIndivSearch, setGsIndivSearch] = useState("");
 
   // Close ⋯ menu when clicking outside
   useEffect(() => {
@@ -4079,74 +3963,93 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           </div>
           {/* Award content — flows directly, tc-session-left scrolls on mobile */}
           <div style={{padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
-
-            {/* ── Give Coins — 4 big buttons in 2×2 grid ── */}
-            <div>
-              <SL style={{marginBottom:8}}>Give Coins</SL>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                {[
-                  { mode:"qr", label:"Scan QR to give", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill={PINK}/><rect x="16" y="5" width="3" height="3" fill={PINK}/><rect x="5" y="16" width="3" height="3" fill={PINK}/></svg> },
-                  { mode:"individual", label:"Give individual", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
-                  { mode:"all", label:"Give everyone", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> },
-                  { mode:"multi", label:"Select multiple", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-                ].map(({mode,label,icon}) => (
-                  <button key={mode} onClick={()=>{
-                    if(mode==="multi"&&!isPro){setProGateHint("massgive");return;}
-                    if(mode==="qr"){setShowQR(true);return;}
-                    setGiveSheet({mode});
-                  }} style={{border:`1px solid ${BORDER}`,borderRadius:14,background:SOFT,cursor:"pointer",display:"flex",alignItems:"center",gap:10,padding:"13px 12px",textAlign:"left",width:"100%"}}>
-                    <div style={{width:36,height:36,borderRadius:10,background:"#FFE4F3",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
-                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:PINK,lineHeight:1.3}}>{label}</span>
-                  </button>
+            {/* ── Give Coins section ── */}
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                <SL style={{marginBottom:0}}>Give Coins</SL>
+                <button onClick={()=>{ if(!isPro){setProGateHint("customlabels");return;} setShowCoinCustomizer(true);}}
+                  title={isPro?"Customise coin labels":"Customise coin labels (Pro)"}
+                  style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:28,height:28,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+                </button>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+                {(ses.otherCoins||TV_DEFAULT).map((v,i) => (
+                  <InlineCoinBtn key={i} value={v}
+                    bg="#ffffff" border="#FECDE8" col={PINK} circle={true}
+                    onAward={e=>awardGuarded("token",v,e)}
+                    onEdit={newV=>mut(s=>{const oc=[...(s.otherCoins||TV_DEFAULT)];oc[i]=newV;s.otherCoins=oc;})}/>
                 ))}
+              </div>
+              <SL>Preset Coins</SL>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+                {ACTS.map((a,i) => {
+                  const pts = (ses.quickCoins||ACTS_DEFAULT.map(x=>x.pts))[i] ?? a.pts;
+                  const palettes = [
+                    {bg:"#FAF5FF",border:"#DDB6FF",num:"#7C3AED",fill:"#7C3AED"},
+                    {bg:"#EEF4FF",border:"#C7D9FF",num:"#4F7CF6",fill:"#4F7CF6"},
+                    {bg:"#EDFAF5",border:"#B3EDDA",num:"#1DB87A",fill:"#1DB87A"},
+                  ];
+                  return <QuickCoinBtn key={a.id} pts={pts} label={a.label} pal={palettes[i]} onAward={e=>awardGuarded(a.id,pts,e)}/>;
+                })}
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                <input type="number" placeholder="Custom amount" value={cAmt} onChange={e=>setCAmt(e.target.value)}
+                  style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
+                <button onClick={e=>{if(!cAmt||isNaN(cAmt))return;awardGuarded("token",Number(cAmt),e);setCAmt("");}}
+                  style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Award</button>
               </div>
             </div>
 
-            {/* ── Quick Coins — participant list ── */}
+            {/* ── Bulk Give Coins button ── */}
+            {isPro ? (
+              <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Bulk Give Coins
+              </button>
+            ) : (
+              <button onClick={()=>setProGateHint("massgive")} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,opacity:0.7}}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Bulk Give Coins</span>
+                <span style={{fontSize:10,background:"rgba(255,255,255,0.2)",borderRadius:99,padding:"2px 8px",fontWeight:700}}>PRO</span>
+              </button>
+            )}
+
+            {/* ── Mobile Quick Coins — direct award(p.id), no selId dependency ── */}
             {sorted.length > 0 && (
               <div className="tc-mobile-qc" style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                 <div style={{padding:"8px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}} data-tour="quick-coins">Quick Coins</span>
-                  <button onClick={()=>{ if(!isPro){setProGateHint("customlabels");return;} setShowCoinCustomizer(true);}}
-                    title={isPro?"Customise coin labels":"Customise coin labels (Pro)"}
-                    style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:26,height:26,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:4}}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
-                  </button>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}}>Quick Coins</span>
                   <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
-                    style={{height:26,padding:"0 8px",border:`1.5px solid ${BORDER}`,borderRadius:7,fontFamily:"Poppins,sans-serif",fontSize:11,color:TEXT,outline:"none",width:90,background:BG}}/>
+                    style={{height:26,padding:"0 8px",border:`1.5px solid ${BORDER}`,borderRadius:7,fontFamily:"Poppins,sans-serif",fontSize:11,color:TEXT,outline:"none",width:100,background:BG}}/>
                 </div>
                 {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
                   .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
                   .map((p,i,arr) => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
                     const isCMp = isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid) || (ses.coinmasterPids||[]).includes(p.id));
-                    const qCoins = ses.quickCoins || ACTS_DEFAULT.map(x=>x.pts);
-                    const palettes = [
-                      {bg:"#FAF5FF",col:"#7C3AED"},
-                      {bg:"#EEF4FF",col:"#4F7CF6"},
-                      {bg:"#EDFAF5",col:"#1DB87A"},
-                    ];
+                    const coins = ses.otherCoins||TV_DEFAULT;
                     return (
                       <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",opacity:isCMp?0.55:1}}>
                         <Av s={p.av} color={isCMp?"#9CA3AF":grp?.color||PINK} size={28}/>
-                        <div style={{flex:1,minWidth:0}}>
+                        <div style={{width:100,flexShrink:0}}>
                           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:isCMp?"#9CA3AF":TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",display:"flex",alignItems:"center",gap:4}}>
                             {p.name}
                             {isCMp && <span style={{fontSize:8,fontWeight:800,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"1px 5px",flexShrink:0}}>CM</span>}
                           </div>
-                          <div style={{display:"flex",alignItems:"center",gap:4}}>
-                            <span style={{fontSize:10,color:isCMp?"#9CA3AF":PINK,fontWeight:700}}>{p.total} pts</span>
-                            {p.num && <span style={{fontSize:9,color:"#ccc",fontWeight:600}}>· P{String(p.num).padStart(3,"0")}</span>}
-                          </div>
+                          <div style={{fontSize:10,color:isCMp?"#9CA3AF":PINK,fontWeight:700}}>{p.total} pts</div>
                         </div>
-                        <div style={{display:"flex",gap:4,flexShrink:0}}>
-                          {qCoins.map((v,ci) => (
-                            <button key={ci} disabled={isCMp}
-                              onClick={e=>{e.stopPropagation();if(isCMp)return;award(p.id,"token",v,e.clientX,e.clientY);}}
-                              style={{width:34,height:30,borderRadius:7,border:"none",background:palettes[ci%3].bg,cursor:isCMp?"default":"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:11,color:palettes[ci%3].col,flexShrink:0,padding:0}}>
-                              {v>0?"+":""}{v}
-                            </button>
-                          ))}
+                        <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
+                          <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:4}}>
+                            {coins.map((v,ci) => (
+                              <button key={ci}
+                                onClick={e=>{e.stopPropagation();setSelId(p.id);award(p.id,"token",v,e.clientX,e.clientY);}}
+                                style={{minWidth:Math.abs(v)>=100?38:30,height:30,borderRadius:7,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?9:11,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
+                                {v>0?"+":""}{v}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     );
@@ -4155,22 +4058,6 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             )}
 
           </div>
-
-          {/* ── Give Coins bottom sheet ── */}
-          {giveSheet && <GiveSheet
-            mode={giveSheet.mode}
-            ses={ses}
-            sorted={sorted}
-            isPro={isPro}
-            PINK={PINK} BORDER={BORDER} SOFT={SOFT} TEXT={TEXT}
-            multiSel={gsMultiSel} setMultiSel={setGsMultiSel}
-            indivId={gsIndivId} setIndivId={setGsIndivId}
-            indivSearch={gsIndivSearch} setIndivSearch={setGsIndivSearch}
-            onAward={(pid,v)=>award(pid,"token",v,null,null)}
-            onClose={()=>{setGiveSheet(null);setGsMultiSel([]);setGsIndivId(null);setGsIndivSearch("");}}
-            notify={notify}
-          />}
-
         </div>
 
         {/* ── RIGHT PANEL: Participants / Board / Groups / Log (+ desktop Award All) ── */}
