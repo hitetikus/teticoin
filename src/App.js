@@ -3992,22 +3992,22 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 {[
                   { mode:"qr",    label:"Open Camera",
-                    icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad2)" strokeWidth="2.2" strokeLinecap="round"><defs><linearGradient id="btnGrad2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#FF4FB8"/><stop offset="100%" stopColor="#9D50FF"/></linearGradient></defs><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> },
+                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> },
                   { mode:"all",   label:"Give everyone",
-                    icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad2)" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
                   { mode:"multi", label:"Select multiple",
-                    icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad2)" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="5" width="13" height="13" rx="2"/><path d="M7 12l3 3 5-5"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/></svg> },
+                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="5" width="13" height="13" rx="2"/><path d="M7 12l3 3 5-5"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/></svg> },
                   { mode:"individual", label:"Give individual",
-                    icon:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="url(#btnGrad2)" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
+                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
                 ].map(({mode,label,icon}) => (
                   <button key={mode} onClick={()=>{
                     if (mode==="multi" && !isPro) { setProGateHint("massgive"); return; }
                     if (mode==="qr") { setMass(true); return; }
                     setGsMultiSel([]); setGsIndivId(null); setGsIndivSearch("");
                     setGiveSheet({mode});
-                  }} style={{border:`2px solid ${PINK}`,borderRadius:999,background:SOFT,cursor:"pointer",display:"flex",alignItems:"center",gap:10,padding:"12px 14px",textAlign:"left",width:"100%"}}>
-                    <div style={{width:36,height:36,borderRadius:"50%",background:"#fff",boxShadow:`0 0 0 1px ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
-                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:PINK,lineHeight:1.2}}>{label}</span>
+                  }} style={{border:`2px solid ${PINK}`,borderRadius:999,background:SOFT,cursor:"pointer",display:"flex",alignItems:"center",gap:10,padding:"10px 14px",textAlign:"left",width:"100%"}}>
+                    <div style={{width:44,height:44,borderRadius:"50%",background:PINK,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,lineHeight:1.25}}>{label}</span>
                   </button>
                 ))}
               </div>
