@@ -2079,12 +2079,18 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     return <CoinmasterView session={live} selfId={myId} onBack={()=>{ /* stay joined, just drop CM view — session must be offline */ }}/>;
   }
 
-  function PinPad({ value, onChange, length=4 }) {
+  function PinPad({ value, onChange, length=4, reveal=false }) {
     return (
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
         <div style={{display:"flex",gap:12,marginBottom:4}}>
           {Array.from({length}).map((_,i)=>(
-            <div key={i} style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${value.length>i?PINK:BORDER}`,background:value.length>i?PINK:"transparent",transition:"all .15s"}}/>
+            reveal && value.length > i ? (
+              <div key={i} style={{width:28,height:28,borderRadius:8,border:`2px solid ${PURPLE}`,background:`${PURPLE}15`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:PURPLE,transition:"all .15s"}}>
+                {value[i]}
+              </div>
+            ) : (
+              <div key={i} style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${value.length>i?PINK:BORDER}`,background:value.length>i?PINK:"transparent",transition:"all .15s"}}/>
+            )
           ))}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,width:"100%",maxWidth:260}}>
@@ -2242,9 +2248,9 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     <div style={{fontSize:13,color:SUB,marginBottom:20,lineHeight:1.6}}>
       Create a 4-digit PIN so you can rejoin and keep your coins &amp; number.
     </div>
-    <PinPad value={pin} onChange={setPin} length={4}/>
+    <PinPad value={pin} onChange={setPin} length={4} reveal={true}/>
     <button onClick={setNewPin} disabled={pin.length<4}
-      style={{width:"100%",marginTop:16,padding:"13px 0",background:pin.length===4?GRAD:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:pin.length===4?"#fff":SUB,cursor:pin.length===4?"pointer":"not-allowed"}}>
+      style={{width:"100%",marginTop:16,padding:"13px 0",background:pin.length===4?`linear-gradient(135deg,${PURPLE},#A855F7)`:BG,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:pin.length===4?"#fff":SUB,cursor:pin.length===4?"pointer":"not-allowed"}}>
       Set PIN & Join
     </button>
     <button onClick={skipPin} style={{marginTop:10,background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif",textDecoration:"underline"}}>
@@ -2366,7 +2372,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
       {/* ── Session inactive overlay ── */}
       {live?.live === false && (
-        <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(10,10,15,0.92)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24}}>
+        <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(10,10,15,0.55)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",padding:"0 24px 80px"}}>
           <div style={{background:"#fff",borderRadius:24,padding:"40px 32px",maxWidth:320,width:"100%",textAlign:"center",boxShadow:"0 32px 80px rgba(0,0,0,.4)"}}>
             <div style={{width:64,height:64,borderRadius:20,background:"#FEF2F2",border:"1.5px solid #EF444430",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
