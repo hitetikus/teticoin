@@ -646,7 +646,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
             <button onClick={()=>{ if(!ok){return;} startScanner(); }}
               style={{width:"100%",padding:"14px 0",background:ok?GRAD:"#F3F4F6",border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:ok?"#fff":"#9CA3AF",cursor:ok?"pointer":"default",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:ok?0:0}}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              {ok ? `Open Camera · +${finalAmt} per scan` : "Select an amount first"}
+              {ok ? "Open Camera to Scan QR" : "Select an amount first"}
             </button>
           )}
 
@@ -3991,8 +3991,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 {[
-                  { mode:"qr",    label:"Open Camera",
-                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> },
+                  { mode:"qr",    label:"Scan Participant's QR",
+                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="17" y2="14"/><line x1="14" y1="17" x2="14" y2="20"/><line x1="17" y1="17" x2="20" y2="17"/><line x1="20" y1="14" x2="20" y2="20"/><line x1="17" y1="20" x2="20" y2="20"/></svg> },
                   { mode:"all",   label:"Give everyone",
                     icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
                   { mode:"multi", label:"Select multiple",
