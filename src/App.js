@@ -411,7 +411,7 @@ function FloatAnim({ x, y, text, color, onDone }) {
 }
 
 // ── Avatar ──
-function Av({ s, color = BLUE, size = 36 }) {
+function Av({ s, color = PINK, size = 36 }) {
   return (
     <div style={{width:size,height:size,borderRadius:size*.22,flexShrink:0,background:`linear-gradient(135deg,${color},${color}99)`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:size*.34,color:"#fff"}}>
       {s}
@@ -528,7 +528,7 @@ function PRow({ p, groups, sel, onSelect }) {
   const grp = groups.find(g => g.id === p.gid);
   return (
     <button onClick={onSelect} style={{width:"100%",display:"flex",alignItems:"center",gap:14,padding:"13px 16px",border:"none",background:sel?SOFT:"#fff",borderBottom:`1px solid ${BORDER}`,cursor:"pointer",textAlign:"left",borderLeft:sel?`3px solid ${PINK}`:"3px solid transparent",transition:".1s"}}>
-      <Av s={p.av} color={grp?.color||BLUE} size={42}/>
+      <Av s={p.av} color={grp?.color||PINK} size={42}/>
       <div style={{flex:1}}>
         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:2}}>{p.name}</div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -670,7 +670,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
                   <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderBottom:`1px solid ${BORDER}`,background:i===0?SOFT:"#fff"}}>
                     <div style={{width:6,height:6,borderRadius:"50%",background:GREEN,flexShrink:0}}/>
                     <span style={{fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,color:PINK,minWidth:36}}>{pNum(p.num)}</span>
-                    <Av s={p.av} color={grp?.color||BLUE} size={26}/>
+                    <Av s={p.av} color={grp?.color||PINK} size={26}/>
                     <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>{p.name}</span>
                     <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:GREEN}}>+{finalAmt}</span>
                     <span style={{fontSize:10,color:SUB}}>{p.t}</span>
@@ -1046,7 +1046,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
               return (
                 <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${BORDER}`}}>
                   <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:36}}>{pNum(p.num)}</div>
-                  <Av s={p.av} color={grp?.color||BLUE} size={34}/>
+                  <Av s={p.av} color={grp?.color||PINK} size={34}/>
                   <div style={{flex:1}}>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{p.name}</div>
                     <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
@@ -2344,15 +2344,15 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
               </button>
               {participantMenuOpen && (
                 <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,background:"#fff",border:`1px solid ${BORDER}`,borderRadius:14,boxShadow:"0 8px 32px rgba(0,0,0,.12)",zIndex:100,minWidth:180,overflow:"hidden"}}>
-                  <button onClick={()=>{setParticipantMenuOpen(false);setShowEarnings(true);}}
-                    style={{width:"100%",padding:"13px 16px",background:"none",border:"none",borderBottom:`1px solid ${BORDER}`,textAlign:"left",display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    My Coins
-                  </button>
                   <button onClick={()=>{setParticipantMenuOpen(false); onBack();}}
                     style={{width:"100%",padding:"13px 16px",background:"none",border:"none",borderBottom:`1px solid ${BORDER}`,textAlign:"left",display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={BLUE} strokeWidth="2.2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                    My Home
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2.2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    Home
+                  </button>
+                  <button onClick={()=>{setParticipantMenuOpen(false);setShowEarnings(true);}}
+                    style={{width:"100%",padding:"13px 16px",background:"none",border:"none",borderBottom:`1px solid ${BORDER}`,textAlign:"left",display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    My Coins
                   </button>
                   <button onClick={async()=>{
                     setParticipantMenuOpen(false);
@@ -2721,7 +2721,7 @@ function LeaderSheet({ session, onToggleBoard, onClose }) {
                     <div style={{display:"flex",alignItems:"center",gap:10}}>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
                       <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB,minWidth:30}}>{pNum(p.num)}</span>
-                      <Av s={p.av} color={grp?.color||BLUE} size={34}/>
+                      <Av s={p.av} color={grp?.color||PINK} size={34}/>
                       <div style={{flex:1}}>
                         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>{p.name}</div>
                         {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
@@ -2910,7 +2910,7 @@ function CMBoardTab({ ses, cmBoardSorted, hasGrps, grpScores, maxGrp, setSelId, 
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
                     <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:ses.boardVisible?"rgba(255,255,255,.45)":SUB,minWidth:30}}>{pNum(p.num)}</span>
-                    <Av s={p.av} color={grp?.color||BLUE} size={34}/>
+                    <Av s={p.av} color={grp?.color||PINK} size={34}/>
                     <div style={{flex:1}}>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?"#fff":TEXT}}>{p.name}</div>
                       {grp && <span style={{fontSize:10,background:`${grp.color}18`,border:`1px solid ${grp.color}30`,color:ses.boardVisible?"#fff":grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
@@ -2966,10 +2966,6 @@ function CoinmasterView({ session: init, selfId, onBack }) {
   const [editingPid, setEditingPid] = useState(null);
   const [editingPName, setEditingPName] = useState("");
   const [inlineAddName, setInlineAddName] = useState("");
-  const [giveSheet, setGiveSheet] = useState(null);
-  const [gsMultiSel, setGsMultiSel] = useState([]);
-  const [gsIndivId, setGsIndivId] = useState(null);
-  const [gsIndivSearch, setGsIndivSearch] = useState("");
   const aid = useRef(0);
 
   // Poll session every 3s — get full fresh copy
@@ -3081,97 +3077,106 @@ function CoinmasterView({ session: init, selfId, onBack }) {
         {/* ── COINS TAB ── */}
         {tab==="award" && (
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0}}>
+            {/* Participant selector */}
+            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0}}>
+              <button onClick={()=>setPicker(true)} style={{width:"100%",display:"flex",alignItems:"center",gap:10,background:selP?SOFT:BG,border:`1.5px solid ${selP?PINK:BORDER}`,borderRadius:13,padding:"10px 14px",cursor:"pointer",textAlign:"left",transition:"all .12s"}}>
+                {selP ? (
+                  <>
+                    <Av s={selP.av} color={ses.groups.find(g=>g.id===selP.gid)?.color||PINK} size={36}/>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
+                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB}}>{pNum(selP.num)}</span>
+                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:TEXT}}>{selP.name}</span>
+                      </div>
+                      <div style={{fontSize:11,color:PINK,fontWeight:700,marginTop:1}}>{selP.total} coins total</div>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:3,flexShrink:0}}>
+                      <span style={{fontFamily:"Poppins,sans-serif",fontSize:11,fontWeight:500,color:SUB}}>Change</span>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{width:36,height:36,borderRadius:8,background:BG,border:`1.5px dashed ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"center",color:SUB,fontSize:20,flexShrink:0}}>+</div>
+                    <div style={{flex:1,fontSize:13,color:SUB,fontWeight:500}}>Tap to select participant</div>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  </>
+                )}
+              </button>
+            </div>
+            {/* Single scroll container — Give Coins + Bulk + Quick Coins all continuous */}
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,minHeight:0}}>
-
-              {/* ── Give Coins — 2×2 big buttons ── */}
-              <div>
-                <SL style={{marginBottom:8}}>Give Coins</SL>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                  {[
-                    { mode:"qr", label:"Scan QR to Give",
-                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="#fff"/><rect x="16" y="5" width="3" height="3" fill="#fff"/><rect x="5" y="16" width="3" height="3" fill="#fff"/></svg> },
-                    { mode:"all", label:"Give everyone",
-                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-                    { mode:"multi", label:"Select multiple",
-                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="7 12 10.5 15.5 17 9"/></svg> },
-                    { mode:"individual", label:"Give individual",
-                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
-                  ].map(({mode,label,icon}) => (
-                    <button key={mode} onClick={()=>{
-                      if (mode==="qr") { setMass(true); return; }
-                      setGsMultiSel([]); setGsIndivId(null); setGsIndivSearch("");
-                      setGiveSheet({mode});
-                    }} style={{border:`2px solid ${PINK}`,borderRadius:999,background:SOFT,cursor:"pointer",display:"flex",alignItems:"center",gap:10,padding:"10px 14px",textAlign:"left",width:"100%"}}>
-                      <div style={{width:44,height:44,borderRadius:"50%",background:PINK,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
-                      <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,lineHeight:1.25}}>{label}</span>
-                    </button>
+              {/* Give Coins */}
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
+                <SL style={{marginBottom:10}}>Give Coins</SL>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+                  {(ses.otherCoins||TV_DEFAULT).map((v,i) => (
+                    <InlineCoinBtn key={i} value={v} bg="#ffffff" border="#FECDE8" col={PINK} circle={true}
+                      disabled={!selP} onAward={e=>awardGuarded("token",v,e)} onEdit={()=>{}}/>
                   ))}
                 </div>
+                <SL>Preset Coins</SL>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+                  {ACTS.map((a,i) => {
+                    const pts = (ses.quickCoins||ACTS_DEFAULT.map(x=>x.pts))[i] ?? a.pts;
+                    const palettes=[{bg:"#FAF5FF",border:"#DDB6FF",num:"#7C3AED",fill:"#7C3AED"},{bg:"#EEF4FF",border:"#C7D9FF",num:"#4F7CF6",fill:"#4F7CF6"},{bg:"#EDFAF5",border:"#B3EDDA",num:"#1DB87A",fill:"#1DB87A"}];
+                    return <QuickCoinBtn key={a.id} pts={pts} label={a.label} pal={palettes[i]} onAward={e=>awardGuarded(a.id,pts,e)}/>;
+                  })}
+                </div>
+                <div style={{display:"flex",gap:8}}>
+                  <input type="number" placeholder="Custom amount" value={cAmt} onChange={e=>setCAmt(e.target.value)}
+                    style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#1A0A14",outline:"none",caretColor:"#1A0A14"}}/>
+                  <button onClick={e=>{if(!cAmt||isNaN(cAmt))return;awardGuarded("token",Number(cAmt),e);setCAmt("");}}
+                    style={{padding:"0 14px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Award</button>
+                </div>
               </div>
-
-              {/* ── Quick Coins ── */}
-              {sorted.length > 0 && (
-                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                  <div style={{padding:"10px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8,background:"#2D2D2D",borderRadius:"14px 14px 0 0"}}>
-                    <div style={{width:28,height:28,borderRadius:"50%",background:PINK,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    </div>
-                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",flex:1}}>Quick Coins</span>
-                    <input placeholder="Search name…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
-                      style={{height:28,padding:"0 12px",border:"none",borderRadius:999,fontFamily:"Poppins,sans-serif",fontSize:11,color:"#1A0A14",outline:"none",width:"46%",background:"rgba(255,255,255,0.88)"}}
-                      onFocus={e=>{e.target.style.background="#fff";}}
-                      onBlur={e=>{e.target.style.background="rgba(255,255,255,0.88)";}}/>
-                  </div>
-                  {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
-                    .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
-                    .map((p,i,arr) => {
-                      const grp = ses.groups.find(g=>g.id===p.gid);
-                      const isCMp = ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid)||(ses.coinmasterPids||[]).includes(p.id));
-                      const allCoins = ses.otherCoins||TV_DEFAULT;
-                      return (
-                        <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",opacity:isCMp?0.55:1}}>
-                          <Av s={p.av} color={isCMp?"#9CA3AF":grp?.color||BLUE} size={32}/>
-                          <div style={{width:108,flexShrink:0}}>
-                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:isCMp?"#9CA3AF":TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",display:"flex",alignItems:"center",gap:4}}>
+              {/* Bulk Give */}
+              <button onClick={()=>setMass(true)} style={{width:"100%",padding:"14px 0",background:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Bulk Give Coins
+              </button>
+              {/* Quick Coins — flat cards, no wrapper container */}
+              {sorted.length > 0 && (<>
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 2px"}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:TEXT,flex:1}}>Quick Coins</span>
+                  <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
+                    style={{height:28,padding:"0 10px",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Poppins,sans-serif",fontSize:12,color:"#1A0A14",outline:"none",width:110,background:"#fff",caretColor:"#1A0A14"}}/>
+                </div>
+                {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
+                  .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
+                  .map((p) => {
+                    const grp = ses.groups.find(g=>g.id===p.gid);
+                    const isCMp = ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid) || (ses.coinmasterPids||[]).includes(p.id));
+                    const coins = ses.otherCoins||TV_DEFAULT;
+                    return (
+                      <div key={p.id} style={{background:"#fff",border:`1.5px solid ${isCMp?"#DDD6FE":BORDER}`,borderRadius:14,padding:"10px 12px",display:"flex",flexDirection:"column",gap:8,opacity:isCMp?0.5:1}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <Av s={p.av} color={isCMp?"#9CA3AF":grp?.color||PINK} size={32}/>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:isCMp?"#9CA3AF":TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",display:"flex",alignItems:"center",gap:5}}>
                               {p.name}
-                              {isCMp && <span style={{fontSize:8,fontWeight:800,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"1px 5px",flexShrink:0}}>CM</span>}
+                              {isCMp && <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"1px 6px",flexShrink:0}}>CM</span>}
                             </div>
-                            <div style={{display:"flex",alignItems:"center",gap:4}}>
-                              <span style={{fontSize:11,color:isCMp?"#9CA3AF":PINK,fontWeight:700}}>{p.total} pts</span>
-                              {p.num != null && <span style={{fontSize:9,color:"#ccc",fontWeight:600}}>· P{String(p.num).padStart(3,"0")}</span>}
-                            </div>
-                          </div>
-                          <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
-                            <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:5}}>
-                              {allCoins.map((v,ci) => (
-                                <button key={ci} disabled={isCMp}
-                                  onClick={e=>{e.stopPropagation();if(isCMp)return;award(p.id,"token",v,e.clientX,e.clientY);}}
-                                  style={{minWidth:v<0||Math.abs(v)>=100?42:36,height:34,borderRadius:8,border:`1.5px solid ${v<0?"#FCA5A5":BORDER}`,background:"#fff",cursor:isCMp?"default":"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?10:12,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0}}>
-                                  {v>0?"+":""}{v}
-                                </button>
-                              ))}
-                            </div>
+                            <div style={{fontSize:10,color:isCMp?"#9CA3AF":PINK,fontWeight:700}}>{p.total} pts</div>
                           </div>
                         </div>
-                      );
-                    })}
-                </div>
-              )}
+                        <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:6}}>
+                          {coins.map((v,ci) => (
+                            <button key={ci}
+                              disabled={isCMp}
+                              onClick={e=>{e.stopPropagation();if(isCMp)return;setSelId(p.id);award(p.id,"token",v,e.clientX,e.clientY);}}
+                              style={{minWidth:Math.abs(v)>=100?44:36,height:36,borderRadius:9,border:`1.5px solid ${v<0?"#FCA5A5":MID}`,background:"#fff",cursor:isCMp?"not-allowed":"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.abs(v)>=100?10:12,color:v<0?"#EF4444":PINK,flexShrink:0,padding:0,opacity:isCMp?0.3:1}}>
+                              {v>0?"+":""}{v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </>)}
               <div style={{height:20}}/>
             </div>
-
-            {/* GiveSheet for coinmaster */}
-            {giveSheet && <GiveSheet
-              mode={giveSheet.mode}
-              ses={ses} sorted={sorted} isPro={true}
-              PINK={PINK} BORDER={BORDER} SOFT={SOFT} TEXT={TEXT} BG={BG}
-              multiSel={gsMultiSel} setMultiSel={setGsMultiSel}
-              indivId={gsIndivId} setIndivId={setGsIndivId}
-              indivSearch={gsIndivSearch} setIndivSearch={setGsIndivSearch}
-              onAward={(pid,v)=>award(pid,"token",v,null,null)}
-              onClose={()=>{setGiveSheet(null);setGsMultiSel([]);setGsIndivId(null);setGsIndivSearch("");}}
-              notify={notify}
-            />}
           </div>
         )}
 
@@ -3214,7 +3219,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                         ) : (
                           <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px"}}>
                             <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
-                            <Av s={p.av} color={grp?.color||BLUE} size={32}/>
+                            <Av s={p.av} color={grp?.color||PINK} size={32}/>
                             <div style={{flex:1,minWidth:0}}>
                               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
                               <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
@@ -3369,7 +3374,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
               return (
                 <div key={p.id} onClick={()=>setIndivId(p.id)}
                   style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,cursor:"pointer",background:sel?"#FFF0F7":"#FAFAFA",border:`1px solid ${sel?BORDER:"transparent"}`,flexShrink:0,transition:"background .1s"}}>
-                  <Av s={p.av} color={grp?.color||BLUE} size={28}/>
+                  <Av s={p.av} color={grp?.color||PINK} size={28}/>
                   <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</span>
                   <span style={{fontSize:10,color:"#bbb",flexShrink:0}}>{p.total} pts</span>
                   {p.num != null && <span style={{fontSize:9,color:"#ddd",marginLeft:2,flexShrink:0}}>P{String(p.num).padStart(3,"0")}</span>}
@@ -3411,7 +3416,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
                   <div style={{width:18,height:18,borderRadius:5,border:`1.5px solid ${checked?PINK:BORDER}`,background:checked?PINK:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     {checked && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
                   </div>
-                  <Av s={p.av} color={grp?.color||BLUE} size={26}/>
+                  <Av s={p.av} color={grp?.color||PINK} size={26}/>
                   <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</span>
                   <span style={{fontSize:10,color:"#bbb",flexShrink:0}}>{p.total} pts</span>
                   {p.num != null && <span style={{fontSize:9,color:"#ddd",marginLeft:2,flexShrink:0}}>P{String(p.num).padStart(3,"0")}</span>}
@@ -3729,7 +3734,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
     award(selId, type, pts, e?.clientX, e?.clientY);
   }
 
-  const sorted = [...ses.participants].sort((a,b)=>b.total-a.total);
+  const sorted = [...ses.participants].sort((a,b)=>a.name.localeCompare(b.name));
   // Scoreboard excludes participants currently assigned as coinmasters — their coins
   // are preserved but they're hidden from rankings while acting as co-hosts.
   const isCMp = (p) => isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid) || (ses.coinmasterPids||[]).includes(p.id));
@@ -3992,7 +3997,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 {[
                   { mode:"qr",    label:"Scan QR to Give",
-                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="#fff"/><rect x="16" y="5" width="3" height="3" fill="#fff"/><rect x="5" y="16" width="3" height="3" fill="#fff"/></svg> },
+                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> },
                   { mode:"all",   label:"Give everyone",
                     icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
                   { mode:"multi", label:"Select multiple",
@@ -4016,15 +4021,13 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             {/* ── Quick Coins — all otherCoins, scrollable, white+pink-border ── */}
             {sorted.length > 0 && (
               <div className="tc-mobile-qc" style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-                <div style={{padding:"10px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8,background:"#2D2D2D",borderRadius:"14px 14px 0 0"}}>
+                <div style={{padding:"10px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
                   <div style={{width:28,height:28,borderRadius:"50%",background:PINK,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                   </div>
-                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",flex:1}} data-tour="quick-coins">Quick Coins</span>
-                  <input placeholder="Search name…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
-                    style={{height:28,padding:"0 12px",border:"none",borderRadius:999,fontFamily:"Poppins,sans-serif",fontSize:11,color:"#1A0A14",outline:"none",width:"46%",background:"rgba(255,255,255,0.88)"}}
-                    onFocus={e=>{e.target.style.background="#fff";}}
-                    onBlur={e=>{e.target.style.background="rgba(255,255,255,0.88)";}}/>
+                  <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,flex:1}} data-tour="quick-coins">Quick Coins</span>
+                  <input placeholder="Search…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
+                    style={{height:28,padding:"0 12px",border:`1.5px solid ${BORDER}`,borderRadius:999,fontFamily:"Poppins,sans-serif",fontSize:11,color:TEXT,outline:"none",width:"46%",background:BG}}/>
                 </div>
                 {[...sorted].sort((a,b)=>a.name.localeCompare(b.name))
                   .filter(p=>!qcSearch.trim()||p.name.toLowerCase().includes(qcSearch.toLowerCase()))
@@ -4034,7 +4037,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     const allCoins = ses.otherCoins || TV_DEFAULT;
                     return (
                       <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 10px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",opacity:isCMp?0.55:1}}>
-                        <Av s={p.av} color={isCMp?"#9CA3AF":grp?.color||BLUE} size={32}/>
+                        <Av s={p.av} color={isCMp?"#9CA3AF":grp?.color||PINK} size={32}/>
                         <div style={{width:108,flexShrink:0}}>
                           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:isCMp?"#9CA3AF":TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",display:"flex",alignItems:"center",gap:4}}>
                             {p.name}
@@ -4172,7 +4175,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                       ) : (
                         <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px"}}>
                           <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:36,flexShrink:0}}>{pNum(p.num)}</span>
-                          <Av s={p.av} color={isCM?"#7C3AED":grp?.color||BLUE} size={32}/>
+                          <Av s={p.av} color={isCM?"#7C3AED":grp?.color||PINK} size={32}/>
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
                               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
@@ -4270,7 +4273,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                       <div key={p.id} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",transition:"background .1s"}}
                         onMouseOver={e=>e.currentTarget.style.background=SOFT}
                         onMouseOut={e=>e.currentTarget.style.background="transparent"}>
-                        <Av s={p.av} color={grp?.color||BLUE} size={28}/>
+                        <Av s={p.av} color={grp?.color||PINK} size={28}/>
                         <div style={{width:130,flexShrink:0}}>
                           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
                           <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
@@ -4358,7 +4361,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                             <div style={{display:"flex",alignItems:"center",gap:10}}>
                               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:rankColor(i),minWidth:20,textAlign:"center"}}>{i+1}</div>
                               <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:ses.boardVisible?"rgba(255,255,255,.45)":SUB,minWidth:30}}>{pNum(p.num)}</span>
-                              <Av s={p.av} color={grp?.color||BLUE} size={34}/>
+                              <Av s={p.av} color={grp?.color||PINK} size={34}/>
                               <div style={{flex:1}}>
                                 <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:ses.boardVisible?"#fff":TEXT}}>{p.name}</div>
                                 {grp && <span style={{fontSize:10,background:ses.boardVisible?`${grp.color}30`:`${grp.color}18`,border:`1px solid ${grp.color}50`,color:ses.boardVisible?"#fff":grp.color,padding:"1px 7px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
@@ -6517,6 +6520,23 @@ export default function App() {
   const [recentJoined, setRecentJoined] = useState([]); // [{code,name,coins,joinedAt,lastUpdated}]
   const [homeRightTab, setHomeRightTab] = useState("created"); // "created" | "joined"
   const [sessionStatuses, setSessionStatuses] = useState({}); // {code: true=live, false=paused}
+
+  // Poll session statuses every 5s while on home screen so Paused/Rejoin updates live
+  useEffect(() => {
+    if (screen !== "home") return;
+    function pollStatuses() {
+      if (!recentJoined.length) return;
+      const top = recentJoined.slice(0, 10);
+      Promise.all(top.map(s => sgSession(s.code).then(r => ({code: s.code, live: r ? r.live : null})))).then(results => {
+        const map = {};
+        results.forEach(r => { map[r.code] = r.live; });
+        setSessionStatuses(map);
+      }).catch(() => {});
+    }
+    pollStatuses();
+    const iv = setInterval(pollStatuses, 5000);
+    return () => clearInterval(iv);
+  }, [screen, recentJoined]);
   const [homeToast, setHomeToast] = useState(null);
   function homeNotify(m) { setHomeToast(m); setTimeout(()=>setHomeToast(null), 3000); }
   const [limitModal, setLimitModal] = useState(null);
