@@ -547,6 +547,8 @@ function MassGive({ participants, groups, onAward, onClose }) {
   const [amt, setAmt] = useState(null);
   const [cAmt, setCAmt] = useState("");
   const [scanLog, setScanLog] = useState([]);
+  const [scanCount, setScanCount] = useState(0);
+  const scanCountRef = useRef(0);
   const [scanning, setScanning] = useState(false);
   const [scanAttempt, setScanAttempt] = useState(0);
   const [scannerErr, setScannerErr] = useState("");
@@ -566,6 +568,8 @@ function MassGive({ participants, groups, onAward, onClose }) {
     if (!ok) return;
     setScannerErr("");
     scanLogRef.current = [];
+    scanCountRef.current = 0;
+    setScanCount(0);
     setScanAttempt(n => n + 1);
     setScanning(true);
   }
@@ -599,6 +603,8 @@ function MassGive({ participants, groups, onAward, onClose }) {
             if (existing && now - existing.ts < 2000) return;
             if (existing) { existing.ts = now; } else { scanLogRef.current = [...scanLogRef.current, {id: p.id, ts: now}]; }
             onAward(p.id, "token", finalAmtRef.current);
+            scanCountRef.current += 1;
+            setScanCount(scanCountRef.current);
             const entry = {...p, t: new Date().toLocaleTimeString()};
             setScanLog(prev => [entry, ...prev.filter(x => x.id !== p.id)]);
             setFlashName({name: p.name, pts: finalAmtRef.current});
@@ -704,7 +710,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
           <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,.75)",backdropFilter:"blur(10px)",padding:"16px 20px 40px",display:"flex",flexDirection:"column",gap:10}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div style={{fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:600}}>
-                {scanLog.length===0?"Point camera at participant's QR code":`✓ ${scanLog.length} scanned · +${finalAmt} each`}
+                {scanCount===0?"Point camera at participant's QR code":`✓ ${scanCount} scanned`}
               </div>
               <div style={{fontSize:14,color:PINK,fontWeight:900}}>+{finalAmt}</div>
             </div>
