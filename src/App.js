@@ -2614,6 +2614,30 @@ function QRModal({ session, onClose }) {
   const url = `${window.location.origin}/join/${session.code}`;
   function copy(text, label) { navigator.clipboard.writeText(text); setCopied(label); setTimeout(()=>setCopied(""),2000); }
 
+  function downloadQR() {
+    const container = qrRef.current;
+    if (!container) return;
+    const canvas = container.querySelector("canvas");
+    const img = container.querySelector("img");
+    if (canvas) {
+      const pad = 24; const labelH = 48; const size = canvas.width;
+      const out = document.createElement("canvas");
+      out.width = size + pad * 2; out.height = size + pad * 2 + labelH;
+      const ctx = out.getContext("2d");
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, out.width, out.height);
+      ctx.drawImage(canvas, pad, pad);
+      ctx.fillStyle = "#E91E8C"; ctx.font = "bold 18px sans-serif"; ctx.textAlign = "center";
+      ctx.fillText(session.code, out.width / 2, size + pad * 2 + 20);
+      ctx.fillStyle = "#9CA3AF"; ctx.font = "11px sans-serif";
+      ctx.fillText(url, out.width / 2, size + pad * 2 + 38);
+      const link = document.createElement("a");
+      link.download = `teticoin-qr-${session.code}.png`; link.href = out.toDataURL("image/png"); link.click();
+    } else if (img) {
+      const link = document.createElement("a");
+      link.download = `teticoin-qr-${session.code}.png`; link.href = img.src; link.click();
+    }
+  }
+
   useEffect(() => {
     const container = qrRef.current;
     if (!container) return;
@@ -2663,20 +2687,24 @@ function QRModal({ session, onClose }) {
         <div style={{padding:"0 20px 32px"}}>
           {/* Real QR code */}
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",background:BG,borderRadius:16,padding:"24px 20px",marginBottom:16}}>
-            <div style={{width:180,height:180,background:"#fff",borderRadius:14,padding:8,border:`1px solid ${BORDER}`,boxShadow:`0 4px 20px ${PINK}15`,marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+            <div style={{width:180,height:180,background:"#fff",borderRadius:0,padding:0,border:`1px solid ${BORDER}`,boxShadow:`0 4px 20px ${PINK}15`,marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
               <div ref={qrRef}/>
             </div>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,letterSpacing:6,color:PINK,marginBottom:6}}>{session.code}</div>
             <div style={{fontSize:11,color:SUB,fontWeight:500,marginBottom:8}}>{url}</div>
             <div style={{fontSize:12,color:PINK,fontWeight:600,background:SOFT,border:`1px solid ${MID}`,borderRadius:8,padding:"4px 12px"}}>Show this screen to participants to scan</div>
           </div>
-          {/* Copy buttons */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          {/* Copy + Download buttons */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr auto",gap:10}}>
             <button onClick={()=>copy(url,"link")} style={{padding:"13px 0",background:copied==="link"?`${GREEN}15`:SOFT,border:`1.5px solid ${copied==="link"?GREEN:MID}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:copied==="link"?GREEN:PINK,cursor:"pointer",transition:"all .2s"}}>
               {copied==="link"?"Copied!":"Copy Link"}
             </button>
             <button onClick={()=>copy(session.code,"code")} style={{padding:"13px 0",background:copied==="code"?`${GREEN}15`:BG,border:`1.5px solid ${copied==="code"?GREEN:BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:copied==="code"?GREEN:TEXT,cursor:"pointer",transition:"all .2s"}}>
               {copied==="code"?"Copied!":"Copy Code"}
+            </button>
+            <button onClick={downloadQR} title="Download QR as PNG"
+              style={{width:48,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
           </div>
         </div>
