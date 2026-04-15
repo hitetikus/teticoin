@@ -1051,7 +1051,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
           {tab==="people" && <>
             {/* Two-column: Add name input + Show QR button */}
             <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,marginBottom:dupErr?4:12,alignItems:"center"}}>
-              <Inp placeholder="Participant Name" value={np} onChange={e=>{setNp(e.target.value);setDupErr("");}} onKeyDown={e=>e.key==="Enter"&&addP()} style={{flex:1,margin:0}}/>
+              <Inp placeholder="Participant Name" value={np} onChange={e=>{setNp(e.target.value);setDupErr("");}} onKeyDown={e=>e.key==="Enter"&&addP()} autoComplete="off" style={{flex:1,margin:0}}/>
               <button onClick={addP}
                 style={{padding:"0 16px",height:42,background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
                 Add
@@ -3196,9 +3196,9 @@ function CoinmasterView({ session: init, selfId, onBack }) {
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
               <Inp placeholder="Add participant name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
-                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
-                style={{flex:1,margin:0}}/>
-              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
+                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast(`"${nm}" is already in this session`);return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
+                autoComplete="off" style={{flex:1,margin:0}}/>
+              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast(`"${nm}" is already in this session`);return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
                 style={{padding:"0 14px",height:40,background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
                 + Add
               </button>
@@ -4123,7 +4123,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"center"}}>
                 <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
                   onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast(`"${nm}" is already in this session`);return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
-                  style={{margin:0}}/>
+                  autoComplete="off" style={{margin:0}}/>
                 <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast(`"${nm}" is already in this session`);return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
                   style={{padding:"0 16px",height:42,background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
                   + Add
