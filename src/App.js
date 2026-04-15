@@ -6599,6 +6599,7 @@ export default function App() {
   const [showHostEarnings, setShowHostEarnings] = useState(false);
   const [homeEarnings, setHomeEarnings] = useState(null); // {totalCoins, totalSessions}
   const [recentJoined, setRecentJoined] = useState([]); // [{code,name,coins,joinedAt,lastUpdated}]
+  const [homeReloadKey, setHomeReloadKey] = useState(0); // increment to force home data refresh
   const [homeRightTab, setHomeRightTab] = useState("created"); // "created" | "joined"
   const [sessionStatuses, setSessionStatuses] = useState({}); // {code: true=live, false=paused}
   const [homeToast, setHomeToast] = useState(null);
@@ -6836,10 +6837,10 @@ export default function App() {
       const t = setTimeout(() => {
         loadHomeEarnings(trainer.uid);
         sg("sessions_index").then(s => { if (s) setSessions(s); }).catch(()=>{});
-      }, 800);
+      }, 300);
       return () => clearTimeout(t);
     }
-  }, [screen, trainer]);
+  }, [screen, trainer, homeReloadKey]);
 
   // Poll session live/paused status every 5s while on home
   useEffect(() => {
@@ -6947,8 +6948,8 @@ export default function App() {
     if (cur) return <><style>{CSS}</style><ParticipantView session={cur} onBack={()=>{ try{localStorage.removeItem("tc_pjoin");}catch(e){} window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
     return <div style={{minHeight:"100vh",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}><style>{CSS}</style><HamLoading/></div>;
   }
-  if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur} onBack={()=>{ window.history.replaceState({},"","/app"); setScreen("home"); }}/></>;
-  if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home");}}/></>;
+  if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur} onBack={()=>{ window.history.replaceState({},"","/app"); setScreen("home"); setHomeReloadKey(k=>k+1); }}/></>;
+  if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home"); setHomeReloadKey(k=>k+1);}}}/></>;
   if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onBack={()=>{
     // Navigate immediately — sync sessions_index in background
     window.history.replaceState({},"","/app"); setScreen("home");
