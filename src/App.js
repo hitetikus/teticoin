@@ -1010,9 +1010,10 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
   const [ngc, setNgc] = useState(GC[0]);
   const [editingName, setEditingName] = useState(false);
   const [nameVal, setNameVal] = useState(session.name); // eslint-disable-line
+  const [dupErr, setDupErr] = useState("");
 
   const sorted = [...session.participants].sort((a,b) => a.num - b.num);
-  function addP() { if (!np.trim()) return; const nm=np.trim(); if(session.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){alert(`"${nm}" is already in this session. Please use a different name.`);return;} const n=(session.participants.reduce((m,p)=>Math.max(m,p.num),0))+1; onUpdate(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;}); setNp(""); }
+  function addP() { if (!np.trim()) return; const nm=np.trim(); if(session.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setDupErr(`"${nm}" is already in this session`);setTimeout(()=>setDupErr(""),3000);return;} const n=(session.participants.reduce((m,p)=>Math.max(m,p.num),0))+1; onUpdate(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;}); setNp(""); setDupErr(""); }
   function addG() { if (!ng.trim()) return; onUpdate(s=>{s.groups.push({id:Date.now(),name:ng.trim(),color:ngc});return s;}); setNg(""); }
   function remP(pid) { const p=session.participants.find(x=>x.id===pid); onUpdate(s=>{s.participants=s.participants.filter(x=>x.id!==pid);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==pid);if(p?.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;}); }
   function asgG(pid,gid) { onUpdate(s=>{const p=s.participants.find(x=>x.id===pid);if(p)p.gid=gid===""?null:(isNaN(Number(gid))?null:Number(gid));return s;}); }
@@ -1049,8 +1050,8 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
 
           {tab==="people" && <>
             {/* Two-column: Add name input + Show QR button */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,marginBottom:12,alignItems:"center"}}>
-              <Inp placeholder="Participant Name" value={np} onChange={e=>setNp(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addP()} style={{flex:1,margin:0}}/>
+            <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,marginBottom:dupErr?4:12,alignItems:"center"}}>
+              <Inp placeholder="Participant Name" value={np} onChange={e=>{setNp(e.target.value);setDupErr("");}} onKeyDown={e=>e.key==="Enter"&&addP()} style={{flex:1,margin:0}}/>
               <button onClick={addP}
                 style={{padding:"0 16px",height:42,background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
                 Add
@@ -1061,6 +1062,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                 Show QR
               </button>
             </div>
+            {dupErr && <div style={{fontSize:12,color:"#EF4444",fontWeight:600,marginBottom:8,padding:"0 2px"}}>{dupErr}</div>}
             {sorted.length===0 && <div style={{textAlign:"center",padding:24,color:SUB,fontSize:13}}>No participants yet</div>}
             {sorted.map(p => {
               const grp = session.groups.find(g=>g.id===p.gid);
