@@ -3224,9 +3224,9 @@ function CoinmasterView({ session: init, selfId, onBack }) {
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
               <Inp placeholder="Add participant name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
-                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast(`"${nm}" is already in this session`);return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
+                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
                 autoComplete="off" style={{flex:1,margin:0}}/>
-              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast(`"${nm}" is already in this session`);return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
+              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
                 style={{padding:"0 14px",height:40,background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
                 + Add
               </button>
@@ -4179,9 +4179,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               {/* Inline add row */}
               <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"center"}}>
                 <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast(`"${nm}" is already in this session`);return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
+                  onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast({m:"Participant limit reached",type:"warn"});return;}if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
                   autoComplete="off" style={{margin:0}}/>
-                <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast("Participant limit reached");return;}if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast(`"${nm}" is already in this session`);return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
+                <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast({m:"Participant limit reached",type:"warn"});return;}if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
                   style={{padding:"0 16px",height:42,background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
                   + Add
                 </button>
@@ -4814,7 +4814,7 @@ function CreateModal({ onConfirm, onClose, existingNames=[] }) {
         <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>
         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:4}}>New Session</div>
         <div style={{fontSize:13,color:SUB,marginBottom:16}}>Give your session a name so you can find it later.</div>
-        <Inp placeholder="e.g. Design Thinking Workshop" value={n} onChange={e=>{setN(e.target.value);setErr("");}} autoFocus onKeyDown={e=>e.key==="Enter"&&tryConfirm()} style={{marginBottom:err?8:20}}/>
+        <Inp placeholder="e.g. Design Thinking Workshop" value={n} onChange={e=>{setN(e.target.value);setErr("");}} onKeyDown={e=>e.key==="Enter"&&tryConfirm()} style={{marginBottom:err?8:20}}/>
         {err && <div style={{fontSize:12,color:"#EF4444",fontWeight:600,marginBottom:14,lineHeight:1.4}}>{err}</div>}
         <div style={{display:"flex",gap:10}}>
           <button onClick={onClose} style={{flex:1,padding:"13px 0",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:SUB,cursor:"pointer"}}>Cancel</button>
