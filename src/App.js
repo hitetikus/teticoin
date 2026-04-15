@@ -4033,28 +4033,57 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
                 </button>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                {[
-                  { mode:"qr",    label:"Scan QR to Give",
-                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> },
-                  { mode:"all",   label:"Give everyone",
-                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-                  { mode:"multi", label:"Select multiple",
-                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="7 12 10.5 15.5 17 9"/></svg> },
-                  { mode:"individual", label:"Give individual",
-                    icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
-                ].map(({mode,label,icon}) => (
-                  <button key={mode} onClick={()=>{
-                    if (mode==="multi" && !isPro) { setProGateHint("massgive"); return; }
-                    if (mode==="qr") { setMass(true); return; }
-                    setGsMultiSel([]); setGsIndivId(null); setGsIndivSearch("");
-                    setGiveSheet({mode});
-                  }} style={{border:`2px solid ${PINK}`,borderRadius:999,background:SOFT,cursor:"pointer",display:"flex",alignItems:"center",gap:10,padding:"10px 14px",textAlign:"left",width:"100%"}}>
-                    <div style={{width:44,height:44,borderRadius:"50%",background:PINK,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
-                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,lineHeight:1.25}}>{label}</span>
+              {sorted.length === 0 ? (
+                <div style={{display:"flex",flexDirection:"column",gap:10,marginTop:4}}>
+                  <div style={{textAlign:"center",padding:"20px 0 8px",color:SUB,fontSize:13}}>
+                    <Ham size={48}/>
+                    <div style={{marginTop:10}}>No participants yet</div>
+                  </div>
+                  <button onClick={()=>setShowQR(true)}
+                    style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:SOFT,border:`1.5px solid ${BORDER}`,borderRadius:14,cursor:"pointer",width:"100%",textAlign:"left"}}>
+                    <div style={{width:40,height:40,borderRadius:10,background:PINK,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="#fff"/><rect x="16" y="5" width="3" height="3" fill="#fff"/><rect x="5" y="16" width="3" height="3" fill="#fff"/></svg>
+                    </div>
+                    <div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>Show QR Code</div>
+                      <div style={{fontSize:12,color:SUB,marginTop:2}}>Participants scan to join instantly</div>
+                    </div>
                   </button>
-                ))}
-              </div>
+                  <button onClick={()=>setManage(true)}
+                    style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,cursor:"pointer",width:"100%",textAlign:"left"}}>
+                    <div style={{width:40,height:40,borderRadius:10,background:"#EDE9FE",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.2" strokeLinecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                    </div>
+                    <div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>Add Manually</div>
+                      <div style={{fontSize:12,color:SUB,marginTop:2}}>Host adds participant by name</div>
+                    </div>
+                  </button>
+                </div>
+              ) : (
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  {[
+                    { mode:"qr",    label:"Scan QR to Give",
+                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> },
+                    { mode:"all",   label:"Give everyone",
+                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+                    { mode:"multi", label:"Select multiple",
+                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="7 12 10.5 15.5 17 9"/></svg> },
+                    { mode:"individual", label:"Give individual",
+                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
+                  ].map(({mode,label,icon}) => (
+                    <button key={mode} onClick={()=>{
+                      if (mode==="multi" && !isPro) { setProGateHint("massgive"); return; }
+                      if (mode==="qr") { setMass(true); return; }
+                      setGsMultiSel([]); setGsIndivId(null); setGsIndivSearch("");
+                      setGiveSheet({mode});
+                    }} style={{border:`2px solid ${PINK}`,borderRadius:999,background:SOFT,cursor:"pointer",display:"flex",alignItems:"center",gap:10,padding:"10px 14px",textAlign:"left",width:"100%"}}>
+                      <div style={{width:44,height:44,borderRadius:"50%",background:PINK,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{icon}</div>
+                      <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,lineHeight:1.25}}>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* ── Quick Coins — all otherCoins, scrollable, white+pink-border ── */}
@@ -4767,18 +4796,29 @@ function LuckyDraw({ participants, badgeAwarded, onClose }) {
 }
 
 
-function CreateModal({ onConfirm, onClose }) {
+function CreateModal({ onConfirm, onClose, existingNames=[] }) {
   const [n, setN] = useState("");
+  const [err, setErr] = useState("");
+  function tryConfirm() {
+    const nm = n.trim();
+    if (!nm) return;
+    if (existingNames.some(x => x.toLowerCase() === nm.toLowerCase())) {
+      setErr(`You already have a session named "${nm}". Please use a different name.`);
+      return;
+    }
+    onConfirm(nm);
+  }
   return (
     <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,background:"rgba(26,10,20,.5)",zIndex:600,backdropFilter:"blur(4px)"}}>
       <div className="tc-modal-sheet" style={{background:"#fff",padding:"28px 24px",width:"100%"}}>
         <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>
         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:4}}>New Session</div>
         <div style={{fontSize:13,color:SUB,marginBottom:16}}>Give your session a name so you can find it later.</div>
-        <Inp placeholder="e.g. Design Thinking Workshop" value={n} onChange={e=>setN(e.target.value)} autoFocus onKeyDown={e=>e.key==="Enter"&&n.trim()&&onConfirm(n.trim())} style={{marginBottom:20}}/>
+        <Inp placeholder="e.g. Design Thinking Workshop" value={n} onChange={e=>{setN(e.target.value);setErr("");}} autoFocus onKeyDown={e=>e.key==="Enter"&&tryConfirm()} style={{marginBottom:err?8:20}}/>
+        {err && <div style={{fontSize:12,color:"#EF4444",fontWeight:600,marginBottom:14,lineHeight:1.4}}>{err}</div>}
         <div style={{display:"flex",gap:10}}>
           <button onClick={onClose} style={{flex:1,padding:"13px 0",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:SUB,cursor:"pointer"}}>Cancel</button>
-          <PBtn onClick={()=>n.trim()&&onConfirm(n.trim())} disabled={!n.trim()} style={{flex:2,padding:"13px 22px"}}>Start Session</PBtn>
+          <PBtn onClick={tryConfirm} disabled={!n.trim()} style={{flex:2,padding:"13px 22px"}}>Start Session</PBtn>
         </div>
       </div>
     </div>
@@ -6959,7 +6999,7 @@ export default function App() {
       {showHostEarnings && trainer && <EarningsPage uid={trainer.uid} name={trainer.name} onClose={()=>{ window.history.replaceState({},"","/app"); setShowHostEarnings(false);}}/>}
       {showSettings && <SettingsPage onClose={()=>{ window.history.replaceState({},"","/app"); setShowSettings(false);}}/>}
       {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);setShowPricing(true);}} onClose={()=>setLimitModal(null)}/>}
-      {creating && <CreateModal onConfirm={handleNew} onClose={()=>setCreating(false)}/>}
+      {creating && <CreateModal onConfirm={handleNew} onClose={()=>setCreating(false)} existingNames={sessions.map(s=>s.name)}/>}
 
       {/* ── Payment success banner ── */}
       {paymentToast && (
