@@ -1528,7 +1528,6 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   }, []);
 
   // Load earnings summary — re-fetch whenever coins change so nav counter stays live
-  // Small delay gives the participant-side Firestore write time to complete first
   const _meTotal = live?.participants?.find(p=>p.id===myId)?.total ?? null;
   useEffect(() => {
     if (!linkedUid) { setParticipantEarnings(null); return; }
@@ -1536,13 +1535,24 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       import("firebase/firestore").then(({getFirestore,doc,getDoc})=>{
         getDoc(doc(getFirestore(),"users",linkedUid,"data","earnings")).then(snap=>{
           const arr = snap.exists() ? (snap.data().value||[]) : [];
+          // Use live me.total for the current session to avoid stale Firestore lag.
+          // Sum all OTHER sessions from Firestore, then add live current session total.
+          const currentCode = init?.code || null;
+          const liveTotal = _meTotal ?? 0;
+          const otherCoins = arr.filter(e => e.code !== currentCode).reduce((s,e)=>s+(e.coins||0),0);
+          // Current session: use max of Firestore value and live total (always most accurate)
+          const currentEntry = arr.find(e => e.code === currentCode);
+          const currentCoins = currentCode
+            ? Math.max(currentEntry?.coins || 0, liveTotal)
+            : 0;
+          const totalCoins = otherCoins + currentCoins;
           setParticipantEarnings({
-            totalCoins: arr.reduce((s,e)=>s+(e.coins||0),0),
+            totalCoins,
             totalSessions: arr.length
           });
         }).catch(()=>{});
       }).catch(()=>{});
-    }, 1500); // wait 1.5s for participant earnings write to land
+    }, 300); // shorter delay — live total is already accurate
     return () => clearTimeout(t);
   }, [linkedUid, _meTotal]);
 
@@ -2328,7 +2338,8 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     <div style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
       {optionalLoginModalJSX}
       {showEarnings && linkedUid && (
-        <EarningsPage uid={linkedUid} name={me?.name||"You"} onClose={()=>setShowEarnings(false)}/>
+        <EarningsPage uid={linkedUid} name={me?.name||"You"} onClose={()=>setShowEarnings(false)}
+          liveOverride={init?.code ? {code:init.code, name:live?.name||"", coins:me?.total||0} : null}/>
       )}
       <BadgeClaimPrompt/>
 
@@ -3746,20 +3757,25 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       p.hist = [{type,pts,t:new Date().toLocaleTimeString()}, ...(p.hist||[]).slice(0,29)];
       s.log = [{id:Date.now(),name:p.name,type,pts,t:new Date().toLocaleTimeString()}, ...(s.log||[]).slice(0,99)];
       // Record earning to participant's personal Firestore earnings history
+      // Use p.total (absolute value) to avoid race conditions from rapid awards
       if (p.uid) {
         const now = Date.now();
+        const pUid = p.uid;
+        const pTotal = p.total; // already incremented above
+        const sesCode = s.code;
+        const sesName = s.name;
         import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
           const db = getFirestore();
-          const ref = doc(db,"users",p.uid,"data","earnings");
+          const ref = doc(db,"users",pUid,"data","earnings");
           getDoc(ref).then(snap=>{
             const prev = snap.exists() ? (snap.data().value||[]) : [];
-            // Find or create entry for this session
-            const idx = prev.findIndex(e=>e.code===ses.code);
+            const idx = prev.findIndex(e=>e.code===sesCode);
             let updated;
             if (idx>=0) {
-              updated = prev.map((e,i)=>i===idx?{...e,coins:e.coins+pts,lastUpdated:now}:e);
+              // Write absolute total — no race condition
+              updated = prev.map((e,i)=>i===idx?{...e,coins:pTotal,lastUpdated:now}:e);
             } else {
-              updated = [{code:ses.code,name:ses.name,coins:pts,joinedAt:now,lastUpdated:now},...prev];
+              updated = [{code:sesCode,name:sesName,coins:pTotal,joinedAt:now,lastUpdated:now},...prev];
             }
             setDoc(ref,{value:updated,updatedAt:now});
           }).catch(()=>{});
@@ -6067,7 +6083,8 @@ function SuperAdminDashboard({ onClose }) {
 
 // ── Coinmaster Join Modal ──
 // ── Earnings Page — participant's personal coin history ──────────
-function EarningsPage({ uid, name, onClose }) {
+function EarningsPage({ uid, name, onClose, liveOverride }) {
+  // liveOverride: { code, coins, name } — current live session's real-time total
   const [earnings, setEarnings] = useState(null); // null = loading
   const [copied, setCopied] = useState(false);
 
@@ -6084,8 +6101,28 @@ function EarningsPage({ uid, name, onClose }) {
     else setEarnings([]);
   }, [uid]);
 
-  const totalCoins = (earnings||[]).reduce((s,e)=>s+e.coins,0);
-  const totalSessions = (earnings||[]).length;
+  // Merge liveOverride into displayed earnings — override the current session entry
+  // so the "My Coins" page always shows the up-to-date live coin count
+  const mergedEarnings = (() => {
+    if (!earnings) return null;
+    if (!liveOverride?.code) return earnings;
+    const idx = earnings.findIndex(e => e.code === liveOverride.code);
+    if (idx >= 0) {
+      // Update existing entry with the higher of Firestore or live value
+      return earnings.map((e, i) => i === idx
+        ? { ...e, coins: Math.max(e.coins, liveOverride.coins) }
+        : e
+      );
+    }
+    // Session not in Firestore yet — prepend it
+    if (liveOverride.coins > 0) {
+      return [{ code: liveOverride.code, name: liveOverride.name, coins: liveOverride.coins, joinedAt: Date.now(), lastUpdated: Date.now() }, ...earnings];
+    }
+    return earnings;
+  })();
+
+  const totalCoins = (mergedEarnings||[]).reduce((s,e)=>s+e.coins,0);
+  const totalSessions = (mergedEarnings||[]).length;
 
   function shareText() {
     return `I've earned ${totalCoins} coins across ${totalSessions} session${totalSessions!==1?"s":""} on Teticoin! 🏆 https://teticoin.com`;
@@ -6135,9 +6172,9 @@ function EarningsPage({ uid, name, onClose }) {
         {/* Session history */}
         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Session history</div>
 
-        {earnings === null ? (
+        {mergedEarnings === null ? (
           <div style={{textAlign:"center",padding:32,color:SUB,fontSize:13}}>Loading…</div>
-        ) : earnings.length === 0 ? (
+        ) : mergedEarnings.length === 0 ? (
           <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"36px 20px",textAlign:"center"}}>
             <Ham size={52}/>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginTop:12,marginBottom:6}}>No earnings yet</div>
@@ -6145,7 +6182,7 @@ function EarningsPage({ uid, name, onClose }) {
           </div>
         ) : (
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {[...earnings].sort((a,b)=>b.lastUpdated-a.lastUpdated).map((e,i) => (
+            {[...mergedEarnings].sort((a,b)=>b.lastUpdated-a.lastUpdated).map((e,i) => (
               <div key={e.code} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",alignItems:"center",gap:12}}>
                 <div style={{width:40,height:40,borderRadius:12,background:SOFT,border:`1.5px solid ${MID}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:PINK}}>
                   {i+1}
