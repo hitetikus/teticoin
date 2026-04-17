@@ -2408,8 +2408,8 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       )}
       <BadgeClaimPrompt/>
 
-      {/* ── Session inactive overlay ── */}
-      {live?.live === false && (
+      {/* ── Session inactive overlay ── host present but deliberately paused ── */}
+      {live?.live === false && live?.lastHostPing && (Date.now() - (live?.lastHostPing||0) < 40000) && (
         <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(10,10,15,0.55)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",padding:"0 24px 80px"}}>
           <div style={{background:"#fff",borderRadius:24,padding:"40px 32px",maxWidth:320,width:"100%",textAlign:"center",boxShadow:"0 32px 80px rgba(0,0,0,.4)"}}>
             <div style={{width:64,height:64,borderRadius:20,background:"#FEF2F2",border:"1.5px solid #EF444430",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
@@ -6987,11 +6987,12 @@ export default function App() {
       if (!recentJoined.length) return;
       Promise.all(recentJoined.slice(0,10).map(s => sgSession(s.code).then(r => {
         if (!r) return {code:s.code, live: null};
-        // A session is "effectively live" only if host is present (heartbeat < 40s)
-        // AND live flag is true. If host is gone, treat as closed regardless of live flag.
+        // A session is "effectively live" only if:
+        //   1. live flag is true, AND
+        //   2. host heartbeat is fresh (within 40s)
+        // No heartbeat OR stale heartbeat = host is gone = session ended/closed.
         const hostPresent = r.lastHostPing && (Date.now() - r.lastHostPing < 40000);
-        const effectiveLive = r.live && hostPresent ? true : (r.live && !r.lastHostPing) ? null : false;
-        // null = unknown/legacy session (no heartbeat data yet) — show Rejoin, let tap decide
+        const effectiveLive = r.live && hostPresent ? true : false;
         return {code:s.code, live: effectiveLive};
       }))).then(results => {
         const map = {};
@@ -7552,8 +7553,9 @@ export default function App() {
                       <div style={{fontSize:13,color:SUB,lineHeight:1.7}}>No sessions joined yet.<br/>Join a session as a participant to see it here.</div>
                     </div>
                   ) : list.map((s,i) => {
-                    const liveStatus = sessionStatuses[s.code]; // true=live, false=paused, undefined=unknown
+                    const liveStatus = sessionStatuses[s.code]; // true=live, false=ended, undefined=loading
                     const isPaused = liveStatus === false;
+                    const isLoading = liveStatus === undefined;
                     return (
                     <div key={s.code+i} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,display:"flex",alignItems:"center",overflow:"hidden"}}>
                       <button onClick={async()=>{
@@ -7616,12 +7618,16 @@ export default function App() {
                         } else {
                           setScreen("participant");
                         }
-                      }} title="Rejoin session"
-                        style={{padding:"0 14px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,gap:5,color:PINK,flexShrink:0}}>
+                      }} title={isPaused ? "Session ended" : "Rejoin session"}
+                        disabled={isPaused}
+                        style={{padding:"0 14px",height:"100%",background:isPaused?"#F9FAFB":"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:isPaused?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,gap:5,color:isPaused?SUB:PINK,flexShrink:0,opacity:isPaused?0.5:1}}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                          <><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></>
+                          {isPaused
+                            ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
+                            : <><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></>
+                          }
                         </svg>
-                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11}}>Rejoin</span>
+                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11}}>{isPaused?"Ended":"Rejoin"}</span>
                       </button>
                     </div>
                   );})}
