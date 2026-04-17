@@ -2500,7 +2500,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         {/* Earned badges — shown if logged in */}
         {linkedUid && <ParticipantBadges uid={linkedUid}/>}
 
-        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",overflow:"hidden",zIndex:1}}>
+        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",zIndex:1}}>
           {coinFlash && (
             <div key={coinFlash.key} style={{position:"absolute",top:10,right:18,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:coinFlash.pts<0?"#EF4444":PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
               {coinFlash.pts>0?"+":""}{coinFlash.pts}
@@ -2575,18 +2575,21 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             );
           })()}
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
+          {/* Spacer so content clears the group banner */}
+          {me && (live.groups||[]).find(g=>g.id===me.gid) && <div style={{height:36}}/>}
+          {/* Group banner — inside card, absolutely at bottom, peeks out under rounded corners */}
+          {(() => {
+            const coinGrp = me ? (live.groups||[]).find(g=>g.id===me.gid) : null;
+            if (!coinGrp) return null;
+            return (
+              <div style={{position:"absolute",bottom:0,left:0,right:0,background:coinGrp.color,borderRadius:"0 0 20px 20px",height:36,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <div style={{width:7,height:7,borderRadius:"50%",background:"rgba(255,255,255,0.6)",flexShrink:0}}/>
+                <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,color:"#fff",letterSpacing:0.3}}>Group: <span style={{fontWeight:800}}>{coinGrp.name}</span></span>
+              </div>
+            );
+          })()}
         </div>
-        {/* Group banner — slides out below the white card in the group color */}
-        {(() => {
-          const coinGrp = me ? (live.groups||[]).find(g=>g.id===me.gid) : null;
-          if (!coinGrp) return null;
-          return (
-            <div style={{width:"100%",background:coinGrp.color,borderRadius:"0 0 20px 20px",padding:"20px 20px 12px",marginTop:-12,display:"flex",alignItems:"center",justifyContent:"center",gap:6,zIndex:0,position:"relative"}}>
-              <div style={{width:7,height:7,borderRadius:"50%",background:"rgba(255,255,255,0.6)",flexShrink:0}}/>
-              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,color:"#fff",letterSpacing:0.3}}>Group: <span style={{fontWeight:800}}>{coinGrp.name}</span></span>
-            </div>
-          );
-        })()}
+
 
         {/* My QR button — compact, below coin card */}
         {me && (
