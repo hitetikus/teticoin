@@ -1610,7 +1610,14 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           prevTotalRef.current = me.total;
         }
       }
-      setLive(s);
+      // If host heartbeat is stale (>8s), synthesize live:false so the
+      // "Session Ended" overlay shows even when the host just closed their tab
+      // without Firestore getting a chance to write live:false.
+      if (s.lastHostPing && s.live && (Date.now() - s.lastHostPing > 8000)) {
+        setLive({...s, live: false});
+      } else {
+        setLive(s);
+      }
     }, 2000);
     return () => clearInterval(t);
   }, [step, init?.code, myId]);
@@ -3244,7 +3251,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   {[
                     { mode:"qr", label:"Scan QR to Give",
-                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="#fff"/><rect x="16" y="5" width="3" height="3" fill="#fff"/><rect x="5" y="16" width="3" height="3" fill="#fff"/></svg> },
+                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9V6a3 3 0 0 1 3-3h3"/><path d="M15 3h3a3 3 0 0 1 3 3v3"/><path d="M21 15v3a3 3 0 0 1-3 3h-3"/><path d="M9 21H6a3 3 0 0 1-3-3v-3"/><rect x="7" y="7" width="4" height="4" rx="0.5"/><rect x="13" y="7" width="4" height="4" rx="0.5"/><rect x="7" y="13" width="4" height="4" rx="0.5"/><path d="M13 15h1m2 0h1m-2-2v1"/></svg> },
                     { mode:"all", label:"Give everyone",
                       icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
                     { mode:"multi", label:"Select multiple",
@@ -3769,7 +3776,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       } catch(e) {}
     }
     ping(); // immediate on mount
-    const t = setInterval(ping, 5000); // every 5s — participants detect close within ~12s
+    const t = setInterval(ping, 3000); // every 3s — participants detect close within ~8s
     return () => clearInterval(t);
   }, [ses.code]);
 
@@ -4199,7 +4206,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   {[
                     { mode:"qr",    label:"Scan QR to Give",
-                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="#fff"/><rect x="16" y="5" width="3" height="3" fill="#fff"/><rect x="5" y="16" width="3" height="3" fill="#fff"/></svg> },
+                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9V6a3 3 0 0 1 3-3h3"/><path d="M15 3h3a3 3 0 0 1 3 3v3"/><path d="M21 15v3a3 3 0 0 1-3 3h-3"/><path d="M9 21H6a3 3 0 0 1-3-3v-3"/><rect x="7" y="7" width="4" height="4" rx="0.5"/><rect x="13" y="7" width="4" height="4" rx="0.5"/><rect x="7" y="13" width="4" height="4" rx="0.5"/><path d="M13 15h1m2 0h1m-2-2v1"/></svg> },
                     { mode:"all",   label:"Give everyone",
                       icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
                     { mode:"multi", label:"Select multiple",
