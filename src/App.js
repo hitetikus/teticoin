@@ -6971,11 +6971,19 @@ export default function App() {
 
   // Reload joined-sessions and created sessions when landing on home screen
   useEffect(() => {
-    if (screen === "home" && trainer?.uid) {
+    // Use trainer.uid if available, fall back to auth.currentUser for participants
+    // who came from /join/CODE and never went through the full host auth flow
+    const uid = trainer?.uid || auth.currentUser?.uid;
+    if (screen === "home" && uid) {
+      // If trainer isn't set yet but we have a Firebase user, hydrate trainer now
+      if (!trainer && auth.currentUser) {
+        const u = auth.currentUser;
+        setTrainer({ name: u.displayName || u.email?.split("@")[0] || "User", email: u.email || "", uid: u.uid });
+      }
       const t = setTimeout(() => {
-        loadHomeEarnings(trainer.uid);
+        loadHomeEarnings(uid);
         sg("sessions_index").then(s => { if (s) setSessions(s); }).catch(()=>{});
-      }, 300);
+      }, 100);
       return () => clearTimeout(t);
     }
   }, [screen, trainer, homeReloadKey]);
@@ -7001,7 +7009,7 @@ export default function App() {
       }).catch(()=>{});
     }
     pollStatuses();
-    const iv = setInterval(pollStatuses, 5000);
+    const iv = setInterval(pollStatuses, 1500); // fast poll — snappy rejoin/ended state
     return () => clearInterval(iv);
   }, [screen, recentJoined]);
 
@@ -7621,13 +7629,20 @@ export default function App() {
                       }} title={isPaused ? "Session ended" : "Rejoin session"}
                         disabled={isPaused}
                         style={{padding:"0 14px",height:"100%",background:isPaused?"#F9FAFB":"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:isPaused?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,gap:5,color:isPaused?SUB:PINK,flexShrink:0,opacity:isPaused?0.5:1}}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                          {isPaused
-                            ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
-                            : <><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></>
-                          }
-                        </svg>
-                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11}}>{isPaused?"Ended":"Rejoin"}</span>
+                        {isPaused ? (
+                          // Stop-sign octagon with "ENDED" inside
+                          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                            <polygon points="11,4 25,4 32,11 32,25 25,32 11,32 4,25 4,11" fill="#E5E7EB" stroke="none"/>
+                            <text x="18" y="21" textAnchor="middle" fontFamily="Plus Jakarta Sans,sans-serif" fontWeight="800" fontSize="7" fill="#9CA3AF" letterSpacing="0.3">ENDED</text>
+                          </svg>
+                        ) : (
+                          <>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+                            </svg>
+                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11}}>Rejoin</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   );})}
