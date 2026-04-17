@@ -2417,7 +2417,11 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         {/* Earned badges — shown if logged in */}
         {linkedUid && <ParticipantBadges uid={linkedUid}/>}
 
-        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",overflow:"hidden"}}>
+        {(()=>{
+          const _myGrp=(live?.groups||[]).find(g=>g.id===me?.gid);
+          const _cardRadius=_myGrp?"20px 20px 0 0":"20px";
+          return (
+        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:_cardRadius,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",overflow:"hidden"}}>
           {coinFlash && (
             <div key={coinFlash.key} style={{position:"absolute",top:10,right:18,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:coinFlash.pts<0?"#EF4444":PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
               {coinFlash.pts>0?"+":""}{coinFlash.pts}
@@ -2487,18 +2491,22 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.max(60,160-((String(me?.total||0).length-1)*30)),lineHeight:1,color:PINK,letterSpacing:-4,transition:"font-size .2s ease, transform .18s ease",transform:coinFlash?"scale(1.07)":"scale(1)",whiteSpace:"nowrap"}}>{me?.total||0}</div>
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
         </div>
-
-        {/* Group badge — coloured strip below coin card */}
+          );
+        })()}
+        {/* Group badge — full-color strip glued to bottom of coin card */}
         {(()=>{
           const myGrp=(live?.groups||[]).find(g=>g.id===me?.gid);
           if(!myGrp) return null;
           return (
-            <div style={{width:"100%",borderRadius:14,overflow:"hidden",border:`2px solid ${myGrp.color}40`}}>
-              <div style={{background:`${myGrp.color}15`,padding:"11px 20px",display:"flex",alignItems:"center",gap:10}}>
-                <div style={{width:13,height:13,borderRadius:"50%",background:myGrp.color,boxShadow:`0 0 8px ${myGrp.color}`,flexShrink:0}}/>
-                <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:myGrp.color}}>Team {myGrp.name}</span>
-                <span style={{marginLeft:"auto",fontSize:11,color:myGrp.color,fontWeight:600,opacity:0.7}}>Your group</span>
-              </div>
+            <div style={{
+              width:"100%",background:myGrp.color,
+              borderRadius:"0 0 20px 20px",
+              marginTop:-8,paddingTop:16,paddingBottom:12,
+              textAlign:"center",
+            }}>
+              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",letterSpacing:.3}}>
+                My Group: {myGrp.name}
+              </span>
             </div>
           );
         })()}
@@ -3768,17 +3776,18 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       p.hist = [{type,pts,t:new Date().toLocaleTimeString()}, ...(p.hist||[]).slice(0,29)];
       s.log = [{id:Date.now(),name:p.name,type,pts,t:new Date().toLocaleTimeString()}, ...(s.log||[]).slice(0,99)];
       // Record earning to participant's personal Firestore earnings history
-      // Use p.total (absolute) so My Coins always reflects the real session total — no drift
       if (p.uid) {
         const now = Date.now();
-        const pTotal = p.total; // capture after mutation above
-        const sessCode = s.code;
+        const pTotal = p.total;       // absolute total AFTER this award — no race condition
+        const sessCode = s.code;      // capture from mut's deep-copy, not stale closure
         const sessName = s.name;
+        const pUid = p.uid;
         import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
           const db = getFirestore();
-          const ref = doc(db,"users",p.uid,"data","earnings");
+          const ref = doc(db,"users",pUid,"data","earnings");
           getDoc(ref).then(snap=>{
             const prev = snap.exists() ? (snap.data().value||[]) : [];
+            // Use pTotal (absolute session total) — avoids race condition from concurrent reads
             const idx = prev.findIndex(e=>e.code===sessCode);
             let updated;
             if (idx>=0) {
