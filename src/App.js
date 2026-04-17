@@ -3720,13 +3720,22 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         if (fresh && fresh.live !== false) await ssSession(code, {...fresh, live:false});
       } catch(e) {}
     }
-    // pagehide fires reliably on mobile; beforeunload on desktop
-    window.addEventListener("pagehide", setOffline);
+    // Only go offline when the tab is truly being CLOSED or hard-refreshed.
+    // Do NOT fire on tab-switch, app-switch, or mobile backgrounding —
+    // those are temporary and should not interrupt a live session.
+    //
+    // pagehide with persisted=false means the page is being fully discarded (closed).
+    // pagehide with persisted=true means it entered bfcache (tab switch / back-forward)
+    // — we must NOT go offline in that case.
+    function handlePagehide(e) {
+      if (!e.persisted) setOffline(); // true close only
+    }
+    window.addEventListener("pagehide", handlePagehide);
     window.addEventListener("beforeunload", setOffline);
     return () => {
-      window.removeEventListener("pagehide", setOffline);
+      window.removeEventListener("pagehide", handlePagehide);
       window.removeEventListener("beforeunload", setOffline);
-      // Go offline when navigating back to home within the app
+      // Go offline when navigating back to home within the app (intentional unmount)
       setOffline();
     };
   }, [ses.code]);
@@ -7036,7 +7045,21 @@ export default function App() {
   }
   async function handleOpen(code) {
     if (code==="DEMO") { setCur(JSON.parse(JSON.stringify(DEMO))); window.history.pushState({}, "", `/session/DEMO`); setScreen("session"); return; }
-    const s = await sgSession(code); if (s) { setCur(s); window.history.pushState({}, "", `/session/${code}`); setScreen("session"); }
+    const s = await sgSession(code);
+    if (s) {
+      // Auto-restore live=true when host re-opens a non-archived session.
+      // A session being "offline" is almost always from a premature pagehide/tab-switch,
+      // not an intentional host action. Archived sessions stay offline.
+      if (s.live === false && !s.archived) {
+        const restored = { ...s, live: true };
+        await ssSession(code, restored);
+        setCur(restored);
+      } else {
+        setCur(s);
+      }
+      window.history.pushState({}, "", `/session/${code}`);
+      setScreen("session");
+    }
   }
   async function handleSelectPlan(id, billing) {
     const newPlan = id==="pro" && billing==="yearly" ? "proY" : id;
@@ -7519,17 +7542,15 @@ export default function App() {
                         </div>
                       </button>
                       <button onClick={async()=>{
+                        // Always fetch fresh from Firestore — never block on cached isPaused
                         const live = await sgSession(s.code);
                         if (!live) { homeNotify("This session is no longer available."); return; }
                         if (!live.live) {
-                          // Update status map and show toast
                           setSessionStatuses(prev=>({...prev,[s.code]:false}));
                           homeNotify("This session is paused. Wait for the host to go live again.");
                           return;
                         }
-                        // Update status as live
                         setSessionStatuses(prev=>({...prev,[s.code]:true}));
-                        // Check if this user is assigned as coinmaster
                         const uid = auth.currentUser?.uid;
                         const myPart = uid ? (live.participants||[]).find(p=>p.uid===uid) : null;
                         const isCM = live.coinmasterEnabled && uid && (
@@ -7544,15 +7565,12 @@ export default function App() {
                         } else {
                           setScreen("participant");
                         }
-                      }} title={isPaused?"Session is paused":"Rejoin session"}
-                        style={{padding:"0 14px",height:"100%",background:isPaused?"#F9FAFB":"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:isPaused?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,gap:5,color:isPaused?SUB:PINK,flexShrink:0,opacity:isPaused?0.55:1}}>
+                      }} title="Rejoin session"
+                        style={{padding:"0 14px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,gap:5,color:PINK,flexShrink:0}}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                          {isPaused
-                            ? <><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></>
-                            : <><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></>
-                          }
+                          <><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></>
                         </svg>
-                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11}}>{isPaused?"Paused":"Rejoin"}</span>
+                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11}}>Rejoin</span>
                       </button>
                     </div>
                   );})}
