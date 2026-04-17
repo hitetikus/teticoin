@@ -479,8 +479,8 @@ function PQR({ p, code, size = 160 }) {
     }
   }, [data, size]);
   return (
-    <div style={{width:size,height:size,background:"#ffffff",borderRadius:12,padding:12,border:"3px solid #ffffff",display:"inline-flex",alignItems:"center",justifyContent:"center",colorScheme:"light"}}>
-      <div ref={ref} style={{background:"#ffffff"}}/>
+    <div style={{width:size,height:size,background:"#fff",borderRadius:12,padding:12,border:`1px solid ${BORDER}`,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
+      <div ref={ref}/>
     </div>
   );
 }
@@ -1377,7 +1377,6 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [live, setLive] = useState(init);
   const [showMyQR, setShowMyQR] = useState(false);
   const [showEarnings, setShowEarnings] = useState(false);
-  const [openCoinsOnMount, setOpenCoinsOnMount] = useState(false);
   const [showLoginPw, setShowLoginPw] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editNameVal, setEditNameVal] = useState("");
@@ -1400,16 +1399,6 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const prevTotalRef = useRef(null);
   const [coinFlash, setCoinFlash] = useState(null); // {pts, key}
   const [participantSoundOn, setParticipantSoundOn] = useState(false); // default muted — user taps to unmute
-
-  // Auto-open My Coins if arriving via /join/CODE/coins permalink
-  useEffect(() => {
-    if (window.location.pathname.endsWith("/coins")) setOpenCoinsOnMount(true);
-  }, []);
-  useEffect(() => {
-    if (openCoinsOnMount && step === "joined" && linkedUid) {
-      setShowEarnings(true); setOpenCoinsOnMount(false);
-    }
-  }, [openCoinsOnMount, step, linkedUid]);
 
   // Auto-populate from already-logged-in Firebase user on mount
   useEffect(() => {
@@ -1538,19 +1527,24 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     };
   }, []);
 
-  // Load earnings summary when linkedUid is set
+  // Load earnings summary — re-fetch whenever coins change so nav counter stays live
+  // Small delay gives the participant-side Firestore write time to complete first
+  const _meTotal = live?.participants?.find(p=>p.id===myId)?.total ?? null;
   useEffect(() => {
     if (!linkedUid) { setParticipantEarnings(null); return; }
-    import("firebase/firestore").then(({getFirestore,doc,getDoc})=>{
-      getDoc(doc(getFirestore(),"users",linkedUid,"data","earnings")).then(snap=>{
-        const arr = snap.exists() ? (snap.data().value||[]) : [];
-        setParticipantEarnings({
-          totalCoins: arr.reduce((s,e)=>s+(e.coins||0),0),
-          totalSessions: arr.length
-        });
+    const t = setTimeout(() => {
+      import("firebase/firestore").then(({getFirestore,doc,getDoc})=>{
+        getDoc(doc(getFirestore(),"users",linkedUid,"data","earnings")).then(snap=>{
+          const arr = snap.exists() ? (snap.data().value||[]) : [];
+          setParticipantEarnings({
+            totalCoins: arr.reduce((s,e)=>s+(e.coins||0),0),
+            totalSessions: arr.length
+          });
+        }).catch(()=>{});
       }).catch(()=>{});
-    }).catch(()=>{});
-  }, [linkedUid]);
+    }, 1500); // wait 1.5s for participant earnings write to land
+    return () => clearTimeout(t);
+  }, [linkedUid, _meTotal]);
 
   // Poll for live updates every 2s once joined — detect coin gain for sound
   useEffect(() => {
@@ -1568,29 +1562,6 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             if (soundOnRef.current) playCoinSoundRef.current(gained);
             setCoinFlash({ pts: gained, key: Date.now() });
             setTimeout(() => setCoinFlash(null), 1500);
-            // Write earnings from PARTICIPANT's own auth context (host cannot write here due to Firestore rules)
-            const uid = auth.currentUser?.uid;
-            if (uid && me.total > 0) {
-              const now = Date.now();
-              const newTotal = me.total;
-              const sessCode = init.code;
-              const sessName = s.name || init.name;
-              import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
-                const db = getFirestore();
-                const ref = doc(db,"users",uid,"data","earnings");
-                getDoc(ref).then(snap=>{
-                  const prev = snap.exists() ? (snap.data().value||[]) : [];
-                  const idx = prev.findIndex(e=>e.code===sessCode);
-                  let updated;
-                  if (idx>=0) {
-                    updated = prev.map((e,i)=>i===idx?{...e,coins:newTotal,lastUpdated:now}:e);
-                  } else {
-                    updated = [{code:sessCode,name:sessName,coins:newTotal,joinedAt:now,lastUpdated:now},...prev];
-                  }
-                  setDoc(ref,{value:updated,updatedAt:now});
-                }).catch(()=>{});
-              }).catch(()=>{});
-            }
           }
           prevTotalRef.current = me.total;
         }
@@ -2357,7 +2328,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     <div style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
       {optionalLoginModalJSX}
       {showEarnings && linkedUid && (
-        <EarningsPage uid={linkedUid} name={me?.name||"You"} refreshKey={me?.total} onClose={()=>{ window.history.replaceState({},"", init?.code ? `/join/${init.code}` : "/app"); setShowEarnings(false); }}/>
+        <EarningsPage uid={linkedUid} name={me?.name||"You"} onClose={()=>setShowEarnings(false)}/>
       )}
       <BadgeClaimPrompt/>
 
@@ -2406,7 +2377,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2.2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     Home
                   </button>
-                  <button onClick={()=>{setParticipantMenuOpen(false); window.history.pushState({}, "", init?.code ? `/join/${init.code}/coins` : "/my-coins"); setShowEarnings(true);}}
+                  <button onClick={()=>{setParticipantMenuOpen(false);setShowEarnings(true);}}
                     style={{width:"100%",padding:"13px 16px",background:"none",border:"none",borderBottom:`1px solid ${BORDER}`,textAlign:"left",display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     My Coins
@@ -2439,8 +2410,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         {/* Earned badges — shown if logged in */}
         {linkedUid && <ParticipantBadges uid={linkedUid}/>}
 
-        {(()=>{ const _mg=(live?.groups||[]).find(g=>g.id===me?.gid); return (
-        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:_mg?"20px 20px 0 0":"20px",padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",overflow:"hidden"}}>
+        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",overflow:"hidden"}}>
           {coinFlash && (
             <div key={coinFlash.key} style={{position:"absolute",top:10,right:18,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:coinFlash.pts<0?"#EF4444":PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
               {coinFlash.pts>0?"+":""}{coinFlash.pts}
@@ -2510,12 +2480,6 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.max(60,160-((String(me?.total||0).length-1)*30)),lineHeight:1,color:PINK,letterSpacing:-4,transition:"font-size .2s ease, transform .18s ease",transform:coinFlash?"scale(1.07)":"scale(1)",whiteSpace:"nowrap"}}>{me?.total||0}</div>
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
         </div>
-        );})()}
-        {(()=>{ const _mg=(live?.groups||[]).find(g=>g.id===me?.gid); if(!_mg) return null; return (
-          <div style={{width:"100%",background:_mg.color,borderRadius:"0 0 20px 20px",padding:"12px 20px",textAlign:"center",marginTop:-2}}>
-            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",letterSpacing:.2}}>My Group: {_mg.name}</span>
-          </div>
-        );})()}
 
         {/* My QR button — compact, below coin card */}
         {me && (
@@ -2527,7 +2491,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         )}
 
         {showMyQR && me && (
-          <div style={{width:"100%",background:"#ffffff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center",colorScheme:"light"}}>
+          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center"}}>
             <PQR p={me} code={init.code} size={160}/>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:10,letterSpacing:2}}>{pNum(me.num)}</div>
             <div style={{fontSize:12,color:SUB,marginTop:2}}>{me.name}</div>
@@ -3781,8 +3745,26 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       p.total += pts; p.bk[type] = (p.bk[type]||0)+1;
       p.hist = [{type,pts,t:new Date().toLocaleTimeString()}, ...(p.hist||[]).slice(0,29)];
       s.log = [{id:Date.now(),name:p.name,type,pts,t:new Date().toLocaleTimeString()}, ...(s.log||[]).slice(0,99)];
-      // NOTE: earnings are written by the PARTICIPANT themselves via their polling loop
-      // (host writing to participant's Firestore doc is blocked by security rules)
+      // Record earning to participant's personal Firestore earnings history
+      if (p.uid) {
+        const now = Date.now();
+        import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
+          const db = getFirestore();
+          const ref = doc(db,"users",p.uid,"data","earnings");
+          getDoc(ref).then(snap=>{
+            const prev = snap.exists() ? (snap.data().value||[]) : [];
+            // Find or create entry for this session
+            const idx = prev.findIndex(e=>e.code===ses.code);
+            let updated;
+            if (idx>=0) {
+              updated = prev.map((e,i)=>i===idx?{...e,coins:e.coins+pts,lastUpdated:now}:e);
+            } else {
+              updated = [{code:ses.code,name:ses.name,coins:pts,joinedAt:now,lastUpdated:now},...prev];
+            }
+            setDoc(ref,{value:updated,updatedAt:now});
+          }).catch(()=>{});
+        }).catch(()=>{});
+      }
     });
     const col = type==="token" ? YELLOW : ACTS.find(x=>x.id===type)?.col||YELLOW;
     setAnims(a => [...a, {id:aid.current++,x:mx,y:my,text:pts<0?`${pts}`:`+${pts}`,color:pts<0?"#EF4444":col}]);
@@ -6085,26 +6067,22 @@ function SuperAdminDashboard({ onClose }) {
 
 // ── Coinmaster Join Modal ──
 // ── Earnings Page — participant's personal coin history ──────────
-function EarningsPage({ uid, name, onClose, refreshKey }) {
-  const [earnings, setEarnings] = useState(null);
+function EarningsPage({ uid, name, onClose }) {
+  const [earnings, setEarnings] = useState(null); // null = loading
   const [copied, setCopied] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-
-  async function loadEarnings(showSpinner) {
-    if (showSpinner) { setRefreshing(true); setEarnings(null); }
-    try {
-      const { getFirestore, doc, getDoc } = await import("firebase/firestore");
-      const db = getFirestore();
-      const snap = await getDoc(doc(db, "users", uid, "data", "earnings"));
-      setEarnings(snap.exists() ? (snap.data().value || []) : []);
-    } catch { setEarnings([]); }
-    if (showSpinner) setRefreshing(false);
-  }
 
   useEffect(() => {
-    if (uid) loadEarnings(false);
+    async function load() {
+      try {
+        const { getFirestore, doc, getDoc } = await import("firebase/firestore");
+        const db = getFirestore();
+        const snap = await getDoc(doc(db, "users", uid, "data", "earnings"));
+        setEarnings(snap.exists() ? (snap.data().value || []) : []);
+      } catch { setEarnings([]); }
+    }
+    if (uid) load();
     else setEarnings([]);
-  }, [uid, refreshKey]);
+  }, [uid]);
 
   const totalCoins = (earnings||[]).reduce((s,e)=>s+e.coins,0);
   const totalSessions = (earnings||[]).length;
@@ -6130,13 +6108,7 @@ function EarningsPage({ uid, name, onClose, refreshKey }) {
           Back
         </button>
         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:17,color:TEXT}}>My Coins</div>
-        <button onClick={()=>loadEarnings(true)} title="Refresh"
-          style={{width:48,height:36,display:"flex",alignItems:"center",justifyContent:"center",background:"none",border:"none",cursor:"pointer",color:refreshing?PINK:SUB,padding:0}}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round"
-            style={{animation:refreshing?"spin 0.7s linear infinite":"none",transformOrigin:"center"}}>
-            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-          </svg>
-        </button>
+        <div style={{width:48}}/>
       </div>
 
       <div style={{flex:1,overflowY:"auto",padding:"20px 16px",maxWidth:480,margin:"0 auto",width:"100%"}}>
@@ -6710,8 +6682,7 @@ export default function App() {
     }
 
     // Participant join link
-    const coinsMatch = path.match(/^\/join\/([A-Z0-9]+)\/coins$/i);
-    const match = coinsMatch || path.match(/^\/join\/([A-Z0-9]+)$/i);
+    const match = path.match(/^\/join\/([A-Z0-9]+)$/i);
     if (match) {
       const code = match[1].toUpperCase();
       sgSession(code).then(s => {
@@ -6748,7 +6719,7 @@ export default function App() {
 
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.match(/^\/join\/[A-Z0-9]+(\/coins)?$/i)) return; // skip entirely for join URLs
+    if (path.match(/^\/join\/[A-Z0-9]+$/i)) return; // skip entirely for join URLs
     if (path.match(/^\/claim\/[a-z0-9]+$/i)) return;  // skip entirely for claim URLs
     if (path === "/login") return; // skip for login permalink — already handled above
 
