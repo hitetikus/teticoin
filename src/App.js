@@ -2408,22 +2408,35 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       )}
       <BadgeClaimPrompt/>
 
-      {/* ── Session inactive overlay ── host present but deliberately paused ── */}
-      {live?.live === false && live?.lastHostPing && (Date.now() - (live?.lastHostPing||0) < 40000) && (
-        <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(10,10,15,0.55)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",padding:"0 24px 80px"}}>
-          <div style={{background:"#fff",borderRadius:24,padding:"40px 32px",maxWidth:320,width:"100%",textAlign:"center",boxShadow:"0 32px 80px rgba(0,0,0,.4)"}}>
-            <div style={{width:64,height:64,borderRadius:20,background:"#FEF2F2",border:"1.5px solid #EF444430",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+      {/* ── Session inactive overlay ── shown when host pauses or ends the session ── */}
+      {live?.live === false && (() => {
+        const hostPresent = live?.lastHostPing && (Date.now() - (live?.lastHostPing||0) < 40000);
+        const isEnded = !hostPresent; // host gone = session ended
+        return (
+          <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(10,10,15,0.55)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",padding:"0 24px 80px"}}>
+            <div style={{background:"#fff",borderRadius:24,padding:"40px 32px",maxWidth:320,width:"100%",textAlign:"center",boxShadow:"0 32px 80px rgba(0,0,0,.4)"}}>
+              <div style={{width:64,height:64,borderRadius:20,background:isEnded?"#F3F4F6":"#FEF2F2",border:`1.5px solid ${isEnded?"#D1D5DB":"#EF444430"}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
+                {isEnded
+                  ? <svg width="28" height="28" viewBox="0 0 24 24" fill="#6B7280"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+                  : <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                }
+              </div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,marginBottom:8}}>
+                {isEnded ? "Session Ended" : "Session Paused"}
+              </div>
+              <div style={{fontSize:14,color:SUB,lineHeight:1.7,marginBottom:24}}>
+                {isEnded
+                  ? "The host has ended this session. Thanks for joining!"
+                  : "The host has paused this session. Hang tight — it'll resume shortly."}
+              </div>
+              <button onClick={onBack}
+                style={{width:"100%",padding:"12px 0",background:"#F9FAFB",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
+                ← Back to Home
+              </button>
             </div>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,marginBottom:8}}>Session Paused</div>
-            <div style={{fontSize:14,color:SUB,lineHeight:1.7,marginBottom:24}}>The host has paused this session. Hang tight — it'll resume shortly.</div>
-            <button onClick={onBack}
-              style={{width:"100%",padding:"12px 0",background:"#F9FAFB",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
-              ← Back to Home
-            </button>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Top nav bar ── */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10,flexShrink:0}}>
@@ -6737,6 +6750,7 @@ export default function App() {
   const [showHostEarnings, setShowHostEarnings] = useState(false);
   const [homeEarnings, setHomeEarnings] = useState(null); // {totalCoins, totalSessions}
   const [recentJoined, setRecentJoined] = useState([]); // [{code,name,coins,joinedAt,lastUpdated}]
+  const recentJoinedRef = React.useRef([]); // always-current ref for use inside poll interval
   const [homeReloadKey, setHomeReloadKey] = useState(0); // increment to force home data refresh
   const [homeRightTab, setHomeRightTab] = useState("created"); // "created" | "joined"
   const [sessionStatuses, setSessionStatuses] = useState({}); // {code: true=live, false=paused}
@@ -6988,30 +7002,29 @@ export default function App() {
     }
   }, [screen, trainer, homeReloadKey]);
 
-  // Poll session live/paused status every 5s while on home
+  // Poll session live/paused status every 2s while on home.
+  // Uses a ref so the interval never restarts when recentJoined updates —
+  // this eliminates the gap between data loading and poll starting after login.
   useEffect(() => {
     if (screen !== "home") return;
     function pollStatuses() {
-      if (!recentJoined.length) return;
-      Promise.all(recentJoined.slice(0,10).map(s => sgSession(s.code).then(r => {
-        if (!r) return {code:s.code, live: null};
-        // A session is "effectively live" only if:
-        //   1. live flag is true, AND
-        //   2. host heartbeat is fresh (within 40s)
-        // No heartbeat OR stale heartbeat = host is gone = session ended/closed.
+      const list = recentJoinedRef.current;
+      if (!list.length) return;
+      Promise.all(list.slice(0,10).map(s => sgSession(s.code).then(r => {
+        if (!r) return {code:s.code, live: false};
+        // Live = host heartbeat fresh (<40s) AND live flag true
         const hostPresent = r.lastHostPing && (Date.now() - r.lastHostPing < 40000);
-        const effectiveLive = r.live && hostPresent ? true : false;
-        return {code:s.code, live: effectiveLive};
+        return {code:s.code, live: r.live && hostPresent ? true : false};
       }))).then(results => {
         const map = {};
         results.forEach(r => { map[r.code] = r.live; });
         setSessionStatuses(map);
       }).catch(()=>{});
     }
-    pollStatuses();
-    const iv = setInterval(pollStatuses, 1500); // fast poll — snappy rejoin/ended state
+    pollStatuses(); // immediate on mount
+    const iv = setInterval(pollStatuses, 2000);
     return () => clearInterval(iv);
-  }, [screen, recentJoined]);
+  }, [screen]); // stable — ref keeps data current without restarting interval
 
   async function loadHomeEarnings(uid) {
     try {
@@ -7048,13 +7061,8 @@ export default function App() {
       // Sort by most recent and keep for "Recently Joined" section
       const sorted = [...mergedList].sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0));
       setRecentJoined(sorted);
-      // Fetch live/paused status for each recent session in background
-      const top = sorted.slice(0,10);
-      Promise.all(top.map(s => sgSession(s.code).then(r => ({code:s.code, live: r ? r.live : null})))).then(results => {
-        const map = {};
-        results.forEach(r => { map[r.code] = r.live; });
-        setSessionStatuses(map);
-      }).catch(()=>{});
+      recentJoinedRef.current = sorted; // keep ref in sync for poll interval
+      // Status polling is handled by the stable pollStatuses interval (uses heartbeat logic)
     } catch { setHomeEarnings({ totalCoins:0, totalSessions:0 }); }
   }
 
@@ -7630,11 +7638,10 @@ export default function App() {
                         disabled={isPaused}
                         style={{padding:"0 14px",height:"100%",background:isPaused?"#F9FAFB":"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:isPaused?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,gap:5,color:isPaused?SUB:PINK,flexShrink:0,opacity:isPaused?0.5:1}}>
                         {isPaused ? (
-                          // Stop-sign octagon with "ENDED" inside
-                          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                            <polygon points="11,4 25,4 32,11 32,25 25,32 11,32 4,25 4,11" fill="#E5E7EB" stroke="none"/>
-                            <text x="18" y="21" textAnchor="middle" fontFamily="Plus Jakarta Sans,sans-serif" fontWeight="800" fontSize="7" fill="#9CA3AF" letterSpacing="0.3">ENDED</text>
-                          </svg>
+                          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#9CA3AF"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:10,color:"#6B7280"}}>Ended</span>
+                          </div>
                         ) : (
                           <>
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
