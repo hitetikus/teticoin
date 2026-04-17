@@ -2500,7 +2500,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         {/* Earned badges — shown if logged in */}
         {linkedUid && <ParticipantBadges uid={linkedUid}/>}
 
-        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",overflow:"hidden"}}>
+        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",overflow:"hidden",zIndex:1}}>
           {coinFlash && (
             <div key={coinFlash.key} style={{position:"absolute",top:10,right:18,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:coinFlash.pts<0?"#EF4444":PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
               {coinFlash.pts>0?"+":""}{coinFlash.pts}
@@ -2581,9 +2581,9 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           const coinGrp = me ? (live.groups||[]).find(g=>g.id===me.gid) : null;
           if (!coinGrp) return null;
           return (
-            <div style={{width:"100%",background:coinGrp.color,borderRadius:"0 0 16px 16px",padding:"10px 20px",marginTop:-8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-              <div style={{width:8,height:8,borderRadius:"50%",background:"rgba(255,255,255,0.6)",flexShrink:0}}/>
-              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",letterSpacing:0.3}}>Group: {coinGrp.name}</span>
+            <div style={{width:"100%",background:coinGrp.color,borderRadius:"0 0 20px 20px",padding:"20px 20px 12px",marginTop:-12,display:"flex",alignItems:"center",justifyContent:"center",gap:6,zIndex:0,position:"relative"}}>
+              <div style={{width:7,height:7,borderRadius:"50%",background:"rgba(255,255,255,0.6)",flexShrink:0}}/>
+              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,color:"#fff",letterSpacing:0.3}}>Group: <span style={{fontWeight:800}}>{coinGrp.name}</span></span>
             </div>
           );
         })()}
