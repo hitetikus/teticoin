@@ -479,8 +479,8 @@ function PQR({ p, code, size = 160 }) {
     }
   }, [data, size]);
   return (
-    <div style={{width:size,height:size,background:"#fff",borderRadius:12,padding:12,border:`1px solid ${BORDER}`,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
-      <div ref={ref}/>
+    <div style={{width:size,height:size,background:"#ffffff",borderRadius:12,padding:12,border:"3px solid #ffffff",display:"inline-flex",alignItems:"center",justifyContent:"center",colorScheme:"light"}}>
+      <div ref={ref} style={{background:"#ffffff"}}/>
     </div>
   );
 }
@@ -1527,7 +1527,8 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     };
   }, []);
 
-  // Load earnings summary when linkedUid is set
+  // Load earnings summary when linkedUid is set, and re-fetch whenever this participant's coins change
+  const meTotal = myId ? (live?.participants?.find(p=>p.id===myId)?.total ?? null) : null;
   useEffect(() => {
     if (!linkedUid) { setParticipantEarnings(null); return; }
     import("firebase/firestore").then(({getFirestore,doc,getDoc})=>{
@@ -1539,7 +1540,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         });
       }).catch(()=>{});
     }).catch(()=>{});
-  }, [linkedUid]);
+  }, [linkedUid, meTotal]);
 
   // Poll for live updates every 2s once joined — detect coin gain for sound
   useEffect(() => {
@@ -2474,6 +2475,12 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           <div style={{fontSize:11,fontWeight:700,color:SUB,marginBottom:4,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.max(60,160-((String(me?.total||0).length-1)*30)),lineHeight:1,color:PINK,letterSpacing:-4,transition:"font-size .2s ease, transform .18s ease",transform:coinFlash?"scale(1.07)":"scale(1)",whiteSpace:"nowrap"}}>{me?.total||0}</div>
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
+          {(()=>{const myGrp=(live?.groups||[]).find(g=>g.id===me?.gid);return myGrp?(
+            <div style={{display:"inline-flex",alignItems:"center",gap:8,marginTop:14,padding:"9px 20px",borderRadius:12,background:`${myGrp.color}18`,border:`2px solid ${myGrp.color}55`}}>
+              <div style={{width:11,height:11,borderRadius:"50%",background:myGrp.color,boxShadow:`0 0 6px ${myGrp.color}90`,flexShrink:0}}/>
+              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:myGrp.color}}>Team {myGrp.name}</span>
+            </div>
+          ):null;})()}
         </div>
 
         {/* My QR button — compact, below coin card */}
@@ -2486,7 +2493,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         )}
 
         {showMyQR && me && (
-          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center"}}>
+          <div style={{width:"100%",background:"#ffffff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center",colorScheme:"light"}}>
             <PQR p={me} code={init.code} size={160}/>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:10,letterSpacing:2}}>{pNum(me.num)}</div>
             <div style={{fontSize:12,color:SUB,marginTop:2}}>{me.name}</div>
@@ -6866,7 +6873,17 @@ export default function App() {
       const list = snap.exists() ? (snap.data().value || []) : [];
       setHomeEarnings({ totalCoins: list.reduce((s,e)=>s+e.coins,0), totalSessions: list.length });
       // Sort by most recent and keep for "Recently Joined" section
-      const sorted = [...list].sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0));
+      let sorted = [...list].sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0));
+      // Fallback: if tc_pjoin refers to a session not yet in earnings (async write lag), inject it
+      try {
+        const saved = JSON.parse(localStorage.getItem("tc_pjoin")||"null");
+        if (saved?.code && !sorted.find(e=>e.code===saved.code)) {
+          const sess = await sgSession(saved.code);
+          if (sess) {
+            sorted = [{code:saved.code,name:sess.name,coins:0,joinedAt:Date.now(),lastUpdated:Date.now()}, ...sorted];
+          }
+        }
+      } catch(e) {}
       setRecentJoined(sorted);
       // Fetch live/paused status for each recent session in background
       const top = sorted.slice(0,10);
