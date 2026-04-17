@@ -479,8 +479,8 @@ function PQR({ p, code, size = 160 }) {
     }
   }, [data, size]);
   return (
-    <div style={{width:size,height:size,background:"#fff",borderRadius:12,padding:12,border:`1px solid ${BORDER}`,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
-      <div ref={ref}/>
+    <div style={{width:size,height:size,background:"#ffffff",borderRadius:12,padding:12,border:"3px solid #ffffff",display:"inline-flex",alignItems:"center",justifyContent:"center",colorScheme:"light"}}>
+      <div ref={ref} style={{background:"#ffffff"}}/>
     </div>
   );
 }
@@ -1403,9 +1403,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
   // Open My Coins automatically if arriving via /join/CODE/coins permalink
   useEffect(() => {
-    if (window.location.pathname.endsWith("/coins")) {
-      setOpenCoinsOnMount(true);
-    }
+    if (window.location.pathname.endsWith("/coins")) setOpenCoinsOnMount(true);
   }, []);
   useEffect(() => {
     if (openCoinsOnMount && step === "joined" && linkedUid) {
@@ -2490,6 +2488,21 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
         </div>
 
+        {/* Group badge — coloured strip below coin card */}
+        {(()=>{
+          const myGrp=(live?.groups||[]).find(g=>g.id===me?.gid);
+          if(!myGrp) return null;
+          return (
+            <div style={{width:"100%",borderRadius:14,overflow:"hidden",border:`2px solid ${myGrp.color}40`}}>
+              <div style={{background:`${myGrp.color}15`,padding:"11px 20px",display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:13,height:13,borderRadius:"50%",background:myGrp.color,boxShadow:`0 0 8px ${myGrp.color}`,flexShrink:0}}/>
+                <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:myGrp.color}}>Team {myGrp.name}</span>
+                <span style={{marginLeft:"auto",fontSize:11,color:myGrp.color,fontWeight:600,opacity:0.7}}>Your group</span>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* My QR button — compact, below coin card */}
         {me && (
           <button onClick={()=>setShowMyQR(v=>!v)}
@@ -2500,7 +2513,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         )}
 
         {showMyQR && me && (
-          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center"}}>
+          <div style={{width:"100%",background:"#ffffff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center",colorScheme:"light"}}>
             <PQR p={me} code={init.code} size={160}/>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:10,letterSpacing:2}}>{pNum(me.num)}</div>
             <div style={{fontSize:12,color:SUB,marginTop:2}}>{me.name}</div>
@@ -3755,20 +3768,23 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       p.hist = [{type,pts,t:new Date().toLocaleTimeString()}, ...(p.hist||[]).slice(0,29)];
       s.log = [{id:Date.now(),name:p.name,type,pts,t:new Date().toLocaleTimeString()}, ...(s.log||[]).slice(0,99)];
       // Record earning to participant's personal Firestore earnings history
+      // Use p.total (absolute) so My Coins always reflects the real session total — no drift
       if (p.uid) {
         const now = Date.now();
+        const pTotal = p.total; // capture after mutation above
+        const sessCode = s.code;
+        const sessName = s.name;
         import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
           const db = getFirestore();
           const ref = doc(db,"users",p.uid,"data","earnings");
           getDoc(ref).then(snap=>{
             const prev = snap.exists() ? (snap.data().value||[]) : [];
-            // Find or create entry for this session
-            const idx = prev.findIndex(e=>e.code===ses.code);
+            const idx = prev.findIndex(e=>e.code===sessCode);
             let updated;
             if (idx>=0) {
-              updated = prev.map((e,i)=>i===idx?{...e,coins:e.coins+pts,lastUpdated:now}:e);
+              updated = prev.map((e,i)=>i===idx?{...e,coins:pTotal,lastUpdated:now}:e);
             } else {
-              updated = [{code:ses.code,name:ses.name,coins:pts,joinedAt:now,lastUpdated:now},...prev];
+              updated = [{code:sessCode,name:sessName,coins:pTotal,joinedAt:now,lastUpdated:now},...prev];
             }
             setDoc(ref,{value:updated,updatedAt:now});
           }).catch(()=>{});
@@ -6739,7 +6755,7 @@ export default function App() {
 
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.match(/^\/join\/[A-Z0-9]+(\/coins)?$/i)) return; // skip entirely for join URLs (incl /coins)
+    if (path.match(/^\/join\/[A-Z0-9]+(\/coins)?$/i)) return; // skip entirely for join URLs
     if (path.match(/^\/claim\/[a-z0-9]+$/i)) return;  // skip entirely for claim URLs
     if (path === "/login") return; // skip for login permalink — already handled above
 
