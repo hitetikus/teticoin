@@ -6750,7 +6750,7 @@ export default function App() {
   const [showHostEarnings, setShowHostEarnings] = useState(false);
   const [homeEarnings, setHomeEarnings] = useState(null); // {totalCoins, totalSessions}
   const [recentJoined, setRecentJoined] = useState([]); // [{code,name,coins,joinedAt,lastUpdated}]
-  const recentJoinedRef = React.useRef([]); // always-current ref for use inside poll interval
+  const recentJoinedRef = useRef([]); // always-current ref for use inside poll interval
   const [homeReloadKey, setHomeReloadKey] = useState(0); // increment to force home data refresh
   const [homeRightTab, setHomeRightTab] = useState("created"); // "created" | "joined"
   const [sessionStatuses, setSessionStatuses] = useState({}); // {code: true=live, false=paused}
