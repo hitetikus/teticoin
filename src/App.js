@@ -1718,9 +1718,9 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
       // If they log in before joining, check if this UID already has a participant slot
       if (!myId) {
+        // Check by uid first (normal case)
         const existingByUid = (live.participants||[]).find(p => p.uid === uid);
         if (existingByUid) {
-          // Already in session — just resume, no new participant created
           prevTotalRef.current = existingByUid.total ?? 0;
           setMyId(existingByUid.id);
           setLinkedUid(uid);
@@ -1731,6 +1731,37 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           setLoginBusy(false);
           return;
         }
+        // Fallback: check localStorage for a saved slot from this session.
+        // Handles logout->login where uid was nulled but the slot still exists.
+        try {
+          const saved = JSON.parse(localStorage.getItem("tc_pjoin")||"null");
+          if (saved && saved.code === init.code && saved.pid) {
+            const existingByPid = (live.participants||[]).find(p => p.id === saved.pid);
+            if (existingByPid) {
+              const restoredId = existingByPid.id;
+              prevTotalRef.current = existingByPid.total ?? 0;
+              setMyId(restoredId);
+              setGuestName(existingByPid.guestName || existingByPid.name || "");
+              setStep("joined");
+              // Patch uid + name back into the existing slot in Firestore
+              const fresh2 = await sgSession(init.code);
+              if (fresh2) {
+                const patched = {
+                  ...fresh2,
+                  participants: (fresh2.participants||[]).map(p =>
+                    p.id === restoredId ? {...p, uid, name: displayName, av: mkAv(displayName), guestName: p.guestName || existingByPid.name} : p
+                  )
+                };
+                setLive(patched);
+                await ssSession(init.code, patched);
+              }
+              setLoginModal(false);
+              setShowLoginBanner(false);
+              setLoginBusy(false);
+              return;
+            }
+          }
+        } catch(e2) {}
         if (!name.trim()) setName(displayName);
         setLoginModal(false);
         setShowLoginBanner(false);
@@ -2383,7 +2414,19 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
               </button>
               {participantMenuOpen && (
                 <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,background:"#fff",border:`1px solid ${BORDER}`,borderRadius:14,boxShadow:"0 8px 32px rgba(0,0,0,.12)",zIndex:100,minWidth:180,overflow:"hidden"}}>
-                  <button onClick={()=>{setParticipantMenuOpen(false); onBack();}}
+                  <button onClick={()=>{
+                    setParticipantMenuOpen(false);
+                    // Cache live coins to localStorage so home screen shows correct total
+                    // even before the Firestore write lands
+                    if (linkedUid && init?.code && me?.total != null) {
+                      try {
+                        localStorage.setItem("tc_livecoins", JSON.stringify({
+                          uid: linkedUid, code: init.code, coins: me.total, ts: Date.now()
+                        }));
+                      } catch(e) {}
+                    }
+                    onBack();
+                  }}
                     style={{width:"100%",padding:"13px 16px",background:"none",border:"none",borderBottom:`1px solid ${BORDER}`,textAlign:"left",display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2.2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     Home
@@ -6906,9 +6949,34 @@ export default function App() {
       const db = getFirestore();
       const snap = await getDoc(doc(db, "users", uid, "data", "earnings"));
       const list = snap.exists() ? (snap.data().value || []) : [];
-      setHomeEarnings({ totalCoins: list.reduce((s,e)=>s+e.coins,0), totalSessions: list.length });
+
+      // Merge the live-coins cache written by ParticipantView just before navigating home.
+      // This covers the gap where the Firestore award write hasn't landed yet.
+      let mergedList = list;
+      try {
+        const cached = JSON.parse(localStorage.getItem("tc_livecoins") || "null");
+        const AGE_LIMIT = 5 * 60 * 1000; // 5 minutes — discard stale cache
+        if (cached && cached.uid === uid && cached.code && Date.now() - cached.ts < AGE_LIMIT) {
+          const idx = mergedList.findIndex(e => e.code === cached.code);
+          if (idx >= 0) {
+            // Use whichever is higher — Firestore or cached live value
+            if (cached.coins > mergedList[idx].coins) {
+              mergedList = mergedList.map((e, i) =>
+                i === idx ? { ...e, coins: cached.coins, lastUpdated: cached.ts } : e
+              );
+            }
+          } else if (cached.coins > 0) {
+            // Session not in Firestore yet — prepend it
+            mergedList = [{ code: cached.code, name: "", coins: cached.coins, joinedAt: cached.ts, lastUpdated: cached.ts }, ...mergedList];
+          }
+          // Clear cache after consuming it so it doesn't affect future loads
+          localStorage.removeItem("tc_livecoins");
+        }
+      } catch(e) {}
+
+      setHomeEarnings({ totalCoins: mergedList.reduce((s,e)=>s+e.coins,0), totalSessions: mergedList.length });
       // Sort by most recent and keep for "Recently Joined" section
-      const sorted = [...list].sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0));
+      const sorted = [...mergedList].sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0));
       setRecentJoined(sorted);
       // Fetch live/paused status for each recent session in background
       const top = sorted.slice(0,10);
