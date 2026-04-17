@@ -1418,6 +1418,40 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         setStep("joined");
         return;
       }
+      // Fallback: uid was nulled on logout but the slot still exists — find by saved pid.
+      // This prevents creating a duplicate participant when the user logs back in.
+      try {
+        const saved = JSON.parse(localStorage.getItem("tc_pjoin")||"null");
+        if (saved && saved.code === init.code && saved.pid) {
+          const existingByPid = (init.participants||[]).find(p => p.id === saved.pid);
+          if (existingByPid) {
+            // Restore this slot: patch uid back so the host can award coins to it
+            prevTotalRef.current = existingByPid.total ?? 0;
+            setMyId(existingByPid.id);
+            setGuestName(existingByPid.guestName || existingByPid.name || "");
+            setStep("joined");
+            // Patch uid + display name back into Firestore session in background
+            ;(async()=>{
+              try {
+                const freshS = await sgSession(init.code);
+                if (freshS) {
+                  const patched = {
+                    ...freshS,
+                    participants: (freshS.participants||[]).map(p =>
+                      p.id === existingByPid.id
+                        ? {...p, uid: u.uid, name: displayName, av: mkAv(displayName), guestName: p.guestName || existingByPid.name}
+                        : p
+                    )
+                  };
+                  setLive(patched);
+                  ssSession(init.code, patched);
+                }
+              } catch(e) {}
+            })();
+            return;
+          }
+        }
+      } catch(e) {}
       // Logged-in user not yet in session — auto-join directly, no name screen needed
       const currentPax = (init.participants||[]).length;
       const limit = hostPlan !== "free" ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
@@ -7542,10 +7576,20 @@ export default function App() {
                         </div>
                       </button>
                       <button onClick={async()=>{
-                        // Always fetch fresh from Firestore — never block on cached isPaused
-                        const live = await sgSession(s.code);
-                        if (!live) { homeNotify("This session is no longer available."); return; }
+                        // Always fetch fresh — never rely on cached isPaused status
+                        const fetched = await sgSession(s.code);
+                        if (!fetched) { homeNotify("This session is no longer available."); return; }
+                        // Auto-restore live if session was paused by a premature pagehide
+                        // (tab-switch, app-switch on mobile). Only a deliberately archived/ended
+                        // session should stay offline.
+                        let live = fetched;
+                        if (!fetched.live && !fetched.archived) {
+                          const restored = { ...fetched, live: true };
+                          await ssSession(s.code, restored);
+                          live = restored;
+                        }
                         if (!live.live) {
+                          // Truly paused (archived or host deliberately went offline)
                           setSessionStatuses(prev=>({...prev,[s.code]:false}));
                           homeNotify("This session is paused. Wait for the host to go live again.");
                           return;
