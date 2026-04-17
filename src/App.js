@@ -3745,31 +3745,41 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
     return () => clearInterval(t);
   }, [ses.code]);
 
+  // ── Host heartbeat — writes lastHostPing every 20s while session is open ──
+  // Participants use this to detect if the host tab is still alive.
+  useEffect(() => {
+    const code = ses.code;
+    async function ping() {
+      try {
+        const fresh = await sgSession(code);
+        if (fresh) await ssSession(code, {...fresh, lastHostPing: Date.now()});
+      } catch(e) {}
+    }
+    ping(); // immediate on mount
+    const t = setInterval(ping, 20000);
+    return () => clearInterval(t);
+  }, [ses.code]);
+
   // ── Auto-offline when host closes/navigates away from the tab ──
   useEffect(() => {
     const code = ses.code;
     async function setOffline() {
       try {
         const fresh = await sgSession(code);
-        if (fresh && fresh.live !== false) await ssSession(code, {...fresh, live:false});
+        if (fresh && fresh.live !== false) await ssSession(code, {...fresh, live:false, lastHostPing: 0});
       } catch(e) {}
     }
-    // Only go offline when the tab is truly being CLOSED or hard-refreshed.
-    // Do NOT fire on tab-switch, app-switch, or mobile backgrounding —
-    // those are temporary and should not interrupt a live session.
-    //
-    // pagehide with persisted=false means the page is being fully discarded (closed).
-    // pagehide with persisted=true means it entered bfcache (tab switch / back-forward)
-    // — we must NOT go offline in that case.
+    // pagehide with persisted=false = page truly discarded (tab closed / hard refresh).
+    // persisted=true = entered bfcache (tab switch) — do NOT go offline.
     function handlePagehide(e) {
-      if (!e.persisted) setOffline(); // true close only
+      if (!e.persisted) setOffline();
     }
     window.addEventListener("pagehide", handlePagehide);
     window.addEventListener("beforeunload", setOffline);
     return () => {
       window.removeEventListener("pagehide", handlePagehide);
       window.removeEventListener("beforeunload", setOffline);
-      // Go offline when navigating back to home within the app (intentional unmount)
+      // Go offline when navigating home within the app (intentional unmount)
       setOffline();
     };
   }, [ses.code]);
@@ -6975,7 +6985,15 @@ export default function App() {
     if (screen !== "home") return;
     function pollStatuses() {
       if (!recentJoined.length) return;
-      Promise.all(recentJoined.slice(0,10).map(s => sgSession(s.code).then(r => ({code:s.code, live: r ? r.live : null})))).then(results => {
+      Promise.all(recentJoined.slice(0,10).map(s => sgSession(s.code).then(r => {
+        if (!r) return {code:s.code, live: null};
+        // A session is "effectively live" only if host is present (heartbeat < 40s)
+        // AND live flag is true. If host is gone, treat as closed regardless of live flag.
+        const hostPresent = r.lastHostPing && (Date.now() - r.lastHostPing < 40000);
+        const effectiveLive = r.live && hostPresent ? true : (r.live && !r.lastHostPing) ? null : false;
+        // null = unknown/legacy session (no heartbeat data yet) — show Rejoin, let tap decide
+        return {code:s.code, live: effectiveLive};
+      }))).then(results => {
         const map = {};
         results.forEach(r => { map[r.code] = r.live; });
         setSessionStatuses(map);
@@ -7080,20 +7098,7 @@ export default function App() {
   async function handleOpen(code) {
     if (code==="DEMO") { setCur(JSON.parse(JSON.stringify(DEMO))); window.history.pushState({}, "", `/session/DEMO`); setScreen("session"); return; }
     const s = await sgSession(code);
-    if (s) {
-      // Auto-restore live=true when host re-opens a non-archived session.
-      // A session being "offline" is almost always from a premature pagehide/tab-switch,
-      // not an intentional host action. Archived sessions stay offline.
-      if (s.live === false && !s.archived) {
-        const restored = { ...s, live: true };
-        await ssSession(code, restored);
-        setCur(restored);
-      } else {
-        setCur(s);
-      }
-      window.history.pushState({}, "", `/session/${code}`);
-      setScreen("session");
-    }
+    if (s) { setCur(s); window.history.pushState({}, "", `/session/${code}`); setScreen("session"); }
   }
   async function handleSelectPlan(id, billing) {
     const newPlan = id==="pro" && billing==="yearly" ? "proY" : id;
@@ -7579,21 +7584,23 @@ export default function App() {
                         // Always fetch fresh — never rely on cached isPaused status
                         const fetched = await sgSession(s.code);
                         if (!fetched) { homeNotify("This session is no longer available."); return; }
-                        // Auto-restore live if session was paused by a premature pagehide
-                        // (tab-switch, app-switch on mobile). Only a deliberately archived/ended
-                        // session should stay offline.
-                        let live = fetched;
-                        if (!fetched.live && !fetched.archived) {
-                          const restored = { ...fetched, live: true };
-                          await ssSession(s.code, restored);
-                          live = restored;
-                        }
-                        if (!live.live) {
-                          // Truly paused (archived or host deliberately went offline)
+                        // Use lastHostPing heartbeat to detect if host tab is still open.
+                        // If pinged within 40s the host is present — honour their live/offline toggle.
+                        // If ping is stale/absent the host has truly left — session is closed.
+                        const hostPresent = fetched.lastHostPing && (Date.now() - fetched.lastHostPing < 40000);
+                        if (!fetched.live) {
+                          if (!hostPresent) {
+                            // Host is gone — session is truly closed
+                            homeNotify("This session has ended. The host is no longer present.");
+                            setSessionStatuses(prev=>({...prev,[s.code]:false}));
+                            return;
+                          }
+                          // Host is present but deliberately paused
                           setSessionStatuses(prev=>({...prev,[s.code]:false}));
                           homeNotify("This session is paused. Wait for the host to go live again.");
                           return;
                         }
+                        const live = fetched;
                         setSessionStatuses(prev=>({...prev,[s.code]:true}));
                         const uid = auth.currentUser?.uid;
                         const myPart = uid ? (live.participants||[]).find(p=>p.uid===uid) : null;
