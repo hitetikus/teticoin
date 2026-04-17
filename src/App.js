@@ -1401,14 +1401,13 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [coinFlash, setCoinFlash] = useState(null); // {pts, key}
   const [participantSoundOn, setParticipantSoundOn] = useState(false); // default muted — user taps to unmute
 
-  // Open My Coins automatically if arriving via /join/CODE/coins permalink
+  // Auto-open My Coins if arriving via /join/CODE/coins permalink
   useEffect(() => {
     if (window.location.pathname.endsWith("/coins")) setOpenCoinsOnMount(true);
   }, []);
   useEffect(() => {
     if (openCoinsOnMount && step === "joined" && linkedUid) {
-      setShowEarnings(true);
-      setOpenCoinsOnMount(false);
+      setShowEarnings(true); setOpenCoinsOnMount(false);
     }
   }, [openCoinsOnMount, step, linkedUid]);
 
@@ -1569,6 +1568,29 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             if (soundOnRef.current) playCoinSoundRef.current(gained);
             setCoinFlash({ pts: gained, key: Date.now() });
             setTimeout(() => setCoinFlash(null), 1500);
+            // Write earnings from PARTICIPANT's own auth context (host cannot write here due to Firestore rules)
+            const uid = auth.currentUser?.uid;
+            if (uid && me.total > 0) {
+              const now = Date.now();
+              const newTotal = me.total;
+              const sessCode = init.code;
+              const sessName = s.name || init.name;
+              import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
+                const db = getFirestore();
+                const ref = doc(db,"users",uid,"data","earnings");
+                getDoc(ref).then(snap=>{
+                  const prev = snap.exists() ? (snap.data().value||[]) : [];
+                  const idx = prev.findIndex(e=>e.code===sessCode);
+                  let updated;
+                  if (idx>=0) {
+                    updated = prev.map((e,i)=>i===idx?{...e,coins:newTotal,lastUpdated:now}:e);
+                  } else {
+                    updated = [{code:sessCode,name:sessName,coins:newTotal,joinedAt:now,lastUpdated:now},...prev];
+                  }
+                  setDoc(ref,{value:updated,updatedAt:now});
+                }).catch(()=>{});
+              }).catch(()=>{});
+            }
           }
           prevTotalRef.current = me.total;
         }
@@ -2417,11 +2439,8 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         {/* Earned badges — shown if logged in */}
         {linkedUid && <ParticipantBadges uid={linkedUid}/>}
 
-        {(()=>{
-          const _myGrp=(live?.groups||[]).find(g=>g.id===me?.gid);
-          const _cardRadius=_myGrp?"20px 20px 0 0":"20px";
-          return (
-        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:_cardRadius,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",overflow:"hidden"}}>
+        {(()=>{ const _mg=(live?.groups||[]).find(g=>g.id===me?.gid); return (
+        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:_mg?"20px 20px 0 0":"20px",padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",overflow:"hidden"}}>
           {coinFlash && (
             <div key={coinFlash.key} style={{position:"absolute",top:10,right:18,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:coinFlash.pts<0?"#EF4444":PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
               {coinFlash.pts>0?"+":""}{coinFlash.pts}
@@ -2491,25 +2510,12 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.max(60,160-((String(me?.total||0).length-1)*30)),lineHeight:1,color:PINK,letterSpacing:-4,transition:"font-size .2s ease, transform .18s ease",transform:coinFlash?"scale(1.07)":"scale(1)",whiteSpace:"nowrap"}}>{me?.total||0}</div>
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
         </div>
-          );
-        })()}
-        {/* Group badge — full-color strip glued to bottom of coin card */}
-        {(()=>{
-          const myGrp=(live?.groups||[]).find(g=>g.id===me?.gid);
-          if(!myGrp) return null;
-          return (
-            <div style={{
-              width:"100%",background:myGrp.color,
-              borderRadius:"0 0 20px 20px",
-              marginTop:-8,paddingTop:16,paddingBottom:12,
-              textAlign:"center",
-            }}>
-              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",letterSpacing:.3}}>
-                My Group: {myGrp.name}
-              </span>
-            </div>
-          );
-        })()}
+        );})()}
+        {(()=>{ const _mg=(live?.groups||[]).find(g=>g.id===me?.gid); if(!_mg) return null; return (
+          <div style={{width:"100%",background:_mg.color,borderRadius:"0 0 20px 20px",padding:"12px 20px",textAlign:"center",marginTop:-2}}>
+            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",letterSpacing:.2}}>My Group: {_mg.name}</span>
+          </div>
+        );})()}
 
         {/* My QR button — compact, below coin card */}
         {me && (
@@ -3775,30 +3781,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       p.total += pts; p.bk[type] = (p.bk[type]||0)+1;
       p.hist = [{type,pts,t:new Date().toLocaleTimeString()}, ...(p.hist||[]).slice(0,29)];
       s.log = [{id:Date.now(),name:p.name,type,pts,t:new Date().toLocaleTimeString()}, ...(s.log||[]).slice(0,99)];
-      // Record earning to participant's personal Firestore earnings history
-      if (p.uid) {
-        const now = Date.now();
-        const pTotal = p.total;       // absolute total AFTER this award — no race condition
-        const sessCode = s.code;      // capture from mut's deep-copy, not stale closure
-        const sessName = s.name;
-        const pUid = p.uid;
-        import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
-          const db = getFirestore();
-          const ref = doc(db,"users",pUid,"data","earnings");
-          getDoc(ref).then(snap=>{
-            const prev = snap.exists() ? (snap.data().value||[]) : [];
-            // Use pTotal (absolute session total) — avoids race condition from concurrent reads
-            const idx = prev.findIndex(e=>e.code===sessCode);
-            let updated;
-            if (idx>=0) {
-              updated = prev.map((e,i)=>i===idx?{...e,coins:pTotal,lastUpdated:now}:e);
-            } else {
-              updated = [{code:sessCode,name:sessName,coins:pTotal,joinedAt:now,lastUpdated:now},...prev];
-            }
-            setDoc(ref,{value:updated,updatedAt:now});
-          }).catch(()=>{});
-        }).catch(()=>{});
-      }
+      // NOTE: earnings are written by the PARTICIPANT themselves via their polling loop
+      // (host writing to participant's Firestore doc is blocked by security rules)
     });
     const col = type==="token" ? YELLOW : ACTS.find(x=>x.id===type)?.col||YELLOW;
     setAnims(a => [...a, {id:aid.current++,x:mx,y:my,text:pts<0?`${pts}`:`+${pts}`,color:pts<0?"#EF4444":col}]);
@@ -6102,7 +6086,7 @@ function SuperAdminDashboard({ onClose }) {
 // ── Coinmaster Join Modal ──
 // ── Earnings Page — participant's personal coin history ──────────
 function EarningsPage({ uid, name, onClose, refreshKey }) {
-  const [earnings, setEarnings] = useState(null); // null = loading
+  const [earnings, setEarnings] = useState(null);
   const [copied, setCopied] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -6147,7 +6131,7 @@ function EarningsPage({ uid, name, onClose, refreshKey }) {
         </button>
         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:17,color:TEXT}}>My Coins</div>
         <button onClick={()=>loadEarnings(true)} title="Refresh"
-          style={{width:48,height:36,display:"flex",alignItems:"center",justifyContent:"center",background:"none",border:"none",cursor:"pointer",color:refreshing?PINK:SUB,transition:"color .2s",padding:0}}>
+          style={{width:48,height:36,display:"flex",alignItems:"center",justifyContent:"center",background:"none",border:"none",cursor:"pointer",color:refreshing?PINK:SUB,padding:0}}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round"
             style={{animation:refreshing?"spin 0.7s linear infinite":"none",transformOrigin:"center"}}>
             <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
