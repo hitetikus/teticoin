@@ -479,8 +479,8 @@ function PQR({ p, code, size = 160 }) {
     }
   }, [data, size]);
   return (
-    <div style={{width:size,height:size,background:"#ffffff",borderRadius:12,padding:12,border:"3px solid #ffffff",display:"inline-flex",alignItems:"center",justifyContent:"center",colorScheme:"light"}}>
-      <div ref={ref} style={{background:"#ffffff"}}/>
+    <div style={{width:size,height:size,background:"#fff",borderRadius:12,padding:12,border:`1px solid ${BORDER}`,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
+      <div ref={ref}/>
     </div>
   );
 }
@@ -1377,6 +1377,19 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [live, setLive] = useState(init);
   const [showMyQR, setShowMyQR] = useState(false);
   const [showEarnings, setShowEarnings] = useState(false);
+  const [openCoinsOnMount, setOpenCoinsOnMount] = useState(false);
+  // If arriving via /join/CODE/coins permalink, open My Coins automatically once joined
+  useEffect(() => {
+    if (window.location.pathname.endsWith("/coins")) {
+      setOpenCoinsOnMount(true);
+    }
+  }, []);
+  useEffect(() => {
+    if (openCoinsOnMount && step === "joined" && linkedUid) {
+      setShowEarnings(true);
+      setOpenCoinsOnMount(false);
+    }
+  }, [openCoinsOnMount, step, linkedUid]);
   const [showLoginPw, setShowLoginPw] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editNameVal, setEditNameVal] = useState("");
@@ -1527,8 +1540,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     };
   }, []);
 
-  // Load earnings summary when linkedUid is set, and re-fetch whenever this participant's coins change
-  const meTotal = myId ? (live?.participants?.find(p=>p.id===myId)?.total ?? null) : null;
+  // Load earnings summary when linkedUid is set
   useEffect(() => {
     if (!linkedUid) { setParticipantEarnings(null); return; }
     import("firebase/firestore").then(({getFirestore,doc,getDoc})=>{
@@ -1540,7 +1552,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         });
       }).catch(()=>{});
     }).catch(()=>{});
-  }, [linkedUid, meTotal]);
+  }, [linkedUid]);
 
   // Poll for live updates every 2s once joined — detect coin gain for sound
   useEffect(() => {
@@ -2324,7 +2336,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     <div style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
       {optionalLoginModalJSX}
       {showEarnings && linkedUid && (
-        <EarningsPage uid={linkedUid} name={me?.name||"You"} onClose={()=>setShowEarnings(false)}/>
+        <EarningsPage uid={linkedUid} name={me?.name||"You"} refreshKey={me?.total} onClose={()=>{ window.history.replaceState({},"", init?.code ? `/join/${init.code}` : "/app"); setShowEarnings(false); }}/>
       )}
       <BadgeClaimPrompt/>
 
@@ -2373,7 +2385,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2.2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     Home
                   </button>
-                  <button onClick={()=>{setParticipantMenuOpen(false);setShowEarnings(true);}}
+                  <button onClick={()=>{setParticipantMenuOpen(false); window.history.pushState({}, "", init?.code ? `/join/${init.code}/coins` : "/my-coins"); setShowEarnings(true);}}
                     style={{width:"100%",padding:"13px 16px",background:"none",border:"none",borderBottom:`1px solid ${BORDER}`,textAlign:"left",display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT}}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     My Coins
@@ -2475,12 +2487,6 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           <div style={{fontSize:11,fontWeight:700,color:SUB,marginBottom:4,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.max(60,160-((String(me?.total||0).length-1)*30)),lineHeight:1,color:PINK,letterSpacing:-4,transition:"font-size .2s ease, transform .18s ease",transform:coinFlash?"scale(1.07)":"scale(1)",whiteSpace:"nowrap"}}>{me?.total||0}</div>
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
-          {(()=>{const myGrp=(live?.groups||[]).find(g=>g.id===me?.gid);return myGrp?(
-            <div style={{display:"inline-flex",alignItems:"center",gap:8,marginTop:14,padding:"9px 20px",borderRadius:12,background:`${myGrp.color}18`,border:`2px solid ${myGrp.color}55`}}>
-              <div style={{width:11,height:11,borderRadius:"50%",background:myGrp.color,boxShadow:`0 0 6px ${myGrp.color}90`,flexShrink:0}}/>
-              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:myGrp.color}}>Team {myGrp.name}</span>
-            </div>
-          ):null;})()}
         </div>
 
         {/* My QR button — compact, below coin card */}
@@ -2493,7 +2499,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         )}
 
         {showMyQR && me && (
-          <div style={{width:"100%",background:"#ffffff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center",colorScheme:"light"}}>
+          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center"}}>
             <PQR p={me} code={init.code} size={160}/>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:10,letterSpacing:2}}>{pNum(me.num)}</div>
             <div style={{fontSize:12,color:SUB,marginTop:2}}>{me.name}</div>
@@ -6069,22 +6075,26 @@ function SuperAdminDashboard({ onClose }) {
 
 // ── Coinmaster Join Modal ──
 // ── Earnings Page — participant's personal coin history ──────────
-function EarningsPage({ uid, name, onClose }) {
+function EarningsPage({ uid, name, onClose, refreshKey }) {
   const [earnings, setEarnings] = useState(null); // null = loading
   const [copied, setCopied] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function loadEarnings(showSpinner) {
+    if (showSpinner) { setRefreshing(true); setEarnings(null); }
+    try {
+      const { getFirestore, doc, getDoc } = await import("firebase/firestore");
+      const db = getFirestore();
+      const snap = await getDoc(doc(db, "users", uid, "data", "earnings"));
+      setEarnings(snap.exists() ? (snap.data().value || []) : []);
+    } catch { setEarnings([]); }
+    if (showSpinner) setRefreshing(false);
+  }
 
   useEffect(() => {
-    async function load() {
-      try {
-        const { getFirestore, doc, getDoc } = await import("firebase/firestore");
-        const db = getFirestore();
-        const snap = await getDoc(doc(db, "users", uid, "data", "earnings"));
-        setEarnings(snap.exists() ? (snap.data().value || []) : []);
-      } catch { setEarnings([]); }
-    }
-    if (uid) load();
+    if (uid) loadEarnings(false);
     else setEarnings([]);
-  }, [uid]);
+  }, [uid, refreshKey]);
 
   const totalCoins = (earnings||[]).reduce((s,e)=>s+e.coins,0);
   const totalSessions = (earnings||[]).length;
@@ -6110,7 +6120,13 @@ function EarningsPage({ uid, name, onClose }) {
           Back
         </button>
         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:17,color:TEXT}}>My Coins</div>
-        <div style={{width:48}}/>
+        <button onClick={()=>loadEarnings(true)} title="Refresh"
+          style={{width:48,height:36,display:"flex",alignItems:"center",justifyContent:"center",background:"none",border:"none",cursor:"pointer",color:refreshing?PINK:SUB,transition:"color .2s",padding:0}}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round"
+            style={{animation:refreshing?"spin 0.7s linear infinite":"none",transformOrigin:"center"}}>
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+        </button>
       </div>
 
       <div style={{flex:1,overflowY:"auto",padding:"20px 16px",maxWidth:480,margin:"0 auto",width:"100%"}}>
@@ -6684,7 +6700,8 @@ export default function App() {
     }
 
     // Participant join link
-    const match = path.match(/^\/join\/([A-Z0-9]+)$/i);
+    const coinsMatch = path.match(/^\/join\/([A-Z0-9]+)\/coins$/i);
+    const match = coinsMatch || path.match(/^\/join\/([A-Z0-9]+)$/i);
     if (match) {
       const code = match[1].toUpperCase();
       sgSession(code).then(s => {
@@ -6721,7 +6738,7 @@ export default function App() {
 
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.match(/^\/join\/[A-Z0-9]+$/i)) return; // skip entirely for join URLs
+    if (path.match(/^\/join\/[A-Z0-9]+(\/coins)?$/i)) return; // skip entirely for join URLs (incl /coins)
     if (path.match(/^\/claim\/[a-z0-9]+$/i)) return;  // skip entirely for claim URLs
     if (path === "/login") return; // skip for login permalink — already handled above
 
@@ -6873,17 +6890,7 @@ export default function App() {
       const list = snap.exists() ? (snap.data().value || []) : [];
       setHomeEarnings({ totalCoins: list.reduce((s,e)=>s+e.coins,0), totalSessions: list.length });
       // Sort by most recent and keep for "Recently Joined" section
-      let sorted = [...list].sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0));
-      // Fallback: if tc_pjoin refers to a session not yet in earnings (async write lag), inject it
-      try {
-        const saved = JSON.parse(localStorage.getItem("tc_pjoin")||"null");
-        if (saved?.code && !sorted.find(e=>e.code===saved.code)) {
-          const sess = await sgSession(saved.code);
-          if (sess) {
-            sorted = [{code:saved.code,name:sess.name,coins:0,joinedAt:Date.now(),lastUpdated:Date.now()}, ...sorted];
-          }
-        }
-      } catch(e) {}
+      const sorted = [...list].sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0));
       setRecentJoined(sorted);
       // Fetch live/paused status for each recent session in background
       const top = sorted.slice(0,10);
