@@ -1378,18 +1378,6 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [showMyQR, setShowMyQR] = useState(false);
   const [showEarnings, setShowEarnings] = useState(false);
   const [openCoinsOnMount, setOpenCoinsOnMount] = useState(false);
-  // If arriving via /join/CODE/coins permalink, open My Coins automatically once joined
-  useEffect(() => {
-    if (window.location.pathname.endsWith("/coins")) {
-      setOpenCoinsOnMount(true);
-    }
-  }, []);
-  useEffect(() => {
-    if (openCoinsOnMount && step === "joined" && linkedUid) {
-      setShowEarnings(true);
-      setOpenCoinsOnMount(false);
-    }
-  }, [openCoinsOnMount, step, linkedUid]);
   const [showLoginPw, setShowLoginPw] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editNameVal, setEditNameVal] = useState("");
@@ -1412,6 +1400,19 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const prevTotalRef = useRef(null);
   const [coinFlash, setCoinFlash] = useState(null); // {pts, key}
   const [participantSoundOn, setParticipantSoundOn] = useState(false); // default muted — user taps to unmute
+
+  // Open My Coins automatically if arriving via /join/CODE/coins permalink
+  useEffect(() => {
+    if (window.location.pathname.endsWith("/coins")) {
+      setOpenCoinsOnMount(true);
+    }
+  }, []);
+  useEffect(() => {
+    if (openCoinsOnMount && step === "joined" && linkedUid) {
+      setShowEarnings(true);
+      setOpenCoinsOnMount(false);
+    }
+  }, [openCoinsOnMount, step, linkedUid]);
 
   // Auto-populate from already-logged-in Firebase user on mount
   useEffect(() => {
