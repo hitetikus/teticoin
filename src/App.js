@@ -1610,14 +1610,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           prevTotalRef.current = me.total;
         }
       }
-      // If host heartbeat is stale (>8s), synthesize live:false so the
-      // "Session Ended" overlay shows even when the host just closed their tab
-      // without Firestore getting a chance to write live:false.
-      if (s.lastHostPing && s.live && (Date.now() - s.lastHostPing > 8000)) {
-        setLive({...s, live: false});
-      } else {
-        setLive(s);
-      }
+      setLive(s);
     }, 2000);
     return () => clearInterval(t);
   }, [step, init?.code, myId]);
@@ -2415,35 +2408,24 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       )}
       <BadgeClaimPrompt/>
 
-      {/* ── Session inactive overlay ── shown when host pauses or ends the session ── */}
-      {live?.live === false && (() => {
-        const hostPresent = live?.lastHostPing && (Date.now() - (live?.lastHostPing||0) < 12000);
-        const isEnded = !hostPresent; // host gone = session ended
-        return (
-          <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(10,10,15,0.55)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",padding:"0 24px 80px"}}>
-            <div style={{background:"#fff",borderRadius:24,padding:"40px 32px",maxWidth:320,width:"100%",textAlign:"center",boxShadow:"0 32px 80px rgba(0,0,0,.4)"}}>
-              <div style={{width:64,height:64,borderRadius:20,background:isEnded?"#F3F4F6":"#FEF2F2",border:`1.5px solid ${isEnded?"#D1D5DB":"#EF444430"}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
-                {isEnded
-                  ? <svg width="28" height="28" viewBox="0 0 24 24" fill="#6B7280"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
-                  : <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
-                }
-              </div>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,marginBottom:8}}>
-                {isEnded ? "Session Ended" : "Session Paused"}
-              </div>
-              <div style={{fontSize:14,color:SUB,lineHeight:1.7,marginBottom:24}}>
-                {isEnded
-                  ? "The host has ended this session. Thanks for joining! The host may reactivate it later — check back in Sessions Joined."
-                  : "The host has paused this session. Hang tight — it'll resume shortly."}
-              </div>
-              <button onClick={onBack}
-                style={{width:"100%",padding:"12px 0",background:"#F9FAFB",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
-                ← Back to Home
-              </button>
+      {/* ── Session Ended overlay — only fires on explicit host action (home / tab close) ── */}
+      {live?.live === false && (
+        <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(10,10,15,0.55)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",padding:"0 24px 80px"}}>
+          <div style={{background:"#fff",borderRadius:24,padding:"40px 32px",maxWidth:320,width:"100%",textAlign:"center",boxShadow:"0 32px 80px rgba(0,0,0,.4)"}}>
+            <div style={{width:64,height:64,borderRadius:20,background:"#F3F4F6",border:"1.5px solid #D1D5DB",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="#6B7280"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
             </div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,marginBottom:8}}>Session Ended</div>
+            <div style={{fontSize:14,color:SUB,lineHeight:1.7,marginBottom:24}}>
+              The host has ended this session. Thanks for joining!<br/>The host may reactivate it — check back in Sessions Joined.
+            </div>
+            <button onClick={onBack}
+              style={{width:"100%",padding:"12px 0",background:"#F9FAFB",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:SUB,cursor:"pointer"}}>
+              ← Back to Home
+            </button>
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       {/* ── Top nav bar ── */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:10,flexShrink:0}}>
@@ -2585,9 +2567,26 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             )}
           </div>
           <div style={{fontSize:11,fontWeight:700,color:SUB,marginBottom:4,letterSpacing:.5,textTransform:"uppercase"}}>Your Teticoins</div>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.max(60,160-((String(me?.total||0).length-1)*30)),lineHeight:1,color:PINK,letterSpacing:-4,transition:"font-size .2s ease, transform .18s ease",transform:coinFlash?"scale(1.07)":"scale(1)",whiteSpace:"nowrap"}}>{me?.total||0}</div>
+          {/* Coin number — group color when assigned, else PINK */}
+          {(() => {
+            const coinGrp = me ? (live.groups||[]).find(g=>g.id===me.gid) : null;
+            return (
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:Math.max(60,160-((String(me?.total||0).length-1)*30)),lineHeight:1,color:coinGrp?.color||PINK,letterSpacing:-4,transition:"font-size .2s ease, transform .18s ease, color .3s ease",transform:coinFlash?"scale(1.07)":"scale(1)",whiteSpace:"nowrap"}}>{me?.total||0}</div>
+            );
+          })()}
           <div style={{fontSize:13,color:SUB,marginTop:6,fontWeight:500}}>coins collected</div>
         </div>
+        {/* Group banner — slides out below the white card in the group color */}
+        {(() => {
+          const coinGrp = me ? (live.groups||[]).find(g=>g.id===me.gid) : null;
+          if (!coinGrp) return null;
+          return (
+            <div style={{width:"100%",background:coinGrp.color,borderRadius:"0 0 16px 16px",padding:"10px 20px",marginTop:-8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <div style={{width:8,height:8,borderRadius:"50%",background:"rgba(255,255,255,0.6)",flexShrink:0}}/>
+              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",letterSpacing:0.3}}>Group: {coinGrp.name}</span>
+            </div>
+          );
+        })()}
 
         {/* My QR button — compact, below coin card */}
         {me && (
