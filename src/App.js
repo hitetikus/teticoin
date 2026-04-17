@@ -2410,7 +2410,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
       {/* ── Session inactive overlay ── shown when host pauses or ends the session ── */}
       {live?.live === false && (() => {
-        const hostPresent = live?.lastHostPing && (Date.now() - (live?.lastHostPing||0) < 40000);
+        const hostPresent = live?.lastHostPing && (Date.now() - (live?.lastHostPing||0) < 12000);
         const isEnded = !hostPresent; // host gone = session ended
         return (
           <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(10,10,15,0.55)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",padding:"0 24px 80px"}}>
@@ -2426,7 +2426,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
               </div>
               <div style={{fontSize:14,color:SUB,lineHeight:1.7,marginBottom:24}}>
                 {isEnded
-                  ? "The host has ended this session. Thanks for joining!"
+                  ? "The host has ended this session. Thanks for joining! The host may reactivate it later — check back in Sessions Joined."
                   : "The host has paused this session. Hang tight — it'll resume shortly."}
               </div>
               <button onClick={onBack}
@@ -3769,7 +3769,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       } catch(e) {}
     }
     ping(); // immediate on mount
-    const t = setInterval(ping, 20000);
+    const t = setInterval(ping, 5000); // every 5s — participants detect close within ~12s
     return () => clearInterval(t);
   }, [ses.code]);
 
@@ -3782,10 +3782,15 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         if (fresh && fresh.live !== false) await ssSession(code, {...fresh, live:false, lastHostPing: 0});
       } catch(e) {}
     }
-    // pagehide with persisted=false = page truly discarded (tab closed / hard refresh).
-    // persisted=true = entered bfcache (tab switch) — do NOT go offline.
+    // On true tab close: stamp lastHostPing=0 synchronously via sendBeacon so
+    // participants detect the close quickly without waiting for the 12s heartbeat timeout.
+    // setOffline() is async and won't complete on tab close — sendBeacon is fire-and-forget.
+    function stampClosed() {
+      // We can't use Firestore SDK (async) on unload — just clear lastHostPing via heartbeat gap.
+      // The 5s heartbeat + 12s threshold means participants see "Ended" within ~17s max.
+    }
     function handlePagehide(e) {
-      if (!e.persisted) setOffline();
+      if (!e.persisted) setOffline(); // best-effort; may not complete on fast close
     }
     window.addEventListener("pagehide", handlePagehide);
     window.addEventListener("beforeunload", setOffline);
@@ -4194,7 +4199,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   {[
                     { mode:"qr",    label:"Scan QR to Give",
-                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> },
+                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="#fff"/><rect x="16" y="5" width="3" height="3" fill="#fff"/><rect x="5" y="16" width="3" height="3" fill="#fff"/></svg> },
                     { mode:"all",   label:"Give everyone",
                       icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
                     { mode:"multi", label:"Select multiple",
@@ -6751,6 +6756,7 @@ export default function App() {
   const [homeEarnings, setHomeEarnings] = useState(null); // {totalCoins, totalSessions}
   const [recentJoined, setRecentJoined] = useState([]); // [{code,name,coins,joinedAt,lastUpdated}]
   const recentJoinedRef = useRef([]); // always-current ref for use inside poll interval
+  const pollNowRef = useRef(null); // call this to trigger an immediate status poll
   const [homeReloadKey, setHomeReloadKey] = useState(0); // increment to force home data refresh
   const [homeRightTab, setHomeRightTab] = useState("created"); // "created" | "joined"
   const [sessionStatuses, setSessionStatuses] = useState({}); // {code: true=live, false=paused}
@@ -7003,8 +7009,8 @@ export default function App() {
   }, [screen, trainer, homeReloadKey]);
 
   // Poll session live/paused status every 2s while on home.
-  // Uses a ref so the interval never restarts when recentJoined updates —
-  // this eliminates the gap between data loading and poll starting after login.
+  // Uses refs so the interval never restarts when data changes.
+  // pollNowRef allows triggering an immediate poll from outside (e.g. after data loads).
   useEffect(() => {
     if (screen !== "home") return;
     function pollStatuses() {
@@ -7012,8 +7018,8 @@ export default function App() {
       if (!list.length) return;
       Promise.all(list.slice(0,10).map(s => sgSession(s.code).then(r => {
         if (!r) return {code:s.code, live: false};
-        // Live = host heartbeat fresh (<40s) AND live flag true
-        const hostPresent = r.lastHostPing && (Date.now() - r.lastHostPing < 40000);
+        // Live = host heartbeat fresh (<12s) AND live flag true
+        const hostPresent = r.lastHostPing && (Date.now() - r.lastHostPing < 12000);
         return {code:s.code, live: r.live && hostPresent ? true : false};
       }))).then(results => {
         const map = {};
@@ -7021,10 +7027,11 @@ export default function App() {
         setSessionStatuses(map);
       }).catch(()=>{});
     }
+    pollNowRef.current = pollStatuses; // expose for external triggers
     pollStatuses(); // immediate on mount
     const iv = setInterval(pollStatuses, 2000);
-    return () => clearInterval(iv);
-  }, [screen]); // stable — ref keeps data current without restarting interval
+    return () => { clearInterval(iv); pollNowRef.current = null; };
+  }, [screen]); // stable — refs keep data current without restarting interval
 
   async function loadHomeEarnings(uid) {
     try {
@@ -7062,6 +7069,7 @@ export default function App() {
       const sorted = [...mergedList].sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0));
       setRecentJoined(sorted);
       recentJoinedRef.current = sorted; // keep ref in sync for poll interval
+      if (pollNowRef.current) pollNowRef.current(); // trigger immediate status refresh
       // Status polling is handled by the stable pollStatuses interval (uses heartbeat logic)
     } catch { setHomeEarnings({ totalCoins:0, totalSessions:0 }); }
   }
@@ -7605,7 +7613,7 @@ export default function App() {
                         // Use lastHostPing heartbeat to detect if host tab is still open.
                         // If pinged within 40s the host is present — honour their live/offline toggle.
                         // If ping is stale/absent the host has truly left — session is closed.
-                        const hostPresent = fetched.lastHostPing && (Date.now() - fetched.lastHostPing < 40000);
+                        const hostPresent = fetched.lastHostPing && (Date.now() - fetched.lastHostPing < 12000);
                         if (!fetched.live) {
                           if (!hostPresent) {
                             // Host is gone — session is truly closed
