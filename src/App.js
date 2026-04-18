@@ -20,7 +20,7 @@ const GREEN = "#00C48C";
 const BLUE = "#3B82F6";
 const PURPLE = "#7C3AED";
 const GRAD = `linear-gradient(135deg,${PINK},${PINK2})`;
-const GC = ["#8B5CF6","#3B82F6","#059669","#D97706","#EF4444","#EC4899","#06B6D4"];
+const GC = ["#EF4444","#F97316","#EAB308","#22C55E","#06B6D4","#3B82F6","#8B5CF6"];
 const TV_DEFAULT = [10,30,50,100,200,-10]; // default Other Coins (editable per session)
 const ACTS_DEFAULT = [
   {id:"correct", label:"Correct Answer", pts:50, col:PINK},
@@ -4186,12 +4186,14 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
             </button>
           </div>
-          {/* Row 2 desktop / Row 3 mobile: participant pills */}
-          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-            {g.members.length===0
-              ? <span style={{fontSize:11,color:SUB,fontStyle:"italic"}}>No participants yet</span>
-              : g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)
-            }
+          {/* Row 2 desktop / Row 3 mobile: participant names as scrollable comma list */}
+          <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",marginBottom:8}}>
+            <div style={{whiteSpace:"nowrap",fontSize:11,color:SUB,fontWeight:500}}>
+              {g.members.length===0
+                ? <span style={{fontStyle:"italic"}}>No participants yet</span>
+                : g.members.map((m,idx)=><span key={m.id}>{pNum(m.num)} {m.name}{idx<g.members.length-1?", ":""}</span>)
+              }
+            </div>
           </div>
           <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
             <div style={{height:4,background:g.color,width:`${(g.total/maxTotal)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
@@ -4614,9 +4616,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         <button onClick={onBack} style={{...IB,borderRadius:"50%"}} title="Back">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div style={{flex:1,overflow:"hidden",minWidth:0,display:"flex",alignItems:"center",gap:8}}>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ses.name}</div>
-          <div style={{flexShrink:0,background:SOFT,border:`1px solid ${MID}`,borderRadius:6,padding:"2px 7px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:10,color:PINK,letterSpacing:.5}}>{ses.code}</div>
+        <div style={{flex:1,overflow:"hidden",minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center",gap:1}}>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.2}}>{ses.name}</div>
+          <div style={{fontSize:10,color:"#9CA3AF",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,letterSpacing:.3,lineHeight:1}}>{ses.code}</div>
         </div>
         <button onClick={toggleLive} title={isLive?"Go offline":"Go live"}
           style={{display:"flex",alignItems:"center",gap:5,background:isLive?SOFT:"#FEF2F2",border:`1px solid ${isLive?MID:"#EF444455"}`,borderRadius:20,padding:"5px 12px",cursor:"pointer",flexShrink:0}}>
@@ -4932,11 +4934,14 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                             </button>
                           )}
                           {(ses.groups.length > 0) && (
-                            <select value={p.gid??""} onChange={e=>mut(s=>{const px=s.participants.find(x=>x.id===p.id);if(px)px.gid=e.target.value===""?null:Number(e.target.value);return s;})}
-                              style={{background:SOFT,border:`1.5px solid ${grp?.color||MID}`,color:grp?.color||SUB,borderRadius:8,padding:"4px 6px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:90,flexShrink:0,fontWeight:700}}>
-                              <option value="">No group</option>
-                              {ses.groups.map(g=><option key={g.id} value={g.id} style={{color:g.color}}>● {g.name}</option>)}
-                            </select>
+                            <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,position:"relative"}}>
+                              {grp && <div style={{width:8,height:8,borderRadius:"50%",background:grp.color,flexShrink:0,pointerEvents:"none"}}/>}
+                              <select value={p.gid??""} onChange={e=>mut(s=>{const px=s.participants.find(x=>x.id===p.id);if(px)px.gid=e.target.value===""?null:Number(e.target.value);return s;})}
+                                style={{background:SOFT,border:`1.5px solid ${grp?.color||MID}`,color:grp?.color||SUB,borderRadius:8,padding:"4px 6px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:90,fontWeight:700}}>
+                                <option value="">No group</option>
+                                {ses.groups.map(g=><option key={g.id} value={g.id} style={{color:"#000"}}>● {g.name}</option>)}
+                              </select>
+                            </div>
                           )}
                           {/* ⋯ context menu */}
                           <div style={{position:"relative",flexShrink:0}}>
