@@ -727,38 +727,111 @@ function MassGive({ participants, groups, session, onAward, onClose }) {
 
 // ── Coin Customizer modal ──
 function CoinCustomizer({ session, onSave, onClose }) {
-  // quickCoins: 3 items matching ACTS (pts only)
-  const initQuick = session.quickCoins || ACTS_DEFAULT.map(a=>a.pts);
   const initOther = session.otherCoins || TV_DEFAULT;
 
-  const [quick, setQuick] = useState([...initQuick]);
   const [other, setOther] = useState([...initOther]);
-  const [tab, setTab] = useState("quick"); // quick | other
   const [newVal, setNewVal] = useState("");
   const [editIdx, setEditIdx] = useState(null);
   const [editVal, setEditVal] = useState("");
+
+  // ── Drag-to-reorder state ──
+  const [dragIdx, setDragIdx] = useState(null);       // index being dragged
+  const [dragOver, setDragOver] = useState(null);      // index being hovered over
+  const [longPressIdx, setLongPressIdx] = useState(null); // index in "wiggle" mode
+  const longPressTimer = useRef(null);
+  const dragStarted = useRef(false);
 
   function addOther() {
     const n = parseInt(newVal);
     if (isNaN(n)) return;
     if (other.length >= 15) return;
-    setOther(prev => [...prev, n].sort((a,b)=>a-b));
+    setOther(prev => [...prev, n]); // no auto-sort — preserve order
     setNewVal("");
   }
 
-  function removeOther(i) { setOther(prev => prev.filter((_,idx)=>idx!==i)); }
+  function removeOther(i) {
+    setOther(prev => prev.filter((_,idx)=>idx!==i));
+    if (longPressIdx === i) setLongPressIdx(null);
+  }
 
   function saveEdit(i) {
     const n = parseInt(editVal);
     if (isNaN(n)) { setEditIdx(null); return; }
-    setOther(prev => { const a=[...prev]; a[i]=n; return a.sort((a,b)=>a-b); });
+    setOther(prev => { const a=[...prev]; a[i]=n; return a; }); // no auto-sort
     setEditIdx(null);
   }
 
-  function save() { onSave({ quickCoins: quick, otherCoins: other }); onClose(); }
+  function save() { onSave({ quickCoins: session.quickCoins || ACTS_DEFAULT.map(a=>a.pts), otherCoins: other }); onClose(); }
 
-  const QLABELS = ["Quick Coin 1","Quick Coin 2","Quick Coin 3"];
-  const QCOLS = [BLUE, GREEN, PINK];
+  // Long-press to enter wiggle mode
+  function handlePressStart(i) {
+    dragStarted.current = false;
+    longPressTimer.current = setTimeout(() => {
+      setLongPressIdx(i);
+      if (navigator.vibrate) navigator.vibrate(30);
+    }, 400);
+  }
+  function handlePressEnd() {
+    clearTimeout(longPressTimer.current);
+  }
+
+  // Touch drag reorder
+  function handleTouchStart(e, i) {
+    if (longPressIdx === null) return; // must be in wiggle mode
+    e.preventDefault();
+    setDragIdx(i);
+    dragStarted.current = true;
+  }
+
+  function handleTouchMove(e) {
+    if (dragIdx === null) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const idx = el?.dataset?.coinidx;
+    if (idx !== undefined && parseInt(idx) !== dragOver) {
+      setDragOver(parseInt(idx));
+    }
+  }
+
+  function handleTouchEnd() {
+    if (dragIdx !== null && dragOver !== null && dragIdx !== dragOver) {
+      setOther(prev => {
+        const a = [...prev];
+        const [removed] = a.splice(dragIdx, 1);
+        a.splice(dragOver, 0, removed);
+        return a;
+      });
+      if (navigator.vibrate) navigator.vibrate(15);
+    }
+    setDragIdx(null);
+    setDragOver(null);
+  }
+
+  // Mouse drag reorder (desktop)
+  function handleDragStart(i) {
+    if (longPressIdx === null) return;
+    setDragIdx(i);
+  }
+  function handleDragOver(e, i) {
+    e.preventDefault();
+    setDragOver(i);
+  }
+  function handleDrop(i) {
+    if (dragIdx !== null && dragIdx !== i) {
+      setOther(prev => {
+        const a = [...prev];
+        const [removed] = a.splice(dragIdx, 1);
+        a.splice(i, 0, removed);
+        return a;
+      });
+      if (navigator.vibrate) navigator.vibrate(15);
+    }
+    setDragIdx(null);
+    setDragOver(null);
+  }
+
+  const GREEN_COIN = "#16A34A";
 
   return (
     <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:600}}>
@@ -766,81 +839,101 @@ function CoinCustomizer({ session, onSave, onClose }) {
       <div className="tc-modal-sheet" style={{background:"#fff",maxHeight:"85vh",display:"flex",flexDirection:"column",animation:"slideUp .25s ease"}}>
         <div style={{padding:"14px 20px 0",flexShrink:0}}>
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Customise Coins</div>
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
-          <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
-            {[["quick","Preset Coins"],["other","Give Coins"]].map(([id,l])=>(
-              <button key={id} onClick={()=>setTab(id)} style={{padding:"8px 16px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}</button>
-            ))}
-          </div>
         </div>
-        <div style={{overflowY:"auto",flex:1,padding:"16px 20px 24px"}}>
 
-          {tab==="quick" && <>
-            <div style={{fontSize:13,color:SUB,marginBottom:14,fontWeight:500,lineHeight:1.6}}>
-              Tap the label to rename. Adjust the point value with the stepper or type directly.
-            </div>
-            {ACTS_DEFAULT.map((a,i)=>{
-              return(
-                <div key={a.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:`1px solid ${BORDER}`}}>
-                  <div style={{width:38,height:38,borderRadius:10,background:`${QCOLS[i]}14`,border:`1.5px solid ${QCOLS[i]}33`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:QCOLS[i]}}>Q{i+1}</span>
-                  </div>
-                  <div style={{flex:1}}>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{a.label}</div>
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}>
-                    <button onClick={()=>setQuick(prev=>{const a=[...prev];a[i]=Math.max(-999,a[i]-5);return a;})}
-                      style={{width:30,height:30,borderRadius:9,border:`1px solid ${BORDER}`,background:BG,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:18,color:SUB,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-                    <input type="number" value={quick[i]} onChange={e=>setQuick(prev=>{const a=[...prev];a[i]=parseInt(e.target.value)||0;return a;})}
-                      style={{width:58,textAlign:"center",background:BG,border:`1.5px solid ${QCOLS[i]}55`,borderRadius:10,padding:"7px 4px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:QCOLS[i],outline:"none"}}/>
-                    <button onClick={()=>setQuick(prev=>{const a=[...prev];a[i]+=5;return a;})}
-                      style={{width:30,height:30,borderRadius:9,border:`1px solid ${BORDER}`,background:BG,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:18,color:SUB,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-                  </div>
-                </div>
-              );
-            })}
-            <div style={{background:`${BLUE}10`,border:`1px solid ${BLUE}25`,borderRadius:10,padding:"10px 12px",marginTop:14,fontSize:12,color:BLUE,fontWeight:600}}>
-              Tip: Use negative values (e.g. −10) to subtract coins as a penalty.
-            </div>
-          </>}
+        <div style={{overflowY:"auto",flex:1,padding:"0 20px 24px"}}>
+          <div style={{fontSize:13,color:SUB,marginBottom:14,fontWeight:500,lineHeight:1.6}}>
+            Up to 15 values. Negative values subtract coins (penalty).{longPressIdx !== null ? " Drag to reorder. Tap done when finished." : " Hold any button to reorder."}
+          </div>
 
-          {tab==="other" && <>
-            <div style={{fontSize:13,color:SUB,marginBottom:14,fontWeight:500,lineHeight:1.6}}>
-              Up to 15 values. Negative values subtract coins (penalty). Changes apply to this session only.
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
-              {other.map((v,i)=>(
-                <div key={i} style={{borderRadius:12,border:`1.5px solid ${v<0?"#EF444440":BORDER}`,background:v<0?"#FEF2F2":`${YELLOW}08`,position:"relative"}}>
-                  {editIdx===i ? (
-                    <input type="number" value={editVal} autoFocus
-                      onChange={e=>setEditVal(e.target.value)}
-                      onKeyDown={e=>{if(e.key==="Enter")saveEdit(i);if(e.key==="Escape")setEditIdx(null);}}
-                      onBlur={()=>saveEdit(i)}
-                      style={{width:"100%",textAlign:"center",background:"none",border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:v<0?"#EF4444":YELLOW,outline:"none",padding:"14px 4px"}}/>
-                  ) : (
-                    <button onClick={()=>{setEditIdx(i);setEditVal(String(v));}}
-                      style={{width:"100%",padding:"14px 4px",background:"none",border:"none",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:v<0?"#EF4444":YELLOW}}>
-                      {v>0?"+":""}{v}
-                    </button>
-                  )}
-                  <button onClick={()=>removeOther(i)}
-                    style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#EF4444",border:"2px solid #fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>
-                    <span style={{color:"#fff",fontSize:10,fontWeight:900,lineHeight:1}}>×</span>
+          {/* CSS for wiggle animation */}
+          <style>{`
+            @keyframes ccWiggle {
+              0%,100%{transform:rotate(-2deg);}
+              50%{transform:rotate(2deg);}
+            }
+            .cc-wiggle { animation: ccWiggle 0.25s ease-in-out infinite; }
+            .cc-drag-over { opacity: 0.4; transform: scale(0.95); }
+          `}</style>
+
+          <div
+            style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {other.map((v,i)=>(
+              <div
+                key={i}
+                data-coinidx={i}
+                draggable={longPressIdx !== null}
+                onDragStart={()=>handleDragStart(i)}
+                onDragOver={e=>handleDragOver(e,i)}
+                onDrop={()=>handleDrop(i)}
+                onTouchStart={e=>handleTouchStart(e,i)}
+                onMouseDown={()=>handlePressStart(i)}
+                onMouseUp={handlePressEnd}
+                onTouchStartCapture={()=>handlePressStart(i)}
+                onTouchEndCapture={handlePressEnd}
+                className={`${longPressIdx !== null ? "cc-wiggle" : ""} ${dragOver===i && dragIdx!==i ? "cc-drag-over" : ""}`}
+                style={{
+                  borderRadius:12,
+                  border:`1.5px solid ${v<0?"#EF444440":BORDER}`,
+                  background:v<0?"#FEF2F2":`${GREEN_COIN}08`,
+                  position:"relative",
+                  cursor: longPressIdx !== null ? "grab" : "pointer",
+                  userSelect:"none",
+                  WebkitUserSelect:"none",
+                  touchAction: longPressIdx !== null ? "none" : "auto",
+                  transition:"opacity .15s, transform .15s",
+                  opacity: dragIdx===i ? 0.5 : 1,
+                }}>
+                {editIdx===i && longPressIdx===null ? (
+                  <input type="number" value={editVal} autoFocus
+                    onChange={e=>setEditVal(e.target.value)}
+                    onKeyDown={e=>{if(e.key==="Enter")saveEdit(i);if(e.key==="Escape")setEditIdx(null);}}
+                    onBlur={()=>saveEdit(i)}
+                    style={{width:"100%",textAlign:"center",background:"none",border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:v<0?"#EF4444":GREEN_COIN,outline:"none",padding:"14px 4px"}}/>
+                ) : (
+                  <button
+                    onClick={()=>{ if(longPressIdx!==null)return; setEditIdx(i); setEditVal(String(v)); }}
+                    style={{width:"100%",padding:"14px 4px",background:"none",border:"none",cursor:longPressIdx!==null?"grab":"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:v<0?"#EF4444":GREEN_COIN}}>
+                    {v>0?"+":""}{v}
                   </button>
-                </div>
-              ))}
-              {/* Add new slot */}
-              {other.length < 15 && (
-                <div style={{borderRadius:12,border:`1.5px dashed ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"center",minHeight:50}}>
-                  <input type="number" placeholder="+/−" value={newVal} onChange={e=>setNewVal(e.target.value)}
-                    onKeyDown={e=>e.key==="Enter"&&addOther()}
-                    style={{width:"100%",textAlign:"center",background:"none",border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:PINK,outline:"none",padding:"14px 4px"}}/>
-                </div>
-              )}
-            </div>
+                )}
+                {/* Remove X — always visible */}
+                <button onClick={e=>{e.stopPropagation();removeOther(i);}}
+                  style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#EF4444",border:"2px solid #fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,zIndex:2}}>
+                  <span style={{color:"#fff",fontSize:10,fontWeight:900,lineHeight:1}}>×</span>
+                </button>
+                {/* Drag handle dots — visible in wiggle mode */}
+                {longPressIdx !== null && (
+                  <div style={{position:"absolute",bottom:3,left:"50%",transform:"translateX(-50%)",display:"flex",gap:2,pointerEvents:"none"}}>
+                    {[0,1,2].map(d=><div key={d} style={{width:3,height:3,borderRadius:"50%",background:"rgba(0,0,0,0.2)"}}/>)}
+                  </div>
+                )}
+              </div>
+            ))}
+            {/* Add new slot */}
+            {other.length < 15 && longPressIdx === null && (
+              <div style={{borderRadius:12,border:`1.5px dashed ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"center",minHeight:50}}>
+                <input type="number" placeholder="+/−" value={newVal} onChange={e=>setNewVal(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&addOther()}
+                  style={{width:"100%",textAlign:"center",background:"none",border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:PINK,outline:"none",padding:"14px 4px"}}/>
+              </div>
+            )}
+          </div>
+
+          {/* Done reordering button */}
+          {longPressIdx !== null ? (
+            <button onClick={()=>setLongPressIdx(null)}
+              style={{width:"100%",padding:"11px 0",background:"#F3F4F6",border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,cursor:"pointer",marginBottom:12}}>
+              ✓ Done Reordering
+            </button>
+          ) : (
             <div style={{display:"flex",gap:8,marginBottom:14}}>
               <input type="number" placeholder="Enter value (e.g. 200 or −50)" value={newVal}
                 onChange={e=>setNewVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addOther()}
@@ -850,12 +943,14 @@ function CoinCustomizer({ session, onSave, onClose }) {
                 Add
               </button>
             </div>
-            <div style={{fontSize:11,color:SUB,fontWeight:600}}>{other.length}/15 values · Tap any value to edit · × to remove</div>
-            <div style={{background:`${PINK}10`,border:`1px solid ${PINK}25`,borderRadius:10,padding:"10px 12px",marginTop:10,fontSize:12,color:PINK,fontWeight:600}}>
-              Negative values (e.g. −50) will subtract coins — participants can go below zero on the scoreboard.
-            </div>
-          </>}
+          )}
+
+          <div style={{fontSize:11,color:SUB,fontWeight:600,marginBottom:10}}>{other.length}/15 values · Tap any value to edit · Hold to reorder</div>
+          <div style={{background:`${PINK}10`,border:`1px solid ${PINK}25`,borderRadius:10,padding:"10px 12px",fontSize:12,color:PINK,fontWeight:600}}>
+            Negative values (e.g. −50) will subtract coins — participants can go below zero on the scoreboard.
+          </div>
         </div>
+
         <div style={{padding:"0 20px 32px",flexShrink:0}}>
           <button onClick={save} style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
             Save Coin Settings
@@ -3594,7 +3689,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
       p.hist = [{type,pts,t:new Date().toLocaleTimeString()}, ...(p.hist||[]).slice(0,29)];
       s.log = [{id:Date.now(),name:p.name,type,pts,t:new Date().toLocaleTimeString()}, ...(s.log||[]).slice(0,99)];
     });
-    const col = type==="token" ? YELLOW : ACTS.find(x=>x.id===type)?.col||YELLOW;
+    const col = type==="token" ? "#16A34A" : ACTS.find(x=>x.id===type)?.col||"#16A34A";
     setAnims(a => [...a, {id:aid.current++,x:mx,y:my,text:pts<0?`${pts}`:`+${pts}`,color:pts<0?"#EF4444":col}]);
     notify(pts<0?`${pts} coins deducted`:`+${pts} coins awarded`);
   }
@@ -4405,7 +4500,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         }).catch(()=>{});
       }
     });
-    const col = type==="token" ? YELLOW : ACTS.find(x=>x.id===type)?.col||YELLOW;
+    const col = type==="token" ? "#16A34A" : ACTS.find(x=>x.id===type)?.col||"#16A34A";
     setAnims(a => [...a, {id:aid.current++,x:mx,y:my,text:pts<0?`${pts}`:`+${pts}`,color:pts<0?"#EF4444":col}]);
     notify(pts<0?`${pts} coins deducted`:`+${pts} coins awarded`);
   }
