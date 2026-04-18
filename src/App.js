@@ -4618,7 +4618,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       </div>
 
       {/* ── BODY: two columns on desktop, single column on mobile ── */}
-      <div className="tc-session-body" style={{flex:1,display:"flex",overflow:"hidden",position:"relative"}}>
+      <div className="tc-session-body" style={{flex:1,display:"flex",overflow:"hidden",position:"relative",minHeight:0}}>
 
         {/* Offline overlay */}
         {!isLive && (
@@ -4773,7 +4773,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         <div className={`tc-session-right${tab==="award" ? " tc-hide-mobile" : ""}`} style={{flexDirection:"column"}}>
 
           {/* Desktop right-panel tabs */}
-          <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0,display:"none"}}>
+          <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0}}>
             {[["people","Participants"],["award_all","Quick Coins"],["groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill={isPro?"#C0C0C0":"#ffb743"}/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill={isPro?"#C0C0C0":"#ffb743"}/></svg></span>],["board","Scoreboard"],["log","Log"]].map(([id,l]) => (
               <button key={id} onClick={()=>{
                 if (ses.boardVisible && id!=="board") { notify("Turn off scoreboard first before switching tabs","warn"); return; }
@@ -8264,7 +8264,7 @@ const CSS = `
   .tc-app-shell { height:100vh; background:${BG}; font-family:Poppins,sans-serif; display:flex; flex-direction:column; overflow:hidden; }
 
   /* ─── Session body: stacked on mobile, side-by-side on desktop ─── */
-  .tc-session-body { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .tc-session-body { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
   .tc-session-left { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
   .tc-session-right { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
   .tc-hide-mobile { display:none !important; }
@@ -8290,7 +8290,7 @@ const CSS = `
   /* ─── Desktop ≥ 900px ─── */
   @media (min-width:900px) {
     /* Session: side-by-side panels */
-    .tc-session-body { flex-direction:row !important; }
+    .tc-session-body { flex-direction:row !important; min-height:0; }
     .tc-session-left { width:420px !important; flex:none !important; border-right:1px solid ${BORDER}; display:flex !important; overflow:hidden !important; overflow-y:hidden !important; min-height:0; }
     .tc-session-right { flex:1 !important; display:flex !important; overflow:hidden !important; min-height:0; }
     .tc-hide-mobile { display:flex !important; }
