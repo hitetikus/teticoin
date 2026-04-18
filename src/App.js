@@ -969,6 +969,57 @@ function SessionSettings({ session, isPro=false, onRename, onToggleLive, onExpor
   );
 }
 
+// ── ColorPickerPopup — grid color spectrum picker with "Use this color" confirm ──
+const COLOR_GRID = [
+  "#1e1e2e","#374151","#4B5563","#6B7280","#9CA3AF","#D1D5DB","#F3F4F6","#ffffff",
+  "#7C3AED","#8B5CF6","#A78BFA","#C4B5FD","#6366F1","#818CF8","#3B82F6","#60A5FA",
+  "#0EA5E9","#06B6D4","#67E8F9","#10B981","#34D399","#059669","#15803D","#166534",
+  "#84CC16","#A3E635","#EAB308","#FDE047","#F59E0B","#D97706","#B45309","#92400E",
+  "#F97316","#FB923C","#EF4444","#F87171","#DC2626","#B91C1C","#EC4899","#F472B6",
+  "#DB2777","#BE185D","#9D174D","#831843","#FF4FB8","#E91E8C","#C026D3","#E879F9",
+];
+function ColorPickerPopup({ value, onChange, onClose }) {
+  const [hovered, setHovered] = useState(null);
+  const [custom, setCustom] = useState(value||GC[0]);
+  const [tab, setTab] = useState("grid"); // grid | custom
+  const preview = hovered || custom;
+  return (
+    <div style={{position:"absolute",zIndex:9999,top:"100%",left:0,marginTop:6,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,boxShadow:"0 8px 32px rgba(0,0,0,0.18)",padding:14,width:228,userSelect:"none"}}>
+      {/* Tab row */}
+      <div style={{display:"flex",gap:0,borderBottom:`1px solid ${BORDER}`,marginBottom:10}}>
+        {[["grid","Grid"],["custom","Spectrum"]].map(([id,label])=>(
+          <button key={id} onClick={()=>setTab(id)}
+            style={{flex:1,padding:"5px 0",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:tab===id?PINK:SUB,borderBottom:tab===id?`2px solid ${PINK}`:"2px solid transparent",cursor:"pointer",marginBottom:-1}}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {tab==="grid" ? (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(8,1fr)",gap:4,marginBottom:10}}>
+          {COLOR_GRID.map(c=>(
+            <div key={c} onClick={()=>setCustom(c)} onMouseEnter={()=>setHovered(c)} onMouseLeave={()=>setHovered(null)}
+              style={{width:20,height:20,borderRadius:4,background:c,cursor:"pointer",border:custom===c?"2px solid #0A0A0F":"1.5px solid rgba(0,0,0,0.08)",boxSizing:"border-box",transition:"transform .1s",transform:hovered===c?"scale(1.25)":"scale(1)"}}/>
+          ))}
+        </div>
+      ) : (
+        <div style={{marginBottom:10}}>
+          <input type="color" value={custom} onChange={e=>setCustom(e.target.value)}
+            style={{width:"100%",height:80,border:`1.5px solid ${BORDER}`,borderRadius:10,cursor:"pointer",padding:2}}/>
+        </div>
+      )}
+      {/* Preview + confirm */}
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <div style={{width:28,height:28,borderRadius:8,background:preview,border:`1.5px solid ${BORDER}`,flexShrink:0}}/>
+        <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:SUB}}>{preview}</span>
+        <button onClick={()=>{onChange(custom);onClose();}}
+          style={{padding:"6px 12px",background:GRAD,border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
+          Use this
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── GroupAssignModal — pick a participant from list to assign to a group ──
 function GroupAssignModal({ g, session, onUpdate, onClose }) {
   const unassigned = session.participants.filter(p => p.gid !== g.id).sort((a,b)=>a.num-b.num);
@@ -1151,7 +1202,8 @@ function GroupEditRow({ g, session, onUpdate }) {
   const [editColor, setEditColor] = useState(g.color);
   const [showAssign, setShowAssign] = useState(false);
   const [showQRAssign, setShowQRAssign] = useState(false);
-  const colorPickRef = useRef(null);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [customColor, setCustomColor] = useState(null); // user-picked custom color
   return (
     <>
     {showAssign && <GroupAssignModal g={g} session={session} onUpdate={onUpdate} onClose={()=>setShowAssign(false)}/>}
@@ -1161,13 +1213,12 @@ function GroupEditRow({ g, session, onUpdate }) {
         <div>
           <input value={editName} onChange={e=>setEditName(e.target.value)}
             style={{width:"100%",padding:"8px 10px",border:`1.5px solid ${MID}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",marginBottom:8,boxSizing:"border-box",caretColor:TEXT}}/>
-          <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center",marginBottom:8}}>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center",marginBottom:8,position:"relative"}}>
+            {customColor && <div onClick={()=>setEditColor(customColor)} title="Custom color" style={{width:20,height:20,borderRadius:"50%",background:customColor,cursor:"pointer",outline:editColor===customColor?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s",flexShrink:0}}/>}
             {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:20,height:20,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
-            <div title="Custom color" onClick={()=>colorPickRef.current&&colorPickRef.current.click()}
-              style={{width:20,height:20,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",position:"relative",overflow:"hidden",flexShrink:0}}>
-              <input ref={colorPickRef} type="color" value={editColor} onChange={e=>setEditColor(e.target.value)}
-                style={{position:"absolute",opacity:0,width:"100%",height:"100%",cursor:"pointer",top:0,left:0}}/>
-            </div>
+            <div title="More colors" onClick={()=>setShowColorPicker(v=>!v)}
+              style={{width:20,height:20,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",flexShrink:0}}/>
+            {showColorPicker && <ColorPickerPopup value={editColor} onChange={c=>{setCustomColor(c);setEditColor(c);}} onClose={()=>setShowColorPicker(false)}/>}
           </div>
           <div style={{display:"flex",gap:6}}>
             <button onClick={()=>{ onUpdate(s=>{const gx=s.groups.find(x=>x.id===g.id);if(gx){gx.name=editName.trim()||g.name;gx.color=editColor;}return s;}); setEditingG(false); }} style={{flex:1,padding:"7px 0",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
@@ -1204,7 +1255,8 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
   const [ng, setNg] = useState("");
   const [ngc, setNgc] = useState(GC[0]);
   const [autoGroupCount, setAutoGroupCount] = useState(4);
-  const manageColorPickRef = useRef(null);
+  const [managePickerOpen, setManagePickerOpen] = useState(false);
+  const [manageCustomColor, setManageCustomColor] = useState(null);
   const [editingName, setEditingName] = useState(false);
   const [nameVal, setNameVal] = useState(session.name); // eslint-disable-line
   const [dupErr, setDupErr] = useState("");
@@ -1315,25 +1367,31 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                 </div>
               </div>
             ) : <>
-            <div style={{display:"flex",gap:8,marginBottom:10}}>
-              <input placeholder="Group name" value={ng} onChange={e=>setNg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addG()} style={{flex:1,padding:"11px 14px",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",cursor:"text",caretColor:TEXT}}/>
-              <button onClick={addG} style={{padding:"0 18px",background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
-            </div>
-            <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",marginBottom:14}}>
-              {GC.map(c => <div key={c} onClick={()=>setNgc(c)} style={{width:28,height:28,borderRadius:"50%",background:c,cursor:"pointer",transition:".12s",outline:ngc===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2}}/>)}
-              <div title="Custom color" onClick={()=>manageColorPickRef.current&&manageColorPickRef.current.click()}
-                style={{width:28,height:28,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"2px solid #D1D5DB",position:"relative",overflow:"hidden",flexShrink:0}}>
-                <input ref={manageColorPickRef} type="color" value={ngc} onChange={e=>setNgc(e.target.value)}
-                  style={{position:"absolute",opacity:0,width:"100%",height:"100%",cursor:"pointer",top:0,left:0}}/>
+            {/* 2-column: left = manual create, right = auto-create */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12,alignItems:"start"}}>
+              {/* LEFT — manual */}
+              <div style={{background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"12px"}}>
+                <div style={{fontSize:10,fontWeight:800,letterSpacing:1.2,color:SUB,textTransform:"uppercase",marginBottom:8}}>Manual</div>
+                <input placeholder="Group name" value={ng} onChange={e=>setNg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addG()}
+                  style={{width:"100%",padding:"8px 10px",border:`1.5px solid ${BORDER}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,background:"#fff",outline:"none",caretColor:TEXT,marginBottom:8,boxSizing:"border-box"}}/>
+                {/* Color swatches row */}
+                <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center",marginBottom:8,position:"relative"}}>
+                  {manageCustomColor && <div onClick={()=>setNgc(manageCustomColor)} title="Custom" style={{width:22,height:22,borderRadius:"50%",background:manageCustomColor,cursor:"pointer",outline:ngc===manageCustomColor?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,flexShrink:0}}/>}
+                  {GC.map(c=><div key={c} onClick={()=>setNgc(c)} style={{width:22,height:22,borderRadius:"50%",background:c,cursor:"pointer",outline:ngc===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
+                  <div title="More colors" onClick={()=>setManagePickerOpen(v=>!v)}
+                    style={{width:22,height:22,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",flexShrink:0}}/>
+                  {managePickerOpen && <ColorPickerPopup value={ngc} onChange={c=>{setManageCustomColor(c);setNgc(c);}} onClose={()=>setManagePickerOpen(false)}/>}
+                </div>
+                <button onClick={addG} style={{width:"100%",padding:"8px 0",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>+ Add Group</button>
               </div>
-            </div>
-            {/* Auto-create multiple groups */}
-            <div style={{background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
-              <div style={{fontSize:11,fontWeight:800,letterSpacing:1.2,color:SUB,textTransform:"uppercase",marginBottom:8}}>Auto-create groups</div>
-              <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                <input type="number" min={1} max={20} value={autoGroupCount} onChange={e=>setAutoGroupCount(Math.max(1,Math.min(20,Number(e.target.value))))}
-                  style={{width:64,padding:"8px 10px",border:`1.5px solid ${BORDER}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",textAlign:"center"}}/>
-                <span style={{fontSize:13,color:SUB,flex:1}}>groups (Group 1, Group 2…)</span>
+              {/* RIGHT — auto-create */}
+              <div style={{background:BG,border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"12px"}}>
+                <div style={{fontSize:10,fontWeight:800,letterSpacing:1.2,color:SUB,textTransform:"uppercase",marginBottom:8}}>Auto-create</div>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+                  <input type="number" min={1} max={20} value={autoGroupCount} onChange={e=>setAutoGroupCount(Math.max(1,Math.min(20,Number(e.target.value))))}
+                    style={{width:52,padding:"8px 6px",border:`1.5px solid ${BORDER}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:TEXT,background:"#fff",outline:"none",textAlign:"center"}}/>
+                  <span style={{fontSize:12,color:SUB,lineHeight:1.4,flex:1}}>groups<br/><span style={{fontSize:10}}>Group 1, 2…</span></span>
+                </div>
                 <button onClick={()=>{
                   if(autoGroupCount<1)return;
                   onUpdate(s=>{
@@ -1343,24 +1401,27 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                     }
                     return s;
                   });
-                }} style={{padding:"8px 14px",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
-                  Create
-                </button>
+                }} style={{width:"100%",padding:"8px 0",background:"#1A0A14",border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>⚡ Create</button>
               </div>
             </div>
-            {/* Randomize groups button */}
-            {session.groups.length > 0 && session.participants.length > 0 && (
-              <button onClick={()=>{
-                if(!window.confirm("Randomly assign all participants to groups?")) return;
-                onUpdate(s=>{
-                  const gIds = s.groups.map(g=>g.id);
-                  if(gIds.length===0) return s;
-                  s.participants = s.participants.map((p,i)=>({...p, gid: gIds[i % gIds.length]}));
-                  return s;
-                });
-              }} style={{width:"100%",padding:"10px 0",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,cursor:"pointer",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                🎲 Randomize Groups
-              </button>
+            {/* Group list header with inline randomize */}
+            {session.groups.length > 0 && (
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                <div style={{fontSize:10,fontWeight:800,letterSpacing:1.2,color:SUB,textTransform:"uppercase"}}>Groups ({session.groups.length})</div>
+                {session.participants.length > 0 && (
+                  <button onClick={()=>{
+                    if(!window.confirm("Randomly assign all participants to groups?")) return;
+                    onUpdate(s=>{
+                      const gIds = s.groups.map(g=>g.id);
+                      if(gIds.length===0) return s;
+                      s.participants = s.participants.map((p,i)=>({...p, gid: gIds[i % gIds.length]}));
+                      return s;
+                    });
+                  }} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:TEXT,cursor:"pointer"}}>
+                    🎲 Randomize
+                  </button>
+                )}
+              </div>
             )}
             {session.groups.map(g => (
               <GroupEditRow key={g.id} g={g} session={session} onUpdate={onUpdate}/>
@@ -3859,7 +3920,8 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
   const [editColor, setEditColor] = useState(g.color);
   const [showAssign, setShowAssign] = useState(false);
   const [showQRAssign, setShowQRAssign] = useState(false);
-  const cardColorPickRef = useRef(null);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [customColor, setCustomColor] = useState(null);
   const rankColor = i => ["#F5A623","#94A3B8","#CD7C2E"][i]||"#9A6080";
   const maxTotal = ses.groups.reduce((m,gr)=>{
     const t=ses.participants.filter(p=>p.gid===gr.id).reduce((s,p)=>s+(p.total||0),0);
@@ -3875,13 +3937,12 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
           <input value={editName} autoFocus onChange={e=>setEditName(e.target.value)}
             onKeyDown={e=>{if(e.key==="Enter")saveEdit();if(e.key==="Escape")setEditing(false);}}
             style={{width:"100%",padding:"7px 10px",border:`1.5px solid ${editColor}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",marginBottom:10,boxSizing:"border-box",caretColor:TEXT}}/>
-          <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center",marginBottom:10}}>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center",marginBottom:10,position:"relative"}}>
+            {customColor && <div onClick={()=>setEditColor(customColor)} title="Custom" style={{width:20,height:20,borderRadius:"50%",background:customColor,cursor:"pointer",outline:editColor===customColor?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,flexShrink:0}}/>}
             {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:20,height:20,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
-            <div title="Custom color" onClick={()=>cardColorPickRef.current&&cardColorPickRef.current.click()}
-              style={{width:20,height:20,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",position:"relative",overflow:"hidden",flexShrink:0}}>
-              <input ref={cardColorPickRef} type="color" value={editColor} onChange={e=>setEditColor(e.target.value)}
-                style={{position:"absolute",opacity:0,width:"100%",height:"100%",cursor:"pointer",top:0,left:0}}/>
-            </div>
+            <div title="More colors" onClick={()=>setShowColorPicker(v=>!v)}
+              style={{width:20,height:20,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",flexShrink:0}}/>
+            {showColorPicker && <ColorPickerPopup value={editColor} onChange={c=>{setCustomColor(c);setEditColor(c);}} onClose={()=>setShowColorPicker(false)}/>}
           </div>
           <div style={{display:"flex",gap:6}}>
             <button onClick={saveEdit} style={{flex:1,padding:"7px 0",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
@@ -3988,7 +4049,6 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
   const [badgePickerTarget, setBadgePickerTarget] = useState(null);
   const [showLuckyDraw, setShowLuckyDraw] = useState(false);
   const [autoGroupCount, setAutoGroupCount] = useState(4);
-  const sesColorPickRef = useRef(null);
               const [proGateHint, setProGateHint] = useState(null); // "customlabels" | "groups" | "coinmaster" | "massgive"
 
   // ── Live poll: pull participant updates from Firebase every 3s ──
@@ -4898,53 +4958,57 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                 </div>
               ) : <>
-              {/* Inline group creation */}
-              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px"}}>
-                <SL style={{marginBottom:10}}>Create Group</SL>
-                <div style={{display:"flex",gap:8,marginBottom:10}}>
+              {/* 2-column: left = manual, right = auto-create */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+                {/* LEFT — manual */}
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"12px"}}>
+                  <div style={{fontSize:10,fontWeight:800,letterSpacing:1.2,color:SUB,textTransform:"uppercase",marginBottom:8}}>Manual</div>
                   <input placeholder="Group name" value={ses._newGroupName||""} onChange={e=>mut(s=>{s._newGroupName=e.target.value;})}
                     onKeyDown={e=>{if(e.key==="Enter"){const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";})}}}
-                    style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"8px 12px",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#1A0A14",outline:"none",caretColor:"#1A0A14"}}/>
+                    style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:9,padding:"7px 10px",fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:12,color:TEXT,outline:"none",caretColor:TEXT,marginBottom:8,boxSizing:"border-box"}}/>
+                  {/* Swatches */}
+                  <div style={{display:"flex",gap:4,flexWrap:"wrap",alignItems:"center",marginBottom:8,position:"relative"}}>
+                    {ses._sesCustomColor && <div onClick={()=>mut(s=>{s._newGroupColor=s._sesCustomColor;})} title="Custom"
+                      style={{width:20,height:20,borderRadius:"50%",background:ses._sesCustomColor,cursor:"pointer",outline:(ses._newGroupColor||GC[0])===ses._sesCustomColor?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,flexShrink:0}}/>}
+                    {GC.map(c=><div key={c} onClick={()=>mut(s=>{s._newGroupColor=c;})} style={{width:20,height:20,borderRadius:"50%",background:c,cursor:"pointer",outline:(ses._newGroupColor||GC[0])===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
+                    <div title="More colors" onClick={()=>mut(s=>{s._sesPickerOpen=!s._sesPickerOpen;})}
+                      style={{width:20,height:20,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",flexShrink:0}}/>
+                    {ses._sesPickerOpen && <ColorPickerPopup value={ses._newGroupColor||GC[0]} onChange={c=>{mut(s=>{s._sesCustomColor=c;s._newGroupColor=c;s._sesPickerOpen=false;});}} onClose={()=>mut(s=>{s._sesPickerOpen=false;})}/>}
+                  </div>
                   <button onClick={()=>{const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";});}}
-                    style={{padding:"0 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Add</button>
+                    style={{width:"100%",padding:"7px 0",background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>+ Add</button>
                 </div>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",marginTop:4,marginBottom:12}}>
-                  {GC.map(c=><div key={c} onClick={()=>mut(s=>{s._newGroupColor=c;})} style={{width:26,height:26,borderRadius:"50%",background:c,cursor:"pointer",outline:(ses._newGroupColor||GC[0])===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
-                  <div title="Custom color" onClick={()=>sesColorPickRef.current&&sesColorPickRef.current.click()}
-                    style={{width:26,height:26,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",position:"relative",overflow:"hidden",flexShrink:0}}>
-                    <input ref={sesColorPickRef} type="color" value={ses._newGroupColor||GC[0]} onChange={e=>mut(s=>{s._newGroupColor=e.target.value;})}
-                      style={{position:"absolute",opacity:0,width:"100%",height:"100%",cursor:"pointer",top:0,left:0}}/>
-                  </div>
-                </div>
-                {/* Auto-create multiple groups */}
-                <div style={{background:BG,border:`1px solid ${BORDER}`,borderRadius:10,padding:"10px 12px"}}>
-                  <div style={{fontSize:10,fontWeight:800,letterSpacing:1.2,color:SUB,textTransform:"uppercase",marginBottom:8}}>Auto-create groups</div>
-                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                {/* RIGHT — auto-create */}
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"12px"}}>
+                  <div style={{fontSize:10,fontWeight:800,letterSpacing:1.2,color:SUB,textTransform:"uppercase",marginBottom:8}}>Auto-create</div>
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
                     <input type="number" min={1} max={20} value={autoGroupCount} onChange={e=>setAutoGroupCount(Math.max(1,Math.min(20,Number(e.target.value))))}
-                      style={{width:56,padding:"6px 8px",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,background:"#fff",outline:"none",textAlign:"center"}}/>
-                    <span style={{fontSize:12,color:SUB,flex:1}}>groups (Group 1, 2…)</span>
-                    <button onClick={()=>{
-                      if(autoGroupCount<1)return;
-                      mut(s=>{
-                        for(let i=0;i<autoGroupCount;i++){
-                          const num=s.groups.length+1;
-                          s.groups.push({id:Date.now()+i,name:`Group ${num}`,color:GC[i%GC.length]});
-                        }
-                        return s;
-                      });
-                    }} style={{padding:"7px 12px",background:GRAD,border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
-                      Create
-                    </button>
+                      style={{width:48,padding:"7px 6px",border:`1.5px solid ${BORDER}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:TEXT,background:"#fff",outline:"none",textAlign:"center"}}/>
+                    <span style={{fontSize:11,color:SUB,lineHeight:1.4,flex:1}}>groups<br/><span style={{fontSize:10}}>Group 1, 2…</span></span>
                   </div>
+                  <button onClick={()=>{
+                    if(autoGroupCount<1)return;
+                    mut(s=>{
+                      for(let i=0;i<autoGroupCount;i++){
+                        const num=s.groups.length+1;
+                        s.groups.push({id:Date.now()+i,name:`Group ${num}`,color:GC[i%GC.length]});
+                      }
+                      return s;
+                    });
+                  }} style={{width:"100%",padding:"7px 0",background:"#1A0A14",border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>⚡ Create</button>
                 </div>
               </div>
-              {/* Randomize button */}
-              {gs.length > 0 && ses.participants.length > 0 && (
-                <button onClick={()=>{if(!window.confirm("Group all participants randomly?"))return;const ids=ses.groups.map(g=>g.id);const shuffled=[...ses.participants].sort(()=>Math.random()-.5);mut(s=>{s.participants=s.participants.map(p=>{const i=shuffled.findIndex(x=>x.id===p.id);return{...p,gid:ids[i%ids.length]};});return s;});}}
-                  style={{width:"100%",padding:"10px 0",background:"#1A0A14",border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="8" cy="8" r="1.2" fill="#fff"/><circle cx="16" cy="8" r="1.2" fill="#fff"/><circle cx="8" cy="16" r="1.2" fill="#fff"/><circle cx="16" cy="16" r="1.2" fill="#fff"/><circle cx="12" cy="12" r="1.2" fill="#fff"/></svg>
-                  Group All Participants Randomly
-                </button>
+              {/* Group list header with inline randomize */}
+              {gs.length > 0 && (
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                  <div style={{fontSize:10,fontWeight:800,letterSpacing:1.2,color:SUB,textTransform:"uppercase"}}>Groups ({gs.length})</div>
+                  {ses.participants.length > 0 && (
+                    <button onClick={()=>{if(!window.confirm("Group all participants randomly?"))return;const ids=ses.groups.map(g=>g.id);const shuffled=[...ses.participants].sort(()=>Math.random()-.5);mut(s=>{s.participants=s.participants.map(p=>{const i=shuffled.findIndex(x=>x.id===p.id);return{...p,gid:ids[i%ids.length]};});return s;});}}
+                      style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:TEXT,cursor:"pointer"}}>
+                      🎲 Randomize
+                    </button>
+                  )}
+                </div>
               )}
               {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:24,textAlign:"center",fontSize:13,color:SUB}}>No groups yet. Add one above!</div>}
               {gs.map((g,i) => (
