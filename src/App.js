@@ -3486,7 +3486,7 @@ function CMBoardTab({ ses, cmBoardSorted, hasGrps, grpScores, maxGrp, setSelId, 
           ))}
         </div>
       )}
-      <div style={{flex:1,overflowY:"auto",padding:"10px 14px",display:"flex",flexDirection:"column",gap:10,background:ses.boardVisible?"#1A1A2E":"transparent",transition:"background .4s"}}>
+      <div style={{flex:1,overflowY:"auto",padding:"10px 14px",display:"flex",flexDirection:"column",gap:10,background:ses.boardVisible?"#1A1A2E":"transparent",transition:"background .4s",minHeight:0}}>
         {(!hasGrps || subTab==="individual") && (
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
             {cmBoardSorted.length===0 && <div style={{padding:48,textAlign:"center"}}><Ham size={70}/><div style={{marginTop:12,fontSize:13,color:ses.boardVisible?"rgba(255,255,255,.5)":SUB}}>No participants yet</div></div>}
@@ -3767,7 +3767,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                 + Add
               </button>
             </div>
-            <div style={{flex:1,overflowY:"auto",padding:"10px 14px"}}>
+            <div style={{flex:1,overflowY:"auto",padding:"10px 14px",minHeight:0}}>
               {sorted.length===0 ? (
                 <div style={{textAlign:"center",padding:"32px 16px",color:SUB,fontSize:13}}><Ham size={48}/><div style={{marginTop:10}}>No participants yet</div></div>
               ) : (
@@ -3841,7 +3841,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
 
         {/* ── LOG TAB ── */}
         {tab==="log" && (
-          <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
+          <div style={{flex:1,overflowY:"auto",padding:"12px 14px",minHeight:0}}>
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
               <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`}}>
                 <SL>Activity Log</SL>
@@ -4636,7 +4636,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         )}
 
         {/* ── LEFT PANEL: Award (Coins tab on mobile) ── */}
-        <div className="tc-session-left" style={{display: tab!=="award" ? "none" : "flex", flexDirection:"column"}}>
+        <div className={`tc-session-left${tab!=="award" ? " tc-hide-mobile" : ""}`} style={{flexDirection:"column"}}>
           {/* Award content */}
           <div style={{padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
 
@@ -4770,7 +4770,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         </div>
 
         {/* ── RIGHT PANEL: Participants / Board / Groups / Log (+ desktop Award All) ── */}
-        <div className="tc-session-right" style={{display: tab==="award" ? "none" : "flex", flexDirection:"column"}}>
+        <div className={`tc-session-right${tab==="award" ? " tc-hide-mobile" : ""}`} style={{flexDirection:"column"}}>
 
           {/* Desktop right-panel tabs */}
           <div className="tc-right-tabs" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,alignItems:"center",flexShrink:0,display:"none"}}>
@@ -4792,7 +4792,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
           {/* ── PEOPLE TAB (desktop) ── */}
           {rightTab==="people" && (
-            <div style={{flex:1,overflowY:"auto",padding:"14px 16px",display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{flex:1,overflowY:"auto",padding:"14px 16px",display:"flex",flexDirection:"column",gap:12,minHeight:0}}>
               {/* Inline add row */}
               <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"center"}}>
                 <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
@@ -4913,7 +4913,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
           {/* ── AWARD ALL TAB (desktop default) ── */}
           {rightTab==="award_all" && (
-            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,minHeight:0}}>
               {sorted.length === 0 ? (
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"36px 24px",textAlign:"center"}}>
                   <Ham size={56}/>
@@ -4988,7 +4988,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
           {/* ── BOARD TAB ── */}
           {rightTab==="board" && (
-            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,background:ses.boardVisible?"#1A1A2E":"transparent",transition:"background .4s"}}>
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,background:ses.boardVisible?"#1A1A2E":"transparent",transition:"background .4s",minHeight:0}}>
               <div onClick={()=>{
                 const turningOn = !ses.boardVisible;
                 mut(s=>{s.boardVisible=turningOn;});
@@ -5092,7 +5092,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
           {/* Groups */}
           {rightTab==="groups" && (
-            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,minHeight:0}}>
               {!isPro ? (
                 <div style={{position:"relative",minHeight:300}}>
                   {/* Teaser dummy content */}
@@ -5206,7 +5206,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
           {/* Log */}
           {rightTab==="log" && (
-            <div style={{flex:1,overflowY:"auto",padding:"12px 14px"}}>
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",minHeight:0}}>
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                 <div style={{padding:"10px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <SL>Activity Log</SL>
@@ -8267,6 +8267,7 @@ const CSS = `
   .tc-session-body { flex:1; display:flex; flex-direction:column; overflow:hidden; }
   .tc-session-left { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
   .tc-session-right { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+  .tc-hide-mobile { display:none !important; }
   .tc-tab-bar { background:#fff; border-bottom:1px solid ${BORDER}; display:flex; align-items:center; flex-shrink:0; }
   .tc-right-tabs { display:none; }
   .tc-session-topbar { padding:0 16px; }
@@ -8292,6 +8293,7 @@ const CSS = `
     .tc-session-body { flex-direction:row !important; }
     .tc-session-left { width:420px !important; flex:none !important; border-right:1px solid ${BORDER}; display:flex !important; overflow:hidden !important; overflow-y:hidden !important; min-height:0; }
     .tc-session-right { flex:1 !important; display:flex !important; overflow:hidden !important; min-height:0; }
+    .tc-hide-mobile { display:flex !important; }
     .tc-tab-bar { display:none !important; }
     .tc-right-tabs { display:flex !important; background:#fff; border-bottom:1px solid ${BORDER}; align-items:center; flex-shrink:0; }
     .tc-session-topbar { padding:0 24px !important; }
