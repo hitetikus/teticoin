@@ -543,7 +543,7 @@ function PRow({ p, groups, sel, onSelect }) {
 }
 
 // ── Mass Give sheet ──
-function MassGive({ participants, groups, onAward, onClose }) {
+function MassGive({ participants, groups, session, onAward, onClose }) {
   const [amt, setAmt] = useState(null);
   const [cAmt, setCAmt] = useState("");
   const [scanLog, setScanLog] = useState([]);
@@ -644,7 +644,7 @@ function MassGive({ participants, groups, onAward, onClose }) {
           {/* Step 1 — coin amount */}
           <SL style={{marginBottom:8}}>Choose amount to give</SL>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
-            {(TV_DEFAULT).map(v => (
+            {(session?.otherCoins || TV_DEFAULT).map(v => (
               <button key={v} onClick={()=>{setAmt(v);setCAmt("");}}
                 style={{padding:"16px 8px",borderRadius:12,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,background:amt===v?GRAD:"#fff",border:amt===v?`2px solid transparent`:`1.5px solid ${BORDER}`,color:amt===v?"#fff":v<0?"#EF4444":PINK,transition:"all .12s"}}>
                 {v>0?"+":""}{v}
@@ -3622,7 +3622,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
         </div>
       )}
       {picker && <Picker participants={sorted} groups={ses.groups} selId={selId} onSelect={setSelId} onClose={()=>setPicker(false)}/>}
-      {mass && <MassGive participants={ses.participants} groups={ses.groups} onAward={award} onClose={()=>setMass(false)}/>}
+      {mass && <MassGive participants={ses.participants} groups={ses.groups} session={ses} onAward={award} onClose={()=>setMass(false)}/>}
 
       {/* TOP BAR */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 12px",display:"flex",alignItems:"center",gap:8,height:56,flexShrink:0}}>
@@ -3874,21 +3874,23 @@ function CoinmasterView({ session: init, selfId, onBack }) {
 function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, multiSel, setMultiSel, indivId, setIndivId, indivSearch, setIndivSearch, onAward, onClose, notify }) {
   const TV_DEF = [10,30,50,100,150,200];
   const coins = ses.otherCoins || TV_DEF;
-  const posCoins = coins.filter(v=>v>0).slice(0,5);
-  const negCoin = coins.find(v=>v<0) ?? -10;
   const [confirmAmt, setConfirmAmt] = useState(null);
+  const [customAmt, setCustomAmt] = useState("");
+  const [selectedAmt, setSelectedAmt] = useState(null);
 
   function doAward(v) {
+    const finalV = v !== undefined ? v : (customAmt !== "" ? parseInt(customAmt, 10) : null);
+    if (finalV === null || isNaN(finalV)) { notify("Enter or select an amount first","warn"); return; }
     if (mode==="all") {
-      ses.participants.forEach(p => onAward(p.id, v));
+      ses.participants.forEach(p => onAward(p.id, finalV));
       onClose();
     } else if (mode==="multi") {
       if (!multiSel.length) { notify("Select at least one participant","warn"); return; }
-      multiSel.forEach(pid => onAward(pid, v));
+      multiSel.forEach(pid => onAward(pid, finalV));
       onClose();
     } else {
       if (!indivId) { notify("Select a participant first","warn"); return; }
-      onAward(indivId, v);
+      onAward(indivId, finalV);
       onClose();
     }
   }
@@ -3898,17 +3900,22 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
     .filter(p => !indivSearch.trim() || p.name.toLowerCase().includes(indivSearch.toLowerCase()));
 
   const CoinButtons = ({onTap}) => (
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,flexShrink:0}}>
-      {posCoins.map((v,i) => (
-        <button key={i} onClick={()=>onTap(v)}
-          style={{border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"16px 4px",textAlign:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:20,color:PINK,background:"#fff",cursor:"pointer"}}>
-          {v>0?"+":""}{v}
-        </button>
-      ))}
-      <button onClick={()=>onTap(negCoin)}
-        style={{border:"1.5px solid #FCA5A5",borderRadius:12,padding:"16px 4px",textAlign:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:20,color:"#EF4444",background:"#fff",cursor:"pointer"}}>
-        {negCoin}
-      </button>
+    <div style={{display:"flex",flexDirection:"column",gap:8,flexShrink:0}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+        {coins.map((v,i) => (
+          <button key={i} onClick={()=>{ setSelectedAmt(v); setCustomAmt(""); onTap(v); }}
+            style={{border:`1.5px solid ${v<0?"#FCA5A5":BORDER}`,borderRadius:12,padding:"16px 4px",textAlign:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:20,color:v<0?"#EF4444":PINK,background:"#fff",cursor:"pointer"}}>
+            {v>0?"+":""}{v}
+          </button>
+        ))}
+      </div>
+      <input
+        type="number"
+        placeholder="Custom amount…"
+        value={customAmt}
+        onChange={e=>{ setCustomAmt(e.target.value); setSelectedAmt(null); }}
+        style={{width:"100%",background:BG,border:`1.5px solid ${customAmt!==""?PINK:BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",boxSizing:"border-box"}}
+      />
     </div>
   );
 
@@ -3964,6 +3971,12 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
           {/* Coin buttons — always pinned above keyboard */}
           <div style={{flexShrink:0}}>
             <CoinButtons onTap={doAward}/>
+            {customAmt !== "" && (
+              <button onClick={()=>doAward()}
+                style={{width:"100%",marginTop:8,padding:"13px 0",background:`linear-gradient(135deg,${PINK},#E91E8C)`,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
+                Give {parseInt(customAmt,10)>0?"+":""}{customAmt} coins
+              </button>
+            )}
             <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
           </div>
         </div>
@@ -4003,6 +4016,12 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
           </div>
           <div style={{flexShrink:0}}>
             <CoinButtons onTap={doAward}/>
+            {customAmt !== "" && (
+              <button onClick={()=>doAward()}
+                style={{width:"100%",marginTop:8,padding:"13px 0",background:`linear-gradient(135deg,${PINK},#E91E8C)`,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
+                Give {parseInt(customAmt,10)>0?"+":""}{customAmt} to {multiSel.length} selected
+              </button>
+            )}
             <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
           </div>
         </div>
@@ -4022,6 +4041,12 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
         </div>
         <div style={{flexShrink:0}}>
           <CoinButtons onTap={v=>setConfirmAmt(v)}/>
+          {customAmt !== "" && (
+            <button onClick={()=>setConfirmAmt(parseInt(customAmt,10))}
+              style={{width:"100%",marginTop:8,padding:"13px 0",background:`linear-gradient(135deg,${PINK},#E91E8C)`,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
+              Give {parseInt(customAmt,10)>0?"+":""}{customAmt} to everyone
+            </button>
+          )}
           <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
         </div>
       </div>
@@ -4532,7 +4557,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
           notify("All coins reset");
         }}
         onClose={()=>setShowSettings(false)}/>}
-      {mass && <MassGive participants={ses.participants} groups={ses.groups} onAward={award} onClose={()=>setMass(false)}/>}
+      {mass && <MassGive participants={ses.participants} groups={ses.groups} session={ses} onAward={award} onClose={()=>setMass(false)}/>}
       {false && showLuckyDraw && <LuckyDraw participants={ses.participants} onClose={()=>setShowLuckyDraw(false)}/>}
       {false && showBadgePicker && badgePickerTarget && (
         <BadgePickerModal
