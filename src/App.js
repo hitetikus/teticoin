@@ -3668,7 +3668,8 @@ function CoinmasterView({ session: init, selfId, onBack }) {
         {/* ── COINS TAB ── */}
         {tab==="award" && (
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0}}>
-            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,minHeight:0}}>
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",minHeight:0}}>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
               <div>
                 <SL style={{marginBottom:8}}>Give Coins</SL>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
@@ -3741,6 +3742,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                 </div>
               )}
               <div style={{height:20}}/>
+              </div>
             </div>
             {giveSheet && <GiveSheet
               mode={giveSheet.mode} ses={ses} sorted={sorted} isPro={true}
@@ -4638,7 +4640,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         {/* ── LEFT PANEL: Award (Coins tab on mobile) ── */}
         <div className={`tc-session-left${tab!=="award" ? " tc-hide-mobile" : ""}`} style={{flexDirection:"column"}}>
           {/* Award content */}
-          <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,minHeight:0}}>
+          <div style={{flex:1,overflowY:"auto",padding:"12px 14px",minHeight:0}}>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
 
             {/* ── Give Coins — 2×2 big buttons ── */}
             <div>
@@ -4753,6 +4756,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             )}
 
           </div>
+          </div>
 
           {/* ── Give Coins bottom sheet ── */}
           {giveSheet && <GiveSheet
@@ -4792,7 +4796,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
 
           {/* ── PEOPLE TAB (desktop) ── */}
           {rightTab==="people" && (
-            <div style={{flex:1,overflowY:"auto",padding:"14px 16px",display:"flex",flexDirection:"column",gap:12,minHeight:0}}>
+            <div style={{flex:1,overflowY:"auto",padding:"14px 16px",minHeight:0}}>
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
               {/* Inline add row */}
               <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"center"}}>
                 <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
@@ -4909,11 +4914,13 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </div>
               {/* Open manage for more options */}
             </div>
+            </div>
           )}
 
           {/* ── AWARD ALL TAB (desktop default) ── */}
           {rightTab==="award_all" && (
-            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,minHeight:0}}>
+            <div style={{flex:1,overflowY:"auto",padding:"12px 14px",minHeight:0}}>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
               {sorted.length === 0 ? (
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"36px 24px",textAlign:"center"}}>
                   <Ham size={56}/>
@@ -4983,6 +4990,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   })}
                 </div>
               )}
+            </div>
             </div>
           )}
 
