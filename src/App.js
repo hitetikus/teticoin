@@ -969,28 +969,162 @@ function SessionSettings({ session, isPro=false, onRename, onToggleLive, onExpor
   );
 }
 
-// ── ColorPickerPopup — grid + spectrum picker ──
+// ── ColorPickerPopup — grid + custom spectrum ──
 const COLOR_GRID = [
-  // Row 1: greys dark→light
   "#111827","#374151","#4B5563","#6B7280","#9CA3AF","#D1D5DB","#E5E7EB","#F9FAFB",
-  // Row 2: navy→royal blue→sky
   "#1e3a8a","#1d4ed8","#2563eb","#3b82f6","#60a5fa","#93c5fd","#bfdbfe","#e0f2fe",
-  // Row 3: teal→cyan→aqua
   "#134e4a","#0f766e","#0d9488","#14b8a6","#2dd4bf","#5eead4","#99f6e4","#ccfbf1",
-  // Row 4: green→lime→yellow-green
   "#14532d","#15803d","#16a34a","#22c55e","#4ade80","#86efac","#bbf7d0","#dcfce7",
-  // Row 5: amber→orange→red
   "#92400e","#b45309","#d97706","#f59e0b","#fbbf24","#fde68a","#fed7aa","#fee2e2",
-  // Row 6: deep red→rose→pink→fuchsia→purple→violet
   "#7f1d1d","#b91c1c","#dc2626","#ec4899","#FF4FB8","#E91E8C","#c026d3","#7C3AED",
 ];
+
+// Helpers: hex ↔ hsv ↔ rgb
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+function rgbToHex(r,g,b) {
+  return '#'+[r,g,b].map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0')).join('');
+}
+function rgbToHsv(r,g,b) {
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+  let h=0;
+  if(d!==0){
+    if(max===r) h=((g-b)/d)%6;
+    else if(max===g) h=(b-r)/d+2;
+    else h=(r-g)/d+4;
+    h=((h*60)+360)%360;
+  }
+  return [h, max===0?0:d/max, max];
+}
+function hsvToRgb(h,s,v) {
+  const c=v*s, x=c*(1-Math.abs((h/60)%2-1)), m=v-c;
+  let r=0,g=0,b=0;
+  if(h<60){r=c;g=x;}else if(h<120){r=x;g=c;}else if(h<180){g=c;b=x;}
+  else if(h<240){g=x;b=c;}else if(h<300){r=x;b=c;}else{r=c;b=x;}
+  return [Math.round((r+m)*255),Math.round((g+m)*255),Math.round((b+m)*255)];
+}
+
+function SpectrumPicker({ value, onCommit }) {
+  const canvasRef = React.useRef(null);
+  const hueRef   = React.useRef(null);
+  const [rgb, setRgb]   = React.useState(()=>hexToRgb(value||'#FF4FB8'));
+  const [hsv, setHsv]   = React.useState(()=>{ const [r,g,b]=hexToRgb(value||'#FF4FB8'); return rgbToHsv(r,g,b); });
+  const [hue, setHue]   = React.useState(()=>{ const [r,g,b]=hexToRgb(value||'#FF4FB8'); return rgbToHsv(r,g,b)[0]; });
+  const [svPos, setSvPos] = React.useState(()=>{ const [r,g,b]=hexToRgb(value||'#FF4FB8'); const [h,s,v]=rgbToHsv(r,g,b); return {x:s,y:1-v}; });
+  const hex = rgbToHex(...rgb);
+
+  // Draw SV canvas whenever hue changes
+  React.useEffect(()=>{
+    const cv = canvasRef.current; if(!cv) return;
+    const ctx = cv.getContext('2d');
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0,0,W,H);
+    // Hue base
+    ctx.fillStyle = `hsl(${hue},100%,50%)`;
+    ctx.fillRect(0,0,W,H);
+    // White left→right
+    const wg = ctx.createLinearGradient(0,0,W,0);
+    wg.addColorStop(0,'rgba(255,255,255,1)');
+    wg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle = wg; ctx.fillRect(0,0,W,H);
+    // Black top→bottom
+    const bg = ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'rgba(0,0,0,0)');
+    bg.addColorStop(1,'rgba(0,0,0,1)');
+    ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+  },[hue]);
+
+  function pickSV(e, cv) {
+    const rect = cv.getBoundingClientRect();
+    const x = Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+    const y = Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height));
+    setSvPos({x,y});
+    const newRgb = hsvToRgb(hue, x, 1-y);
+    setRgb(newRgb);
+    setHsv([hue,x,1-y]);
+    onCommit(rgbToHex(...newRgb));
+  }
+  function onCanvasDown(e) {
+    pickSV(e, canvasRef.current);
+    const move = ev => pickSV(ev, canvasRef.current);
+    const up   = () => { window.removeEventListener('mousemove',move); window.removeEventListener('mouseup',up); };
+    window.addEventListener('mousemove',move);
+    window.addEventListener('mouseup',up);
+  }
+
+  function pickHue(e, el) {
+    const rect = el.getBoundingClientRect();
+    const x = Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+    const newH = x*360;
+    setHue(newH);
+    const newRgb = hsvToRgb(newH, hsv[1], hsv[2]);
+    setRgb(newRgb);
+    onCommit(rgbToHex(...newRgb));
+  }
+  function onHueDown(e) {
+    pickHue(e, hueRef.current);
+    const move = ev => pickHue(ev, hueRef.current);
+    const up   = () => { window.removeEventListener('mousemove',move); window.removeEventListener('mouseup',up); };
+    window.addEventListener('mousemove',move);
+    window.addEventListener('mouseup',up);
+  }
+
+  function handleRgbInput(ch, val) {
+    const v = Math.max(0,Math.min(255,parseInt(val)||0));
+    const nr = ch==='r'?v:rgb[0], ng=ch==='g'?v:rgb[1], nb=ch==='b'?v:rgb[2];
+    setRgb([nr,ng,nb]);
+    const [h,s,sv2] = rgbToHsv(nr,ng,nb);
+    setHsv([h,s,sv2]); setHue(h); setSvPos({x:s,y:1-sv2});
+    onCommit(rgbToHex(nr,ng,nb));
+  }
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      {/* SV canvas */}
+      <div style={{position:"relative",width:"100%",cursor:"crosshair"}} onMouseDown={onCanvasDown}>
+        <canvas ref={canvasRef} width={194} height={120} style={{display:"block",width:"100%",height:120,borderRadius:6}}/>
+        {/* Crosshair */}
+        <div style={{position:"absolute",left:`calc(${svPos.x*100}% - 6px)`,top:`calc(${svPos.y*100}% - 6px)`,width:12,height:12,borderRadius:"50%",border:"2px solid #fff",boxShadow:"0 0 0 1px rgba(0,0,0,0.4)",pointerEvents:"none"}}/>
+      </div>
+      {/* Hue strip */}
+      <div ref={hueRef} onMouseDown={onHueDown}
+        style={{position:"relative",height:12,borderRadius:6,cursor:"pointer",
+          background:"linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)"}}>
+        <div style={{position:"absolute",top:-2,left:`calc(${hue/360*100}% - 7px)`,width:14,height:14,borderRadius:"50%",background:`hsl(${hue},100%,50%)`,border:"2px solid #fff",boxShadow:"0 0 0 1px rgba(0,0,0,0.3)",pointerEvents:"none"}}/>
+      </div>
+      {/* RGB inputs */}
+      <div style={{display:"flex",gap:6,alignItems:"flex-end"}}>
+        {[['R',rgb[0],'r'],['G',rgb[1],'g'],['B',rgb[2],'b']].map(([label,val,ch])=>(
+          <div key={ch} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+            <input type="number" min={0} max={255} value={val} onChange={e=>handleRgbInput(ch,e.target.value)}
+              style={{width:"100%",padding:"4px 2px",border:`1.5px solid ${BORDER}`,borderRadius:6,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:12,color:TEXT,textAlign:"center",outline:"none",boxSizing:"border-box"}}/>
+            <span style={{fontSize:10,color:SUB,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600}}>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ColorPickerPopup({ value, onChange, onClose }) {
   const [custom, setCustom] = useState(value || GC[0]);
   const [tab, setTab] = useState("grid");
   const [hovered, setHovered] = useState(null);
+  const wrapRef = React.useRef(null);
   const preview = hovered || custom;
+
+  // Close on outside click
+  React.useEffect(()=>{
+    function handle(e){ if(wrapRef.current && !wrapRef.current.contains(e.target)) onClose(); }
+    document.addEventListener('mousedown', handle);
+    return ()=>document.removeEventListener('mousedown', handle);
+  },[onClose]);
+
   return (
-    <div style={{position:"absolute",zIndex:9999,top:"calc(100% + 6px)",left:0,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,boxShadow:"0 8px 32px rgba(0,0,0,0.18)",padding:12,width:218,userSelect:"none"}}>
+    <div ref={wrapRef} style={{position:"absolute",zIndex:9999,top:"calc(100% + 6px)",left:0,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,boxShadow:"0 8px 32px rgba(0,0,0,0.18)",padding:12,width:222,userSelect:"none"}}>
       {/* Tabs */}
       <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`,marginBottom:10}}>
         {[["grid","Grid"],["spectrum","Spectrum"]].map(([id,label])=>(
@@ -1001,29 +1135,21 @@ function ColorPickerPopup({ value, onChange, onClose }) {
         ))}
       </div>
       {tab==="grid" ? (
-        /* Square swatches, no gap, smooth color ramp */
         <div style={{display:"grid",gridTemplateColumns:"repeat(8,1fr)",gap:0,marginBottom:10,borderRadius:5,overflow:"hidden",border:"1px solid rgba(0,0,0,0.08)"}}>
           {COLOR_GRID.map(c=>(
-            <div key={c}
-              onClick={()=>setCustom(c)}
-              onMouseEnter={()=>setHovered(c)}
-              onMouseLeave={()=>setHovered(null)}
-              style={{width:"100%",aspectRatio:"1",background:c,cursor:"pointer",
-                outline:custom===c?"2.5px solid #0A0A0F":"none",outlineOffset:-2,
-                filter:hovered===c?"brightness(1.15)":"none",transition:"filter .08s"}}/>
+            <div key={c} onClick={()=>setCustom(c)} onMouseEnter={()=>setHovered(c)} onMouseLeave={()=>setHovered(null)}
+              style={{width:"100%",aspectRatio:"1",background:c,cursor:"pointer",outline:custom===c?"2.5px solid #0A0A0F":"none",outlineOffset:-2,filter:hovered===c?"brightness(1.15)":"none",transition:"filter .08s"}}/>
           ))}
         </div>
       ) : (
-        /* Spectrum: full native picker, no extra steps */
         <div style={{marginBottom:10}}>
-          <input type="color" value={custom} onChange={e=>setCustom(e.target.value)}
-            style={{display:"block",width:"100%",height:108,border:`1.5px solid ${BORDER}`,borderRadius:8,cursor:"pointer",padding:2}}/>
+          <SpectrumPicker value={custom} onCommit={c=>setCustom(c)}/>
         </div>
       )}
       {/* Preview + confirm */}
-      <div style={{display:"flex",alignItems:"center",gap:8}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginTop:2}}>
         <div style={{width:26,height:26,borderRadius:6,background:preview,border:`1.5px solid ${BORDER}`,flexShrink:0}}/>
-        <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:10,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{preview}</span>
+        <span style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:10,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{preview.toUpperCase()}</span>
         <button onClick={()=>{onChange(custom);onClose();}}
           style={{padding:"6px 12px",background:GRAD,border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
           Use this
@@ -1408,13 +1534,13 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                 <div style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:PINK,textTransform:"uppercase"}}>Auto Create Groups</div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:TEXT,flexShrink:0}}>Create</span>
-                  <div style={{display:"flex",border:`1.5px solid ${BORDER}`,borderRadius:10,overflow:"hidden",flexShrink:0}}>
+                  <div style={{display:"flex",border:`1.5px solid ${BORDER}`,borderRadius:10,overflow:"hidden",flexShrink:0,height:36}}>
                     <button onClick={()=>setAutoGroupCount(c=>Math.max(1,c-1))}
-                      style={{width:32,height:36,border:"none",borderRight:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:18,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>−</button>
-                    <input type="number" min={1} max={20} value={autoGroupCount} onChange={e=>setAutoGroupCount(Math.max(1,Math.min(20,Number(e.target.value))))}
-                      style={{width:44,height:36,border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:16,color:TEXT,background:"#fff",outline:"none",textAlign:"center",padding:0}}/>
+                      style={{width:36,height:36,border:"none",borderRight:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:20,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1,flexShrink:0}}>−</button>
+                    <input type="text" inputMode="numeric" value={autoGroupCount} onChange={e=>setAutoGroupCount(Math.max(1,Math.min(20,parseInt(e.target.value)||1)))}
+                      style={{width:48,height:36,border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:16,color:TEXT,background:"#fff",outline:"none",textAlign:"center",padding:0,MozAppearance:"textfield",WebkitAppearance:"none"}}/>
                     <button onClick={()=>setAutoGroupCount(c=>Math.min(20,c+1))}
-                      style={{width:32,height:36,border:"none",borderLeft:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:18,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
+                      style={{width:36,height:36,border:"none",borderLeft:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:20,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1,flexShrink:0}}>+</button>
                   </div>
                   <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:TEXT,flexShrink:0}}>Groups</span>
                 </div>
@@ -1427,7 +1553,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                     }
                     return s;
                   });
-                }} style={{padding:"10px 16px",background:"#3B82F6",border:"none",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:"auto",alignSelf:"flex-start",whiteSpace:"nowrap"}}>
+                }} style={{padding:"10px 16px",background:"#3B82F6",border:"none",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:"auto",alignSelf:"flex-end",whiteSpace:"nowrap"}}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                   Auto Create Groups
                 </button>
@@ -5020,13 +5146,13 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   {/* Create [−][N][+] Groups — stepper attached */}
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:TEXT,flexShrink:0}}>Create</span>
-                    <div style={{display:"flex",border:`1.5px solid ${BORDER}`,borderRadius:10,overflow:"hidden",flexShrink:0}}>
+                    <div style={{display:"flex",border:`1.5px solid ${BORDER}`,borderRadius:10,overflow:"hidden",flexShrink:0,height:36}}>
                       <button onClick={()=>setAutoGroupCount(c=>Math.max(1,c-1))}
-                        style={{width:32,height:36,border:"none",borderRight:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:18,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>−</button>
-                      <input type="number" min={1} max={20} value={autoGroupCount} onChange={e=>setAutoGroupCount(Math.max(1,Math.min(20,Number(e.target.value))))}
-                        style={{width:44,height:36,border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:16,color:TEXT,background:"#fff",outline:"none",textAlign:"center",padding:0}}/>
+                        style={{width:36,height:36,border:"none",borderRight:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:20,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1,flexShrink:0}}>−</button>
+                      <input type="text" inputMode="numeric" value={autoGroupCount} onChange={e=>setAutoGroupCount(Math.max(1,Math.min(20,parseInt(e.target.value)||1)))}
+                        style={{width:48,height:36,border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:16,color:TEXT,background:"#fff",outline:"none",textAlign:"center",padding:0,MozAppearance:"textfield",WebkitAppearance:"none"}}/>
                       <button onClick={()=>setAutoGroupCount(c=>Math.min(20,c+1))}
-                        style={{width:32,height:36,border:"none",borderLeft:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:18,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>+</button>
+                        style={{width:36,height:36,border:"none",borderLeft:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:20,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1,flexShrink:0}}>+</button>
                     </div>
                     <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:TEXT,flexShrink:0}}>Groups</span>
                   </div>
@@ -5039,7 +5165,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                       }
                       return s;
                     });
-                  }} style={{padding:"10px 16px",background:"#3B82F6",border:"none",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:"auto",alignSelf:"flex-start",whiteSpace:"nowrap"}}>
+                  }} style={{padding:"10px 16px",background:"#3B82F6",border:"none",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:"auto",alignSelf:"flex-end",whiteSpace:"nowrap"}}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                     Auto Create Groups
                   </button>
