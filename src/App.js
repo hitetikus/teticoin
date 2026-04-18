@@ -4638,7 +4638,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         {/* ── LEFT PANEL: Award (Coins tab on mobile) ── */}
         <div className={`tc-session-left${tab!=="award" ? " tc-hide-mobile" : ""}`} style={{flexDirection:"column"}}>
           {/* Award content */}
-          <div style={{padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,minHeight:0}}>
 
             {/* ── Give Coins — 2×2 big buttons ── */}
             <div>
