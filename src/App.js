@@ -3458,7 +3458,7 @@ function CMBoardTab({ ses, cmBoardSorted, hasGrps, grpScores, maxGrp, setSelId, 
   const [subTab, setSubTab] = useState("individual");
   const GREEN = "#22C55E";
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0}}>
       {/* Scoreboard visibility toggle */}
       <div onClick={onToggleBoard}
         style={{margin:"10px 14px 0",background:ses.boardVisible?`${GREEN}12`:`${PINK}08`,border:`1.5px solid ${ses.boardVisible?GREEN:BORDER}`,borderRadius:13,padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .2s",flexShrink:0}}>
@@ -3757,7 +3757,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
 
         {/* ── PARTICIPANTS TAB ── */}
         {tab==="people" && (
-          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0}}>
             <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
               <Inp placeholder="Add participant name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
                 onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
@@ -8265,8 +8265,8 @@ const CSS = `
 
   /* ─── Session body: stacked on mobile, side-by-side on desktop ─── */
   .tc-session-body { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-  .tc-session-left { flex:1; display:flex; flex-direction:column; overflow-y:auto; }
-  .tc-session-right { display:flex; flex-direction:column; }
+  .tc-session-left { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+  .tc-session-right { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
   .tc-tab-bar { background:#fff; border-bottom:1px solid ${BORDER}; display:flex; align-items:center; flex-shrink:0; }
   .tc-right-tabs { display:none; }
   .tc-session-topbar { padding:0 16px; }
@@ -8290,8 +8290,8 @@ const CSS = `
   @media (min-width:900px) {
     /* Session: side-by-side panels */
     .tc-session-body { flex-direction:row !important; }
-    .tc-session-left { width:420px !important; flex:none !important; border-right:1px solid ${BORDER}; display:flex !important; overflow:hidden !important; overflow-y:hidden !important; }
-    .tc-session-right { flex:1 !important; display:flex !important; }
+    .tc-session-left { width:420px !important; flex:none !important; border-right:1px solid ${BORDER}; display:flex !important; overflow:hidden !important; overflow-y:hidden !important; min-height:0; }
+    .tc-session-right { flex:1 !important; display:flex !important; overflow:hidden !important; min-height:0; }
     .tc-tab-bar { display:none !important; }
     .tc-right-tabs { display:flex !important; background:#fff; border-bottom:1px solid ${BORDER}; align-items:center; flex-shrink:0; }
     .tc-session-topbar { padding:0 24px !important; }
