@@ -20,7 +20,7 @@ const GREEN = "#00C48C";
 const BLUE = "#3B82F6";
 const PURPLE = "#7C3AED";
 const GRAD = `linear-gradient(135deg,${PINK},${PINK2})`;
-const GC = ["#8B5CF6","#3B82F6","#059669","#D97706","#EF4444","#EC4899","#06B6D4"];
+const GC = ["#EF4444","#F97316","#EAB308","#22C55E","#06B6D4","#3B82F6"];
 const TV_DEFAULT = [10,30,50,100,200,-10]; // default Other Coins (editable per session)
 const ACTS_DEFAULT = [
   {id:"correct", label:"Correct Answer", pts:50, col:PINK},
@@ -1394,6 +1394,8 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
   const [autoGroupCount, setAutoGroupCount] = useState(4);
   const [managePickerOpen, setManagePickerOpen] = useState(false);
   const [manageCustomColor, setManageCustomColor] = useState(null);
+  const [mGDropOpen, setMGDropOpen] = useState(null);  // pid whose group dropdown is open
+  const [mGDropPos,  setMGDropPos]  = useState({top:0,right:0});
   const [editingName, setEditingName] = useState(false);
   const [nameVal, setNameVal] = useState(session.name); // eslint-disable-line
   const [dupErr, setDupErr] = useState("");
@@ -1461,10 +1463,14 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                     <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                   </div>
                   {session.groups.length > 0 && (() => { const selG = session.groups.find(g=>g.id===p.gid); return (
-                    <select value={p.gid??""} onChange={e=>asgG(p.id,e.target.value)} style={{background:SOFT,border:`1px solid ${selG?.color||MID}`,color:selG?.color||TEXT,borderRadius:9,padding:"5px 8px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:110}}>
-                      <option value="">No group</option>
-                      {session.groups.map(g=><option key={g.id} value={g.id} style={{color:g.color}}>● {g.name}</option>)}
-                    </select>
+                    <div style={{position:"relative",flexShrink:0}}>
+                      <button onClick={e=>{e.stopPropagation();if(mGDropOpen===p.id){setMGDropOpen(null);}else{const r=e.currentTarget.getBoundingClientRect();setMGDropPos({top:r.bottom+4,right:window.innerWidth-r.right});setMGDropOpen(p.id);}}}
+                        style={{display:"flex",alignItems:"center",gap:5,background:SOFT,border:`1.5px solid ${selG?.color||MID}`,color:selG?.color||SUB,borderRadius:8,padding:"4px 8px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:100,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden"}}>
+                        {selG ? <span style={{width:8,height:8,borderRadius:"50%",background:selG.color,display:"inline-block",flexShrink:0}}/> : null}
+                        <span style={{overflow:"hidden",textOverflow:"ellipsis",maxWidth:68}}>{selG?selG.name:"No group"}</span>
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0}}><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                    </div>
                   ); })()}
                   <button onClick={()=>{ if(p.total>0||p.uid){if(!window.confirm(`Remove ${p.name}? They have ${p.total} coins. This cannot be undone.`))return;} remP(p.id); }} title="Remove participant"
                     style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"4px 9px",fontSize:11,color:SUB,cursor:"pointer"}}>✕</button>
@@ -1650,6 +1656,33 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
           </>}
         </div>
       </div>
+      {/* Group dropdown portal for Manage modal */}
+      {mGDropOpen && (() => {
+        const p = session.participants.find(x=>x.id===mGDropOpen);
+        if(!p) return null;
+        return (
+          <div style={{position:"fixed",top:mGDropPos.top,right:mGDropPos.right,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,.18)",zIndex:9991,minWidth:150,overflow:"hidden",maxHeight:280,overflowY:"auto"}}
+            onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()}>
+            <button onClick={()=>{asgG(p.id,"");setMGDropOpen(null);}}
+              style={{width:"100%",padding:"10px 14px",background:!p.gid?"#F9FAFB":"none",border:"none",textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
+              onMouseOver={e=>e.currentTarget.style.background="#F3F4F6"} onMouseOut={e=>e.currentTarget.style.background=!p.gid?"#F9FAFB":"none"}>
+              <span style={{width:8,height:8,borderRadius:"50%",background:"#D1D5DB",display:"inline-block",flexShrink:0}}/>
+              No group
+              {!p.gid && <svg style={{marginLeft:"auto"}} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+            </button>
+            {session.groups.map(g=>(
+              <button key={g.id} onClick={()=>{asgG(p.id,String(g.id));setMGDropOpen(null);}}
+                style={{width:"100%",padding:"10px 14px",background:p.gid===g.id?"#F9FAFB":"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#111827",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
+                onMouseOver={e=>e.currentTarget.style.background="#F3F4F6"} onMouseOut={e=>e.currentTarget.style.background=p.gid===g.id?"#F9FAFB":"none"}>
+                <span style={{width:8,height:8,borderRadius:"50%",background:g.color,display:"inline-block",flexShrink:0}}/>
+                {g.name}
+                {p.gid===g.id && <svg style={{marginLeft:"auto"}} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={g.color} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+              </button>
+            ))}
+          </div>
+        );
+      })()}
+      {mGDropOpen && <div style={{position:"fixed",inset:0,zIndex:9990}} onClick={()=>setMGDropOpen(null)}/>}
     </div>
   );
 }
@@ -4186,14 +4219,12 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
             </button>
           </div>
-          {/* Row 2 desktop / Row 3 mobile: participant names, scrollable comma list */}
-          <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",marginBottom:8}}>
-            <div style={{whiteSpace:"nowrap",fontSize:11,color:SUB,fontWeight:500}}>
-              {g.members.length===0
-                ? <span style={{fontStyle:"italic"}}>No participants yet</span>
-                : g.members.map((m,idx)=><span key={m.id}>{pNum(m.num)} {m.name}{idx<g.members.length-1?", ":""}</span>)
-              }
-            </div>
+          {/* Row 2 desktop / Row 3 mobile: participant pills */}
+          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+            {g.members.length===0
+              ? <span style={{fontSize:11,color:SUB,fontStyle:"italic"}}>No participants yet</span>
+              : g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)
+            }
           </div>
           <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
             <div style={{height:4,background:g.color,width:`${(g.total/maxTotal)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
@@ -4616,9 +4647,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         <button onClick={onBack} style={{...IB,borderRadius:"50%"}} title="Back">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div style={{flex:1,overflow:"hidden",minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center",gap:1}}>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.2}}>{ses.name}</div>
-          <div style={{fontSize:10,color:"#9CA3AF",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,letterSpacing:.3,lineHeight:1}}>{ses.code}</div>
+        <div style={{flex:1,overflow:"hidden",minWidth:0,display:"flex",alignItems:"center",gap:8}}>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ses.name}</div>
+          <div style={{flexShrink:0,background:SOFT,border:`1px solid ${MID}`,borderRadius:6,padding:"2px 7px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:10,color:PINK,letterSpacing:.5}}>{ses.code}</div>
         </div>
         <button onClick={toggleLive} title={isLive?"Go offline":"Go live"}
           style={{display:"flex",alignItems:"center",gap:5,background:isLive?SOFT:"#FEF2F2",border:`1px solid ${isLive?MID:"#EF444455"}`,borderRadius:20,padding:"5px 12px",cursor:"pointer",flexShrink:0}}>
@@ -4831,7 +4862,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   borderBottom:rightTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
               </button>
             ))}
-            <div style={{marginLeft:"auto",paddingRight:16,display:"flex",alignItems:"center",gap:4}}>
+            <div style={{marginLeft:"auto",paddingRight:12,display:"flex",alignItems:"center",gap:4}}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
             </div>
@@ -5177,9 +5208,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                 </div>
               ) : <>
-              {/* Groups creator — light grey full-bleed band */}
-              <div style={{margin:"-12px -14px 10px",background:"#F3F4F6",padding:"12px 14px 14px"}}>
-              <div className="tc-groups-creator" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:10,alignItems:"stretch"}}>
+              {/* Groups creator — 2-col desktop, stacked mobile */}
+              <div className="tc-groups-creator" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:10,marginBottom:10,alignItems:"stretch"}}>
                 {/* LEFT — Create Group */}
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
                   <div style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:PINK,textTransform:"uppercase"}}>Create a Group</div>
@@ -5234,7 +5264,6 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </button>
                 </div>
               </div>
-              </div>{/* end grey band */}
               {/* Group list header with inline randomize */}
               {gs.length > 0 && (
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
