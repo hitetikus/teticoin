@@ -1518,9 +1518,9 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                   <div style={{display:"flex",border:`1.5px solid ${BORDER}`,borderRadius:10,overflow:"hidden",flexShrink:0,height:36}}>
                     <button onClick={()=>setAutoGroupCount(c=>Math.max(1,c-1))}
                       style={{width:36,height:36,border:"none",borderRight:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:400,fontSize:22,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:"0 0 3px 0",lineHeight:1,flexShrink:0}}>−</button>
-                    <input type="text" inputMode="numeric" value={autoGroupCount} onChange={e=>setAutoGroupCount(Math.max(1,Math.min(20,parseInt(e.target.value)||1)))}
+                    <input type="text" inputMode="numeric" value={autoGroupCount} onChange={e=>setAutoGroupCount(Math.max(1,Math.min(99,parseInt(e.target.value)||1)))}
                       style={{width:48,height:36,border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:16,color:TEXT,background:"#fff",outline:"none",textAlign:"center",padding:0,MozAppearance:"textfield",WebkitAppearance:"none"}}/>
-                    <button onClick={()=>setAutoGroupCount(c=>Math.min(20,c+1))}
+                    <button onClick={()=>setAutoGroupCount(c=>Math.min(99,c+1))}
                       style={{width:36,height:36,border:"none",borderLeft:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:400,fontSize:22,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:"0 0 3px 0",lineHeight:1,flexShrink:0}}>+</button>
                   </div>
                   <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:TEXT,flexShrink:0}}>Groups</span>
@@ -3771,7 +3771,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
               {sorted.length===0 ? (
                 <div style={{textAlign:"center",padding:"32px 16px",color:SUB,fontSize:13}}><Ham size={48}/><div style={{marginTop:10}}>No participants yet</div></div>
               ) : (
-                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"visible"}}>
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                   {sorted.map(p => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
                     const isEditing = editingPid === p.id;
@@ -4088,34 +4088,60 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
         </div>
       ) : (
         <>
-          {/* Row 1: rank + dot + name + members count + total + all buttons */}
-          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8,flexWrap:"wrap"}}>
+          {/* Row 1: rank + dot + name + members + total — always visible */}
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),flexShrink:0,minWidth:16}}>{i+1}</div>
             <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:g.color,whiteSpace:"nowrap"}}>{g.name}</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:g.color,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.name}</div>
             <div style={{fontSize:11,color:SUB,flexShrink:0}}>{g.members.length} members</div>
             <div style={{flex:1}}/>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:g.color,flexShrink:0}}>{g.total}</div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:g.color,flexShrink:0}}>
+              {g.total}
+            </div>
+            {/* Desktop-only buttons inline in row 1 */}
+            <span className="tc-grp-btns-desktop">
+              <button onClick={()=>setShowAssign(true)}
+                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB}} title="Assign">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                Assign
+              </button>
+              <button onClick={()=>setShowQRAssign(true)}
+                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB,marginLeft:4}} title="QR Scan">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="21" y1="17" x2="21" y2="21"/><line x1="17" y1="21" x2="17" y2="17"/><line x1="14" y1="17" x2="14" y2="21"/></svg>
+                QR Scan
+              </button>
+              <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditing(true);}}
+                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"inline-flex",alignItems:"center",marginLeft:4}} title="Rename">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button onClick={()=>{if(!window.confirm(`Delete group "${g.name}"?`))return;mut(s=>{s.groups=s.groups.filter(x=>x.id!==g.id);s.participants=s.participants.map(p=>p.gid===g.id?{...p,gid:null}:p);return s;});}}
+                style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"inline-flex",alignItems:"center",marginLeft:4}} title="Delete">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              </button>
+            </span>
+          </div>
+          {/* Row 2: mobile-only all-buttons row, right-aligned */}
+          <div className="tc-grp-btns-mobile" style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6,marginBottom:6}}>
             <button onClick={()=>setShowAssign(true)}
-              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",gap:4,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB,flexShrink:0}} title="Assign participant">
+              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB}} title="Assign">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-              <span className="tc-session-meta-text">Assign</span>
+              Assign
             </button>
             <button onClick={()=>setShowQRAssign(true)}
-              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",gap:4,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB,flexShrink:0}} title="QR scan to assign">
+              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB}} title="QR Scan">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="21" y1="17" x2="21" y2="21"/><line x1="17" y1="21" x2="17" y2="17"/><line x1="14" y1="17" x2="14" y2="21"/></svg>
-              <span className="tc-session-meta-text">QR Scan</span>
+              QR Scan
             </button>
             <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditing(true);}}
-              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}} title="Rename / recolor">
+              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Rename">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
             <button onClick={()=>{if(!window.confirm(`Delete group "${g.name}"?`))return;mut(s=>{s.groups=s.groups.filter(x=>x.id!==g.id);s.participants=s.participants.map(p=>p.gid===g.id?{...p,gid:null}:p);return s;});}}
-              style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}} title="Delete group">
+              style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Delete">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
             </button>
           </div>
-          {/* Row 2: participant pills */}
+          {/* Row 2 desktop / Row 3 mobile: participant pills */}
           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
             {g.members.length===0
               ? <span style={{fontSize:11,color:SUB,fontStyle:"italic"}}>No participants yet</span>
@@ -4804,7 +4830,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                 </div>
               )}
-              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"visible"}}>
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                 {sorted.length===0 && (
                   <div style={{padding:"32px 16px",textAlign:"center",color:SUB,fontSize:13}}>
                     <Ham size={48}/><div style={{marginTop:10}}>No participants yet</div>
@@ -5134,9 +5160,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     <div style={{display:"flex",border:`1.5px solid ${BORDER}`,borderRadius:10,overflow:"hidden",flexShrink:0,height:36}}>
                       <button onClick={()=>setAutoGroupCount(c=>Math.max(1,c-1))}
                         style={{width:36,height:36,border:"none",borderRight:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"monospace",fontWeight:400,fontSize:20,color:"#9CA3AF",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:"0 0 1px 0",lineHeight:1,flexShrink:0}}>−</button>
-                      <input type="text" inputMode="numeric" value={autoGroupCount} onChange={e=>setAutoGroupCount(Math.max(1,Math.min(20,parseInt(e.target.value)||1)))}
+                      <input type="text" inputMode="numeric" value={autoGroupCount} onChange={e=>setAutoGroupCount(Math.max(1,Math.min(99,parseInt(e.target.value)||1)))}
                         style={{width:48,height:36,border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:16,color:TEXT,background:"#fff",outline:"none",textAlign:"center",padding:0,MozAppearance:"textfield",WebkitAppearance:"none"}}/>
-                      <button onClick={()=>setAutoGroupCount(c=>Math.min(20,c+1))}
+                      <button onClick={()=>setAutoGroupCount(c=>Math.min(99,c+1))}
                         style={{width:36,height:36,border:"none",borderLeft:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"monospace",fontWeight:400,fontSize:20,color:"#9CA3AF",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:"0 0 1px 0",lineHeight:1,flexShrink:0}}>+</button>
                     </div>
                     <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:TEXT,flexShrink:0}}>Groups</span>
@@ -8292,10 +8318,16 @@ const CSS = `
   .tc-groups-creator { grid-template-columns: 3fr 2fr !important; }
   .tc-randomize-full { display: inline; }
   .tc-randomize-short { display: none; }
+  /* Group card: desktop shows inline buttons, hides mobile button row */
+  .tc-grp-btns-desktop { display: inline-flex; align-items: center; }
+  .tc-grp-btns-mobile  { display: none !important; }
   @media (max-width: 899px) {
     .tc-groups-creator { grid-template-columns: 1fr !important; }
     .tc-randomize-full { display: none !important; }
     .tc-randomize-short { display: inline !important; }
+    /* Group card: mobile hides desktop buttons, shows mobile button row */
+    .tc-grp-btns-desktop { display: none !important; }
+    .tc-grp-btns-mobile  { display: flex !important; }
   }
   /* Global cursor fix */
   * { caret-color: #1A0A14 !important; }
