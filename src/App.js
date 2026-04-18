@@ -5188,9 +5188,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 </div>
               ) : <>
               {/* Groups creator — 2-col desktop, stacked mobile */}
-              <div className="tc-groups-creator" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:10,marginBottom:10,alignItems:"stretch"}}>
+              <div className="tc-groups-creator" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:10,marginBottom:10,alignItems:"stretch",background:"#FAFAFA",borderRadius:16,padding:14}}>
                 {/* LEFT — Create Group */}
-                <div style={{background:"#FAFAFA",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
                   <div style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:PINK,textTransform:"uppercase"}}>Create a Group</div>
                   <input placeholder="Group name" value={ses._newGroupName||""} onChange={e=>mut(s=>{s._newGroupName=e.target.value;})}
                     onKeyDown={e=>{if(e.key==="Enter"){const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";})}}}
@@ -5213,7 +5213,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                 </div>
                 {/* RIGHT — Auto Create Groups */}
-                <div style={{background:"#FAFAFA",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10,alignItems:"center"}}>
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10,alignItems:"center"}}>
                   <div style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:PINK,textTransform:"uppercase",alignSelf:"flex-start"}}>Auto Create Groups</div>
                   {/* Create [−][N][+] Groups — stepper attached */}
                   <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
