@@ -1124,7 +1124,9 @@ function ColorPickerPopup({ value, onChange, onClose }) {
   },[onClose]);
 
   return (
-    <div ref={wrapRef} onMouseDown={e=>e.stopPropagation()} style={{position:"absolute",zIndex:9999,top:"calc(100% + 6px)",left:0,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,boxShadow:"0 8px 32px rgba(0,0,0,0.18)",padding:12,width:222,userSelect:"none"}}>
+    <>
+    <div onMouseDown={onClose} style={{position:"fixed",inset:0,zIndex:9998,background:"rgba(0,0,0,0.15)"}}/>
+    <div ref={wrapRef} onMouseDown={e=>e.stopPropagation()} style={{position:"fixed",zIndex:9999,top:"50%",left:"50%",transform:"translate(-50%,-50%)",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,boxShadow:"0 8px 32px rgba(0,0,0,0.18)",padding:12,width:222,userSelect:"none"}}>
       {/* Tabs */}
       <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`,marginBottom:10}}>
         {[["grid","Grid"],["spectrum","Spectrum"]].map(([id,label])=>(
@@ -1156,6 +1158,7 @@ function ColorPickerPopup({ value, onChange, onClose }) {
         </button>
       </div>
     </div>
+  </>
   );
 }
 // ── GroupAssignModal — pick a participant from list to assign to a group ──
@@ -4107,35 +4110,44 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
         </div>
       ) : (
         <>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),minWidth:18}}>{i+1}</div>
+          {/* Row 1: rank + dot + name + members + total */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,minWidth:0,flex:1}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:rankColor(i),flexShrink:0,minWidth:18}}>{i+1}</div>
               <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:g.color}}>{g.name}</div>
-              <div style={{fontSize:11,color:SUB}}>{g.members.length} members</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:g.color,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.name}</div>
+              <div style={{fontSize:11,color:SUB,flexShrink:0}}>{g.members.length} members</div>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:5}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:g.color}}>{g.total}</div>
-              <button onClick={()=>setShowAssign(true)}
-                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Assign participant">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-              </button>
-              <button onClick={()=>setShowQRAssign(true)}
-                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"flex",alignItems:"center"}} title="QR scan to assign">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="21" y1="17" x2="21" y2="21"/><line x1="17" y1="21" x2="17" y2="17"/><line x1="14" y1="17" x2="14" y2="21"/></svg>
-              </button>
-              <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditing(true);}}
-                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Rename / recolor">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-              <button onClick={()=>{if(!window.confirm(`Delete group "${g.name}"?`))return;mut(s=>{s.groups=s.groups.filter(x=>x.id!==g.id);s.participants=s.participants.map(p=>p.gid===g.id?{...p,gid:null}:p);return s;});}}
-                style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Delete group">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-              </button>
-            </div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:g.color,flexShrink:0,marginLeft:8}}>{g.total}</div>
           </div>
+          {/* Row 2: action buttons */}
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+            <button onClick={()=>setShowAssign(true)}
+              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB}} title="Assign participant">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              Assign
+            </button>
+            <button onClick={()=>setShowQRAssign(true)}
+              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB}} title="QR scan to assign">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="21" y1="17" x2="21" y2="21"/><line x1="17" y1="21" x2="17" y2="17"/><line x1="14" y1="17" x2="14" y2="21"/></svg>
+              QR Scan
+            </button>
+            <div style={{flex:1}}/>
+            <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditing(true);}}
+              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Rename / recolor">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button onClick={()=>{if(!window.confirm(`Delete group "${g.name}"?`))return;mut(s=>{s.groups=s.groups.filter(x=>x.id!==g.id);s.participants=s.participants.map(p=>p.gid===g.id?{...p,gid:null}:p);return s;});}}
+              style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Delete group">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </button>
+          </div>
+          {/* Row 3: participant pills */}
           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-            {g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)}
+            {g.members.length===0
+              ? <span style={{fontSize:11,color:SUB,fontStyle:"italic"}}>No participants yet</span>
+              : g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)
+            }
           </div>
           <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
             <div style={{height:4,background:g.color,width:`${(g.total/maxTotal)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
@@ -5115,8 +5127,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                 </div>
               ) : <>
-              {/* 2-column groups creator — 60:40 */}
-              <div style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:10,marginBottom:10,alignItems:"stretch"}}>
+              {/* Stacked groups creator — full width each */}
+              <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:10}}>
                 {/* LEFT — Create Group */}
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
                   <div style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:PINK,textTransform:"uppercase"}}>Create a Group</div>
