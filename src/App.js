@@ -5188,7 +5188,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 </div>
               ) : <>
               {/* Groups creator — 2-col desktop, stacked mobile */}
-              <div className="tc-groups-creator" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:10,marginBottom:10,alignItems:"stretch",background:"#FAFAFA",borderRadius:16,padding:14}}>
+              <div style={{margin:"0 -14px",background:"#EBEBEB",borderBottom:`1px solid #D1D5DB`,padding:"14px 14px",marginBottom:10}}>
+              <div className="tc-groups-creator" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:10,alignItems:"stretch"}}>
                 {/* LEFT — Create Group */}
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
                   <div style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:PINK,textTransform:"uppercase"}}>Create a Group</div>
@@ -5242,6 +5243,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     Auto Create Groups
                   </button>
                 </div>
+              </div>
               </div>
               {/* Group list header with inline randomize */}
               {gs.length > 0 && (
