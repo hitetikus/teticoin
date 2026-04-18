@@ -20,7 +20,7 @@ const GREEN = "#00C48C";
 const BLUE = "#3B82F6";
 const PURPLE = "#7C3AED";
 const GRAD = `linear-gradient(135deg,${PINK},${PINK2})`;
-const GC = ["#8B5CF6","#3B82F6","#059669","#D97706","#EF4444","#EC4899","#06B6D4"];
+const GC = ["#EF4444","#F97316","#EAB308","#22C55E","#06B6D4","#3B82F6"];
 const TV_DEFAULT = [10,30,50,100,200,-10]; // default Other Coins (editable per session)
 const ACTS_DEFAULT = [
   {id:"correct", label:"Correct Answer", pts:50, col:PINK},
@@ -1437,7 +1437,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
           {tab==="people" && <>
             {/* Two-column: Add name input + Show QR button */}
             <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,marginBottom:dupErr?4:12,alignItems:"center"}}>
-              <Inp placeholder="Participant Name" maxLength={15} value={np} onChange={e=>{setNp(e.target.value.slice(0,15));setDupErr("");}} onKeyDown={e=>e.key==="Enter"&&addP()} autoComplete="off" style={{flex:1,margin:0}}/>
+              <Inp placeholder="Participant Name" value={np} onChange={e=>{setNp(e.target.value);setDupErr("");}} onKeyDown={e=>e.key==="Enter"&&addP()} autoComplete="off" style={{flex:1,margin:0}}/>
               <button onClick={addP}
                 style={{padding:"0 16px",height:42,background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
                 Add
@@ -2620,10 +2620,9 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             <input
               placeholder="e.g. Jimmy"
               value={name}
-              onChange={e=>setName(e.target.value.slice(0,15))}
+              onChange={e=>setName(e.target.value)}
               onKeyDown={e=>e.key==="Enter"&&checkName()}
               autoFocus
-              maxLength={15}
               style={{width:"100%",boxSizing:"border-box",padding:"14px 16px",border:`2px solid ${name.trim()?PINK:BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:400,fontSize:16,color:TEXT,outline:"none",transition:"border-color .15s",background:"#fff",caretColor:PINK,textAlign:"center"}}
             />
           </div>
@@ -3780,7 +3779,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
         {tab==="people" && (
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0}}>
             <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
-              <Inp placeholder="Add participant name" maxLength={15} value={inlineAddName} onChange={e=>setInlineAddName(e.target.value.slice(0,15))}
+              <Inp placeholder="Add participant name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
                 onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
                 autoComplete="off" style={{flex:1,margin:0}}/>
               <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
@@ -4187,12 +4186,14 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
             </button>
           </div>
-          {/* Row 2 desktop / Row 3 mobile: participant pills */}
-          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-            {g.members.length===0
-              ? <span style={{fontSize:11,color:SUB,fontStyle:"italic"}}>No participants yet</span>
-              : g.members.map(m=><span key={m.id} style={{fontSize:11,background:`${g.color}12`,border:`1px solid ${g.color}28`,color:g.color,padding:"2px 9px",borderRadius:99,fontWeight:700}}>{pNum(m.num)} {m.name}</span>)
-            }
+          {/* Row 2 desktop / Row 3 mobile: participant names — scrollable comma list */}
+          <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",marginBottom:8}}>
+            <div style={{whiteSpace:"nowrap",fontSize:11,color:SUB,fontWeight:500}}>
+              {g.members.length===0
+                ? <span style={{fontStyle:"italic"}}>No participants yet</span>
+                : g.members.map((m,idx)=><span key={m.id}>{pNum(m.num)} {m.name}{idx<g.members.length-1?", ":""}</span>)
+              }
+            </div>
           </div>
           <div style={{height:4,background:BORDER,borderRadius:4,overflow:"hidden"}}>
             <div style={{height:4,background:g.color,width:`${(g.total/maxTotal)*100}%`,borderRadius:4,transition:"width .6s ease"}}/>
@@ -4615,9 +4616,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         <button onClick={onBack} style={{...IB,borderRadius:"50%"}} title="Back">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div style={{flex:1,overflow:"hidden",minWidth:0,display:"flex",alignItems:"center",gap:8}}>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ses.name}</div>
-          <div style={{flexShrink:0,background:SOFT,border:`1px solid ${MID}`,borderRadius:6,padding:"2px 7px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:10,color:PINK,letterSpacing:.5}}>{ses.code}</div>
+        <div style={{flex:1,overflow:"hidden",minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center",gap:1}}>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.2}}>{ses.name}</div>
+          <div style={{fontSize:10,color:"#9CA3AF",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,letterSpacing:.3,lineHeight:1}}>{ses.code}</div>
         </div>
         <button onClick={toggleLive} title={isLive?"Go offline":"Go live"}
           style={{display:"flex",alignItems:"center",gap:5,background:isLive?SOFT:"#FEF2F2",border:`1px solid ${isLive?MID:"#EF444455"}`,borderRadius:20,padding:"5px 12px",cursor:"pointer",flexShrink:0}}>
@@ -4830,7 +4831,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   borderBottom:rightTab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
               </button>
             ))}
-            <div style={{marginLeft:"auto",paddingRight:12,display:"flex",alignItems:"center",gap:4}}>
+            <div style={{marginLeft:"auto",paddingRight:16,display:"flex",alignItems:"center",gap:4}}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
             </div>
@@ -4842,7 +4843,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
               {/* Inline add row */}
               <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"center"}}>
-                <Inp placeholder="Participant Name" maxLength={15} value={inlineAddName} onChange={e=>setInlineAddName(e.target.value.slice(0,15))}
+                <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
                   onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast({m:"Participant limit reached",type:"warn"});return;}if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
                   autoComplete="off" style={{margin:0}}/>
                 <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast({m:"Participant limit reached",type:"warn"});return;}if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
@@ -5176,9 +5177,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                 </div>
               ) : <>
-              {/* Groups creator — light grey full-bleed band */}
-              <div style={{margin:"-12px -14px 10px",background:"#F3F4F6",padding:"12px 14px 14px"}}>
-              <div className="tc-groups-creator" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:10,alignItems:"stretch"}}>
+              {/* Groups creator — 2-col desktop, stacked mobile */}
+              <div className="tc-groups-creator" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:10,marginBottom:10,alignItems:"stretch"}}>
                 {/* LEFT — Create Group */}
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
                   <div style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:PINK,textTransform:"uppercase"}}>Create a Group</div>
@@ -5233,7 +5233,6 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </button>
                 </div>
               </div>
-              </div>{/* end grey band */}
               {/* Group list header with inline randomize */}
               {gs.length > 0 && (
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
