@@ -1116,17 +1116,12 @@ function ColorPickerPopup({ value, onChange, onClose }) {
   const wrapRef = React.useRef(null);
   const preview = hovered || custom;
 
-  // Close on outside click
-  React.useEffect(()=>{
-    function handle(e){ if(wrapRef.current && !wrapRef.current.contains(e.target)) onClose(); }
-    document.addEventListener('mousedown', handle);
-    return ()=>document.removeEventListener('mousedown', handle);
-  },[onClose]);
+  // Outside click handled by transparent backdrop div
 
   return (
     <>
-    <div onMouseDown={onClose} style={{position:"fixed",inset:0,zIndex:9998,background:"rgba(0,0,0,0.15)"}}/>
-    <div ref={wrapRef} onMouseDown={e=>e.stopPropagation()} style={{position:"fixed",zIndex:9999,top:"50%",left:"50%",transform:"translate(-50%,-50%)",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,boxShadow:"0 8px 32px rgba(0,0,0,0.18)",padding:12,width:222,userSelect:"none"}}>
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:9998,background:"transparent"}}/>
+    <div ref={wrapRef} onClick={e=>e.stopPropagation()} style={{position:"fixed",zIndex:9999,top:"50%",left:"50%",transform:"translate(-50%,-50%)",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,boxShadow:"0 8px 40px rgba(0,0,0,0.22)",padding:12,width:230,userSelect:"none"}}>
       {/* Tabs */}
       <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`,marginBottom:10}}>
         {[["grid","Grid"],["spectrum","Spectrum"]].map(([id,label])=>(
@@ -5127,8 +5122,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                 </div>
               ) : <>
-              {/* Stacked groups creator — full width each */}
-              <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:10}}>
+              {/* Groups creator — 2-col desktop, stacked mobile */}
+              <div className="tc-groups-creator" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:10,marginBottom:10,alignItems:"stretch"}}>
                 {/* LEFT — Create Group */}
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
                   <div style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:PINK,textTransform:"uppercase"}}>Create a Group</div>
@@ -5136,15 +5131,15 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     onKeyDown={e=>{if(e.key==="Enter"){const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";})}}}
                     style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"9px 12px",fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:13,color:TEXT,outline:"none",caretColor:TEXT,boxSizing:"border-box"}}/>
                   {/* Swatches + button on same row — order: presets → rainbow → custom */}
-                  <div style={{display:"flex",alignItems:"center",gap:6,position:"relative",flexWrap:"wrap"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:5,position:"relative",flexWrap:"nowrap"}}>
                     {GC.map(c=>{const sel=ses._newGroupColor||GC[0];return(<div key={c} onClick={()=>mut(s=>{s._newGroupColor=c;})}
-                      style={{width:22,height:22,borderRadius:"50%",background:c,cursor:"pointer",flexShrink:0,
-                        boxShadow:sel===c?`0 0 0 2px #fff, 0 0 0 3.5px ${c}`:"none",transition:".12s"}}/>);})}
+                      style={{width:18,height:18,borderRadius:"50%",background:c,cursor:"pointer",flexShrink:0,
+                        boxShadow:sel===c?`0 0 0 2px #fff, 0 0 0 3px ${c}`:"none",transition:".12s"}}/>);})}
                     <div title="More colors" onClick={e=>{e.stopPropagation();setSesColorPickerOpen(v=>!v);}}
-                      style={{width:22,height:22,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",flexShrink:0}}/>
+                      style={{width:18,height:18,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",flexShrink:0}}/>
                     {ses._sesCustomColor ? <div onClick={()=>mut(s=>{s._newGroupColor=s._sesCustomColor;})} title="Custom color"
-                      style={{width:22,height:22,borderRadius:"50%",background:ses._sesCustomColor,cursor:"pointer",flexShrink:0,
-                        boxShadow:(ses._newGroupColor||GC[0])===ses._sesCustomColor?`0 0 0 2px #fff, 0 0 0 3.5px ${ses._sesCustomColor}`:"none",transition:".12s"}}/> : null}
+                      style={{width:18,height:18,borderRadius:"50%",background:ses._sesCustomColor,cursor:"pointer",flexShrink:0,
+                        boxShadow:(ses._newGroupColor||GC[0])===ses._sesCustomColor?`0 0 0 2px #fff, 0 0 0 3px ${ses._sesCustomColor}`:"none",transition:".12s"}}/> : null}
                     {sesColorPickerOpen ? <ColorPickerPopup value={ses._newGroupColor||GC[0]} onChange={c=>{mut(s=>{s._sesCustomColor=c;s._newGroupColor=c;});setSesColorPickerOpen(false);}} onClose={()=>setSesColorPickerOpen(false)}/> : null}
                     <button onClick={()=>{const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";});}}
                       style={{marginLeft:"auto",flexShrink:0,padding:"10px 18px",background:GRAD,border:"none",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
@@ -5191,7 +5186,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     <button onClick={()=>{if(!window.confirm("Group all participants randomly?"))return;const ids=ses.groups.map(g=>g.id);const shuffled=[...ses.participants].sort(()=>Math.random()-.5);mut(s=>{s.participants=s.participants.map(p=>{const i=shuffled.findIndex(x=>x.id===p.id);return{...p,gid:ids[i%ids.length]};});return s;});}}
                       style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",background:"#fff",border:"1.5px solid #374151",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#374151",cursor:"pointer"}}>
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="3"/><circle cx="8" cy="8" r="1.2" fill="#374151" stroke="none"/><circle cx="16" cy="8" r="1.2" fill="#374151" stroke="none"/><circle cx="8" cy="16" r="1.2" fill="#374151" stroke="none"/><circle cx="16" cy="16" r="1.2" fill="#374151" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="#374151" stroke="none"/></svg>
-                      Randomize Participants into All Groups
+                      <span className="tc-randomize-full">Randomize Participants into All Groups</span>
+                      <span className="tc-randomize-short">Randomize Participants</span>
                     </button>
                   )}
                 </div>
@@ -8313,6 +8309,15 @@ const CSS = `
   @media (max-width:899px) {
     .tc-session-meta-text { display:none; }
     .tc-meta-icon { display:inline !important; }
+  }
+  /* Groups creator responsive */
+  .tc-groups-creator { grid-template-columns: 3fr 2fr !important; }
+  .tc-randomize-full { display: inline; }
+  .tc-randomize-short { display: none; }
+  @media (max-width: 899px) {
+    .tc-groups-creator { grid-template-columns: 1fr !important; }
+    .tc-randomize-full { display: none !important; }
+    .tc-randomize-short { display: inline !important; }
   }
   /* Global cursor fix */
   * { caret-color: #1A0A14 !important; }
