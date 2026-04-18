@@ -1809,6 +1809,7 @@ function Auth({ onDone, onBack, initialView="login" }) {
 function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [step, setStep] = useState("name");
   const [name, setName] = useState("");
+  const [nameErr, setNameErr] = useState(false);
   const [pin, setPin] = useState("");
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
@@ -2620,12 +2621,13 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             <input
               placeholder="e.g. Jimmy"
               value={name}
-              onChange={e=>setName(e.target.value)}
+              onChange={e=>{const v=e.target.value;if(v.length>15){setNameErr(true);}else{setNameErr(false);setName(v);}}}
               onKeyDown={e=>e.key==="Enter"&&checkName()}
               autoFocus
-              style={{width:"100%",boxSizing:"border-box",padding:"14px 16px",border:`2px solid ${name.trim()?PINK:BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:400,fontSize:16,color:TEXT,outline:"none",transition:"border-color .15s",background:"#fff",caretColor:PINK,textAlign:"center"}}
+              style={{width:"100%",boxSizing:"border-box",padding:"14px 16px",border:`2px solid ${nameErr?"#EF4444":name.trim()?PINK:BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:400,fontSize:16,color:TEXT,outline:"none",transition:"border-color .15s",background:"#fff",caretColor:PINK,textAlign:"center"}}
             />
           </div>
+          {nameErr && <div style={{fontSize:12,color:"#EF4444",fontWeight:600,textAlign:"center",marginBottom:8}}>Max 15 characters</div>}
           <div style={{fontSize:11,color:SUB,textAlign:"center",marginBottom:20,lineHeight:1.6}}>
             Please remember this name if you want to join this session again as the same person.
           </div>
@@ -3571,6 +3573,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
   const [editingPid, setEditingPid] = useState(null);
   const [editingPName, setEditingPName] = useState("");
   const [inlineAddName, setInlineAddName] = useState("");
+  const [inlineAddNameErr, setInlineAddNameErr] = useState(false);
   const [giveSheet, setGiveSheet] = useState(null);
   const [gsMultiSel, setGsMultiSel] = useState([]);
   const [gsIndivId, setGsIndivId] = useState(null);
@@ -3778,14 +3781,17 @@ function CoinmasterView({ session: init, selfId, onBack }) {
         {/* ── PARTICIPANTS TAB ── */}
         {tab==="people" && (
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0}}>
-            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
-              <Inp placeholder="Add participant name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
-                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
-                autoComplete="off" style={{flex:1,margin:0}}/>
-              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
+            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",flexDirection:"column",gap:4}}>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <Inp placeholder="Add participant name" value={inlineAddName} onChange={e=>{const v=e.target.value;if(v.length>15){setInlineAddNameErr(true);}else{setInlineAddNameErr(false);setInlineAddName(v);}}}
+                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");setInlineAddNameErr(false);}}}
+                autoComplete="off" style={{flex:1,margin:0,borderColor:inlineAddNameErr?"#EF4444":undefined}}/>
+              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");setInlineAddNameErr(false);}}
                 style={{padding:"0 14px",height:40,background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
                 + Add
               </button>
+              </div>
+              {inlineAddNameErr && <div style={{fontSize:11,color:"#EF4444",fontWeight:600,paddingLeft:2}}>Max 15 characters</div>}
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"10px 14px",minHeight:0}}>
               {sorted.length===0 ? (
@@ -4253,6 +4259,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
     return () => document.removeEventListener("mousedown", close);
   }, [pMenuOpen]);
   const [inlineAddName, setInlineAddName] = useState("");
+  const [inlineAddNameErr, setInlineAddNameErr] = useState(false);
   const aid = useRef(0);
 
   const isLive = ses.live !== false; // default true
@@ -4842,11 +4849,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             <div style={{flex:1,overflowY:"auto",padding:"14px 16px",minHeight:0}}>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
               {/* Inline add row */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"center"}}>
-                <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>setInlineAddName(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast({m:"Participant limit reached",type:"warn"});return;}if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}}
-                  autoComplete="off" style={{margin:0}}/>
-                <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast({m:"Participant limit reached",type:"warn"});return;}if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");}}
+              <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"center"}}>
+                <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>{const v=e.target.value;if(v.length>15){setInlineAddNameErr(true);}else{setInlineAddNameErr(false);setInlineAddName(v);}}}
+                  onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast({m:"Participant limit reached",type:"warn"});return;}if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");setInlineAddNameErr(false);}}}
+                  autoComplete="off" style={{margin:0,borderColor:inlineAddNameErr?"#EF4444":undefined}}/>
+                <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.length>=paxLimit){setToast({m:"Participant limit reached",type:"warn"});return;}if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");setInlineAddNameErr(false);}}
                   style={{padding:"0 16px",height:42,background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
                   + Add
                 </button>
@@ -4855,6 +4863,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
                   Show QR
                 </button>
+                </div>
+                {inlineAddNameErr && <div style={{fontSize:11,color:"#EF4444",fontWeight:600,paddingLeft:2}}>Max 15 characters</div>}
               </div>
               {/* Participant list */}
               {isPro && (
@@ -5180,7 +5190,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               {/* Groups creator — 2-col desktop, stacked mobile */}
               <div className="tc-groups-creator" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:10,marginBottom:10,alignItems:"stretch"}}>
                 {/* LEFT — Create Group */}
-                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
+                <div style={{background:"#FAFAFA",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
                   <div style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:PINK,textTransform:"uppercase"}}>Create a Group</div>
                   <input placeholder="Group name" value={ses._newGroupName||""} onChange={e=>mut(s=>{s._newGroupName=e.target.value;})}
                     onKeyDown={e=>{if(e.key==="Enter"){const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";})}}}
@@ -5203,7 +5213,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   </div>
                 </div>
                 {/* RIGHT — Auto Create Groups */}
-                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10,alignItems:"center"}}>
+                <div style={{background:"#FAFAFA",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10,alignItems:"center"}}>
                   <div style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:PINK,textTransform:"uppercase",alignSelf:"flex-start"}}>Auto Create Groups</div>
                   {/* Create [−][N][+] Groups — stepper attached */}
                   <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
