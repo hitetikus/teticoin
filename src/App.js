@@ -3692,17 +3692,17 @@ function CoinmasterView({ session: init, selfId, onBack }) {
             <div style={{flex:1,overflowY:"auto",padding:"12px 14px",minHeight:0}}>
               <div style={{display:"flex",flexDirection:"column",gap:10}}>
               <div>
-                <SL style={{marginBottom:8}}>Give Coins</SL>
+                <SL style={{marginBottom:8}}>Give Coins in Bulk</SL>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   {[
                     { mode:"qr", label:"Scan QR to Give",
                       icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9V6a3 3 0 0 1 3-3h3"/><path d="M15 3h3a3 3 0 0 1 3 3v3"/><path d="M21 15v3a3 3 0 0 1-3 3h-3"/><path d="M9 21H6a3 3 0 0 1-3-3v-3"/><rect x="7" y="7" width="4" height="4" rx="0.5"/><rect x="13" y="7" width="4" height="4" rx="0.5"/><rect x="7" y="13" width="4" height="4" rx="0.5"/><path d="M13 15h1m2 0h1m-2-2v1"/></svg> },
                     { mode:"all", label:"Give everyone",
                       icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+                    { mode:"group", label:"Give by Group",
+                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><rect x="2" y="7" width="8" height="14" rx="2"/><rect x="14" y="3" width="8" height="18" rx="2"/></svg> },
                     { mode:"multi", label:"Select multiple",
                       icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="7 12 10.5 15.5 17 9"/></svg> },
-                    { mode:"individual", label:"Give individual",
-                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
                   ].map(({mode,label,icon}) => (
                     <button key={mode} onClick={()=>{
                       if (mode==="qr") { setMass(true); return; }
@@ -3901,6 +3901,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
   const [confirmAmt, setConfirmAmt] = useState(null);
   const [customAmt, setCustomAmt] = useState("");
   const [selectedAmt, setSelectedAmt] = useState(null);
+  const [groupSel, setGroupSel] = useState([]); // selected group ids for "group" mode
 
   function doAward(v) {
     const finalV = v !== undefined ? v : (customAmt !== "" ? parseInt(customAmt, 10) : null);
@@ -3911,6 +3912,12 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
     } else if (mode==="multi") {
       if (!multiSel.length) { notify("Select at least one participant","warn"); return; }
       multiSel.forEach(pid => onAward(pid, finalV));
+      onClose();
+    } else if (mode==="group") {
+      if (!groupSel.length) { notify("Select at least one group","warn"); return; }
+      ses.participants
+        .filter(p => groupSel.includes(p.gid))
+        .forEach(p => onAward(p.id, finalV));
       onClose();
     } else {
       if (!indivId) { notify("Select a participant first","warn"); return; }
@@ -4000,6 +4007,67 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
                 style={{width:"100%",marginTop:8,padding:"13px 0",background:`linear-gradient(135deg,${PINK},#E91E8C)`,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
                 Give {parseInt(customAmt,10)>0?"+":""}{customAmt} coins
               </button>
+            )}
+            <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── GROUP ──
+  if (mode==="group") {
+    const groups = ses.groups || [];
+    const noGroups = groups.length === 0;
+    const totalSelected = ses.participants.filter(p => groupSel.includes(p.gid)).length;
+    return (
+      <div onClick={e=>{ if(e.target===e.currentTarget) onClose(); }} style={backdropStyle}>
+        <div style={sheetStyle}>
+          <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px",flexShrink:0}}/>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,flexShrink:0}}>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>Give by Group</div>
+            {groupSel.length > 0 && <div style={{fontSize:12,color:PINK,fontWeight:700}}>{totalSelected} participants</div>}
+          </div>
+          {noGroups ? (
+            <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,padding:"24px 0"}}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <div style={{fontSize:13,color:"#9CA3AF",textAlign:"center"}}>No groups yet.<br/>Create groups in the Groups tab first.</div>
+            </div>
+          ) : (
+            <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:8,marginBottom:12,minHeight:0}}>
+              {groups.map(g => {
+                const members = ses.participants.filter(p => p.gid === g.id);
+                const checked = groupSel.includes(g.id);
+                return (
+                  <div key={g.id} onClick={()=>setGroupSel(prev=>checked?prev.filter(x=>x!==g.id):[...prev,g.id])}
+                    style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:12,cursor:"pointer",background:checked?"#FFF0F7":"#FAFAFA",border:`1.5px solid ${checked?PINK:"transparent"}`,flexShrink:0,transition:"all .1s"}}>
+                    <div style={{width:20,height:20,borderRadius:6,border:`1.5px solid ${checked?PINK:BORDER}`,background:checked?PINK:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      {checked && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                    </div>
+                    <div style={{width:12,height:12,borderRadius:"50%",background:g.color,flexShrink:0}}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.name}</div>
+                      <div style={{fontSize:11,color:"#9CA3AF",marginTop:1}}>{members.length} member{members.length!==1?"s":""}</div>
+                    </div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:g.color,flexShrink:0}}>
+                      {members.reduce((s,p)=>s+(p.total||0),0)} pts
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div style={{flexShrink:0}}>
+            {!noGroups && (
+              <>
+                <CoinButtons onTap={doAward}/>
+                {customAmt !== "" && (
+                  <button onClick={()=>doAward()}
+                    style={{width:"100%",marginTop:8,padding:"13px 0",background:`linear-gradient(135deg,${PINK},#E91E8C)`,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
+                    Give {parseInt(customAmt,10)>0?"+":""}{customAmt} to {groupSel.length} group{groupSel.length!==1?"s":""}
+                  </button>
+                )}
+              </>
             )}
             <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
           </div>
@@ -4707,7 +4775,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
             {/* ── Give Coins — 2×2 big buttons ── */}
             <div>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                <SL style={{marginBottom:0}}>Give Coins</SL>
+                <SL style={{marginBottom:0}}>Give Coins in Bulk</SL>
                 <button onClick={()=>{ if(!isPro){setProGateHint("coinsetting");return;} setShowCoinCustomizer(true);}}
                   title={isPro?"Customise coin values":"Customise coin values (Pro)"}
                   style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:26,height:26,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -4748,14 +4816,15 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                       icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9V6a3 3 0 0 1 3-3h3"/><path d="M15 3h3a3 3 0 0 1 3 3v3"/><path d="M21 15v3a3 3 0 0 1-3 3h-3"/><path d="M9 21H6a3 3 0 0 1-3-3v-3"/><rect x="7" y="7" width="4" height="4" rx="0.5"/><rect x="13" y="7" width="4" height="4" rx="0.5"/><rect x="7" y="13" width="4" height="4" rx="0.5"/><path d="M13 15h1m2 0h1m-2-2v1"/></svg> },
                     { mode:"all",   label:"Give everyone",
                       icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+                    { mode:"group", label:"Give by Group",
+                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><rect x="2" y="7" width="8" height="14" rx="2"/><rect x="14" y="3" width="8" height="18" rx="2"/></svg> },
                     { mode:"multi", label:"Select multiple",
                       icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><polyline points="7 12 10.5 15.5 17 9"/></svg> },
-                    { mode:"individual", label:"Give individual",
-                      icon:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
                   ].map(({mode,label,icon}) => (
                     <button key={mode} onClick={()=>{
                       if (mode==="qr"    && !isPro) { setProGateHint("qr");    return; }
                       if (mode==="all"   && !isPro) { setProGateHint("all");   return; }
+                      if (mode==="group" && !isPro) { setProGateHint("multi"); return; }
                       if (mode==="multi" && !isPro) { setProGateHint("multi"); return; }
                       if (mode==="qr") { setMass(true); return; }
                       setGsMultiSel([]); setGsIndivId(null); setGsIndivSearch("");
