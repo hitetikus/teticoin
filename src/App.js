@@ -6223,88 +6223,110 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
         <div style={{width:60}}/>
       </div>
 
-      {/* Body — 2-column on desktop, single column on mobile */}
-      <div style={{flex:1,overflow:"hidden",display:"flex"}}>
+      {/* Body — single scrollable column, centered */}
+      <div style={{flex:1,overflowY:"auto"}}>
+        <div style={{maxWidth:520,margin:"0 auto",padding:"24px 20px 48px"}}>
 
-        {/* LEFT: current plan + usage + upgrade CTA */}
-        <div className="tc-billing-left" style={{flex:"0 0 420px",borderRight:`1px solid ${BORDER}`,overflowY:"auto",padding:"28px 32px"}}>
+          {/* ── Plan card + feature list — single unified container ── */}
+          <div style={{background:"#fff",border:`1.5px solid ${isFree ? BORDER : pd.color}`,borderRadius:20,overflow:"hidden",marginBottom:20,boxShadow:isFree?"none":`0 0 0 1px ${pd.color}40`}}>
 
-          {/* Current plan card */}
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Current Plan</div>
-          <div style={{background:isFree?"#fff":isBetaPlan?"#F0FDF4":pd.color===PINK?SOFT:"#FAF5FF",border:`2px solid ${pd.color}`,borderRadius:16,padding:"20px",marginBottom:20}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:pd.color}}>{pd.name}</div>
-              <div style={{background:`${pd.color}18`,border:`1.5px solid ${pd.color}44`,borderRadius:99,padding:"3px 12px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:pd.color}}>{isBetaPlan?"Beta Access":"Active"}</div>
+            {/* Top: coloured plan card */}
+            <div style={{
+              background: isFree
+                ? "#fff"
+                : isBetaPlan
+                  ? "linear-gradient(135deg,#D1FAE5,#A7F3D0)"
+                  : pd.color===PINK
+                    ? `linear-gradient(135deg,${SOFT},#FFD6EE)`
+                    : "linear-gradient(135deg,#EDE9FE,#DDD6FE)",
+              padding:"24px 20px 20px",
+              borderBottom:`1px solid ${isFree ? BORDER : pd.color+"33"}`
+            }}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:isFree?TEXT:pd.color}}>{pd.name}</div>
+                <div style={{background:isFree?"#F3F4F6":`${pd.color}20`,border:`1.5px solid ${isFree?BORDER:pd.color+"44"}`,borderRadius:99,padding:"4px 14px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isFree?SUB:pd.color}}>
+                  {isBetaPlan?"Beta Access":"Active"}
+                </div>
+              </div>
+              {isBetaPlan ? (
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:18,color:"#065F46"}}>Full Pro — Complimentary</div>
+              ) : (
+                <div style={{display:"flex",alignItems:"baseline",gap:4}}>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:36,color:isFree?TEXT:pd.color,lineHeight:1}}>{pd.price}</div>
+                  {!isFree && pd.renewal!=="one-time" && <div style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</div>}
+                </div>
+              )}
+              <div style={{fontSize:12,color:isFree?SUB:isBetaPlan?"#065F46":pd.color,fontWeight:500,marginTop:6}}>
+                {isFree
+                  ? "No time limit · No card required"
+                  : isBetaPlan
+                    ? `Beta access until ${pd.next || "—"}`
+                    : pd.next ? `Renews ${pd.next}` : "Active subscription"}
+              </div>
             </div>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:TEXT,marginBottom:4,lineHeight:1}}>
-              {isBetaPlan?<span style={{fontSize:18,fontWeight:700,color:GREEN}}>Full Pro — Complimentary</span>:<span style={{display:"contents"}}>{pd.price}{!isFree&&pd.renewal!=="one-time"&&<span style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</span>}</span>}
-            </div>
-            {pd.next && <div style={{fontSize:12,color:isBetaPlan?"#16A34A":SUB,fontWeight:600,marginTop:6}}>Beta access until {pd.next}</div>}
-            {isFree && <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>No time limit · No card required</div>}
-            {isBetaPlan && <div style={{fontSize:11,color:"#166534",fontWeight:500,marginTop:4}}>You have been granted Beta Pro access. Enjoy all Pro features!</div>}
-          </div>
 
-          {/* Feature list */}
-          <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"16px 18px",marginBottom:20}}>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,marginBottom:12}}>
-              {isFree ? "What's included" : "Everything in your plan"}
+            {/* Bottom: feature list (always white) */}
+            <div style={{background:"#fff",padding:"16px 20px"}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,marginBottom:12}}>
+                {isFree ? "What's included" : "Everything in your plan"}
+              </div>
+              {isFree ? (
+                <>
+                  {[
+                    "5 active sessions",
+                    "Up to 30 participants per session",
+                    "Award coins in real time",
+                    "Live scoreboard",
+                    "QR / link join — no app needed",
+                    "Session log",
+                    "Projector / TV mode",
+                    "Export CSV",
+                  ].map(f=>(
+                    <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:`1px solid ${BORDER}`}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
+                    </div>
+                  ))}
+                  <div style={{marginTop:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,marginBottom:8}}>🔒 Unlock with Pro</div>
+                  {[
+                    "Unlimited sessions",
+                    "Up to 200 participants",
+                    "Groups",
+                    "Custom coin values",
+                    "Mass give coins",
+                    "Give by Group",
+                  ].map(f=>(
+                    <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:`1px solid ${BORDER}`,opacity:0.5}}>
+                      <svg width="13" height="11" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
+                      <div style={{fontSize:13,color:SUB,fontWeight:500}}>{f}</div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>
+                  {[
+                    "Unlimited sessions",
+                    "Up to 200 participants",
+                    "Award coins in real time",
+                    "Live scoreboard",
+                    "QR / link join — no app needed",
+                    "Mass give coins",
+                    "Give by Group",
+                    "Session log",
+                    "Projector / TV mode",
+                    "Export CSV",
+                    "Groups",
+                    "Custom coin values",
+                    "Priority support",
+                  ].map(f=>(
+                    <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:`1px solid ${BORDER}`}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
-            {isFree ? (
-              <>
-                {[
-                  "5 active sessions",
-                  "Up to 30 participants per session",
-                  "Award coins in real time",
-                  "Live scoreboard",
-                  "QR / link join — no app needed",
-                  "Session log",
-                  "Projector / TV mode",
-                  "Export CSV",
-                ].map(f=>(
-                  <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${BORDER}`}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
-                  </div>
-                ))}
-                <div style={{marginTop:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,marginBottom:8}}>🔒 Unlock with Pro</div>
-                {[
-                  "Unlimited sessions",
-                  "Up to 200 participants",
-                  "Groups",
-                  "Custom coin values",
-                  "Mass give coins",
-                  "Give by Group",
-                ].map(f=>(
-                  <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${BORDER}`,opacity:0.5}}>
-                    <svg width="13" height="11" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
-                    <div style={{fontSize:13,color:SUB,fontWeight:500}}>{f}</div>
-                  </div>
-                ))}
-              </>
-            ) : (
-              <>
-                {[
-                  "Unlimited sessions",
-                  "Up to 200 participants",
-                  "Award coins in real time",
-                  "Live scoreboard",
-                  "QR / link join — no app needed",
-                  "Mass give coins",
-                  "Give by Group",
-                  "Session log",
-                  "Projector / TV mode",
-                  "Export CSV",
-                  "Groups",
-                  "Custom coin values",
-                  "Priority support",
-                ].map(f=>(
-                  <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${BORDER}`}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
-                  </div>
-                ))}
-              </>
-            )}
           </div>
 
           {/* Usage */}
@@ -6331,7 +6353,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
           {/* Upgrade CTA */}
           {isFree && (
             <button onClick={onUpgrade}
-              style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:16}}>
+              style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:20}}>
               Upgrade to Pro · RM 29/mo
             </button>
           )}
@@ -6339,7 +6361,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
           {/* Cancel */}
           {!isFree && (
             cancelConfirm ? (
-              <div style={{background:"#FEF2F2",border:"1.5px solid #EF444440",borderRadius:14,padding:"16px"}}>
+              <div style={{background:"#FEF2F2",border:"1.5px solid #EF444440",borderRadius:14,padding:"16px",marginBottom:20}}>
                 <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#EF4444",marginBottom:6}}>Cancel subscription?</div>
                 <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>You'll keep your plan features until the end of the billing period. Data preserved for 90 days after.</div>
                 <div style={{display:"flex",gap:8}}>
@@ -6349,25 +6371,22 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
               </div>
             ) : (
               <button onClick={()=>setCancelConfirm(true)}
-                style={{width:"100%",padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
+                style={{width:"100%",padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer",marginBottom:20}}>
                 Cancel Subscription
               </button>
             )
           )}
-        </div>
 
-        {/* RIGHT: invoice history */}
-        <div style={{flex:1,overflowY:"auto",padding:"28px 32px"}}>
+          {/* Invoice History — at the bottom */}
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Invoice History</div>
-
           {invoices.length === 0 ? (
-            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"48px 24px",textAlign:"center"}}>
-              <div style={{fontSize:32,marginBottom:10}}>🧾</div>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>No invoices yet</div>
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"36px 24px",textAlign:"center",marginBottom:20}}>
+              <div style={{fontSize:28,marginBottom:8}}>🧾</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>No invoices yet</div>
               <div style={{fontSize:13,color:SUB}}>Invoices will appear here after your first payment.</div>
             </div>
           ) : (
-            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:20}}>
               {invoices.map((inv,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none"}}>
                   <div style={{flex:1}}>
@@ -6381,8 +6400,8 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
             </div>
           )}
 
-          {/* Payment methods info */}
-          <div style={{marginTop:20,background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px 18px"}}>
+          {/* Payment methods */}
+          <div style={{background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px 18px"}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,marginBottom:8}}>Payment Methods</div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
               {["FPX","DuitNow QR","E-Wallet","Credit / Debit Card"].map(m=>(
@@ -6391,12 +6410,12 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
             </div>
             <div style={{fontSize:12,color:SUB,marginTop:10}}>Payments processed securely by <span style={{color:"#6C47FF",fontWeight:700}}>Chip</span> · International cards accepted</div>
           </div>
+
         </div>
       </div>
     </div>
   );
 }
-
 
 // ── ResendBtn — self-contained resend button with sent state ──
 function ResendBtn({ email, serviceId, templateId, publicKey }) {
@@ -8427,7 +8446,7 @@ const CSS = `
   .tc-tab-bar { background:#fff; border-bottom:1px solid ${BORDER}; display:flex; align-items:center; flex-shrink:0; }
   .tc-right-tabs { display:none; }
   .tc-session-topbar { padding:0 16px; }
-  .tc-billing-left { flex:1 !important; border-right:none !important; width:100% !important; max-width:520px; margin:0 auto; }
+  .tc-billing-left { display:none; }
 
   /* ─── Home layout: single column on mobile ─── */
   .tc-home-wrap { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
@@ -8458,7 +8477,7 @@ const CSS = `
     .tc-mobile-qc { display:none !important; }
     /* Show full text labels in session cards on desktop */
     .tc-session-meta-text { display:inline !important; }
-    .tc-billing-left { flex:0 0 420px !important; border-right:1px solid ${BORDER} !important; max-width:none !important; margin:0 !important; }
+    /* billing layout handled inline */
     .tc-meta-icon { display:none !important; }
 
     /* Home: fixed top nav + two-column body */
