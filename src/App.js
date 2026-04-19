@@ -4500,7 +4500,69 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
       {showCoinCustomizer && <CoinCustomizer session={ses}
         onSave={cfg=>mut(s=>{s.quickCoins=cfg.quickCoins;s.otherCoins=cfg.otherCoins;})}
         onClose={()=>setShowCoinCustomizer(false)}/>}
-      {proGateHint && (\n        <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:800,backdropFilter:"blur(4px)",background:"rgba(26,10,20,.4)"}} onClick={()=>setProGateHint(null)}>\n          <div className="tc-modal-sheet" style={{background:"#fff",padding:"28px 24px 32px",width:"100%",position:"relative"}} onClick={e=>e.stopPropagation()}>\n            {/* X close button */}\n            <button onClick={()=>setProGateHint(null)} style={{position:"absolute",top:16,right:16,width:32,height:32,borderRadius:"50%",border:"none",background:"#F3F4F6",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1}}>\n              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>\n            </button>\n            <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>\n            <div style={{textAlign:"center",marginBottom:20}}>\n              <div style={{marginBottom:12,display:"flex",justifyContent:"center"}}>\n                <svg width="40" height="34" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>\n              </div>\n              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:8}}>\n                {proGateHint==="qr" ? "Scan QR to Give is Pro"\n                  : proGateHint==="all" ? "Give Everyone is Pro"\n                  : proGateHint==="multi" ? "Select Multiple is Pro"\n                  : proGateHint==="coinsetting" ? "Coin Setting is Pro"\n                  : proGateHint==="groups" ? "Groups is Pro"\n                  : "Coinmaster Mode is Pro"}\n              </div>\n              <div style={{fontSize:14,color:SUB,lineHeight:1.7,textAlign:"left"}}>\n                {(proGateHint==="qr" || proGateHint==="all" || proGateHint==="multi") ? (\n                  <div style={{width:"100%"}}>\n                    <div style={{marginBottom:12,textAlign:"center"}}>Give coins to multiple participants at once. Unlock all bulk give modes:</div>\n                    <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden",marginBottom:0}}>\n                      {[\n                        ["Scan QR to Give","Participants scan to self-select for a reward"],\n                        ["Give Everyone","All participants get coins in one tap"],\n                        ["Select Multiple","Pick specific participants to reward"],\n                      ].map(([label,desc],i,arr)=>(\n                        <div key={label} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",background:(\n                          (proGateHint==="qr" && i===0)||(proGateHint==="all" && i===1)||(proGateHint==="multi" && i===2)\n                        ) ? "rgba(255,79,184,0.04)" : "#fff"}}>\n                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:(\n                            (proGateHint==="qr" && i===0)||(proGateHint==="all" && i===1)||(proGateHint==="multi" && i===2)\n                          ) ? PINK : TEXT,minWidth:110,flexShrink:0}}>{label}</div>\n                          <div style={{fontSize:12,color:SUB,lineHeight:1.5}}>{desc}</div>\n                        </div>\n                      ))}\n                    </div>\n                  </div>\n                ) : proGateHint==="coinsetting"\n                  ? "Rename award buttons to match your activity — Correct Answer, Participation, Teamwork and more."\n                  : proGateHint==="groups"\n                  ? "Organise participants into teams, assign groups, and track team scores on the scoreboard."\n                  : "Let a co-host award coins from their own device without giving them full host access."}\n              </div>\n            </div>\n            <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,padding:"12px 16px",marginBottom:20}}>\n              {[["Custom coin values","✗","✓"],["Groups","✗","✓"],["Mass give coins","✗","✓"],["Participants","30","200"],["Sessions","5","∞"]].map(([f,free,pro])=>(\n                <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${BORDER}`}}>\n                  <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>\n                  <div style={{display:"flex",gap:24}}>\n                    <div style={{fontSize:13,color:free==="✗"?"#EF4444":SUB,fontWeight:700,minWidth:36,textAlign:"center"}}>{free}</div>\n                    <div style={{fontSize:13,color:PINK,fontWeight:700,minWidth:36,textAlign:"center"}}>{pro}</div>\n                  </div>\n                </div>\n              ))}\n            </div>\n            <button onClick={()=>{ setProGateHint(null); if(onUpgrade) onUpgrade(); }} style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>Upgrade to Pro · RM 29/mo</button>\n            <button onClick={()=>setProGateHint(null)} style={{width:"100%",padding:"10px 0",background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer"}}>Maybe later</button>\n          </div>\n        </div>\n      )}
+      {proGateHint && (
+        <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:800,backdropFilter:"blur(4px)",background:"rgba(26,10,20,.4)"}} onClick={()=>setProGateHint(null)}>
+          <div className="tc-modal-sheet" style={{background:"#fff",padding:"28px 24px 32px",width:"100%",position:"relative"}} onClick={e=>e.stopPropagation()}>
+            <button onClick={()=>setProGateHint(null)} style={{position:"absolute",top:16,right:16,width:32,height:32,borderRadius:"50%",border:"none",background:"#F3F4F6",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 20px"}}/>
+            <div style={{textAlign:"center",marginBottom:20}}>
+              <div style={{marginBottom:12,display:"flex",justifyContent:"center"}}>
+                <svg width="40" height="34" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
+              </div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT,marginBottom:8}}>
+                {proGateHint==="qr" ? "Scan QR to Give is Pro"
+                  : proGateHint==="all" ? "Give Everyone is Pro"
+                  : proGateHint==="multi" ? "Select Multiple is Pro"
+                  : proGateHint==="coinsetting" ? "Coin Setting is Pro"
+                  : proGateHint==="groups" ? "Groups is Pro"
+                  : "Coinmaster Mode is Pro"}
+              </div>
+              <div style={{fontSize:14,color:SUB,lineHeight:1.7,textAlign:"left"}}>
+                {(proGateHint==="qr" || proGateHint==="all" || proGateHint==="multi") ? (
+                  <div style={{width:"100%"}}>
+                    <div style={{marginBottom:12,textAlign:"center"}}>Give coins to multiple participants at once. Unlock all bulk give modes:</div>
+                    <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden",marginBottom:0}}>
+                      {[
+                        ["Scan QR to Give","Participants scan to self-select for a reward"],
+                        ["Give Everyone","All participants get coins in one tap"],
+                        ["Select Multiple","Pick specific participants to reward"],
+                      ].map(([label,desc],i,arr)=>(
+                        <div key={label} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",background:(
+                          (proGateHint==="qr" && i===0)||(proGateHint==="all" && i===1)||(proGateHint==="multi" && i===2)
+                        ) ? "rgba(255,79,184,0.04)" : "#fff"}}>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:(
+                            (proGateHint==="qr" && i===0)||(proGateHint==="all" && i===1)||(proGateHint==="multi" && i===2)
+                          ) ? PINK : TEXT,minWidth:110,flexShrink:0}}>{label}</div>
+                          <div style={{fontSize:12,color:SUB,lineHeight:1.5}}>{desc}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : proGateHint==="coinsetting"
+                  ? "Rename award buttons to match your activity — Correct Answer, Participation, Teamwork and more."
+                  : proGateHint==="groups"
+                  ? "Organise participants into teams, assign groups, and track team scores on the scoreboard."
+                  : "Let a co-host award coins from their own device without giving them full host access."}
+              </div>
+            </div>
+            <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,padding:"12px 16px",marginBottom:20}}>
+              {[["Custom coin values","✗","✓"],["Groups","✗","✓"],["Mass give coins","✗","✓"],["Participants","30","200"],["Sessions","5","∞"]].map(([f,free,pro])=>(
+                <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${BORDER}`}}>
+                  <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
+                  <div style={{display:"flex",gap:24}}>
+                    <div style={{fontSize:13,color:free==="✗"?"#EF4444":SUB,fontWeight:700,minWidth:36,textAlign:"center"}}>{free}</div>
+                    <div style={{fontSize:13,color:PINK,fontWeight:700,minWidth:36,textAlign:"center"}}>{pro}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={()=>{ setProGateHint(null); if(onUpgrade) onUpgrade(); }} style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10}}>Upgrade to Pro · RM 29/mo</button>
+            <button onClick={()=>setProGateHint(null)} style={{width:"100%",padding:"10px 0",background:"none",border:"none",fontSize:13,color:SUB,cursor:"pointer"}}>Maybe later</button>
+          </div>
+        </div>
+      )}
       {showQR && <QRModal session={ses} onClose={()=>setShowQR(false)}/>}
       {showLeader && <LeaderSheet session={ses} onToggleBoard={()=>{
         const turningOn = !ses.boardVisible;
