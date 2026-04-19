@@ -881,9 +881,12 @@ function SessionSettings({ session, isPro=false, onRename, onToggleLive, onExpor
 
           {/* Archive */}
           <div style={{background:"#F8F8FA",border:`1px solid ${BORDER}`,borderRadius:13,padding:"14px 16px"}}>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Archive Session</div>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>Archive Session</div>
+            </div>
             <div style={{fontSize:12,color:SUB,marginBottom:12,lineHeight:1.6}}>
-              Permanently closes the session. Participants can no longer join. Data is preserved as read-only history.
+              Moves the session out of your active list. Participants can no longer join, but all data is preserved. You can unarchive it anytime.
             </div>
             <button onClick={onArchive}
               style={{width:"100%",padding:"11px 0",background:"#1A0A14",border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>
@@ -4194,7 +4197,7 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
   }
 }
 
-function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, onPView, onUpgrade }) {
+function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionCount=0, onDuplicateSession, onBack, onPView, onUpgrade }) {
   const isSesAdmin = plan === "superadmin";
   const isSuperadmin = plan === "superadmin";
   const isBeta = plan === "beta";
@@ -4587,10 +4590,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
         onRename={renameSession}
         onToggleLive={toggleLive}
         onDuplicate={()=>{
-          const code=genCode();
-          const dup={...JSON.parse(JSON.stringify(ses)),code,name:`${ses.name} (Copy)`,
-            participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false};
-          ssSession(code, dup); notify("Session duplicated"); setShowSettings(false);
+          if (onDuplicateSession) { onDuplicateSession(); setShowSettings(false); }
+          else { notify("Session duplicated"); setShowSettings(false); }
         }}
         onArchive={()=>{
           if(!window.confirm("Archive this session?")) return;
@@ -5582,6 +5583,46 @@ function CreateModal({ onConfirm, onClose, existingNames=[] }) {
 }
 
 // ─────────────────────────────────────────────
+// CSV EXPORT HELPERS
+// ─────────────────────────────────────────────
+function escapeCsv(val) {
+  const s = String(val == null ? "" : val);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function buildParticipantsCsv(ses) {
+  const rows = [["Rank","Name","Total Coins","Group","Logged-in"]];
+  const sorted = [...(ses.participants||[])].sort((a,b)=>b.total-a.total);
+  sorted.forEach((p,i) => {
+    const grp = (ses.groups||[]).find(g=>g.id===p.gid);
+    rows.push([i+1, p.name, p.total, grp?grp.name:"", p.uid?"Yes":"No"]);
+  });
+  return rows.map(r=>r.map(escapeCsv).join(",")).join("\r\n");
+}
+
+function buildLogCsv(ses) {
+  const rows = [["Timestamp","Participant","Type","Points"]];
+  (ses.log||[]).forEach(item => {
+    rows.push([item.t||"", item.name||"", item.type||"", item.pts]);
+  });
+  return rows.map(r=>r.map(escapeCsv).join(",")).join("\r\n");
+}
+
+function triggerCsvDownload(csvContent, filename) {
+  try {
+    const BOM = "\uFEFF"; // UTF-8 BOM so Excel opens correctly
+    const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+  } catch(e) { console.error("CSV download failed", e); }
+}
+
+// ─────────────────────────────────────────────
 // PLAN CONSTANTS
 // ─────────────────────────────────────────────
 const SUPERADMIN_EMAIL = "hi.tetikus@gmail.com";
@@ -6385,7 +6426,7 @@ function SettingsPage({ isPro=false, onClose }) {
   );
 
   const tabs = [
-    { id:"coins", label:"Coin Settings", proOnly:true },
+    { id:"coins", label:"Coin Settings" },
     { id:"prefs", label:"Preferences" },
   ];
 
@@ -6420,7 +6461,7 @@ function SettingsPage({ isPro=false, onClose }) {
       <div className="tc-settings-wrap">
         {/* Sidebar — desktop */}
         <div className="tc-settings-sidebar">
-          {tabs.filter(t => !t.proOnly || isPro).map(t => (
+          {tabs.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
               style={{padding:"12px 20px",border:"none",background:activeTab===t.id?"#fff":"transparent",borderRight:activeTab===t.id?`3px solid ${PINK}`:"3px solid transparent",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:activeTab===t.id?PINK:SUB,cursor:"pointer",textAlign:"left",width:"100%",transition:"all .12s"}}>
               {t.label}
@@ -6430,7 +6471,7 @@ function SettingsPage({ isPro=false, onClose }) {
 
         {/* Mobile tabs */}
         <div className="tc-settings-tabs">
-          {tabs.filter(t => !t.proOnly || isPro).map(t => (
+          {tabs.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
               style={{color:activeTab===t.id?PINK:SUB,borderBottom:activeTab===t.id?`2.5px solid ${PINK}`:"2.5px solid transparent"}}>
               {t.label}
@@ -6442,6 +6483,27 @@ function SettingsPage({ isPro=false, onClose }) {
         <div className="tc-settings-content">
 
           {/* ── COIN SETTINGS ── */}
+          {activeTab === "coins" && !isPro && (
+            <div style={{maxWidth:520}}>
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"36px 28px",textAlign:"center"}}>
+                <div style={{width:56,height:56,borderRadius:"50%",background:"rgba(255,79,184,0.08)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+                  <svg width="26" height="26" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
+                </div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:18,color:TEXT,marginBottom:8}}>Coin Settings is Pro</div>
+                <div style={{fontSize:13,color:SUB,lineHeight:1.7,marginBottom:24,maxWidth:320,margin:"0 auto 24px"}}>Customise your default coin values for all new sessions. Upgrade to Pro to unlock this feature.</div>
+                <div style={{background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px 20px",marginBottom:20,textAlign:"left"}}>
+                  {["Set default coin values for all sessions","Up to 15 custom coin buttons","Negative coins support","Drag to reorder","Reset to defaults anytime"].map(f=>(
+                    <div key={f} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",fontSize:13,color:TEXT}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>
+                      {f}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── COIN SETTINGS (Pro) ── */}
           {activeTab === "coins" && isPro && (
             <div style={{maxWidth:520}}>
               <div style={{background:"rgba(255,79,184,0.06)",border:`1px solid ${BORDER}`,borderRadius:12,padding:"12px 16px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:10}}>
@@ -6481,8 +6543,8 @@ function SettingsPage({ isPro=false, onClose }) {
                   </button>
                   <div style={{textAlign:"center"}}>
                     <button onClick={resetCoins}
-                      style={{background:"none",border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:12,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3,padding:"4px 0"}}>
-                      Reset to Teticoin Default
+                      style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",textDecoration:"none",padding:"6px 16px",marginTop:4}}>
+                      ↺ Reset to Teticoin Default
                     </button>
                   </div>
                 </>
@@ -7870,7 +7932,7 @@ export default function App() {
     if (!document.getElementById(styleId)) {
       const s = document.createElement('style');
       s.id = styleId;
-      s.textContent = '* { caret-color: #1A0A14 !important; } input, textarea { color: #1A0A14 !important; caret-color: #1A0A14 !important; color-scheme: light !important; cursor: text !important; }';
+      s.textContent = '* { caret-color: #1A0A14 !important; } input, textarea { color: #1A0A14 !important; caret-color: #1A0A14 !important; color-scheme: light !important; cursor: text !important; } input[type="number"], input[type="text"], input[type="email"], input[type="password"] { cursor: text !important; }';
       document.head.appendChild(s);
     }
   }, []);
@@ -8238,7 +8300,7 @@ export default function App() {
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur} onBack={()=>{ window.history.replaceState({},"","/app"); setScreen("home"); setHomeReloadKey(k=>k+1); }}/></>;
   if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home"); setHomeReloadKey(k=>k+1);}}/></>;
-  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onUpgrade={()=>openPricing()} onBack={()=>{
+  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} sessionCount={sessions.filter(s=>!s.archived).length} onDuplicateSession={async()=>{ const activeCnt=sessions.filter(s=>!s.archived).length; if(isFree&&activeCnt>=sessionLimit){setLimitModal("sessions");return;} const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }} onUpgrade={()=>openPricing()} onBack={()=>{
     // Navigate immediately — sync sessions_index in background
     window.history.replaceState({},"","/app"); setScreen("home");
     (async()=>{
@@ -8264,7 +8326,7 @@ export default function App() {
           isPro={plan !== "free"}
           onRename={async(name)=>{ const s={...cur,name}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,name}:x); setSessions(idx); await ss("sessions_index",idx); }}
           onToggleLive={async()=>{ const goingLive = cur.live===false; const s={...cur, live:goingLive, ...(goingLive&&cur.archived?{archived:false}:{})}; await ssSession(s.code, s); setCur(s); }}
-          onDuplicate={async()=>{ const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
+          onDuplicate={async()=>{ const activeCnt=sessions.filter(s=>!s.archived).length; if(isFree&&activeCnt>=sessionLimit){setLimitModal("sessions");return;} const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onArchive={async()=>{ if(!window.confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onExport={()=>{ triggerCsvDownload(buildParticipantsCsv(cur), `teticoin-${cur.code}-participants.csv`); }}
           onExportLog={()=>{ triggerCsvDownload(buildLogCsv(cur), `teticoin-${cur.code}-log.csv`); }}
@@ -8790,7 +8852,11 @@ const CSS = `
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-thumb { background:${MID}; border-radius:4px; }
   input, textarea { user-select:text; -webkit-user-select:text; cursor:text !important; caret-color:#1A0A14 !important; color:#1A0A14 !important; color-scheme:light; }
-  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="submit"]):not([type="button"]) { caret-color:#1A0A14 !important; color:#1A0A14 !important; }
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="submit"]):not([type="button"]) { caret-color:#1A0A14 !important; color:#1A0A14 !important; cursor:text !important; }
+  input[type="number"] { cursor:text !important; }
+  input[type="text"] { cursor:text !important; }
+  input[type="email"] { cursor:text !important; }
+  input[type="password"] { cursor:text !important; }
   input::placeholder, textarea::placeholder { color:${SUB}; opacity:.6; }
   select option { background:#fff; }
 
