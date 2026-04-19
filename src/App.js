@@ -791,6 +791,7 @@ function CoinCustomizer({ session, onSave, onClose }) {
       </div>
     </div>
   );
+}
 
 // ── Session Settings sheet (gear next to session name in session list) ──
 function SessionSettings({ session, isPro=false, onRename, onToggleLive, onExport, onExportLog, onReset, onDuplicate, onArchive, onClose }) {
