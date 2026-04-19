@@ -6065,41 +6065,48 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
   const touchClone              = useRef(null);
   const touchOverIdx            = useRef(null);
 
-  // ── Mouse / Desktop DnD — floating clone ─────────────────────────
-  function onDragStart(e, i) {
-    setDragIdx(i);
-    mouseDragIdx.current = i;
-    mouseOverIdx.current = i;
-    e.dataTransfer.effectAllowed = "move";
-
-    // Suppress the default browser ghost
-    const ghost = document.createElement("div");
-    ghost.style.cssText = "position:absolute;top:-999px;";
-    document.body.appendChild(ghost);
-    e.dataTransfer.setDragImage(ghost, 0, 0);
-    setTimeout(() => ghost.parentNode && ghost.parentNode.removeChild(ghost), 0);
-
-    // Build our own floating clone
-    const row = e.currentTarget;
-    const rect = row.getBoundingClientRect();
-    const clone = row.cloneNode(true);
+  // ── Helper: create a floating clone of a row element ─────────────
+  function createClone(rowEl) {
+    const rect = rowEl.getBoundingClientRect();
+    const clone = document.createElement("div");
     clone.style.cssText = `
       position:fixed; z-index:9999; pointer-events:none;
-      width:${rect.width}px; left:${rect.left}px; top:${rect.top}px;
+      width:${rect.width}px; height:${rect.height}px;
+      left:${rect.left}px; top:${rect.top}px;
       opacity:0.92; box-shadow:0 8px 24px rgba(0,0,0,0.18);
       border-radius:10px; background:#fff;
       border:1.5px solid ${PINK};
+      display:flex; align-items:center;
+      padding:0 14px; gap:10px; box-sizing:border-box;
     `;
+    // Copy just the text content — the value label
+    const val = rowEl.querySelector("[data-coin-val]");
+    if (val) {
+      const label = document.createElement("div");
+      label.textContent = val.textContent;
+      label.style.cssText = val.style.cssText + ";font-family:Plus Jakarta Sans,sans-serif;font-weight:800;font-size:16px;";
+      clone.appendChild(label);
+    }
+    return { clone, rect };
+  }
+
+  // ── Mouse / Desktop — pure mousedown on handle ───────────────────
+  function onMouseDown(e, i, rowEl) {
+    if (e.button !== 0) return; // left button only
+    e.preventDefault();
+
+    mouseDragIdx.current = i;
+    mouseOverIdx.current = i;
+    setDragIdx(i);
+
+    const { clone, rect } = createClone(rowEl);
     document.body.appendChild(clone);
     mouseClone.current = clone;
 
-    // Follow the mouse
     function onMouseMove(ev) {
-      if (!mouseClone.current) return;
-      mouseClone.current.style.top  = `${ev.clientY - 24}px`;
-      mouseClone.current.style.left = `${rect.left}px`;
+      clone.style.top  = `${ev.clientY - rect.height / 2}px`;
+      clone.style.left = `${rect.left}px`;
 
-      // Detect which row we're over
       if (!listRef.current) return;
       const rows = listRef.current.querySelectorAll("[data-coin-row]");
       rows.forEach((r, idx) => {
@@ -6112,46 +6119,34 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
         }
       });
     }
+
+    function onMouseUp() {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+
+      if (mouseClone.current) {
+        document.body.removeChild(mouseClone.current);
+        mouseClone.current = null;
+      }
+
+      const from = mouseDragIdx.current;
+      const to   = mouseOverIdx.current;
+      if (from !== null && to !== null && from !== to) {
+        setCoins(prev => {
+          const a = [...prev];
+          const [item] = a.splice(from, 1);
+          a.splice(to, 0, item);
+          return a;
+        });
+      }
+      mouseDragIdx.current = null;
+      mouseOverIdx.current = null;
+      setDragIdx(null);
+      setOverIdx(null);
+    }
+
     document.addEventListener("mousemove", onMouseMove);
-    mouseClone._cleanup = () => document.removeEventListener("mousemove", onMouseMove);
-  }
-
-  function onDragOver(e, i) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  }
-
-  function onDrop(e, i) {
-    e.preventDefault();
-    const from = mouseDragIdx.current;
-    const to   = mouseOverIdx.current;
-    _finishMouseDrag(from, to);
-  }
-
-  function onDragEnd() {
-    const from = mouseDragIdx.current;
-    const to   = mouseOverIdx.current;
-    _finishMouseDrag(from, to);
-  }
-
-  function _finishMouseDrag(from, to) {
-    if (mouseClone.current) {
-      if (mouseClone.current._cleanup) mouseClone.current._cleanup();
-      document.body.removeChild(mouseClone.current);
-      mouseClone.current = null;
-    }
-    if (from !== null && to !== null && from !== to) {
-      setCoins(prev => {
-        const a = [...prev];
-        const [item] = a.splice(from, 1);
-        a.splice(to, 0, item);
-        return a;
-      });
-    }
-    mouseDragIdx.current = null;
-    mouseOverIdx.current = null;
-    setDragIdx(null);
-    setOverIdx(null);
+    document.addEventListener("mouseup", onMouseUp);
   }
 
   // ── Touch / Mobile DnD ───────────────────────────────────────────
@@ -6229,11 +6224,6 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
         const isOver     = overIdx === i && dragIdx !== null && dragIdx !== i;
         return (
           <div key={i} data-coin-row
-            draggable
-            onDragStart={e => onDragStart(e, i)}
-            onDragOver={e  => onDragOver(e, i)}
-            onDrop={e      => onDrop(e, i)}
-            onDragEnd={onDragEnd}
             style={{
               display:"flex", alignItems:"center", gap:10,
               padding:"10px 14px",
@@ -6245,8 +6235,9 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
               userSelect:"none",
             }}>
 
-            {/* Drag handle — touch listeners here so only the handle initiates drag */}
+            {/* Drag handle — mouse + touch */}
             <div
+              onMouseDown={e => onMouseDown(e, i, e.currentTarget.closest("[data-coin-row]"))}
               onTouchStart={e => onTouchStart(e, i)}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -6260,7 +6251,7 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
               ))}
             </div>
 
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,
+            <div data-coin-val style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,
               color:v<0?"#EF4444":PINK,minWidth:52}}>
               {v>0?"+":""}{v}
             </div>
