@@ -6073,20 +6073,35 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
       position:fixed; z-index:9999; pointer-events:none;
       width:${rect.width}px; height:${rect.height}px;
       left:${rect.left}px; top:${rect.top}px;
-      opacity:0.92; box-shadow:0 8px 24px rgba(0,0,0,0.18);
-      border-radius:10px; background:#fff;
-      border:1.5px solid ${PINK};
-      display:flex; align-items:center;
-      padding:0 14px; gap:10px; box-sizing:border-box;
+      opacity:0.95; box-shadow:0 8px 28px rgba(233,30,140,0.25);
+      border-radius:12px; background:#fff;
+      border:2px solid ${PINK};
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 16px; box-sizing:border-box;
     `;
-    // Copy just the text content — the value label
+    // Value label
     const val = rowEl.querySelector("[data-coin-val]");
     if (val) {
       const label = document.createElement("div");
+      const v = parseInt(val.textContent);
       label.textContent = val.textContent;
-      label.style.cssText = val.style.cssText + ";font-family:Plus Jakarta Sans,sans-serif;font-weight:800;font-size:16px;";
+      label.style.cssText = `font-family:Plus Jakarta Sans,sans-serif;font-weight:800;font-size:16px;color:${val.style.color||"#E91E8C"};`;
       clone.appendChild(label);
     }
+    // 6-dot handle on right
+    const handle = document.createElement("div");
+    handle.style.cssText = "display:flex;flex-direction:column;gap:3px;opacity:0.4;";
+    for (let r=0;r<3;r++) {
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;gap:3px;";
+      for (let c=0;c<2;c++) {
+        const dot = document.createElement("div");
+        dot.style.cssText = "width:3.5px;height:3.5px;border-radius:50%;background:#E91E8C;";
+        row.appendChild(dot);
+      }
+      handle.appendChild(row);
+    }
+    clone.appendChild(handle);
     return { clone, rect };
   }
 
@@ -6155,28 +6170,21 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
     touchOverIdx.current = i;
     setDragIdx(i);
 
-    // Create floating clone that follows the finger
-    const row = e.currentTarget.parentElement;
-    const rect = row.getBoundingClientRect();
-    const clone = row.cloneNode(true);
-    clone.style.cssText = `
-      position:fixed; z-index:9999; pointer-events:none;
-      width:${rect.width}px; left:${rect.left}px; top:${rect.top}px;
-      opacity:0.92; box-shadow:0 8px 24px rgba(0,0,0,0.18);
-      border-radius:10px; background:#fff;
-      border:1.5px solid ${PINK};
-    `;
+    // Use createClone for consistent, clean appearance on mobile
+    const row = e.currentTarget.closest("[data-coin-row]");
+    const { clone, rect } = createClone(row);
     document.body.appendChild(clone);
     touchClone.current = clone;
+    touchClone._rect = rect;
   }
 
   function onTouchMove(e) {
-    e.preventDefault(); // stop page scroll while dragging
+    e.preventDefault();
     const touch = e.touches[0];
 
-    // Move the clone
     if (touchClone.current) {
-      touchClone.current.style.top = `${touch.clientY - 24}px`;
+      const rect = touchClone._rect || {height:44};
+      touchClone.current.style.top = `${touch.clientY - rect.height / 2}px`;
     }
 
     // Figure out which row we're over
@@ -6445,7 +6453,7 @@ function SettingsPage({ isPro=false, onClose }) {
 
                   <button onClick={saveCoins} disabled={coinBusy}
                     style={{width:"100%",padding:"14px 0",background:coinSaved?GREEN:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10,transition:"background .2s"}}>
-                    {coinBusy?"Saving…":coinSaved?"✓ Saved as Default":"Save as Default for New Sessions"}
+                    {coinBusy?"Saving…":coinSaved?"✓ Default coins updated":"Set as Default for New Sessions"}
                   </button>
                   <button onClick={resetCoins}
                     style={{width:"100%",padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
@@ -7835,7 +7843,7 @@ export default function App() {
     if (!document.getElementById(styleId)) {
       const s = document.createElement('style');
       s.id = styleId;
-      s.textContent = '* { caret-color: #1A0A14 !important; } input, textarea { color: #1A0A14; }';
+      s.textContent = '* { caret-color: #1A0A14 !important; } input, textarea { color: #1A0A14 !important; caret-color: #1A0A14 !important; color-scheme: light !important; cursor: text !important; }';
       document.head.appendChild(s);
     }
   }, []);
@@ -8754,9 +8762,9 @@ const CSS = `
   @keyframes eyeSquint { 0%,88%,100%{opacity:0;transform:scaleY(1);} 92%,96%{opacity:1;} }
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-thumb { background:${MID}; border-radius:4px; }
-  input, textarea { user-select:text; -webkit-user-select:text; cursor:text !important; caret-color:#1A0A14 !important; }
-  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]) { caret-color:#1A0A14 !important; }
-  input::placeholder { color:${SUB}; opacity:.6; }
+  input, textarea { user-select:text; -webkit-user-select:text; cursor:text !important; caret-color:#1A0A14 !important; color:#1A0A14 !important; color-scheme:light; }
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="submit"]):not([type="button"]) { caret-color:#1A0A14 !important; color:#1A0A14 !important; }
+  input::placeholder, textarea::placeholder { color:${SUB}; opacity:.6; }
   select option { background:#fff; }
 
   /* ── Responsive modal: bottom-sheet on mobile, centered on desktop ── */
