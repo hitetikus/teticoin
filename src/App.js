@@ -5731,7 +5731,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
     @media(max-width:700px){ .pp-grid { grid-template-columns:1fr; max-width:420px; } }
     .pp-card { background:#fff; border:1.5px solid #E5E7EB; border-radius:20px; padding:32px 24px; position:relative; display:flex; flex-direction:column; }
     .pp-card-popular { border-color:${LP_PINK}; box-shadow:0 0 0 1px ${LP_PINK},0 8px 40px rgba(255,79,184,0.12); overflow:hidden; }
-    .pp-badge { position:absolute; top:28px; right:-36px; background:${LP_GRAD}; color:#fff; font-size:9px; font-weight:800; padding:6px 60px; letter-spacing:.8px; transform:rotate(35deg); pointer-events:none; font-family:'DM Sans',sans-serif; }
+    .pp-badge { position:absolute; top:28px; right:-44px; background:${LP_GRAD}; color:#fff; font-size:9px; font-weight:800; padding:6px 68px; letter-spacing:.8px; transform:rotate(35deg); pointer-events:none; font-family:'DM Sans',sans-serif; }
     .pp-current-badge { position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:#0A0A0F; color:#fff; font-size:10px; font-weight:800; padding:3px 14px; border-radius:99px; white-space:nowrap; font-family:'Plus Jakarta Sans',sans-serif; }
     .pp-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:12px; font-family:'DM Sans',sans-serif; }
     .pp-price { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:42px; line-height:1; margin-bottom:4px; }
