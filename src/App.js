@@ -8866,7 +8866,8 @@ const CSS = `
   }
   /* Global cursor fix */
   * { caret-color: #1A0A14 !important; }
-  input, textarea, [contenteditable] { caret-color: #1A0A14 !important; color: inherit; }
+  input, textarea, [contenteditable] { caret-color: #1A0A14 !important; }
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="submit"]):not([type="button"]) { cursor: text !important; }
   /* Quick coin button hover — desktop only */
   @media (min-width:900px) {
     .tc-qcrow button:not(:disabled):hover {
