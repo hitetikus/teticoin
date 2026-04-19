@@ -731,9 +731,6 @@ function CoinCustomizer({ session, onSave, onClose }) {
 
   const [other, setOther] = useState([...initOther]);
   const [newVal, setNewVal] = useState("");
-  const [editIdx, setEditIdx] = useState(null);
-  const [editVal, setEditVal] = useState("");
-  const [reorderMode, setReorderMode] = useState(false);
 
   function addOther() {
     const n = parseInt(newVal);
@@ -745,28 +742,7 @@ function CoinCustomizer({ session, onSave, onClose }) {
 
   function removeOther(i) { setOther(prev => prev.filter((_,idx)=>idx!==i)); }
 
-  function saveEdit(i) {
-    const n = parseInt(editVal);
-    if (isNaN(n)) { setEditIdx(null); return; }
-    setOther(prev => { const a=[...prev]; a[i]=n; return a; });
-    setEditIdx(null);
-  }
-
-  function moveUp(i) {
-    if (i === 0) return;
-    setOther(prev => { const a=[...prev]; [a[i-1],a[i]]=[a[i],a[i-1]]; return a; });
-    if (navigator.vibrate) navigator.vibrate(15);
-  }
-
-  function moveDown(i) {
-    if (i === other.length - 1) return;
-    setOther(prev => { const a=[...prev]; [a[i],a[i+1]]=[a[i+1],a[i]]; return a; });
-    if (navigator.vibrate) navigator.vibrate(15);
-  }
-
   function save() { onSave({ quickCoins: session.quickCoins || ACTS_DEFAULT.map(a=>a.pts), otherCoins: other }); onClose(); }
-
-  const GREEN_COIN = "#16A34A";
 
   return (
     <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:600}}>
@@ -776,98 +752,31 @@ function CoinCustomizer({ session, onSave, onClose }) {
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Customise Coins</div>
-            <div style={{display:"flex",gap:8,alignItems:"center"}}>
-              <button onClick={()=>{ setReorderMode(r=>!r); setEditIdx(null); }}
-                style={{padding:"5px 12px",border:`1.5px solid ${reorderMode?PINK:BORDER}`,borderRadius:8,background:reorderMode?SOFT:"#fff",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:reorderMode?PINK:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-                {reorderMode ? "Done" : "Reorder"}
-              </button>
-              <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-            </div>
+            <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
         </div>
 
         <div style={{overflowY:"auto",flex:1,padding:"0 20px 24px"}}>
+          <div style={{fontSize:13,color:SUB,marginBottom:14,fontWeight:500,lineHeight:1.6}}>
+            Drag <svg width="10" height="13" viewBox="0 0 10 16" fill="none" style={{verticalAlign:"middle",margin:"0 2px"}}><circle cx="3" cy="2" r="1.5" fill="#9CA3AF"/><circle cx="7" cy="2" r="1.5" fill="#9CA3AF"/><circle cx="3" cy="8" r="1.5" fill="#9CA3AF"/><circle cx="7" cy="8" r="1.5" fill="#9CA3AF"/><circle cx="3" cy="14" r="1.5" fill="#9CA3AF"/><circle cx="7" cy="14" r="1.5" fill="#9CA3AF"/></svg> to reorder · Up to 15 values
+          </div>
 
-          {/* ── REORDER MODE: flat list with ↑↓ arrows ── */}
-          {reorderMode ? (
-            <>
-              <div style={{fontSize:13,color:SUB,marginBottom:12,fontWeight:500,lineHeight:1.6}}>
-                Tap ↑ ↓ to reorder. Order is saved when you tap Save.
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                {other.map((v,i) => (
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,background:v<0?"#FEF2F2":`${GREEN_COIN}06`,border:`1.5px solid ${v<0?"#EF444430":BORDER}`,borderRadius:12,padding:"10px 14px"}}>
-                    {/* Value */}
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:v<0?"#EF4444":GREEN_COIN,minWidth:52}}>
-                      {v>0?"+":""}{v}
-                    </div>
-                    <div style={{flex:1}}/>
-                    {/* Up/Down buttons */}
-                    <button onClick={()=>moveUp(i)} disabled={i===0}
-                      style={{width:36,height:36,borderRadius:9,border:`1.5px solid ${BORDER}`,background:i===0?"#F9FAFB":"#fff",cursor:i===0?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:i===0?0.3:1}}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={i===0?SUB:TEXT} strokeWidth="2.5" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>
-                    </button>
-                    <button onClick={()=>moveDown(i)} disabled={i===other.length-1}
-                      style={{width:36,height:36,borderRadius:9,border:`1.5px solid ${BORDER}`,background:i===other.length-1?"#F9FAFB":"#fff",cursor:i===other.length-1?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:i===other.length-1?0.3:1}}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={i===other.length-1?SUB:TEXT} strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-                    </button>
-                    {/* Remove */}
-                    <button onClick={()=>removeOther(i)}
-                      style={{width:28,height:28,borderRadius:"50%",background:"#EF4444",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      <span style={{color:"#fff",fontSize:14,fontWeight:900,lineHeight:1}}>×</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            /* ── NORMAL MODE: grid ── */
-            <>
-              <div style={{fontSize:13,color:SUB,marginBottom:14,fontWeight:500,lineHeight:1.6}}>
-                Up to 15 values. Tap to edit, × to remove. Use "Reorder" to change order.
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
-                {other.map((v,i) => (
-                  <div key={i} style={{borderRadius:12,border:`1.5px solid ${v<0?"#EF444440":BORDER}`,background:v<0?"#FEF2F2":`${GREEN_COIN}08`,position:"relative"}}>
-                    {editIdx===i ? (
-                      <input type="number" value={editVal} autoFocus
-                        onChange={e=>setEditVal(e.target.value)}
-                        onKeyDown={e=>{if(e.key==="Enter")saveEdit(i);if(e.key==="Escape")setEditIdx(null);}}
-                        onBlur={()=>saveEdit(i)}
-                        style={{width:"100%",textAlign:"center",background:"none",border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:v<0?"#EF4444":GREEN_COIN,outline:"none",padding:"14px 4px"}}/>
-                    ) : (
-                      <button onClick={()=>{ setEditIdx(i); setEditVal(String(v)); }}
-                        style={{width:"100%",padding:"14px 4px",background:"none",border:"none",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:v<0?"#EF4444":GREEN_COIN}}>
-                        {v>0?"+":""}{v}
-                      </button>
-                    )}
-                    <button onClick={()=>removeOther(i)}
-                      style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#EF4444",border:"2px solid #fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,zIndex:2}}>
-                      <span style={{color:"#fff",fontSize:10,fontWeight:900,lineHeight:1}}>×</span>
-                    </button>
-                  </div>
-                ))}
-                {other.length < 15 && (
-                  <div style={{borderRadius:12,border:`1.5px dashed ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"center",minHeight:50}}>
-                    <input type="number" placeholder="+/−" value={newVal} onChange={e=>setNewVal(e.target.value)}
-                      onKeyDown={e=>e.key==="Enter"&&addOther()}
-                      style={{width:"100%",textAlign:"center",background:"none",border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:15,color:PINK,outline:"none",padding:"14px 4px"}}/>
-                  </div>
-                )}
-              </div>
-              <div style={{display:"flex",gap:8,marginBottom:14}}>
-                <input type="number" placeholder="Enter value (e.g. 200 or −50)" value={newVal}
-                  onChange={e=>setNewVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addOther()}
-                  style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
-                <button onClick={addOther} disabled={other.length>=15||!newVal}
-                  style={{padding:"0 16px",background:other.length>=15?BG:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:other.length>=15?SUB:"#fff",cursor:other.length>=15?"not-allowed":"pointer"}}>
-                  Add
-                </button>
-              </div>
-              <div style={{fontSize:11,color:SUB,fontWeight:600,marginBottom:10}}>{other.length}/15 values · Tap to edit · Tap Reorder to change order</div>
-            </>
-          )}
+          <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"visible",marginBottom:16}}>
+            {other.length === 0 && (
+              <div style={{padding:"20px",textAlign:"center",fontSize:13,color:SUB}}>No coins yet.</div>
+            )}
+            <DraggableCoinList coins={other} setCoins={setOther} onRemove={removeOther}/>
+          </div>
+
+          <div style={{display:"flex",gap:8,marginBottom:14}}>
+            <input type="number" placeholder="Enter value (e.g. 200 or −50)" value={newVal}
+              onChange={e=>setNewVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addOther()}
+              style={{flex:1,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none"}}/>
+            <button onClick={addOther} disabled={other.length>=15||!newVal}
+              style={{padding:"0 16px",background:other.length>=15?BG:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:other.length>=15?SUB:"#fff",cursor:other.length>=15?"not-allowed":"pointer"}}>
+              Add
+            </button>
+          </div>
 
           <div style={{background:`${PINK}10`,border:`1px solid ${PINK}25`,borderRadius:10,padding:"10px 12px",marginTop:8,fontSize:12,color:PINK,fontWeight:600}}>
             Negative values (e.g. −50) will subtract coins — participants can go below zero on the scoreboard.
@@ -882,7 +791,6 @@ function CoinCustomizer({ session, onSave, onClose }) {
       </div>
     </div>
   );
-}
 
 // ── Session Settings sheet (gear next to session name in session list) ──
 function SessionSettings({ session, isPro=false, onRename, onToggleLive, onExport, onExportLog, onReset, onDuplicate, onArchive, onClose }) {
@@ -6144,8 +6052,91 @@ function ProfilePage({ trainer, onClose, onSaved }) {
   );
 }
 
-// ── Settings Page ──────────────────────────
-function SettingsPage({ onClose }) {
+// ── Shared DraggableCoinList ─────────────────────────────────────
+function DraggableCoinList({ coins, setCoins, onRemove }) {
+  const [dragIdx, setDragIdx] = useState(null);
+  const [overIdx, setOverIdx] = useState(null);
+
+  function onDragStart(e, i) {
+    setDragIdx(i);
+    e.dataTransfer.effectAllowed = "move";
+    // Make drag ghost transparent so we control appearance via CSS
+    const ghost = document.createElement("div");
+    ghost.style.position = "absolute"; ghost.style.top = "-999px";
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, 0, 0);
+    setTimeout(() => document.body.removeChild(ghost), 0);
+  }
+
+  function onDragOver(e, i) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (i !== overIdx) setOverIdx(i);
+  }
+
+  function onDrop(e, i) {
+    e.preventDefault();
+    if (dragIdx === null || dragIdx === i) { setDragIdx(null); setOverIdx(null); return; }
+    setCoins(prev => {
+      const a = [...prev];
+      const [item] = a.splice(dragIdx, 1);
+      a.splice(i, 0, item);
+      return a;
+    });
+    setDragIdx(null); setOverIdx(null);
+  }
+
+  function onDragEnd() { setDragIdx(null); setOverIdx(null); }
+
+  return (
+    <div style={{display:"flex",flexDirection:"column"}}>
+      {coins.map((v, i) => {
+        const isDragging = dragIdx === i;
+        const isOver = overIdx === i && dragIdx !== null && dragIdx !== i;
+        return (
+          <div key={i}
+            draggable
+            onDragStart={e => onDragStart(e, i)}
+            onDragOver={e => onDragOver(e, i)}
+            onDrop={e => onDrop(e, i)}
+            onDragEnd={onDragEnd}
+            style={{
+              display:"flex", alignItems:"center", gap:10,
+              padding:"10px 14px",
+              borderBottom:`1px solid ${BORDER}`,
+              background: isDragging ? "rgba(233,30,140,0.06)" : isOver ? "rgba(233,30,140,0.04)" : "#fff",
+              opacity: isDragging ? 0.5 : 1,
+              borderTop: isOver ? `2px solid ${PINK}` : "none",
+              cursor:"grab", transition:"background .1s",
+              userSelect:"none",
+            }}>
+            {/* Drag handle — 6 dots */}
+            <div style={{display:"flex",flexDirection:"column",gap:2.5,flexShrink:0,cursor:"grab",padding:"2px 4px"}}>
+              {[0,1,2].map(row => (
+                <div key={row} style={{display:"flex",gap:3}}>
+                  <div style={{width:3,height:3,borderRadius:"50%",background:"#D1D5DB"}}/>
+                  <div style={{width:3,height:3,borderRadius:"50%",background:"#D1D5DB"}}/>
+                </div>
+              ))}
+            </div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:v<0?"#EF4444":PINK,minWidth:52}}>
+              {v>0?"+":""}{v}
+            </div>
+            <div style={{flex:1}}/>
+            <button onClick={() => onRemove(i)}
+              style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,cursor:"pointer",padding:"4px 8px",display:"flex",alignItems:"center",flexShrink:0}}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Settings Page (merged: Coin Settings + Preferences) ──────────────────
+function SettingsPage({ isPro=false, onClose }) {
+  const [activeTab, setActiveTab] = useState("coins");
   const [soundOn, setSoundOn] = useState(() => {
     try { return localStorage.getItem("tc_sound") !== "off"; } catch { return true; }
   });
@@ -6153,15 +6144,40 @@ function SettingsPage({ onClose }) {
     try { return localStorage.getItem("tc_confetti") !== "off"; } catch { return true; }
   });
 
+  // Coin settings state
+  const [coins, setCoins] = useState(null);
+  const [newVal, setNewVal] = useState("");
+  const [coinSaved, setCoinSaved] = useState(false);
+  const [coinBusy, setCoinBusy] = useState(false);
+
+  useEffect(() => {
+    if (isPro) sg("defaultCoins").then(v => setCoins(v || TV_DEFAULT));
+  }, [isPro]);
+
   function toggle(key, val, setter) {
     setter(val);
     try { localStorage.setItem(key, val ? "on" : "off"); } catch {}
   }
 
-  const Row = ({ label, sub, value, onToggle }) => (
+  function addCoin() {
+    const n = parseInt(newVal);
+    if (isNaN(n) || !coins || coins.length >= 15) return;
+    setCoins(prev => [...prev, n]);
+    setNewVal(""); setCoinSaved(false);
+  }
+
+  async function saveCoins() {
+    setCoinBusy(true);
+    await ss("defaultCoins", coins);
+    setCoinBusy(false); setCoinSaved(true);
+  }
+
+  function resetCoins() { setCoins([...TV_DEFAULT]); setCoinSaved(false); }
+
+  const Toggle = ({ label, sub, value, onToggle }) => (
     <div style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:`1px solid ${BORDER}`}}>
       <div style={{flex:1}}>
-        <div style={{fontFamily:"Poppins,sans-serif",fontSize:13,fontWeight:600,color:TEXT}}>{label}</div>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:13,fontWeight:600,color:TEXT}}>{label}</div>
         <div style={{fontSize:11,color:SUB,marginTop:2}}>{sub}</div>
       </div>
       <button onClick={onToggle} style={{width:44,height:26,borderRadius:13,border:"none",background:value?PINK:"#D1D5DB",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}>
@@ -6170,9 +6186,30 @@ function SettingsPage({ onClose }) {
     </div>
   );
 
+  const tabs = [
+    { id:"coins", label:"Coin Settings", proOnly:true },
+    { id:"prefs", label:"Preferences" },
+  ];
+
+  const settingsCSS = `
+    .tc-settings-wrap { display:flex; flex-direction:column; height:100%; }
+    .tc-settings-sidebar { display:none; }
+    .tc-settings-tabs { display:flex; background:#fff; border-bottom:1px solid ${BORDER}; flex-shrink:0; }
+    .tc-settings-tabs button { flex:1; padding:12px 8px; border:none; background:none; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:13px; cursor:pointer; border-bottom:2.5px solid transparent; transition:all .12s; }
+    .tc-settings-content { flex:1; overflow-y:auto; padding:24px 20px 48px; }
+    @media(min-width:700px) {
+      .tc-settings-wrap { flex-direction:row; }
+      .tc-settings-sidebar { display:flex; flex-direction:column; width:200px; flex-shrink:0; border-right:1px solid ${BORDER}; padding:20px 0; background:#FAFAFA; }
+      .tc-settings-tabs { display:none; }
+      .tc-settings-content { padding:32px; }
+    }
+  `;
+
   return (
     <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <style>{CSS}</style>
+      <style>{CSS}{settingsCSS}</style>
+
+      {/* Header */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
         <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -6181,137 +6218,90 @@ function SettingsPage({ onClose }) {
         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Settings</div>
         <div style={{width:60}}/>
       </div>
-      <div style={{flex:1,overflowY:"auto",padding:"24px 20px",maxWidth:520,width:"100%",margin:"0 auto"}}>
 
-        <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Session Experience</div>
-        <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:20}}>
-          <Row label="Sound Effects" sub="Play sounds when coins are awarded" value={soundOn} onToggle={()=>toggle("tc_sound",!soundOn,setSoundOn)}/>
-          <Row label="Confetti Animation" sub="Show confetti burst on large awards" value={confettiOn} onToggle={()=>toggle("tc_confetti",!confettiOn,setConfettiOn)}/>
+      <div className="tc-settings-wrap">
+        {/* Sidebar — desktop */}
+        <div className="tc-settings-sidebar">
+          {tabs.filter(t => !t.proOnly || isPro).map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)}
+              style={{padding:"12px 20px",border:"none",background:activeTab===t.id?"#fff":"transparent",borderRight:activeTab===t.id?`3px solid ${PINK}`:"3px solid transparent",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:activeTab===t.id?PINK:SUB,cursor:"pointer",textAlign:"left",width:"100%",transition:"all .12s"}}>
+              {t.label}
+            </button>
+          ))}
         </div>
 
-      </div>
-    </div>
-  );
-}
-
-// ── Global Coin Settings Page ──────────────────────────
-function GlobalCoinSettingsPage({ onClose }) {
-  const [coins, setCoins] = useState(null); // null = loading
-  const [newVal, setNewVal] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    sg("defaultCoins").then(v => setCoins(v || TV_DEFAULT));
-  }, []);
-
-  function addCoin() {
-    const n = parseInt(newVal);
-    if (isNaN(n)) return;
-    if (coins.length >= 15) return;
-    setCoins(prev => [...prev, n]);
-    setNewVal("");
-    setSaved(false);
-  }
-
-  function removeCoin(i) { setCoins(prev => prev.filter((_,idx)=>idx!==i)); setSaved(false); }
-
-  function moveUp(i) {
-    if (i === 0) return;
-    setCoins(prev => { const a=[...prev]; [a[i-1],a[i]]=[a[i],a[i-1]]; return a; });
-    setSaved(false);
-  }
-
-  function moveDown(i) {
-    if (i === coins.length - 1) return;
-    setCoins(prev => { const a=[...prev]; [a[i],a[i+1]]=[a[i+1],a[i]]; return a; });
-    setSaved(false);
-  }
-
-  async function save() {
-    setBusy(true);
-    await ss("defaultCoins", coins);
-    setBusy(false);
-    setSaved(true);
-  }
-
-  function reset() { setCoins([...TV_DEFAULT]); setSaved(false); }
-
-  return (
-    <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <style>{CSS}</style>
-      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-        <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-          Back
-        </button>
-        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Coin Settings</div>
-        <div style={{width:60}}/>
-      </div>
-
-      <div style={{flex:1,overflowY:"auto",padding:"24px 20px 48px",maxWidth:520,width:"100%",margin:"0 auto"}}>
-
-        <div style={{background:"rgba(255,79,184,0.06)",border:`1px solid ${BORDER}`,borderRadius:12,padding:"12px 16px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:10}}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <div style={{fontSize:13,color:SUB,lineHeight:1.6}}>These coin values become the <strong style={{color:TEXT}}>default for all new sessions</strong>. You can still override them per session using the ⋯ button inside any session.</div>
+        {/* Mobile tabs */}
+        <div className="tc-settings-tabs">
+          {tabs.filter(t => !t.proOnly || isPro).map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)}
+              style={{color:activeTab===t.id?PINK:SUB,borderBottom:activeTab===t.id?`2.5px solid ${PINK}`:"2.5px solid transparent"}}>
+              {t.label}
+            </button>
+          ))}
         </div>
 
-        {coins === null ? (
-          <div style={{textAlign:"center",padding:40,color:SUB,fontSize:13}}>Loading…</div>
-        ) : (
-          <>
-            {/* Current coins list */}
-            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:16}}>
-              <div style={{padding:"12px 16px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Coin Values</div>
-                <div style={{fontSize:11,color:SUB}}>{coins.length} / 15 max</div>
+        {/* Content */}
+        <div className="tc-settings-content">
+
+          {/* ── COIN SETTINGS ── */}
+          {activeTab === "coins" && isPro && (
+            <div style={{maxWidth:520}}>
+              <div style={{background:"rgba(255,79,184,0.06)",border:`1px solid ${BORDER}`,borderRadius:12,padding:"12px 16px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:10}}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <div style={{fontSize:13,color:SUB,lineHeight:1.6}}>These become the <strong style={{color:TEXT}}>default for all new sessions</strong>. Override per session with the ⋯ button inside any session.</div>
               </div>
-              {coins.length === 0 && (
-                <div style={{padding:"24px 16px",textAlign:"center",fontSize:13,color:SUB}}>No coins yet. Add one below.</div>
-              )}
-              {coins.map((v,i) => (
-                <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",borderBottom:i<coins.length-1?`1px solid ${BORDER}`:"none"}}>
-                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:v<0?"#EF4444":PINK,minWidth:52}}>{v>0?"+":""}{v}</div>
-                  <div style={{flex:1}}/>
-                  <button onClick={()=>moveUp(i)} disabled={i===0}
-                    style={{background:"none",border:"none",cursor:i===0?"default":"pointer",color:i===0?"#E5E7EB":SUB,padding:"4px 6px",fontSize:14}}>↑</button>
-                  <button onClick={()=>moveDown(i)} disabled={i===coins.length-1}
-                    style={{background:"none",border:"none",cursor:i===coins.length-1?"default":"pointer",color:i===coins.length-1?"#E5E7EB":SUB,padding:"4px 6px",fontSize:14}}>↓</button>
-                  <button onClick={()=>removeCoin(i)}
-                    style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,cursor:"pointer",padding:"4px 8px",display:"flex",alignItems:"center"}}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+
+              {coins === null ? (
+                <div style={{textAlign:"center",padding:40,color:SUB}}>Loading…</div>
+              ) : (
+                <>
+                  <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"visible",marginBottom:16}}>
+                    <div style={{padding:"12px 16px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Coin Values</div>
+                      <div style={{fontSize:11,color:SUB}}>{coins.length} / 15 max</div>
+                    </div>
+                    {coins.length === 0 && (
+                      <div style={{padding:"24px 16px",textAlign:"center",fontSize:13,color:SUB}}>No coins yet. Add one below.</div>
+                    )}
+                    <DraggableCoinList coins={coins} setCoins={c=>{setCoins(c);setCoinSaved(false);}} onRemove={i=>{setCoins(p=>p.filter((_,idx)=>idx!==i));setCoinSaved(false);}}/>
+                  </div>
+
+                  <div style={{display:"flex",gap:8,marginBottom:20}}>
+                    <input type="number" placeholder="e.g. +50 or -10" value={newVal}
+                      onChange={e=>{setNewVal(e.target.value);setCoinSaved(false);}}
+                      onKeyDown={e=>e.key==="Enter"&&addCoin()}
+                      style={{flex:1,border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",background:"#fff",boxSizing:"border-box"}}/>
+                    <button onClick={addCoin} disabled={!coins||coins.length>=15||!newVal.trim()}
+                      style={{padding:"10px 18px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0,opacity:(!coins||coins.length>=15)?0.5:1}}>
+                      Add
+                    </button>
+                  </div>
+
+                  <button onClick={saveCoins} disabled={coinBusy}
+                    style={{width:"100%",padding:"14px 0",background:coinSaved?GREEN:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10,transition:"background .2s"}}>
+                    {coinBusy?"Saving…":coinSaved?"✓ Saved as Default":"Save as Default for New Sessions"}
                   </button>
-                </div>
-              ))}
+                  <button onClick={resetCoins}
+                    style={{width:"100%",padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
+                    Reset to Default Values
+                  </button>
+                </>
+              )}
             </div>
+          )}
 
-            {/* Add new coin */}
-            <div style={{display:"flex",gap:8,marginBottom:20}}>
-              <input
-                type="number"
-                placeholder="e.g. +50 or -10"
-                value={newVal}
-                onChange={e=>{setNewVal(e.target.value);setSaved(false);}}
-                onKeyDown={e=>e.key==="Enter"&&addCoin()}
-                style={{flex:1,border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",background:"#fff",boxSizing:"border-box"}}
-              />
-              <button onClick={addCoin} disabled={coins.length>=15||!newVal.trim()}
-                style={{padding:"10px 18px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:coins.length>=15?"not-allowed":"pointer",opacity:coins.length>=15?0.5:1,flexShrink:0}}>
-                Add
-              </button>
+          {/* ── PREFERENCES ── */}
+          {activeTab === "prefs" && (
+            <div style={{maxWidth:520}}>
+              <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Session Experience</div>
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:20}}>
+                <Toggle label="Sound Effects" sub="Play sounds when coins are awarded" value={soundOn} onToggle={()=>toggle("tc_sound",!soundOn,setSoundOn)}/>
+                <Toggle label="Confetti Animation" sub="Show confetti burst on large awards" value={confettiOn} onToggle={()=>toggle("tc_confetti",!confettiOn,setConfettiOn)}/>
+              </div>
             </div>
+          )}
 
-            {/* Actions */}
-            <button onClick={save} disabled={busy}
-              style={{width:"100%",padding:"14px 0",background:saved?GREEN:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10,transition:"background .2s"}}>
-              {busy?"Saving…":saved?"✓ Saved as Default":"Save as Default for New Sessions"}
-            </button>
-            <button onClick={reset}
-              style={{width:"100%",padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
-              Reset to Default Values
-            </button>
-          </>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -7642,7 +7632,6 @@ export default function App() {
   function openPricing() { window.history.replaceState({}, "", "/app/pricing"); setShowPricing(true); }
   function closePricing() { window.history.replaceState({}, "", "/app"); setShowPricing(false); }
   const [showBilling, setShowBilling] = useState(false);
-  const [showCoinSettings, setShowCoinSettings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showSuperAdmin, setShowSuperAdmin] = useState(false);
@@ -7869,7 +7858,7 @@ export default function App() {
             setShowSettings(true);
           } else if (restorePath === "/app/coin-settings") {
             setScreen("home");
-            setShowCoinSettings(true);
+            setShowSettings(true);
           } else {
             setScreen("home");
           }
@@ -8096,8 +8085,7 @@ export default function App() {
       {showProfile && <ProfilePage trainer={trainer} onClose={()=>{ window.history.replaceState({},"","/app"); setShowProfile(false);}} onSaved={(newName)=>setTrainer(t=>({...t,name:newName}))}/>}
       {showSuperAdmin && <SuperAdminDashboard onClose={()=>{ window.history.replaceState({},"","/app"); setShowSuperAdmin(false);}}/>}
       {showHostEarnings && trainer && <EarningsPage uid={trainer.uid} name={trainer.name} onClose={()=>{ window.history.replaceState({},"","/app"); setShowHostEarnings(false);}}/>}
-      {showSettings && <SettingsPage onClose={()=>{ window.history.replaceState({},"","/app"); setShowSettings(false);}}/>}
-      {showCoinSettings && <GlobalCoinSettingsPage onClose={()=>{ window.history.replaceState({},"","/app"); setShowCoinSettings(false);}}/>}
+      {showSettings && <SettingsPage isPro={isPro} onClose={()=>{ window.history.replaceState({},"","/app"); setShowSettings(false);}}/>}
       {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);openPricing();}} onClose={()=>setLimitModal(null)}/>}
       {creating && <CreateModal onConfirm={handleNew} onClose={()=>setCreating(false)} existingNames={sessions.map(s=>s.name)}/>}
 
@@ -8165,7 +8153,6 @@ export default function App() {
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, label:"Billing & Plan", fn:()=>{window.history.replaceState({},"","/app/billing");setShowBilling(true);}, hidden:isSuperadmin},
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>, label:"My Coins", fn:()=>{window.history.replaceState({},"","/app/coins");setShowHostEarnings(true);}},
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>, label:"Settings", fn:()=>{window.history.replaceState({},"","/app/settings");setShowSettings(true);}},
-              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>, label:"Coin Settings", fn:()=>{window.history.replaceState({},"","/app/coin-settings");setShowCoinSettings(true);}, hidden:!isPro},
               ...(isSuperadmin ? [{icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label:"Admin Dashboard", fn:()=>{window.history.replaceState({},"","/app/admin");setShowSuperAdmin(true);}}] : []),
             ].filter(item => !item.hidden).map(item => (
               <button key={item.label} onClick={()=>{setProfileOpen(false);item.fn();}}
