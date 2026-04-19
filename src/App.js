@@ -1340,15 +1340,11 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Participants</div>
             <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
           </div>
-          <div style={{display:"flex",borderBottom:`1px solid ${BORDER}`}}>
-            {tabBtn("people","Participants")}
-            {tabBtn("groups",<span style={{display:"flex",alignItems:"center",gap:4}}>Groups<svg width="12" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></span>)}
-            {isManagePro && tabBtn("coinmaster","Coinmaster")}
-          </div>
+          <div style={{height:1,background:BORDER,margin:"0 -0px"}}/>
         </div>
         <div style={{overflowY:"auto",flex:1,padding:"16px 20px 32px"}}>
 
-          {tab==="people" && <>
+          <>
             {/* Two-column: Add name input + Show QR button */}
             <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,marginBottom:dupErr?4:12,alignItems:"center"}}>
               <Inp placeholder="Participant Name" value={np} onChange={e=>{setNp(e.target.value);setDupErr("");}} onKeyDown={e=>e.key==="Enter"&&addP()} autoComplete="off" style={{flex:1,margin:0}}/>
@@ -1385,9 +1381,9 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
                 </div>
               );
             })}
-          </>}
+          </>
 
-          {tab==="groups" && <>
+          {false && <>
             {!isManagePro ? (
               <div style={{position:"relative"}}>
                 {/* Dummy group content as teaser — visible behind overlay */}
@@ -1498,7 +1494,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
             </>}
           </>}
 
-          {tab==="coinmaster" && <>
+          {false && <>
             {!isManagePro ? (
               <div style={{textAlign:"center",padding:"32px 16px 24px"}}>
                 <div style={{display:"flex",justifyContent:"center",marginBottom:10}}><svg width="36" height="30" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg></div>
