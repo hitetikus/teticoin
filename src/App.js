@@ -4611,7 +4611,21 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     </div>
                   </div>
                 ) : proGateHint==="coinsetting"
-                  ? "Rename award buttons to match your activity — Correct Answer, Participation, Teamwork and more."
+                  ? <div style={{width:"100%"}}>
+                      <div style={{marginBottom:12,textAlign:"center"}}>Customise coin buttons for any session:</div>
+                      <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden"}}>
+                        {[
+                          ["Add new coin values","Set any amount — +5, +75, -20, anything"],
+                          ["Delete existing coins","Remove buttons you don't need"],
+                          ["Rearrange coin buttons","Drag to reorder, applied session-wide"],
+                        ].map(([label,desc],i,arr)=>(
+                          <div key={label} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
+                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,minWidth:120,flexShrink:0}}>{label}</div>
+                            <div style={{fontSize:12,color:SUB,lineHeight:1.5}}>{desc}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   : proGateHint==="groups"
                   ? "Organise participants into teams, assign groups, and track team scores on the scoreboard."
                   : "Let a co-host award coins from their own device without giving them full host access."}
@@ -6180,6 +6194,129 @@ function SettingsPage({ onClose }) {
   );
 }
 
+// ── Global Coin Settings Page ──────────────────────────
+function GlobalCoinSettingsPage({ onClose }) {
+  const [coins, setCoins] = useState(null); // null = loading
+  const [newVal, setNewVal] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    sg("defaultCoins").then(v => setCoins(v || TV_DEFAULT));
+  }, []);
+
+  function addCoin() {
+    const n = parseInt(newVal);
+    if (isNaN(n)) return;
+    if (coins.length >= 15) return;
+    setCoins(prev => [...prev, n]);
+    setNewVal("");
+    setSaved(false);
+  }
+
+  function removeCoin(i) { setCoins(prev => prev.filter((_,idx)=>idx!==i)); setSaved(false); }
+
+  function moveUp(i) {
+    if (i === 0) return;
+    setCoins(prev => { const a=[...prev]; [a[i-1],a[i]]=[a[i],a[i-1]]; return a; });
+    setSaved(false);
+  }
+
+  function moveDown(i) {
+    if (i === coins.length - 1) return;
+    setCoins(prev => { const a=[...prev]; [a[i],a[i+1]]=[a[i+1],a[i]]; return a; });
+    setSaved(false);
+  }
+
+  async function save() {
+    setBusy(true);
+    await ss("defaultCoins", coins);
+    setBusy(false);
+    setSaved(true);
+  }
+
+  function reset() { setCoins([...TV_DEFAULT]); setSaved(false); }
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <style>{CSS}</style>
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:SUB,fontFamily:"Poppins,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Coin Settings</div>
+        <div style={{width:60}}/>
+      </div>
+
+      <div style={{flex:1,overflowY:"auto",padding:"24px 20px 48px",maxWidth:520,width:"100%",margin:"0 auto"}}>
+
+        <div style={{background:"rgba(255,79,184,0.06)",border:`1px solid ${BORDER}`,borderRadius:12,padding:"12px 16px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:10}}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div style={{fontSize:13,color:SUB,lineHeight:1.6}}>These coin values become the <strong style={{color:TEXT}}>default for all new sessions</strong>. You can still override them per session using the ⋯ button inside any session.</div>
+        </div>
+
+        {coins === null ? (
+          <div style={{textAlign:"center",padding:40,color:SUB,fontSize:13}}>Loading…</div>
+        ) : (
+          <>
+            {/* Current coins list */}
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:16}}>
+              <div style={{padding:"12px 16px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT}}>Coin Values</div>
+                <div style={{fontSize:11,color:SUB}}>{coins.length} / 15 max</div>
+              </div>
+              {coins.length === 0 && (
+                <div style={{padding:"24px 16px",textAlign:"center",fontSize:13,color:SUB}}>No coins yet. Add one below.</div>
+              )}
+              {coins.map((v,i) => (
+                <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",borderBottom:i<coins.length-1?`1px solid ${BORDER}`:"none"}}>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:v<0?"#EF4444":PINK,minWidth:52}}>{v>0?"+":""}{v}</div>
+                  <div style={{flex:1}}/>
+                  <button onClick={()=>moveUp(i)} disabled={i===0}
+                    style={{background:"none",border:"none",cursor:i===0?"default":"pointer",color:i===0?"#E5E7EB":SUB,padding:"4px 6px",fontSize:14}}>↑</button>
+                  <button onClick={()=>moveDown(i)} disabled={i===coins.length-1}
+                    style={{background:"none",border:"none",cursor:i===coins.length-1?"default":"pointer",color:i===coins.length-1?"#E5E7EB":SUB,padding:"4px 6px",fontSize:14}}>↓</button>
+                  <button onClick={()=>removeCoin(i)}
+                    style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,cursor:"pointer",padding:"4px 8px",display:"flex",alignItems:"center"}}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Add new coin */}
+            <div style={{display:"flex",gap:8,marginBottom:20}}>
+              <input
+                type="number"
+                placeholder="e.g. +50 or -10"
+                value={newVal}
+                onChange={e=>{setNewVal(e.target.value);setSaved(false);}}
+                onKeyDown={e=>e.key==="Enter"&&addCoin()}
+                style={{flex:1,border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",background:"#fff",boxSizing:"border-box"}}
+              />
+              <button onClick={addCoin} disabled={coins.length>=15||!newVal.trim()}
+                style={{padding:"10px 18px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:coins.length>=15?"not-allowed":"pointer",opacity:coins.length>=15?0.5:1,flexShrink:0}}>
+                Add
+              </button>
+            </div>
+
+            {/* Actions */}
+            <button onClick={save} disabled={busy}
+              style={{width:"100%",padding:"14px 0",background:saved?GREEN:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10,transition:"background .2s"}}>
+              {busy?"Saving…":saved?"✓ Saved as Default":"Save as Default for New Sessions"}
+            </button>
+            <button onClick={reset}
+              style={{width:"100%",padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
+              Reset to Default Values
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── 4. Billing Page ──────────────────────────
 function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, onUpgrade, onClose }) {
   const [cancelConfirm, setCancelConfirm] = useState(false);
@@ -7505,6 +7642,7 @@ export default function App() {
   function openPricing() { window.history.replaceState({}, "", "/app/pricing"); setShowPricing(true); }
   function closePricing() { window.history.replaceState({}, "", "/app"); setShowPricing(false); }
   const [showBilling, setShowBilling] = useState(false);
+  const [showCoinSettings, setShowCoinSettings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showSuperAdmin, setShowSuperAdmin] = useState(false);
@@ -7729,6 +7867,9 @@ export default function App() {
           } else if (restorePath === "/app/settings") {
             setScreen("home");
             setShowSettings(true);
+          } else if (restorePath === "/app/coin-settings") {
+            setScreen("home");
+            setShowCoinSettings(true);
           } else {
             setScreen("home");
           }
@@ -7871,7 +8012,8 @@ export default function App() {
   async function handleNew(name) {
     if (isFree && sessions.length >= sessionLimit) { setLimitModal("sessions"); return; }
     const code = genCode();
-    const s = {code, name, createdAt:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), boardVisible:false, participants:[], groups:[], log:[], coinmasterEnabled:false, hostUid: _currentUid || null};
+    const defaultCoins = await sg("defaultCoins");
+    const s = {code, name, createdAt:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), boardVisible:false, participants:[], groups:[], log:[], coinmasterEnabled:false, hostUid: _currentUid || null, ...(defaultCoins ? {otherCoins: defaultCoins} : {})};
     await ssSession(code, s);
     const idx = [{code, name, date:s.createdAt, count:0}, ...sessions];
     setSessions(idx); await ss("sessions_index", idx);
@@ -7955,6 +8097,7 @@ export default function App() {
       {showSuperAdmin && <SuperAdminDashboard onClose={()=>{ window.history.replaceState({},"","/app"); setShowSuperAdmin(false);}}/>}
       {showHostEarnings && trainer && <EarningsPage uid={trainer.uid} name={trainer.name} onClose={()=>{ window.history.replaceState({},"","/app"); setShowHostEarnings(false);}}/>}
       {showSettings && <SettingsPage onClose={()=>{ window.history.replaceState({},"","/app"); setShowSettings(false);}}/>}
+      {showCoinSettings && <GlobalCoinSettingsPage onClose={()=>{ window.history.replaceState({},"","/app"); setShowCoinSettings(false);}}/>}
       {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);openPricing();}} onClose={()=>setLimitModal(null)}/>}
       {creating && <CreateModal onConfirm={handleNew} onClose={()=>setCreating(false)} existingNames={sessions.map(s=>s.name)}/>}
 
@@ -8022,6 +8165,7 @@ export default function App() {
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, label:"Billing & Plan", fn:()=>{window.history.replaceState({},"","/app/billing");setShowBilling(true);}, hidden:isSuperadmin},
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>, label:"My Coins", fn:()=>{window.history.replaceState({},"","/app/coins");setShowHostEarnings(true);}},
               {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>, label:"Settings", fn:()=>{window.history.replaceState({},"","/app/settings");setShowSettings(true);}},
+              {icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>, label:"Coin Settings", fn:()=>{window.history.replaceState({},"","/app/coin-settings");setShowCoinSettings(true);}, hidden:!isPro},
               ...(isSuperadmin ? [{icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label:"Admin Dashboard", fn:()=>{window.history.replaceState({},"","/app/admin");setShowSuperAdmin(true);}}] : []),
             ].filter(item => !item.hidden).map(item => (
               <button key={item.label} onClick={()=>{setProfileOpen(false);item.fn();}}
