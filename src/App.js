@@ -6216,12 +6216,22 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
     setOverIdx(null);
   }
 
+  const [editIdx, setEditIdx] = useState(null);
+  const [editVal, setEditVal] = useState("");
+
+  function commitEdit(i) {
+    const n = parseInt(editVal);
+    if (!isNaN(n)) { setCoins(prev => { const a=[...prev]; a[i]=n; return a; }); }
+    setEditIdx(null); setEditVal("");
+  }
+
   // ── Render ────────────────────────────────────────────────────────
   return (
     <div ref={listRef} style={{display:"flex",flexDirection:"column"}}>
       {coins.map((v, i) => {
         const isDragging = dragIdx === i;
         const isOver     = overIdx === i && dragIdx !== null && dragIdx !== i;
+        const isEditing  = editIdx === i;
         return (
           <div key={i} data-coin-row
             style={{
@@ -6235,27 +6245,29 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
               userSelect:"none",
             }}>
 
-            {/* Drag handle — mouse + touch */}
-            <div
-              onMouseDown={e => onMouseDown(e, i, e.currentTarget.closest("[data-coin-row]"))}
-              onTouchStart={e => onTouchStart(e, i)}
-              onTouchMove={onTouchMove}
-              onTouchEnd={onTouchEnd}
-              style={{display:"flex",flexDirection:"column",gap:2.5,flexShrink:0,
-                cursor:"grab",padding:"6px 6px",touchAction:"none"}}>
-              {[0,1,2].map(row => (
-                <div key={row} style={{display:"flex",gap:3}}>
-                  <div style={{width:3.5,height:3.5,borderRadius:"50%",background:"#9CA3AF"}}/>
-                  <div style={{width:3.5,height:3.5,borderRadius:"50%",background:"#9CA3AF"}}/>
-                </div>
-              ))}
-            </div>
+            {/* Value — tap to edit */}
+            {isEditing ? (
+              <input type="number" value={editVal} autoFocus
+                onChange={e => setEditVal(e.target.value)}
+                onBlur={() => commitEdit(i)}
+                onKeyDown={e => { if(e.key==="Enter") commitEdit(i); if(e.key==="Escape") setEditIdx(null); }}
+                style={{width:80,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,
+                  color:v<0?"#EF4444":PINK,border:`1.5px solid ${PINK}`,borderRadius:8,
+                  padding:"4px 8px",outline:"none",background:"#fff"}}/>
+            ) : (
+              <div data-coin-val
+                onClick={() => { setEditIdx(i); setEditVal(String(v)); }}
+                title="Tap to edit"
+                style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,
+                  color:v<0?"#EF4444":PINK,minWidth:52,cursor:"text",
+                  borderBottom:`1.5px dashed ${v<0?"#FCA5A5":BORDER}`,paddingBottom:1}}>
+                {v>0?"+":""}{v}
+              </div>
+            )}
 
-            <div data-coin-val style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,
-              color:v<0?"#EF4444":PINK,minWidth:52}}>
-              {v>0?"+":""}{v}
-            </div>
             <div style={{flex:1}}/>
+
+            {/* Delete */}
             <button onClick={() => onRemove(i)}
               style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,
                 cursor:"pointer",padding:"4px 8px",display:"flex",alignItems:"center",flexShrink:0}}>
@@ -6265,6 +6277,22 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
                 <path d="M10 11v6"/><path d="M14 11v6"/>
               </svg>
             </button>
+
+            {/* Drag handle — right side, thumb-friendly */}
+            <div
+              onMouseDown={e => onMouseDown(e, i, e.currentTarget.closest("[data-coin-row]"))}
+              onTouchStart={e => onTouchStart(e, i)}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+              style={{display:"flex",flexDirection:"column",gap:2.5,flexShrink:0,
+                cursor:"grab",padding:"6px 4px",touchAction:"none"}}>
+              {[0,1,2].map(row => (
+                <div key={row} style={{display:"flex",gap:3}}>
+                  <div style={{width:3.5,height:3.5,borderRadius:"50%",background:"#9CA3AF"}}/>
+                  <div style={{width:3.5,height:3.5,borderRadius:"50%",background:"#9CA3AF"}}/>
+                </div>
+              ))}
+            </div>
           </div>
         );
       })}
