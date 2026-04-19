@@ -6276,7 +6276,10 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
             <div style={{flex:1}}/>
 
             {/* Delete */}
-            <button onClick={() => onRemove(i)}
+            <button onClick={() => {
+              const val = v > 0 ? `+${v}` : `${v}`;
+              if (window.confirm(`Remove ${val} from your coin list?`)) onRemove(i);
+            }}
               style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,
                 cursor:"pointer",padding:"4px 8px",display:"flex",alignItems:"center",flexShrink:0}}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round">
@@ -6453,11 +6456,11 @@ function SettingsPage({ isPro=false, onClose }) {
 
                   <button onClick={saveCoins} disabled={coinBusy}
                     style={{width:"100%",padding:"14px 0",background:coinSaved?GREEN:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10,transition:"background .2s"}}>
-                    {coinBusy?"Saving…":coinSaved?"✓ Default coins updated":"Set as Default for New Sessions"}
+                    {coinBusy?"Saving…":coinSaved?"✓ Universal coins setting updated":"Set as Default for New Sessions"}
                   </button>
                   <button onClick={resetCoins}
                     style={{width:"100%",padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
-                    Reset to Default Values
+                    Reset to Factory Default (10, 30, 50, 100, 200, −10)
                   </button>
                 </>
               )}
