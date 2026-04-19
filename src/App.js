@@ -6058,37 +6058,101 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
   const [dragIdx, setDragIdx]   = useState(null);
   const [overIdx, setOverIdx]   = useState(null);
   const listRef                 = useRef(null);
+  const mouseClone              = useRef(null);
+  const mouseDragIdx            = useRef(null);
+  const mouseOverIdx            = useRef(null);
   const touchDragIdx            = useRef(null);
   const touchClone              = useRef(null);
   const touchOverIdx            = useRef(null);
 
-  // ── Mouse / Desktop DnD ──────────────────────────────────────────
+  // ── Mouse / Desktop DnD — floating clone ─────────────────────────
   function onDragStart(e, i) {
     setDragIdx(i);
+    mouseDragIdx.current = i;
+    mouseOverIdx.current = i;
     e.dataTransfer.effectAllowed = "move";
+
+    // Suppress the default browser ghost
     const ghost = document.createElement("div");
     ghost.style.cssText = "position:absolute;top:-999px;";
     document.body.appendChild(ghost);
     e.dataTransfer.setDragImage(ghost, 0, 0);
     setTimeout(() => ghost.parentNode && ghost.parentNode.removeChild(ghost), 0);
+
+    // Build our own floating clone
+    const row = e.currentTarget;
+    const rect = row.getBoundingClientRect();
+    const clone = row.cloneNode(true);
+    clone.style.cssText = `
+      position:fixed; z-index:9999; pointer-events:none;
+      width:${rect.width}px; left:${rect.left}px; top:${rect.top}px;
+      opacity:0.92; box-shadow:0 8px 24px rgba(0,0,0,0.18);
+      border-radius:10px; background:#fff;
+      border:1.5px solid ${PINK};
+    `;
+    document.body.appendChild(clone);
+    mouseClone.current = clone;
+
+    // Follow the mouse
+    function onMouseMove(ev) {
+      if (!mouseClone.current) return;
+      mouseClone.current.style.top  = `${ev.clientY - 24}px`;
+      mouseClone.current.style.left = `${rect.left}px`;
+
+      // Detect which row we're over
+      if (!listRef.current) return;
+      const rows = listRef.current.querySelectorAll("[data-coin-row]");
+      rows.forEach((r, idx) => {
+        const rb = r.getBoundingClientRect();
+        if (ev.clientY >= rb.top && ev.clientY <= rb.bottom) {
+          if (idx !== mouseOverIdx.current) {
+            mouseOverIdx.current = idx;
+            setOverIdx(idx);
+          }
+        }
+      });
+    }
+    document.addEventListener("mousemove", onMouseMove);
+    mouseClone._cleanup = () => document.removeEventListener("mousemove", onMouseMove);
   }
+
   function onDragOver(e, i) {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    if (i !== overIdx) setOverIdx(i);
   }
+
   function onDrop(e, i) {
     e.preventDefault();
-    if (dragIdx === null || dragIdx === i) { setDragIdx(null); setOverIdx(null); return; }
-    setCoins(prev => {
-      const a = [...prev];
-      const [item] = a.splice(dragIdx, 1);
-      a.splice(i, 0, item);
-      return a;
-    });
-    setDragIdx(null); setOverIdx(null);
+    const from = mouseDragIdx.current;
+    const to   = mouseOverIdx.current;
+    _finishMouseDrag(from, to);
   }
-  function onDragEnd() { setDragIdx(null); setOverIdx(null); }
+
+  function onDragEnd() {
+    const from = mouseDragIdx.current;
+    const to   = mouseOverIdx.current;
+    _finishMouseDrag(from, to);
+  }
+
+  function _finishMouseDrag(from, to) {
+    if (mouseClone.current) {
+      if (mouseClone.current._cleanup) mouseClone.current._cleanup();
+      document.body.removeChild(mouseClone.current);
+      mouseClone.current = null;
+    }
+    if (from !== null && to !== null && from !== to) {
+      setCoins(prev => {
+        const a = [...prev];
+        const [item] = a.splice(from, 1);
+        a.splice(to, 0, item);
+        return a;
+      });
+    }
+    mouseDragIdx.current = null;
+    mouseOverIdx.current = null;
+    setDragIdx(null);
+    setOverIdx(null);
+  }
 
   // ── Touch / Mobile DnD ───────────────────────────────────────────
   function onTouchStart(e, i) {
