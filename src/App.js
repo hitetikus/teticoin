@@ -6181,7 +6181,7 @@ function SettingsPage({ onClose }) {
 }
 
 // ── 4. Billing Page ──────────────────────────
-function BillingPage({ plan="free", planExpiry=null, sessionCount=0, onUpgrade, onClose }) {
+function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, onUpgrade, onClose }) {
   const [cancelConfirm, setCancelConfirm] = useState(false);
 
   // Format real expiry date, or fall back to a rough estimate label
@@ -6342,7 +6342,7 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, onUpgrade, 
                 <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,marginBottom:12}}>Usage</div>
                 {[
                   {label:"Sessions", used:sessionCount, max:FREE_SESSION_LIMIT, color:PINK},
-                  {label:"Participants / session", used:0, max:FREE_PAX_LIMIT, color:BLUE},
+                  {label:"Participants / session", used:maxPax, max:FREE_PAX_LIMIT, color:BLUE},
                 ].map(u=>(
                   <div key={u.label} style={{marginBottom:12}}>
                     <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
@@ -7945,7 +7945,7 @@ export default function App() {
       <style>{CSS}</style>
 
       {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>setShowPricing(false)}/>}
-      {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>{ window.history.replaceState({},"","/app"); setShowBilling(false);}}/>}
+      {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} sessionCount={sessions.filter(s=>!s.archived).length} maxPax={Math.max(0,...sessions.filter(s=>!s.archived).map(s=>s.count||0))} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>{ window.history.replaceState({},"","/app"); setShowBilling(false);}}/>}
       {showProfile && <ProfilePage trainer={trainer} onClose={()=>{ window.history.replaceState({},"","/app"); setShowProfile(false);}} onSaved={(newName)=>setTrainer(t=>({...t,name:newName}))}/>}
       {showSuperAdmin && <SuperAdminDashboard onClose={()=>{ window.history.replaceState({},"","/app"); setShowSuperAdmin(false);}}/>}
       {showHostEarnings && trainer && <EarningsPage uid={trainer.uid} name={trainer.name} onClose={()=>{ window.history.replaceState({},"","/app"); setShowHostEarnings(false);}}/>}
