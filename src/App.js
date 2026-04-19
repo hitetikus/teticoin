@@ -4522,6 +4522,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                           <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden",marginBottom:0}}>
                             {[
                               ["Give to everyone","All participants get coins in one tap"],
+                              ["Select multiple","Pick specific participants to reward"],
                               ["Select by group","Reward a whole team at once"],
                               ["QR select","Participants scan to self-select for a reward"],
                             ].map(([label,desc],i,arr)=>(
@@ -4537,7 +4538,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
               </div>
             </div>
             <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,padding:"12px 16px",marginBottom:20}}>
-              {[["Custom coin labels","✗","✓"],["Groups & teams","✗","✓"],["Mass give coins","✗","✓"],["Participants","30","200"],["Sessions","3","∞"]].map(([f,free,pro])=>(
+              {[["Custom coin values","✗","✓"],["Groups","✗","✓"],["Mass give coins","✗","✓"],["Participants","30","200"],["Sessions","5","∞"]].map(([f,free,pro])=>(
                 <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${BORDER}`}}>
                   <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
                   <div style={{display:"flex",gap:24}}>
