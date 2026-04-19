@@ -4583,25 +4583,27 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 {proGateHint==="qr" ? "Scan QR to Give is Pro"
                   : proGateHint==="all" ? "Give Everyone is Pro"
                   : proGateHint==="multi" ? "Select Multiple is Pro"
+                  : proGateHint==="group" ? "Give by Group is Pro"
                   : proGateHint==="coinsetting" ? "Coin Setting is Pro"
                   : proGateHint==="groups" ? "Groups is Pro"
                   : "Coinmaster Mode is Pro"}
               </div>
               <div style={{fontSize:14,color:SUB,lineHeight:1.7,textAlign:"left"}}>
-                {(proGateHint==="qr" || proGateHint==="all" || proGateHint==="multi") ? (
+                {(proGateHint==="qr" || proGateHint==="all" || proGateHint==="multi" || proGateHint==="group") ? (
                   <div style={{width:"100%"}}>
-                    <div style={{marginBottom:12,textAlign:"center"}}>Give coins to multiple participants at once. Unlock all bulk give modes:</div>
+                    <div style={{marginBottom:12,textAlign:"center"}}>Unlock all bulk give modes:</div>
                     <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden",marginBottom:0}}>
                       {[
                         ["Scan QR to Give","Participants scan to self-select for a reward"],
                         ["Give Everyone","All participants get coins in one tap"],
+                        ["Give by Group","Reward all members of selected groups"],
                         ["Select Multiple","Pick specific participants to reward"],
                       ].map(([label,desc],i,arr)=>(
                         <div key={label} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none",background:(
-                          (proGateHint==="qr" && i===0)||(proGateHint==="all" && i===1)||(proGateHint==="multi" && i===2)
+                          (proGateHint==="qr" && i===0)||(proGateHint==="all" && i===1)||(proGateHint==="group" && i===2)||(proGateHint==="multi" && i===3)
                         ) ? "rgba(255,79,184,0.04)" : "#fff"}}>
                           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:(
-                            (proGateHint==="qr" && i===0)||(proGateHint==="all" && i===1)||(proGateHint==="multi" && i===2)
+                            (proGateHint==="qr" && i===0)||(proGateHint==="all" && i===1)||(proGateHint==="group" && i===2)||(proGateHint==="multi" && i===3)
                           ) ? PINK : TEXT,minWidth:110,flexShrink:0}}>{label}</div>
                           <div style={{fontSize:12,color:SUB,lineHeight:1.5}}>{desc}</div>
                         </div>
@@ -4824,7 +4826,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     <button key={mode} onClick={()=>{
                       if (mode==="qr"    && !isPro) { setProGateHint("qr");    return; }
                       if (mode==="all"   && !isPro) { setProGateHint("all");   return; }
-                      if (mode==="group" && !isPro) { setProGateHint("multi"); return; }
+                      if (mode==="group" && !isPro) { setProGateHint("group"); return; }
                       if (mode==="multi" && !isPro) { setProGateHint("multi"); return; }
                       if (mode==="qr") { setMass(true); return; }
                       setGsMultiSel([]); setGsIndivId(null); setGsIndivSearch("");
@@ -5639,7 +5641,7 @@ function CreateModal({ onConfirm, onClose, existingNames=[] }) {
 // PLAN CONSTANTS
 // ─────────────────────────────────────────────
 const SUPERADMIN_EMAIL = "hi.tetikus@gmail.com";
-const FREE_SESSION_LIMIT = 3;
+const FREE_SESSION_LIMIT = 5;
 const FREE_PAX_LIMIT = 30;
 const PRO_PAX_LIMIT = 200;
 
@@ -5927,7 +5929,7 @@ function LimitModal({ type, onUpgrade, onClose }) {
     sessions: {
       icon:<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
       title:"Session limit reached",
-      body:"Free plan allows 3 sessions. Upgrade to Pro for unlimited sessions, participants, and more.",
+      body:"Free plan allows 5 sessions. Upgrade to Pro for unlimited sessions, participants, and more.",
       cta:"Unlock Unlimited Sessions",
     },
     participants: {
@@ -5966,10 +5968,10 @@ function LimitModal({ type, onUpgrade, onClose }) {
             </div>
           </div>
           {[
-            ["Sessions","3","∞"],
+            ["Sessions","5","∞"],
             ["Participants","30","200"],
-            ["Groups & teams","✗","✓"],
-            ["Custom labels","✗","✓"],
+            ["Groups","✗","✓"],
+            ["Custom coin values","✗","✓"],
             ["Mass give coins","✗","✓"],
           ].map(([f,free,pro]) => (
             <div key={f} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderTop:`1px solid ${BORDER}`}}>
