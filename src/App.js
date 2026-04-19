@@ -6461,7 +6461,7 @@ function SettingsPage({ isPro=false, onClose }) {
                   <div style={{textAlign:"center"}}>
                     <button onClick={resetCoins}
                       style={{background:"none",border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:12,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3,padding:"4px 0"}}>
-                      Reset to Teticoin Default
+                      Reset to factory values (10, 30, 50, 100, 200, −10)
                     </button>
                   </div>
                 </>
@@ -7827,6 +7827,7 @@ export default function App() {
   const [limitModal, setLimitModal] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [showAllActive, setShowAllActive] = useState(false);
   const [showCMJoin, setShowCMJoin] = useState(false);
   const [cmSession, setCmSession] = useState(null);
   const [paymentToast, setPaymentToast] = useState(null);
@@ -8548,7 +8549,7 @@ export default function App() {
               const active = sessions.filter(s=>!s.archived);
               const archived = sessions.filter(s=>s.archived);
               const showAll = showArchived;
-              const displayed = (showAll ? sessions : active).slice(0,showAll?999:5);
+              const displayed = (showAll ? sessions : active).slice(0,showAll?999:(showAllActive?999:5));
               return (
                 <>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:8,flexWrap:"wrap"}}>
@@ -8629,8 +8630,8 @@ export default function App() {
                   </div>
                   {/* View full list button if more than 5 */}
                   {active.length > 5 && !showArchived && (
-                    <button onClick={()=>setShowArchived(false)} style={{width:"100%",padding:"10px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",marginTop:2}}>
-                      View all {active.length} sessions →
+                    <button onClick={()=>setShowAllActive(v=>!v)} style={{width:"100%",padding:"10px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",marginTop:2}}>
+                      {showAllActive ? "Show less ↑" : `View all ${active.length} sessions →`}
                     </button>
                   )}
                 </>
