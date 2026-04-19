@@ -6181,7 +6181,7 @@ function SettingsPage({ onClose }) {
 }
 
 // ── 4. Billing Page ──────────────────────────
-function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
+function BillingPage({ plan="free", planExpiry=null, sessionCount=0, onUpgrade, onClose }) {
   const [cancelConfirm, setCancelConfirm] = useState(false);
 
   // Format real expiry date, or fall back to a rough estimate label
@@ -6229,14 +6229,14 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
         {/* LEFT column (full width on mobile, 420px on desktop) */}
         <div className="tc-billing-left" style={{overflowY:"auto",padding:"24px 20px 48px"}}>
 
-          {/* ── Unified plan container: bordered card on top + white feature list ── */}
+          {/* ── Unified plan container: bordered card on top + feature list + usage + upgrade ── */}
           <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,overflow:"hidden",marginBottom:20}}>
 
-            {/* Top: plan card — has its own inset border + optional fill */}
+            {/* Top: plan card — inset with its own border */}
             <div style={{
               margin:12,
               borderRadius:14,
-              border:`1.5px solid ${isFree ? BORDER : pd.color+"66"}`,
+              border: isFree ? `2px solid ${TEXT}` : `1.5px solid ${pd.color+"66"}`,
               background: isFree
                 ? "#fff"
                 : isBetaPlan
@@ -6335,36 +6335,38 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
                 </>
               )}
             </div>
+
+            {/* Usage — inside container, separated by top border */}
+            {isFree && (
+              <div style={{borderTop:`1px solid ${BORDER}`,padding:"16px 20px"}}>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,marginBottom:12}}>Usage</div>
+                {[
+                  {label:"Sessions", used:sessionCount, max:FREE_SESSION_LIMIT, color:PINK},
+                  {label:"Participants / session", used:0, max:FREE_PAX_LIMIT, color:BLUE},
+                ].map(u=>(
+                  <div key={u.label} style={{marginBottom:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                      <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{u.label}</div>
+                      <div style={{fontSize:13,color:u.color,fontWeight:700}}>{u.used} / {u.max}</div>
+                    </div>
+                    <div style={{height:6,background:BORDER,borderRadius:4,overflow:"hidden"}}>
+                      <div style={{height:6,background:u.used/u.max>0.8?`linear-gradient(90deg,${u.color},#EF4444)`:u.color,width:`${Math.max(2,(u.used/u.max)*100)}%`,borderRadius:4,transition:"width .5s ease"}}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upgrade CTA — inside container */}
+            {isFree && (
+              <div style={{padding:"0 16px 16px"}}>
+                <button onClick={onUpgrade}
+                  style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
+                  Upgrade to Pro · RM 29/mo
+                </button>
+              </div>
+            )}
           </div>
-
-          {/* Usage */}
-          {isFree && (
-            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px",marginBottom:20}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:14}}>Usage</div>
-              {[
-                {label:"Sessions", used:1, max:FREE_SESSION_LIMIT, color:PINK},
-                {label:"Participants / session", used:0, max:FREE_PAX_LIMIT, color:BLUE},
-              ].map(u=>(
-                <div key={u.label} style={{marginBottom:14}}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                    <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{u.label}</div>
-                    <div style={{fontSize:13,color:u.color,fontWeight:700}}>{u.used} / {u.max}</div>
-                  </div>
-                  <div style={{height:6,background:BORDER,borderRadius:4,overflow:"hidden"}}>
-                    <div style={{height:6,background:u.used/u.max>0.8?`linear-gradient(90deg,${u.color},#EF4444)`:u.color,width:`${Math.max(2,(u.used/u.max)*100)}%`,borderRadius:4,transition:"width .5s ease"}}/>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Upgrade CTA */}
-          {isFree && (
-            <button onClick={onUpgrade}
-              style={{width:"100%",padding:"14px 0",background:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:20}}>
-              Upgrade to Pro · RM 29/mo
-            </button>
-          )}
 
           {/* Cancel */}
           {!isFree && (
@@ -7943,7 +7945,7 @@ export default function App() {
       <style>{CSS}</style>
 
       {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>setShowPricing(false)}/>}
-      {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>{ window.history.replaceState({},"","/app"); setShowBilling(false);}}/>}
+      {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>{ window.history.replaceState({},"","/app"); setShowBilling(false);}}/>}
       {showProfile && <ProfilePage trainer={trainer} onClose={()=>{ window.history.replaceState({},"","/app"); setShowProfile(false);}} onSaved={(newName)=>setTrainer(t=>({...t,name:newName}))}/>}
       {showSuperAdmin && <SuperAdminDashboard onClose={()=>{ window.history.replaceState({},"","/app"); setShowSuperAdmin(false);}}/>}
       {showHostEarnings && trainer && <EarningsPage uid={trainer.uid} name={trainer.name} onClose={()=>{ window.history.replaceState({},"","/app"); setShowHostEarnings(false);}}/>}
