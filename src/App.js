@@ -6461,7 +6461,7 @@ function SettingsPage({ isPro=false, onClose }) {
                   <div style={{textAlign:"center"}}>
                     <button onClick={resetCoins}
                       style={{background:"none",border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:12,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3,padding:"4px 0"}}>
-                      Reset to factory values (10, 30, 50, 100, 200, −10)
+                      Reset to Teticoin Default
                     </button>
                   </div>
                 </>
