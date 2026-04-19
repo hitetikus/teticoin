@@ -6223,11 +6223,11 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
         <div style={{width:60}}/>
       </div>
 
-      {/* Body — 2-column on desktop */}
+      {/* Body — 2-column on desktop, single column on mobile */}
       <div style={{flex:1,overflow:"hidden",display:"flex"}}>
 
         {/* LEFT: current plan + usage + upgrade CTA */}
-        <div style={{flex:"0 0 420px",borderRight:`1px solid ${BORDER}`,overflowY:"auto",padding:"28px 32px"}}>
+        <div className="tc-billing-left" style={{flex:"0 0 420px",borderRight:`1px solid ${BORDER}`,overflowY:"auto",padding:"28px 32px"}}>
 
           {/* Current plan card */}
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Current Plan</div>
@@ -6252,27 +6252,28 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
             {isFree ? (
               <>
                 {[
-                  {label:"3 active sessions",ok:true},
-                  {label:"Up to 30 participants per session",ok:true},
-                  {label:"Award coins in real time",ok:true},
-                  {label:"Live scoreboard",ok:true},
-                  {label:"QR / link join — no app needed",ok:true},
-                  {label:"Session log",ok:true},
-                  {label:"Projector / TV mode",ok:true},
-                  {label:"Export CSV",ok:true},
+                  "5 active sessions",
+                  "Up to 30 participants per session",
+                  "Award coins in real time",
+                  "Live scoreboard",
+                  "QR / link join — no app needed",
+                  "Session log",
+                  "Projector / TV mode",
+                  "Export CSV",
                 ].map(f=>(
-                  <div key={f.label} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${BORDER}`}}>
+                  <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${BORDER}`}}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f.label}</div>
+                    <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
                   </div>
                 ))}
                 <div style={{marginTop:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,marginBottom:8}}>🔒 Unlock with Pro</div>
                 {[
                   "Unlimited sessions",
                   "Up to 200 participants",
-                  "Groups & team scoring",
-                  "Custom coin labels",
+                  "Groups",
+                  "Custom coin values",
                   "Mass give coins",
+                  "Give by Group",
                 ].map(f=>(
                   <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${BORDER}`,opacity:0.5}}>
                     <svg width="13" height="11" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
@@ -6289,12 +6290,12 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
                   "Live scoreboard",
                   "QR / link join — no app needed",
                   "Mass give coins",
+                  "Give by Group",
                   "Session log",
                   "Projector / TV mode",
                   "Export CSV",
-                  "Groups & team scoring",
-                  "Custom coin labels",
-                  "PIN rejoin for returning participants",
+                  "Groups",
+                  "Custom coin values",
                   "Priority support",
                 ].map(f=>(
                   <div key={f} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${BORDER}`}}>
@@ -8426,6 +8427,7 @@ const CSS = `
   .tc-tab-bar { background:#fff; border-bottom:1px solid ${BORDER}; display:flex; align-items:center; flex-shrink:0; }
   .tc-right-tabs { display:none; }
   .tc-session-topbar { padding:0 16px; }
+  .tc-billing-left { flex:1 !important; border-right:none !important; width:100% !important; max-width:520px; margin:0 auto; }
 
   /* ─── Home layout: single column on mobile ─── */
   .tc-home-wrap { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
@@ -8456,6 +8458,7 @@ const CSS = `
     .tc-mobile-qc { display:none !important; }
     /* Show full text labels in session cards on desktop */
     .tc-session-meta-text { display:inline !important; }
+    .tc-billing-left { flex:0 0 420px !important; border-right:1px solid ${BORDER} !important; max-width:none !important; margin:0 !important; }
     .tc-meta-icon { display:none !important; }
 
     /* Home: fixed top nav + two-column body */
