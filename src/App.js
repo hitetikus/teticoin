@@ -3746,8 +3746,8 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                               {p.num != null && <span style={{fontSize:9,color:"#ccc",fontWeight:600}}>· P{String(p.num).padStart(3,"0")}</span>}
                             </div>
                           </div>
-                          <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
-                            <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:5}}>
+                          <div style={{flex:1,minWidth:0,overflow:"visible"}}>
+                            <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:5,padding:"3px 1px"}}>
                               {allCoins.map((v,ci) => (
                                 <button key={ci} disabled={isCMp}
                                   onClick={e=>{e.stopPropagation();if(isCMp)return;award(p.id,"token",v,e.clientX,e.clientY);}}
@@ -4872,8 +4872,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                             {p.num != null && <span style={{fontSize:9,color:"#ccc",fontWeight:600}}>· P{String(p.num).padStart(3,"0")}</span>}
                           </div>
                         </div>
-                        <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
-                          <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:5}}>
+                        <div style={{flex:1,minWidth:0,overflow:"visible"}}>
+                          <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:5,padding:"3px 1px"}}>
                             {allCoins.map((v,ci) => (
                               <button key={ci} disabled={isCMp}
                                 onClick={e=>{e.stopPropagation();if(isCMp)return;award(p.id,"token",v,e.clientX,e.clientY);}}
@@ -5109,8 +5109,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</div>
                           <div style={{fontSize:10,color:PINK,fontWeight:700}}>{p.total} pts</div>
                         </div>
-                        <div style={{flex:1,minWidth:0,overflow:"hidden"}}>
-                          <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:4}}>
+                        <div style={{flex:1,minWidth:0,overflow:"visible"}}>
+                          <div className="tc-qcrow" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",display:"flex",gap:4,padding:"3px 1px"}}>
                             {coins.map((v,ci) => (
                               <button key={ci}
                                 onClick={e=>{e.stopPropagation();award(p.id,"token",v,e.clientX,e.clientY);}}
@@ -8570,4 +8570,15 @@ const CSS = `
   /* Global cursor fix */
   * { caret-color: #1A0A14 !important; }
   input, textarea, [contenteditable] { caret-color: #1A0A14 !important; color: inherit; }
+  /* Quick coin button hover — desktop only */
+  @media (min-width:900px) {
+    .tc-qcrow button:not(:disabled):hover {
+      border-color: ${PINK} !important;
+      transform: scale(1.12);
+      z-index: 2;
+      box-shadow: 0 2px 8px rgba(233,30,140,0.2);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
+    }
+    .tc-qcrow button { transition: transform 0.1s ease, box-shadow 0.1s ease; position: relative; }
+  }
 `;
