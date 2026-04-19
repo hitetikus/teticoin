@@ -7768,7 +7768,7 @@ export default function App() {
         }
       } catch {}
     })();
-  }} onPView={()=>setScreen("participant")}/></>;
+  }} onPView={()=>setScreen("participant")}/>{showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>setShowPricing(false)}/>}</>;
 
   // Session settings from home list gear icon
   if (screen==="sessionSettings" && cur) return (
