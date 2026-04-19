@@ -5628,192 +5628,200 @@ async function handlePaymentReturn(onSuccess) {
 function PricingPage({ currentPlan="free", onSelect, onClose }) {
   const [billing, setBilling] = useState("monthly");
 
-  const { fxRate, chip, myr } = PAYMENT_CONFIG;
+  const proMonthly = 29;
+  const proYearly  = 269;
+  const proPerMonth = Math.round(proYearly / 12);
+  const proSaving  = proMonthly * 12 - proYearly;
+  const proLink = billing === "monthly"
+    ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL"
+    : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl";
 
-  function myrPrice(planId) {
-    if (planId === "oneTime") return myr.oneTime.oneTime;
-    return billing === "yearly" ? myr[planId].yearly : myr[planId].monthly;
-  }
-  function myrPerMonth(planId) {
-    if (planId === "oneTime") return myr.oneTime.oneTime;
-    return billing === "yearly"
-      ? (myr[planId].yearly / 12).toFixed(0)
-      : myr[planId].monthly;
-  }
-  function saving(planId) {
-    const annual = myr[planId].monthly * 12;
-    return annual - myr[planId].yearly;
+  const NEUT   = "#6B7280";
+  const LP_PINK   = "#FF4FB8";
+  const LP_PINK2  = "#E91E8C";
+  const LP_PURPLE = "#9D50FF";
+  const LP_PURPLE2= "#7C3AED";
+  const LP_TEXT   = "#0A0A0F";
+  const LP_BORDER = "rgba(255,79,184,0.15)";
+  const LP_GRAD   = `linear-gradient(135deg,${LP_PINK},${LP_PURPLE})`;
+  const isFree = currentPlan === "free";
+  const isPro  = currentPlan === "pro" || currentPlan === "proY";
+
+  function CheckIcon({ color = LP_PINK2 }) {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0}}>
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    );
   }
 
-  function handlePay(planId) {
-    if (planId === "oneTime") {
-      const url = chip.oneTime?.oneTime;
-      if (url) window.location.href = url;
-      return;
-    }
-    const url = chip[planId]?.[billing];
-    if (url) window.location.href = url;
-  }
-
-  const tiers = [
-    {
-      id:"free", name:"Free",
-      color:SUB, borderColor:BORDER, bg:"#fff",
-      tagline:"Try it out, no card needed",
-      features:["3 sessions","Up to 20 participants","Live scoreboard","QR join — no app needed","Basic features"],
-    },
-    {
-      id:"oneTime", name:"One Time",
-      color:BLUE, borderColor:BLUE, bg:"#EFF6FF",
-      tagline:"Pay once, use forever",
-      features:["Unlimited sessions","Unlimited participants","Full features","No subscription needed","All future basic updates"],
-    },
-    {
-      id:"pro", name:"Pro",
-      color:PINK, borderColor:PINK, bg:SOFT,
-      tagline:"For active facilitators",
-      badge:"⭐ Best value",
-      features:["Unlimited sessions","Up to 200 participants","Groups & team scoring","Custom coin labels","Mass give coins","Priority support"],
-    },
-  ];
+  const cardCSS = `
+    .pp-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; max-width:860px; margin:0 auto; }
+    @media(max-width:700px){ .pp-grid { grid-template-columns:1fr; max-width:420px; } }
+    .pp-card { background:#fff; border:1.5px solid #E5E7EB; border-radius:20px; padding:32px 24px; position:relative; display:flex; flex-direction:column; }
+    .pp-card-popular { border-color:${LP_PINK}; box-shadow:0 0 0 1px ${LP_PINK},0 8px 40px rgba(255,79,184,0.12); overflow:hidden; }
+    .pp-badge { position:absolute; top:18px; right:-28px; background:${LP_GRAD}; color:#fff; font-size:9px; font-weight:800; padding:5px 36px; letter-spacing:.8px; transform:rotate(35deg); pointer-events:none; font-family:'DM Sans',sans-serif; }
+    .pp-current-badge { position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:#0A0A0F; color:#fff; font-size:10px; font-weight:800; padding:3px 14px; border-radius:99px; white-space:nowrap; font-family:'Plus Jakarta Sans',sans-serif; }
+    .pp-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:12px; font-family:'DM Sans',sans-serif; }
+    .pp-price { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:42px; line-height:1; margin-bottom:4px; }
+    .pp-period { font-size:13px; color:${NEUT}; }
+    .pp-divider { height:1px; background:#F3F4F6; margin:20px 0; }
+    .pp-features { list-style:none; display:flex; flex-direction:column; gap:10px; margin-bottom:24px; flex:1; padding:0; }
+    .pp-features li { display:flex; align-items:flex-start; gap:8px; font-size:13px; color:${LP_TEXT}; }
+    .pp-btn { width:100%; padding:13px; border-radius:999px; font-family:'DM Sans',sans-serif; font-weight:700; font-size:14px; cursor:pointer; border:none; transition:all .15s; }
+    .pp-btn-primary { background:${LP_GRAD}; color:#fff; }
+    .pp-btn-outline { background:#fff; color:${LP_TEXT}; border:1.5px solid #E5E7EB; }
+    .pp-btn-outline:hover { border-color:${LP_PINK}; color:${LP_PINK}; }
+    .pp-btn-purple { background:linear-gradient(135deg,${LP_PURPLE2},${LP_PURPLE}); color:#fff; }
+    .pp-toggle { display:inline-flex; background:#F3F4F6; border:1.5px solid #D1D5DB; border-radius:999px; padding:4px; gap:2px; }
+    .pp-toggle button { border:none; border-radius:999px; padding:9px 20px; font-family:'DM Sans',sans-serif; font-weight:700; font-size:13px; cursor:pointer; transition:all .2s; white-space:nowrap; background:transparent; color:${NEUT}; }
+  `;
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <style>{CSS}</style>
+    <div style={{position:"fixed",inset:0,zIndex:700,background:"#FAFAFA",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <style>{cardCSS}</style>
 
       {/* Header */}
-      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Choose a Plan</div>
-        <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+      <div style={{background:"#fff",borderBottom:`1px solid rgba(255,79,184,0.15)`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,background:LP_GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+          Choose a Plan
+        </div>
+        <button onClick={onClose} style={{background:"none",border:"1.5px solid #E5E7EB",borderRadius:8,width:30,height:30,cursor:"pointer",color:NEUT,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
       </div>
 
       {/* Scrollable body */}
       <div style={{flex:1,overflowY:"auto"}}>
-        <div style={{maxWidth:1100,margin:"0 auto",padding:"32px 24px 64px"}}>
+        <div style={{maxWidth:960,margin:"0 auto",padding:"32px 20px 64px",textAlign:"center"}}>
 
-          {/* Value prop + toggle */}
-          <div style={{textAlign:"center",marginBottom:24}}>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:TEXT,lineHeight:1.2,marginBottom:6}}>
-              Reward participation,<br/>not just answers.
-            </div>
-            <div style={{fontSize:14,color:SUB,marginBottom:16}}>Kahoot scores quizzes. Teticoin rewards humans.</div>
-            <div style={{display:"inline-flex",background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:99,padding:"4px 14px",fontSize:12,color:SUB,alignItems:"center",gap:6,marginBottom:20}}>
-              <span>🇲🇾</span><span>Prices in MYR · International cards accepted</span>
-            </div>
-
-            {/* Billing toggle — centered */}
-            <div style={{display:"flex",justifyContent:"center"}}>
-              <div style={{display:"flex",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:3,gap:3,width:320}}>
-                {[["monthly","Monthly",null],["yearly","Yearly","SAVE 35%"]].map(([b,label,badge]) => (
-                  <button key={b} onClick={()=>setBilling(b)}
-                    style={{flex:1,padding:"10px 0",borderRadius:9,border:"none",
-                      background:billing===b?GRAD:"transparent",
-                      fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
-                      color:billing===b?"#fff":SUB,cursor:"pointer",transition:"all .15s",
-                      display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                    {label}
-                    {badge && <span style={{background:billing==="yearly"?"rgba(255,255,255,.25)":GREEN,color:"#fff",fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:99}}>{badge}</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* 3-column plan cards */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
-            {tiers.map(t => {
-              const isCurrent = currentPlan === t.id;
-              const isPaid = t.id !== "free";
-              const monthlyNote = t.id === "pro" && billing === "monthly" ? myr.pro.monthlyNote : null;
-              return (
-                <div key={t.id} style={{background:t.bg,border:`2px solid ${isCurrent?t.color:t.id==="free"?BORDER:t.borderColor}`,borderRadius:18,padding:"24px",position:"relative",display:"flex",flexDirection:"column"}}>
-                  {t.badge && <div style={{position:"absolute",top:-11,left:20,background:GRAD,color:"#fff",fontSize:10,fontWeight:800,padding:"3px 12px",borderRadius:99,boxShadow:`0 2px 8px ${PINK}40`}}>{t.badge}</div>}
-                  {isCurrent && <div style={{position:"absolute",top:-11,right:20,background:t.color,color:"#fff",fontSize:10,fontWeight:800,padding:"3px 12px",borderRadius:99}}>✓ Current Plan</div>}
-
-                  <div style={{marginBottom:16}}>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:t.color}}>{t.name}</div>
-                    <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:2}}>{t.tagline}</div>
-                  </div>
-
-                  {/* Price */}
-                  <div style={{marginBottom:16}}>
-                    {!isPaid ? (
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:SUB}}>Free</div>
-                    ) : t.id === "oneTime" ? (
-                      <>
-                        <div style={{display:"flex",alignItems:"baseline",gap:3}}>
-                          <span style={{fontSize:12,fontWeight:600,color:t.color}}>RM</span>
-                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:t.color,lineHeight:1}}>29</span>
-                        </div>
-                        <div style={{fontSize:12,color:SUB,marginTop:3}}>One-time payment</div>
-                        <div style={{fontSize:11,background:`${BLUE}15`,color:BLUE,fontWeight:700,borderRadius:6,padding:"2px 8px",marginTop:4,display:"inline-block"}}>No subscription</div>
-                      </>
-                    ) : billing === "yearly" ? (
-                      <>
-                        <div style={{display:"flex",alignItems:"baseline",gap:3}}>
-                          <span style={{fontSize:12,fontWeight:600,color:t.color}}>RM</span>
-                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:t.color,lineHeight:1}}>{myrPerMonth(t.id)}</span>
-                          <span style={{fontSize:13,color:SUB}}>/mo</span>
-                        </div>
-                        <div style={{fontSize:12,color:SUB,marginTop:3}}>RM {myr[t.id].yearly}/year</div>
-                        <div style={{fontSize:11,background:`${GREEN}15`,color:GREEN,fontWeight:700,borderRadius:6,padding:"2px 8px",marginTop:4,display:"inline-block"}}>Save RM {saving(t.id)}</div>
-                      </>
-                    ) : (
-                      <>
-                        <div style={{display:"flex",alignItems:"baseline",gap:3}}>
-                          <span style={{fontSize:12,fontWeight:600,color:t.color}}>RM</span>
-                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:32,color:t.color,lineHeight:1}}>{myr[t.id].monthly}</span>
-                          <span style={{fontSize:13,color:SUB}}>/mo</span>
-                        </div>
-                        {monthlyNote && <div style={{fontSize:11,background:`${PINK}12`,color:PINK,fontWeight:700,borderRadius:6,padding:"2px 8px",marginTop:4,display:"inline-block"}}>🎉 {monthlyNote}</div>}
-                      </>
-                    )}
-                  </div>
-
-                  {/* Features */}
-                  <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20,flex:1}}>
-                    {t.features.map(f => (
-                      <div key={f} style={{display:"flex",alignItems:"center",gap:8}}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.color} strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0}}><polyline points="20 6 9 17 4 12"/></svg>
-                        <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* CTA */}
-                  {isCurrent ? (
-                    <div style={{textAlign:"center",padding:"11px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:t.color,background:`${t.color}10`,borderRadius:10}}>
-                      ✓ Your current plan
-                    </div>
-                  ) : t.id==="free" ? (
-                    currentPlan !== "free" ? (
-                      <button onClick={()=>onSelect(t.id,"monthly")} style={{width:"100%",padding:"11px 0",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>
-                        Downgrade to Free
-                      </button>
-                    ) : null
-                  ) : (
-                    <button onClick={()=>handlePay(t.id)}
-                      style={{width:"100%",padding:"14px 0",background:t.id==="pro"?GRAD:t.id==="oneTime"?`linear-gradient(135deg,${BLUE},#2563EB)`:`linear-gradient(135deg,${PURPLE},#A855F7)`,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:t.id==="pro"?`0 4px 16px ${PINK}40`:t.id==="oneTime"?`0 4px 16px ${BLUE}40`:`0 4px 16px ${PURPLE}40`}}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                      {t.id==="oneTime" ? "Get One Time · RM 29" : `Get ${t.name} ${billing==="yearly"?"— Save RM 79":""} · RM ${myrPrice(t.id)}`}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Footer trust signals */}
-          <div style={{marginTop:28,textAlign:"center",fontSize:12,color:SUB,lineHeight:2}}>
-            Cancel anytime · No hidden fees · Secure payment via{" "}
-            <span style={{color:"#6C47FF",fontWeight:700}}>Chip</span><br/>
-            <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,flexWrap:"wrap",marginTop:4}}>
-              {["FPX","DuitNow QR","E-Wallet","Credit / Debit Card"].map(m=>(
-                <span key={m} style={{background:"#F3F4F6",borderRadius:6,padding:"2px 8px",fontWeight:600,color:SUB,fontSize:11}}>{m}</span>
+          {/* Toggle */}
+          <div style={{marginBottom:28}}>
+            <div className="pp-toggle">
+              {[["monthly","Monthly"],["yearly","Yearly — save RM 79"]].map(([v,l]) => (
+                <button key={v} onClick={() => setBilling(v)}
+                  style={{background:billing===v?LP_GRAD:"transparent",color:billing===v?"#fff":NEUT,
+                    boxShadow:billing===v?"0 4px 16px rgba(255,79,184,0.25)":"none"}}>
+                  {l}
+                </button>
               ))}
-            </span>
-            <div style={{marginTop:8,color:SUB}}>International cards accepted · Billed in MYR</div>
+            </div>
           </div>
+
+          {/* Cards grid */}
+          <div className="pp-grid">
+
+            {/* FREE */}
+            <div className="pp-card" style={currentPlan==="free" ? {borderColor:LP_PINK,boxShadow:`0 0 0 1px ${LP_PINK}`} : {}}>
+              {currentPlan==="free" && <div className="pp-current-badge">✓ Current Plan</div>}
+              <div className="pp-label" style={{color:NEUT}}>Free</div>
+              <div style={{minHeight:80,display:"flex",flexDirection:"column",justifyContent:"flex-end",margin:"8px 0 0"}}>
+                <div className="pp-price" style={{color:LP_TEXT}}>RM 0</div>
+              </div>
+              <div style={{height:36,display:"flex",alignItems:"center"}}>
+                <div className="pp-period">No time limit. No card required.</div>
+              </div>
+              <div className="pp-divider"/>
+              <ul className="pp-features">
+                {["5 active sessions","Up to 30 participants","Award coins in real time","Live scoreboard","QR / link join — no app needed","Session log","Projector / TV mode","Export CSV"].map(f => (
+                  <li key={f}><CheckIcon color={NEUT}/>{f}</li>
+                ))}
+              </ul>
+              {currentPlan === "free" ? (
+                <div style={{textAlign:"center",padding:"11px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:NEUT,background:"#F3F4F6",borderRadius:999}}>✓ Your current plan</div>
+              ) : (
+                <button className="pp-btn pp-btn-outline" onClick={onClose}>Continue with Free</button>
+              )}
+            </div>
+
+            {/* PRO */}
+            <div className={`pp-card pp-card-popular`} style={isPro ? {borderColor:LP_PINK,boxShadow:`0 0 0 2px ${LP_PINK}`} : {}}>
+              {isPro && <div className="pp-current-badge">✓ Current Plan</div>}
+              <div className="pp-badge">POPULAR</div>
+              <div className="pp-label" style={{color:LP_PINK}}>Pro</div>
+              <div style={{minHeight:80,display:"flex",flexDirection:"column",justifyContent:"flex-end",margin:"8px 0 0"}}>
+                {billing === "monthly" ? (
+                  <div style={{display:"flex",alignItems:"baseline",gap:4}}>
+                    <div className="pp-price" style={{color:LP_PINK,margin:0}}>RM {proMonthly}</div>
+                    <div style={{fontSize:15,fontWeight:600,color:LP_PINK}}>/mo</div>
+                  </div>
+                ) : (
+                  <div style={{display:"flex",alignItems:"baseline",gap:4}}>
+                    <div className="pp-price" style={{color:LP_PINK,margin:0}}>RM {proYearly}</div>
+                    <div style={{fontSize:15,fontWeight:600,color:LP_PINK}}>/yr</div>
+                  </div>
+                )}
+              </div>
+              <div style={{height:36,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                {billing === "monthly" ? (
+                  <div className="pp-period">Charged once · valid for 1 month</div>
+                ) : (
+                  <>
+                    <div className="pp-period">RM {proPerMonth}/mo</div>
+                    <div style={{fontSize:11,fontWeight:700,color:"#16A34A",background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:99,padding:"2px 8px",whiteSpace:"nowrap"}}>Save RM {proSaving}</div>
+                  </>
+                )}
+              </div>
+              <div className="pp-divider" style={{background:"#FECDE8"}}/>
+              <ul className="pp-features">
+                {["Everything in Free","Unlimited sessions","Up to 200 participants","Groups & team scoring","Custom coin labels","Mass give coins to everyone","Projector / TV mode","Export CSV","Priority support"].map(f => (
+                  <li key={f}><CheckIcon color={LP_PINK}/>{f}</li>
+                ))}
+              </ul>
+              {isPro ? (
+                <div style={{textAlign:"center",padding:"11px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:LP_PINK,background:"rgba(255,79,184,0.08)",borderRadius:999}}>✓ Your current plan</div>
+              ) : (
+                <>
+                  <button className="pp-btn pp-btn-primary" onClick={() => window.location.href = proLink}>
+                    {billing === "monthly" ? `Upgrade to Pro — RM ${proMonthly}/mo` : `Upgrade to Pro — RM ${proYearly}/yr`}
+                  </button>
+                  <div style={{textAlign:"center",fontSize:11,color:NEUT,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>
+                </>
+              )}
+            </div>
+
+            {/* ENTERPRISE */}
+            <div className="pp-card" style={currentPlan==="team"||currentPlan==="teamY" ? {borderColor:LP_PURPLE,boxShadow:`0 0 0 1px ${LP_PURPLE}`} : {}}>
+              {(currentPlan==="team"||currentPlan==="teamY") && <div className="pp-current-badge" style={{background:LP_PURPLE}}>✓ Current Plan</div>}
+              <div className="pp-label" style={{color:LP_PURPLE}}>Enterprise</div>
+              <div style={{minHeight:80,display:"flex",flexDirection:"column",justifyContent:"flex-end",margin:"8px 0 0"}}>
+                <div className="pp-price" style={{fontSize:32,color:LP_PURPLE,margin:0}}>Contact us</div>
+              </div>
+              <div style={{height:36,display:"flex",alignItems:"center"}}>
+                <div className="pp-period">For teams and organisations</div>
+              </div>
+              <div className="pp-divider" style={{background:"#DDD6FE"}}/>
+              <ul className="pp-features">
+                {[
+                  {text:"Everything in Pro", sub:null},
+                  {text:"Unlimited participants", sub:null},
+                  {text:"Multiple host accounts", sub:"Each trainer gets their own login"},
+                  {text:"Shared session library", sub:"All hosts share the same sessions"},
+                  {text:"Admin dashboard", sub:null},
+                  {text:"Dedicated support", sub:null},
+                ].map(f => (
+                  <li key={f.text} style={{flexDirection:"column",alignItems:"flex-start",gap:2}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <CheckIcon color={LP_PURPLE}/>
+                      <span>{f.text}</span>
+                    </div>
+                    {f.sub && <div style={{fontSize:11,color:"#9CA3AF",paddingLeft:22,marginTop:1}}>{f.sub}</div>}
+                  </li>
+                ))}
+              </ul>
+              <button className="pp-btn pp-btn-outline" style={{borderColor:"#DDD6FE",color:LP_PURPLE}} onClick={() => window.location.href = "mailto:hi.tetikus@gmail.com"}>Get in touch</button>
+            </div>
+
+          </div>
+
+          {/* Footer trust */}
+          <div style={{marginTop:28,fontSize:12,color:NEUT,lineHeight:2}}>
+            Cancel anytime · No hidden fees · Secure payment via <span style={{color:"#6C47FF",fontWeight:700}}>Chip</span>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,flexWrap:"wrap",marginTop:4}}>
+              {["FPX","DuitNow QR","E-Wallet","Credit / Debit Card"].map(m=>(
+                <span key={m} style={{background:"#F3F4F6",borderRadius:6,padding:"2px 8px",fontWeight:600,color:NEUT,fontSize:11}}>{m}</span>
+              ))}
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
