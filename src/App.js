@@ -6223,15 +6223,20 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
         <div style={{width:60}}/>
       </div>
 
-      {/* Body — single scrollable column, centered */}
-      <div style={{flex:1,overflowY:"auto"}}>
-        <div style={{maxWidth:520,margin:"0 auto",padding:"24px 20px 48px"}}>
+      {/* Body — responsive: single col mobile, 2-col desktop */}
+      <div style={{flex:1,overflow:"hidden",display:"flex"}}>
 
-          {/* ── Plan card + feature list — single unified container ── */}
-          <div style={{background:"#fff",border:`1.5px solid ${isFree ? BORDER : pd.color}`,borderRadius:20,overflow:"hidden",marginBottom:20,boxShadow:isFree?"none":`0 0 0 1px ${pd.color}40`}}>
+        {/* LEFT column (full width on mobile, 420px on desktop) */}
+        <div className="tc-billing-left" style={{overflowY:"auto",padding:"24px 20px 48px"}}>
 
-            {/* Top: coloured plan card */}
+          {/* ── Unified plan container: bordered card on top + white feature list ── */}
+          <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,overflow:"hidden",marginBottom:20}}>
+
+            {/* Top: plan card — has its own inset border + optional fill */}
             <div style={{
+              margin:12,
+              borderRadius:14,
+              border:`1.5px solid ${isFree ? BORDER : pd.color+"66"}`,
               background: isFree
                 ? "#fff"
                 : isBetaPlan
@@ -6239,20 +6244,19 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
                   : pd.color===PINK
                     ? `linear-gradient(135deg,${SOFT},#FFD6EE)`
                     : "linear-gradient(135deg,#EDE9FE,#DDD6FE)",
-              padding:"24px 20px 20px",
-              borderBottom:`1px solid ${isFree ? BORDER : pd.color+"33"}`
+              padding:"18px 16px 16px",
             }}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:isFree?TEXT:pd.color}}>{pd.name}</div>
-                <div style={{background:isFree?"#F3F4F6":`${pd.color}20`,border:`1.5px solid ${isFree?BORDER:pd.color+"44"}`,borderRadius:99,padding:"4px 14px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isFree?SUB:pd.color}}>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:isFree?TEXT:pd.color}}>{pd.name}</div>
+                <div style={{background:isFree?"#F3F4F6":`${pd.color}18`,border:`1.5px solid ${isFree?BORDER:pd.color+"44"}`,borderRadius:99,padding:"4px 14px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isFree?SUB:pd.color}}>
                   {isBetaPlan?"Beta Access":"Active"}
                 </div>
               </div>
               {isBetaPlan ? (
-                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:18,color:"#065F46"}}>Full Pro — Complimentary</div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:17,color:"#065F46"}}>Full Pro — Complimentary</div>
               ) : (
                 <div style={{display:"flex",alignItems:"baseline",gap:4}}>
-                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:36,color:isFree?TEXT:pd.color,lineHeight:1}}>{pd.price}</div>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:34,color:isFree?TEXT:pd.color,lineHeight:1}}>{pd.price}</div>
                   {!isFree && pd.renewal!=="one-time" && <div style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</div>}
                 </div>
               )}
@@ -6265,9 +6269,9 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
               </div>
             </div>
 
-            {/* Bottom: feature list (always white) */}
-            <div style={{background:"#fff",padding:"16px 20px"}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,marginBottom:12}}>
+            {/* Bottom: feature list — always white, no extra border */}
+            <div style={{padding:"0 20px 16px"}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,margin:"4px 0 12px"}}>
                 {isFree ? "What's included" : "Everything in your plan"}
               </div>
               {isFree ? (
@@ -6287,7 +6291,11 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
                       <div style={{fontSize:13,color:TEXT,fontWeight:500}}>{f}</div>
                     </div>
                   ))}
-                  <div style={{marginTop:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,marginBottom:8}}>🔒 Unlock with Pro</div>
+                  {/* Unlock with Pro — flat lock icon */}
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginTop:14,marginBottom:8}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB}}>Unlock with Pro</div>
+                  </div>
                   {[
                     "Unlimited sessions",
                     "Up to 200 participants",
@@ -6377,16 +6385,57 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
             )
           )}
 
-          {/* Invoice History — at the bottom */}
+          {/* Invoice History — below CTA on mobile, hidden here on desktop (shown in right col) */}
+          <div className="tc-billing-invoice">
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Invoice History</div>
+            {invoices.length === 0 ? (
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"36px 24px",textAlign:"center",marginBottom:20}}>
+                <div style={{width:48,height:48,borderRadius:12,background:SOFT,border:`1.5px solid ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.8" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>No invoices yet</div>
+                <div style={{fontSize:13,color:SUB}}>Invoices will appear here after your first payment.</div>
+              </div>
+            ) : (
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:20}}>
+                {invoices.map((inv,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none"}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{inv.date}</div>
+                      <div style={{fontSize:12,color:SUB,marginTop:1}}>{pd.name} Plan · {pd.renewal}</div>
+                    </div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:12}}>{inv.amount}</div>
+                    <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN}}>{inv.status}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px 18px"}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,marginBottom:8}}>Payment Methods</div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                {["FPX","DuitNow QR","E-Wallet","Credit / Debit Card"].map(m=>(
+                  <span key={m} style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:6,padding:"4px 10px",fontSize:12,fontWeight:600,color:SUB}}>{m}</span>
+                ))}
+              </div>
+              <div style={{fontSize:12,color:SUB,marginTop:10}}>Payments processed securely by <span style={{color:"#6C47FF",fontWeight:700}}>Chip</span> · International cards accepted</div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* RIGHT column — invoice history, desktop only */}
+        <div className="tc-billing-right" style={{flex:1,overflowY:"auto",padding:"28px 32px",borderLeft:`1px solid ${BORDER}`}}>
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Invoice History</div>
           {invoices.length === 0 ? (
-            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"36px 24px",textAlign:"center",marginBottom:20}}>
-              <div style={{fontSize:28,marginBottom:8}}>🧾</div>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>No invoices yet</div>
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"48px 24px",textAlign:"center"}}>
+              <div style={{width:56,height:56,borderRadius:14,background:SOFT,border:`1.5px solid ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.8" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>No invoices yet</div>
               <div style={{fontSize:13,color:SUB}}>Invoices will appear here after your first payment.</div>
             </div>
           ) : (
-            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:20}}>
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
               {invoices.map((inv,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none"}}>
                   <div style={{flex:1}}>
@@ -6399,9 +6448,7 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
               ))}
             </div>
           )}
-
-          {/* Payment methods */}
-          <div style={{background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px 18px"}}>
+          <div style={{marginTop:20,background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px 18px"}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,marginBottom:8}}>Payment Methods</div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
               {["FPX","DuitNow QR","E-Wallet","Credit / Debit Card"].map(m=>(
@@ -6410,8 +6457,8 @@ function BillingPage({ plan="free", planExpiry=null, onUpgrade, onClose }) {
             </div>
             <div style={{fontSize:12,color:SUB,marginTop:10}}>Payments processed securely by <span style={{color:"#6C47FF",fontWeight:700}}>Chip</span> · International cards accepted</div>
           </div>
-
         </div>
+
       </div>
     </div>
   );
@@ -8446,7 +8493,9 @@ const CSS = `
   .tc-tab-bar { background:#fff; border-bottom:1px solid ${BORDER}; display:flex; align-items:center; flex-shrink:0; }
   .tc-right-tabs { display:none; }
   .tc-session-topbar { padding:0 16px; }
-  .tc-billing-left { display:none; }
+  .tc-billing-left { flex:1; width:100%; overflow-y:auto; padding:24px 20px 48px; }
+  .tc-billing-right { display:none !important; }
+  .tc-billing-invoice { display:block; }
 
   /* ─── Home layout: single column on mobile ─── */
   .tc-home-wrap { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
@@ -8478,6 +8527,9 @@ const CSS = `
     /* Show full text labels in session cards on desktop */
     .tc-session-meta-text { display:inline !important; }
     /* billing layout handled inline */
+    .tc-billing-left { flex:0 0 420px !important; padding:28px 32px !important; width:auto !important; }
+    .tc-billing-right { display:block !important; }
+    .tc-billing-invoice { display:none !important; }
     .tc-meta-icon { display:none !important; }
 
     /* Home: fixed top nav + two-column body */
