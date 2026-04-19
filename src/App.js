@@ -3521,9 +3521,8 @@ function CoinmasterView({ session: init, selfId, onBack }) {
     mut(s => {
       const p = s.participants.find(x=>x.id===pid); if (!p) return;
       p.total += pts; p.bk[type] = (p.bk[type]||0)+1;
-      const _nowA = new Date(); const _tsA = _nowA.toLocaleDateString("en-GB",{day:"2-digit",month:"short"})+" "+_nowA.toLocaleTimeString();
-      p.hist = [{type,pts,t:_tsA}, ...(p.hist||[]).slice(0,29)];
-      s.log = [{id:Date.now(),name:p.name,type,pts,t:_tsA}, ...(s.log||[]).slice(0,99)];
+      p.hist = [{type,pts,t:new Date().toLocaleTimeString()}, ...(p.hist||[]).slice(0,29)];
+      s.log = [{id:Date.now(),name:p.name,type,pts,t:new Date().toLocaleTimeString()}, ...(s.log||[]).slice(0,99)];
     });
     const col = type==="token" ? "#16A34A" : ACTS.find(x=>x.id===type)?.col||"#16A34A";
     setAnims(a => [...a, {id:aid.current++,x:mx,y:my,text:pts<0?`${pts}`:`+${pts}`,color:pts<0?"#EF4444":col}]);
@@ -4382,9 +4381,8 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
     mut(s => {
       const p = s.participants.find(x=>x.id===pid); if (!p) return;
       p.total += pts; p.bk[type] = (p.bk[type]||0)+1;
-      const _nowB = new Date(); const _tsB = _nowB.toLocaleDateString("en-GB",{day:"2-digit",month:"short"})+" "+_nowB.toLocaleTimeString();
-      p.hist = [{type,pts,t:_tsB}, ...(p.hist||[]).slice(0,29)];
-      s.log = [{id:Date.now(),name:p.name,type,pts,t:_tsB}, ...(s.log||[]).slice(0,99)];
+      p.hist = [{type,pts,t:new Date().toLocaleTimeString()}, ...(p.hist||[]).slice(0,29)];
+      s.log = [{id:Date.now(),name:p.name,type,pts,t:new Date().toLocaleTimeString()}, ...(s.log||[]).slice(0,99)];
       // Record earning to participant's personal Firestore earnings history
       // Use p.total (absolute value) to avoid race conditions from rapid awards
       if (p.uid) {
@@ -4497,7 +4495,6 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                   : proGateHint==="group" ? "Give by Group is Pro"
                   : proGateHint==="coinsetting" ? "Coin Setting is Pro"
                   : proGateHint==="groups" ? "Groups is Pro"
-                  : proGateHint==="exportlog" ? "Export CSV is Pro"
                   : "Coinmaster Mode is Pro"}
               </div>
               <div style={{fontSize:14,color:SUB,lineHeight:1.7,textAlign:"left"}}>
@@ -4540,23 +4537,6 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                     </div>
                   : proGateHint==="groups"
                   ? "Organise participants into teams, assign groups, and track team scores on the scoreboard."
-                  : proGateHint==="exportlog"
-                  ? <div style={{width:"100%"}}>
-                      <div style={{marginBottom:12,textAlign:"center"}}>Download a full record of every coin event:</div>
-                      <div style={{background:"#fff",border:`1px solid ${BORDER}`,borderRadius:12,overflow:"hidden"}}>
-                        {[
-                          ["Participant name","Who received the coins"],
-                          ["Coin amount & type","Value and label of each award"],
-                          ["Timestamp","Date and time of every event"],
-                          ["Session reference","Linked to your session code"],
-                        ].map(([label,desc],i,arr)=>(
-                          <div key={label} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderBottom:i<arr.length-1?`1px solid ${BORDER}`:"none"}}>
-                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,minWidth:130,flexShrink:0}}>{label}</div>
-                            <div style={{fontSize:12,color:SUB,lineHeight:1.5}}>{desc}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                   : "Let a co-host award coins from their own device without giving them full host access."}
               </div>
             </div>
@@ -5322,15 +5302,14 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, onBack, 
                 {ses.log.length===0 && <div style={{padding:40,textAlign:"center"}}><Ham size={56}/><div style={{marginTop:10,fontSize:13,color:SUB}}>No activity yet</div></div>}
                 {ses.log.map(item => {
                   const a = ACTS.find(x=>x.id===item.type);
-                  const col = item.type==="token" ? PINK : (a?.col || PINK);
-                  const pts = item.pts;
+                  const col = item.type==="token" ? YELLOW : a?.col;
                   return (
                     <div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 14px",borderBottom:`1px solid ${BORDER}`}}>
                       <div style={{width:6,height:6,borderRadius:"50%",background:col,flexShrink:0}}/>
                       <div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{item.name}</div>
                       <div style={{fontSize:12,color:SUB,fontWeight:500}}>{item.type==="token"?"Token":a?.label}</div>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:pts<0?"#EF4444":col}}>{pts>0?"+":""}{pts}</div>
-                      <div style={{fontSize:11,color:SUB,whiteSpace:"nowrap"}}>{item.t}</div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:14,color:col}}>+{item.pts}</div>
+                      <div style={{fontSize:11,color:SUB}}>{item.t}</div>
                     </div>
                   );
                 })}
@@ -7848,7 +7827,6 @@ export default function App() {
   const [limitModal, setLimitModal] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
-  const [showAllActive, setShowAllActive] = useState(false);
   const [showCMJoin, setShowCMJoin] = useState(false);
   const [cmSession, setCmSession] = useState(null);
   const [paymentToast, setPaymentToast] = useState(null);
@@ -8570,7 +8548,7 @@ export default function App() {
               const active = sessions.filter(s=>!s.archived);
               const archived = sessions.filter(s=>s.archived);
               const showAll = showArchived;
-              const displayed = (showAll ? sessions : active).slice(0,showAll?999:(showAllActive?999:5));
+              const displayed = (showAll ? sessions : active).slice(0,showAll?999:5);
               return (
                 <>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginBottom:8,flexWrap:"wrap"}}>
@@ -8651,8 +8629,8 @@ export default function App() {
                   </div>
                   {/* View full list button if more than 5 */}
                   {active.length > 5 && !showArchived && (
-                    <button onClick={()=>setShowAllActive(v=>!v)} style={{width:"100%",padding:"10px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",marginTop:2}}>
-                      {showAllActive ? "Show less ↑" : `View all ${active.length} sessions →`}
+                    <button onClick={()=>setShowArchived(false)} style={{width:"100%",padding:"10px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",marginTop:2}}>
+                      View all {active.length} sessions →
                     </button>
                   )}
                 </>
