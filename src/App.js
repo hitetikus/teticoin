@@ -6053,28 +6053,30 @@ function ProfilePage({ trainer, onClose, onSaved }) {
   );
 }
 
-// ── Shared DraggableCoinList ─────────────────────────────────────
+// ── Shared DraggableCoinList — supports mouse (HTML5 dnd) + touch ────────
 function DraggableCoinList({ coins, setCoins, onRemove }) {
-  const [dragIdx, setDragIdx] = useState(null);
-  const [overIdx, setOverIdx] = useState(null);
+  const [dragIdx, setDragIdx]   = useState(null);
+  const [overIdx, setOverIdx]   = useState(null);
+  const listRef                 = useRef(null);
+  const touchDragIdx            = useRef(null);
+  const touchClone              = useRef(null);
+  const touchOverIdx            = useRef(null);
 
+  // ── Mouse / Desktop DnD ──────────────────────────────────────────
   function onDragStart(e, i) {
     setDragIdx(i);
     e.dataTransfer.effectAllowed = "move";
-    // Make drag ghost transparent so we control appearance via CSS
     const ghost = document.createElement("div");
-    ghost.style.position = "absolute"; ghost.style.top = "-999px";
+    ghost.style.cssText = "position:absolute;top:-999px;";
     document.body.appendChild(ghost);
     e.dataTransfer.setDragImage(ghost, 0, 0);
-    setTimeout(() => document.body.removeChild(ghost), 0);
+    setTimeout(() => ghost.parentNode && ghost.parentNode.removeChild(ghost), 0);
   }
-
   function onDragOver(e, i) {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (i !== overIdx) setOverIdx(i);
   }
-
   function onDrop(e, i) {
     e.preventDefault();
     if (dragIdx === null || dragIdx === i) { setDragIdx(null); setOverIdx(null); return; }
@@ -6086,47 +6088,127 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
     });
     setDragIdx(null); setOverIdx(null);
   }
-
   function onDragEnd() { setDragIdx(null); setOverIdx(null); }
 
+  // ── Touch / Mobile DnD ───────────────────────────────────────────
+  function onTouchStart(e, i) {
+    touchDragIdx.current = i;
+    touchOverIdx.current = i;
+    setDragIdx(i);
+
+    // Create floating clone that follows the finger
+    const row = e.currentTarget.parentElement;
+    const rect = row.getBoundingClientRect();
+    const clone = row.cloneNode(true);
+    clone.style.cssText = `
+      position:fixed; z-index:9999; pointer-events:none;
+      width:${rect.width}px; left:${rect.left}px; top:${rect.top}px;
+      opacity:0.92; box-shadow:0 8px 24px rgba(0,0,0,0.18);
+      border-radius:10px; background:#fff;
+      border:1.5px solid ${PINK};
+    `;
+    document.body.appendChild(clone);
+    touchClone.current = clone;
+  }
+
+  function onTouchMove(e) {
+    e.preventDefault(); // stop page scroll while dragging
+    const touch = e.touches[0];
+
+    // Move the clone
+    if (touchClone.current) {
+      touchClone.current.style.top = `${touch.clientY - 24}px`;
+    }
+
+    // Figure out which row we're over
+    if (!listRef.current) return;
+    const rows = listRef.current.querySelectorAll("[data-coin-row]");
+    let found = touchOverIdx.current;
+    rows.forEach((row, idx) => {
+      const rect = row.getBoundingClientRect();
+      if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) found = idx;
+    });
+    if (found !== touchOverIdx.current) {
+      touchOverIdx.current = found;
+      setOverIdx(found);
+    }
+  }
+
+  function onTouchEnd() {
+    // Remove clone
+    if (touchClone.current) {
+      document.body.removeChild(touchClone.current);
+      touchClone.current = null;
+    }
+    // Reorder if moved
+    const from = touchDragIdx.current;
+    const to   = touchOverIdx.current;
+    if (from !== null && to !== null && from !== to) {
+      setCoins(prev => {
+        const a = [...prev];
+        const [item] = a.splice(from, 1);
+        a.splice(to, 0, item);
+        return a;
+      });
+    }
+    touchDragIdx.current = null;
+    touchOverIdx.current = null;
+    setDragIdx(null);
+    setOverIdx(null);
+  }
+
+  // ── Render ────────────────────────────────────────────────────────
   return (
-    <div style={{display:"flex",flexDirection:"column"}}>
+    <div ref={listRef} style={{display:"flex",flexDirection:"column"}}>
       {coins.map((v, i) => {
         const isDragging = dragIdx === i;
-        const isOver = overIdx === i && dragIdx !== null && dragIdx !== i;
+        const isOver     = overIdx === i && dragIdx !== null && dragIdx !== i;
         return (
-          <div key={i}
+          <div key={i} data-coin-row
             draggable
             onDragStart={e => onDragStart(e, i)}
-            onDragOver={e => onDragOver(e, i)}
-            onDrop={e => onDrop(e, i)}
+            onDragOver={e  => onDragOver(e, i)}
+            onDrop={e      => onDrop(e, i)}
             onDragEnd={onDragEnd}
             style={{
               display:"flex", alignItems:"center", gap:10,
               padding:"10px 14px",
               borderBottom:`1px solid ${BORDER}`,
               background: isDragging ? "rgba(233,30,140,0.06)" : isOver ? "rgba(233,30,140,0.04)" : "#fff",
-              opacity: isDragging ? 0.5 : 1,
+              opacity: isDragging ? 0.45 : 1,
               borderTop: isOver ? `2px solid ${PINK}` : "none",
-              cursor:"grab", transition:"background .1s",
+              transition:"background .1s, opacity .1s",
               userSelect:"none",
             }}>
-            {/* Drag handle — 6 dots */}
-            <div style={{display:"flex",flexDirection:"column",gap:2.5,flexShrink:0,cursor:"grab",padding:"2px 4px"}}>
+
+            {/* Drag handle — touch listeners here so only the handle initiates drag */}
+            <div
+              onTouchStart={e => onTouchStart(e, i)}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+              style={{display:"flex",flexDirection:"column",gap:2.5,flexShrink:0,
+                cursor:"grab",padding:"6px 6px",touchAction:"none"}}>
               {[0,1,2].map(row => (
                 <div key={row} style={{display:"flex",gap:3}}>
-                  <div style={{width:3,height:3,borderRadius:"50%",background:"#D1D5DB"}}/>
-                  <div style={{width:3,height:3,borderRadius:"50%",background:"#D1D5DB"}}/>
+                  <div style={{width:3.5,height:3.5,borderRadius:"50%",background:"#9CA3AF"}}/>
+                  <div style={{width:3.5,height:3.5,borderRadius:"50%",background:"#9CA3AF"}}/>
                 </div>
               ))}
             </div>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:v<0?"#EF4444":PINK,minWidth:52}}>
+
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,
+              color:v<0?"#EF4444":PINK,minWidth:52}}>
               {v>0?"+":""}{v}
             </div>
             <div style={{flex:1}}/>
             <button onClick={() => onRemove(i)}
-              style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,cursor:"pointer",padding:"4px 8px",display:"flex",alignItems:"center",flexShrink:0}}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+              style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,
+                cursor:"pointer",padding:"4px 8px",display:"flex",alignItems:"center",flexShrink:0}}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/>
+              </svg>
             </button>
           </div>
         );
