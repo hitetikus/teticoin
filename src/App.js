@@ -6425,7 +6425,7 @@ function SettingsPage({ isPro=false, onClose }) {
             <div style={{maxWidth:520}}>
               <div style={{background:"rgba(255,79,184,0.06)",border:`1px solid ${BORDER}`,borderRadius:12,padding:"12px 16px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:10}}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <div style={{fontSize:13,color:SUB,lineHeight:1.6}}>These become the <strong style={{color:TEXT}}>default for all new sessions</strong>. Override per session with the ⋯ button inside any session.</div>
+                <div style={{fontSize:13,color:SUB,lineHeight:1.6}}>These coin values apply to all new sessions you create. You can still customise coins per session using the <span style={{display:"inline-flex",alignItems:"center",gap:2,border:`1px solid ${BORDER}`,borderRadius:6,padding:"1px 6px",fontSize:11,fontWeight:700,color:SUB,verticalAlign:"middle",background:"#fff"}}>•••</span> button inside any session.</div>
               </div>
 
               {coins === null ? (
@@ -6455,13 +6455,15 @@ function SettingsPage({ isPro=false, onClose }) {
                   </div>
 
                   <button onClick={saveCoins} disabled={coinBusy}
-                    style={{width:"100%",padding:"14px 0",background:coinSaved?GREEN:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:10,transition:"background .2s"}}>
-                    {coinBusy?"Saving…":coinSaved?"✓ Universal coins setting updated":"Set as Default for New Sessions"}
+                    style={{width:"100%",padding:"14px 0",background:coinSaved?GREEN:GRAD,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:12,transition:"background .2s"}}>
+                    {coinBusy?"Saving…":coinSaved?"✓ Universal coins setting updated":"Save Universal Coin Setting"}
                   </button>
-                  <button onClick={resetCoins}
-                    style={{width:"100%",padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer"}}>
-                    Reset to Factory Default (10, 30, 50, 100, 200, −10)
-                  </button>
+                  <div style={{textAlign:"center"}}>
+                    <button onClick={resetCoins}
+                      style={{background:"none",border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:12,color:SUB,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3,padding:"4px 0"}}>
+                      Reset to factory values (10, 30, 50, 100, 200, −10)
+                    </button>
+                  </div>
                 </>
               )}
             </div>
