@@ -5731,7 +5731,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
     @media(max-width:700px){ .pp-grid { grid-template-columns:1fr; max-width:420px; } }
     .pp-card { background:#fff; border:1.5px solid #E5E7EB; border-radius:20px; padding:32px 24px; position:relative; display:flex; flex-direction:column; }
     .pp-card-popular { border-color:${LP_PINK}; box-shadow:0 0 0 1px ${LP_PINK},0 8px 40px rgba(255,79,184,0.12); overflow:hidden; }
-    .pp-badge { position:absolute; top:26px; right:-30px; background:${LP_GRAD}; color:#fff; font-size:9px; font-weight:800; padding:6px 52px; letter-spacing:.8px; transform:rotate(35deg); pointer-events:none; font-family:'DM Sans',sans-serif; }
+    .pp-badge { position:absolute; top:28px; right:-36px; background:${LP_GRAD}; color:#fff; font-size:9px; font-weight:800; padding:6px 60px; letter-spacing:.8px; transform:rotate(35deg); pointer-events:none; font-family:'DM Sans',sans-serif; }
     .pp-current-badge { position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:#0A0A0F; color:#fff; font-size:10px; font-weight:800; padding:3px 14px; border-radius:99px; white-space:nowrap; font-family:'Plus Jakarta Sans',sans-serif; }
     .pp-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:12px; font-family:'DM Sans',sans-serif; }
     .pp-price { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:42px; line-height:1; margin-bottom:4px; }
@@ -7502,6 +7502,8 @@ export default function App() {
   const [plan, setPlan] = useState("free");
   const [planExpiry, setPlanExpiry] = useState(null);
   const [showPricing, setShowPricing] = useState(false);
+  function openPricing() { window.history.replaceState({}, "", "/app/pricing"); setShowPricing(true); }
+  function closePricing() { window.history.replaceState({}, "", "/app"); setShowPricing(false); }
   const [showBilling, setShowBilling] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -7712,6 +7714,9 @@ export default function App() {
           } else if (restorePath === "/app/billing") {
             setScreen("home");
             setShowBilling(true);
+          } else if (restorePath === "/app/pricing") {
+            setScreen("home");
+            setShowPricing(true);
           } else if (restorePath === "/app/profile") {
             setScreen("home");
             setShowProfile(true);
@@ -7882,7 +7887,7 @@ export default function App() {
   async function handleSelectPlan(id, billing) {
     const newPlan = id==="pro" && billing==="yearly" ? "proY" : id;
     setPlan(newPlan); await ss("plan", newPlan);
-    setShowPricing(false);
+    closePricing();
   }
 
   if (loading) return (
@@ -7901,7 +7906,7 @@ export default function App() {
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur} onBack={()=>{ window.history.replaceState({},"","/app"); setScreen("home"); setHomeReloadKey(k=>k+1); }}/></>;
   if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home"); setHomeReloadKey(k=>k+1);}}/></>;
-  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onUpgrade={()=>setShowPricing(true)} onBack={()=>{
+  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} onUpgrade={()=>openPricing()} onBack={()=>{
     // Navigate immediately — sync sessions_index in background
     window.history.replaceState({},"","/app"); setScreen("home");
     (async()=>{
@@ -7916,7 +7921,7 @@ export default function App() {
         }
       } catch {}
     })();
-  }} onPView={()=>setScreen("participant")}/>{showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>setShowPricing(false)}/>}</>;
+  }} onPView={()=>setScreen("participant")}/>{showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>closePricing()}/>}</>;
 
   // Session settings from home list gear icon
   if (screen==="sessionSettings" && cur) return (
@@ -7944,13 +7949,13 @@ export default function App() {
     <div className="tc-app-shell" style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
       <style>{CSS}</style>
 
-      {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>setShowPricing(false)}/>}
-      {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} sessionCount={sessions.filter(s=>!s.archived).length} maxPax={Math.max(0,...sessions.filter(s=>!s.archived).map(s=>s.count||0))} onUpgrade={()=>{setShowBilling(false);setShowPricing(true);}} onClose={()=>{ window.history.replaceState({},"","/app"); setShowBilling(false);}}/>}
+      {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>closePricing()}/>}
+      {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} sessionCount={sessions.filter(s=>!s.archived).length} maxPax={Math.max(0,...sessions.filter(s=>!s.archived).map(s=>s.count||0))} onUpgrade={()=>{setShowBilling(false);openPricing();}} onClose={()=>{ window.history.replaceState({},"","/app"); setShowBilling(false);}}/>}
       {showProfile && <ProfilePage trainer={trainer} onClose={()=>{ window.history.replaceState({},"","/app"); setShowProfile(false);}} onSaved={(newName)=>setTrainer(t=>({...t,name:newName}))}/>}
       {showSuperAdmin && <SuperAdminDashboard onClose={()=>{ window.history.replaceState({},"","/app"); setShowSuperAdmin(false);}}/>}
       {showHostEarnings && trainer && <EarningsPage uid={trainer.uid} name={trainer.name} onClose={()=>{ window.history.replaceState({},"","/app"); setShowHostEarnings(false);}}/>}
       {showSettings && <SettingsPage onClose={()=>{ window.history.replaceState({},"","/app"); setShowSettings(false);}}/>}
-      {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);setShowPricing(true);}} onClose={()=>setLimitModal(null)}/>}
+      {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);openPricing();}} onClose={()=>setLimitModal(null)}/>}
       {creating && <CreateModal onConfirm={handleNew} onClose={()=>setCreating(false)} existingNames={sessions.map(s=>s.name)}/>}
 
       {/* ── Payment success banner ── */}
@@ -8157,7 +8162,7 @@ export default function App() {
               </button>
             </div>
 
-            {isFree && <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>setShowPricing(true)}/>}
+            {isFree && <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>openPricing()}/>}
 
             {/* Beta Pro banner on home screen */}
             {!isFree && isBeta && (() => {
