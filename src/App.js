@@ -3585,12 +3585,12 @@ function CoinmasterView({ session: init, selfId, onBack }) {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#F5A623" stroke="#F5A623" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       </div>
 
-      {/* TABS */}
-      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
+      {/* TABS — horizontally scrollable so all 5 tabs fit on mobile */}
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none"}}>
         {[["award","Coins"],["people","Participants"],["board","Scoreboard"],["groups","Groups"],["log","Log"]].map(([id,l]) => (
           <button key={id} onClick={()=>setTab(id)}
-            style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
-              color:tab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
+            style={{padding:"11px 12px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
+              color:tab===id?PINK:SUB,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap",
               borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
           </button>
         ))}
@@ -3782,7 +3782,13 @@ function CoinmasterView({ session: init, selfId, onBack }) {
         />}
 
         {/* ── GROUPS TAB ── */}
-        {tab==="groups" && (
+        {tab==="groups" && (()=>{
+          const cmGs = ses.groups.map(g=>({
+            ...g,
+            members: ses.participants.filter(p=>p.gid===g.id),
+            total: ses.participants.filter(p=>p.gid===g.id).reduce((s,p)=>s+(p.total||0),0),
+          })).sort((a,b)=>b.total-a.total);
+          return (
           <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,minHeight:0}}>
             <div style={{margin:"0 -14px",background:"#EBEBEB",borderBottom:`1px solid #D1D5DB`,padding:"14px 14px",marginBottom:10}}>
               <div style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:10,alignItems:"stretch"}}>
@@ -3840,12 +3846,13 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                 )}
               </div>
             )}
-            {ses.groups.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:24,textAlign:"center",fontSize:13,color:SUB}}>No groups yet. Add one above!</div>}
-            {ses.groups.map((g,i) => (
+            {cmGs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:24,textAlign:"center",fontSize:13,color:SUB}}>No groups yet. Add one above!</div>}
+            {cmGs.map((g,i) => (
               <GroupSessionCard key={g.id} g={g} i={i} mut={mut} ses={ses} pNum={pNum}/>
             ))}
           </div>
-        )}
+          );
+        })()}
 
         {/* ── LOG TAB ── */}
         {tab==="log" && (
