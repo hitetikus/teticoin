@@ -831,51 +831,35 @@ function SessionSettings({ session, isPro=false, atLimit=false, onRename, onTogg
             <div style={{fontSize:11,color:SUB,marginTop:4}}>Code: {session.code} · {session.participants.length} participants</div>
           </div>
 
-          {/* Live toggle */}
-          <div onClick={onToggleLive}
-            style={{background:session.live!==false?`${GREEN}10`:`#EF444410`,border:`1.5px solid ${session.live!==false?GREEN:"#EF4444"}`,borderRadius:14,padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",transition:"all .2s"}}>
-            <div>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:session.live!==false?GREEN:"#EF4444"}}>
-                {session.live!==false?"Session is Live":"Session is Offline"}
-              </div>
-              <div style={{fontSize:12,color:SUB,marginTop:2,fontWeight:500}}>
-                {session.live!==false?"Participants can join and earn coins":"Participants cannot join or earn coins"}
-              </div>
-            </div>
-            <div style={{width:44,height:26,borderRadius:13,background:session.live!==false?GREEN:"#EF4444",position:"relative",transition:"all .2s",flexShrink:0,marginLeft:12}}>
-              <div style={{position:"absolute",top:3,left:session.live!==false?21:3,width:20,height:20,borderRadius:"50%",background:"#fff",boxShadow:"0 1px 4px rgba(0,0,0,.2)",transition:"left .2s"}}/>
-            </div>
-          </div>
-
-          {/* Export */}
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            <button onClick={onExport} style={{width:"100%",padding:"13px 0",background:`linear-gradient(135deg,${GREEN},#06B6D4)`,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export Participants CSV
-            </button>
-            {isPro ? (
-              <button onClick={onExportLog} style={{width:"100%",padding:"13px 0",background:`linear-gradient(135deg,#9D50FF,#7C3AED)`,border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Export Activity Log CSV
-              </button>
-            ) : (
-              <div style={{width:"100%",padding:"13px 0",background:"#F3F4F6",border:"1.5px solid #E5E7EB",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#9CA3AF",cursor:"not-allowed",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                <svg width="12" height="12" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
-                Export Activity Log CSV — Pro
-              </div>
-            )}
-          </div>
-
-          {/* Duplicate */}
+          {/* Duplicate — first after session name */}
           <button onClick={atLimit ? undefined : onDuplicate} disabled={atLimit}
             title={atLimit ? "Session limit reached — upgrade to Pro for unlimited sessions" : "Duplicate this session"}
-            style={{width:"100%",padding:"13px 0",background:atLimit?"#F9FAFB":SOFT,border:`1.5px solid ${atLimit?"#E5E7EB":MID}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:atLimit?"#9CA3AF":PINK,cursor:atLimit?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            style={{width:"100%",padding:"13px 0",background:"#fff",border:`1.5px solid ${atLimit?"#E5E7EB":"#1A0A14"}`,borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:atLimit?"#9CA3AF":"#1A0A14",cursor:atLimit?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             Duplicate Session
             {atLimit && <span style={{fontSize:11,fontWeight:700,background:"#F3F4F6",border:"1px solid #E5E7EB",borderRadius:99,padding:"2px 8px",color:"#9CA3AF"}}>Limit reached</span>}
           </button>
 
+          {/* Export Participants — Pro only */}
+          {isPro ? (
+            <button onClick={onExport} style={{width:"100%",padding:"13px 0",background:"#fff",border:"1.5px solid #1A0A14",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#1A0A14",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Participants CSV
+            </button>
+          ) : (
+            <button onClick={()=>{}} style={{width:"100%",padding:"13px 0",background:"#F9FAFB",border:"1.5px solid #E5E7EB",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#9CA3AF",cursor:"not-allowed",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              <svg width="12" height="12" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
+              Export Participants CSV — Pro
+            </button>
+          )}
+
+          {/* Export Log — free for all */}
+          <button onClick={onExportLog} style={{width:"100%",padding:"13px 0",background:"#fff",border:"1.5px solid #1A0A14",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#1A0A14",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export Activity Log CSV
+          </button>
+
           {/* Reset */}
-          <button onClick={onReset} style={{width:"100%",padding:"13px 0",background:"#FEF2F2",border:"1.5px solid #EF444440",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#EF4444",cursor:"pointer"}}>
+          <button onClick={onReset} style={{width:"100%",padding:"13px 0",background:"#FEF2F2",border:"1.5px solid #EF444440",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#EF4444",cursor:"pointer"}}>
             Reset All Coins
           </button>
 
@@ -1789,7 +1773,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
                     ...freshS,
                     participants: (freshS.participants||[]).map(p =>
                       p.id === existingByPid.id
-                        ? {...p, uid: u.uid, name: displayName, av: mkAv(displayName), guestName: p.guestName || existingByPid.name}
+                        ? {...p, uid: u.uid, email: u.email||"", name: displayName, av: mkAv(displayName), guestName: p.guestName || existingByPid.name}
                         : p
                     )
                   };
@@ -1807,7 +1791,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       const limit = hostPlan !== "free" ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
       if (currentPax < limit && displayName.trim()) {
         const n = ((init.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
-        const np = {id:Date.now(),name:displayName,av:mkAv(displayName),total:0,bk:{},gid:null,num:n,uid:u.uid,guestName:displayName};
+        const np = {id:Date.now(),name:displayName,av:mkAv(displayName),total:0,bk:{},gid:null,num:n,uid:u.uid,email:u.email||"",guestName:displayName};
         prevTotalRef.current = 0;
         setMyId(np.id);
         const updated = {...init,participants:[...(init.participants||[]),np]};
@@ -5590,11 +5574,11 @@ function escapeCsv(val) {
 }
 
 function buildParticipantsCsv(ses) {
-  const rows = [["Rank","Name","Total Coins","Group","Logged-in"]];
+  const rows = [["Rank","Name","Email","Total Coins","Group","Logged-in"]];
   const sorted = [...(ses.participants||[])].sort((a,b)=>b.total-a.total);
   sorted.forEach((p,i) => {
     const grp = (ses.groups||[]).find(g=>g.id===p.gid);
-    rows.push([i+1, p.name, p.total, grp?grp.name:"", p.uid?"Yes":"No"]);
+    rows.push([i+1, p.name, p.email||"", p.total, grp?grp.name:"", p.uid?"Yes":"No"]);
   });
   return rows.map(r=>r.map(escapeCsv).join(",")).join("\r\n");
 }
