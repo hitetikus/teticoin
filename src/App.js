@@ -5311,21 +5311,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
                   <SL>Activity Log</SL>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <span style={{fontSize:11,color:SUB,fontWeight:600}}>{ses.log.length} events</span>
-                    {isPro ? (
-                      <button onClick={()=>triggerCsvDownload(buildLogCsv(ses),`teticoin-${ses.code}-log.csv`)}
+                    <button onClick={()=>triggerCsvDownload(buildLogCsv(ses),`teticoin-${ses.code}-log.csv`)}
                         title="Export Log CSV"
                         style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",background:`linear-gradient(135deg,#9D50FF,#7C3AED)`,border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:"#fff",cursor:"pointer"}}>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Export CSV
                       </button>
-                    ) : (
-                      <button onClick={()=>setProGateHint("exportlog")}
-                        title="Export Log CSV (Pro)"
-                        style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",background:"#F3F4F6",border:"1.5px solid #E5E7EB",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:"#9CA3AF",cursor:"pointer"}}>
-                        <svg width="10" height="10" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="m2.8373 20.9773c-.6083-3.954-1.2166-7.9079-1.8249-11.8619-.1349-.8765.8624-1.4743 1.5718-.9422 1.8952 1.4214 3.7903 2.8427 5.6855 4.2641.624.468 1.513.3157 1.9456-.3333l4.7333-7.1c.5002-.7503 1.6026-.7503 2.1028 0l4.7333 7.1c.4326.649 1.3216.8012 1.9456.3333 1.8952-1.4214 3.7903-2.8427 5.6855-4.2641.7094-.5321 1.7067.0657 1.5719.9422-.6083 3.954-1.2166 7.9079-1.8249 11.8619z" fill="#ffb743"/><path d="m27.7902 27.5586h-23.5804c-.758 0-1.3725-.6145-1.3725-1.3725v-3.015h26.3255v3.015c-.0001.758-.6146 1.3725-1.3726 1.3725z" fill="#ffb743"/></svg>
-                        Export CSV
-                      </button>
-                    )}
                   </div>
                 </div>
                 {ses.log.length===0 && <div style={{padding:40,textAlign:"center"}}><Ham size={56}/><div style={{marginTop:10,fontSize:13,color:SUB}}>No activity yet</div></div>}
@@ -6381,7 +6372,7 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
 
 // ── Settings Page (merged: Coin Settings + Preferences) ──────────────────
 function SettingsPage({ isPro=false, onClose }) {
-  const [activeTab, setActiveTab] = useState("coins");
+  const [activeTab, setActiveTab] = useState(isPro ? "coins" : "prefs");
   const [soundOn, setSoundOn] = useState(() => {
     try { return localStorage.getItem("tc_sound") !== "off"; } catch { return true; }
   });
@@ -6505,6 +6496,10 @@ function SettingsPage({ isPro=false, onClose }) {
                     </div>
                   ))}
                 </div>
+                <button onClick={onClose}
+                  style={{width:"100%",padding:"13px 0",background:`linear-gradient(135deg,${PINK},#9D50FF)`,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#fff",cursor:"pointer"}}>
+                  Upgrade to Pro →
+                </button>
               </div>
             </div>
           )}
