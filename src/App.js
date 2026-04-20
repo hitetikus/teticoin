@@ -7930,20 +7930,25 @@ export default function App() {
     if (!document.getElementById(styleId)) {
       const s = document.createElement('style');
       s.id = styleId;
+      // This tag is inserted ONCE and never removed — immune to React re-renders
       s.textContent = [
         'html, body { color-scheme: light !important; }',
         '* { caret-color: #1A0A14 !important; }',
-        'input, textarea {',
+        'input, textarea, input:focus, textarea:focus {',
         '  color: #1A0A14 !important;',
         '  caret-color: #1A0A14 !important;',
         '  color-scheme: light !important;',
         '  cursor: text !important;',
         '  background-color: #ffffff !important;',
         '}',
-        'input[type="number"], input[type="text"], input[type="email"], input[type="password"] {',
-        '  cursor: text !important; color: #1A0A14 !important;',
+        'input[type="number"], input[type="text"], input[type="email"], input[type="password"],',
+        'input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {',
+        '  cursor: text !important;',
+        '  color: #1A0A14 !important;',
+        '  caret-color: #1A0A14 !important;',
+        '  background-color: #ffffff !important;',
         '}',
-      ].join(' ');
+      ].join('\n');
       document.head.appendChild(s);
     }
   }, []);
@@ -8863,10 +8868,7 @@ const CSS = `
   @keyframes eyeSquint { 0%,88%,100%{opacity:0;transform:scaleY(1);} 92%,96%{opacity:1;} }
   ::-webkit-scrollbar { width:4px; }
   ::-webkit-scrollbar-thumb { background:${MID}; border-radius:4px; }
-  html, body { color-scheme: light !important; }
-  input, textarea { user-select:text; -webkit-user-select:text; cursor:text !important; caret-color:#1A0A14 !important; color:#1A0A14 !important; color-scheme:light !important; background-color:#ffffff !important; }
-  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="submit"]):not([type="button"]) { caret-color:#1A0A14 !important; color:#1A0A14 !important; cursor:text !important; }
-  input[type="number"], input[type="text"], input[type="email"], input[type="password"] { cursor:text !important; }
+  input, textarea { user-select:text; -webkit-user-select:text; }
   input::placeholder, textarea::placeholder { color:${SUB}; opacity:.6; }
   select option { background:#fff; }
 
