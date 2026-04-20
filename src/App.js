@@ -3493,6 +3493,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
   const [gsIndivSearch, setGsIndivSearch] = useState("");
   const [cmAutoGroupCount, setCmAutoGroupCount] = useState(2);
   const [cmColorPickerOpen, setCmColorPickerOpen] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const aid = useRef(0);
 
   // Poll session every 3s — get full fresh copy
@@ -3560,6 +3561,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
       )}
       {picker && <Picker participants={sorted} groups={ses.groups} selId={selId} onSelect={setSelId} onClose={()=>setPicker(false)}/>}
       {mass && <MassGive participants={ses.participants} groups={ses.groups} session={ses} onAward={award} onClose={()=>setMass(false)}/>}
+      {showQR && <QRModal session={ses} onClose={()=>setShowQR(false)}/>}
 
       {/* TOP BAR */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 12px",display:"flex",alignItems:"center",gap:8,height:56,flexShrink:0}}>
@@ -3585,19 +3587,22 @@ function CoinmasterView({ session: init, selfId, onBack }) {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#F5A623" stroke="#F5A623" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       </div>
 
-      {/* TABS — horizontally scrollable so all 5 tabs fit on mobile */}
+      {/* TABS — Participants first, Coins second; scrollable on mobile */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none"}}>
-        {[["award","Coins"],["people","Participants"],["board","Scoreboard"],["groups","Groups"],["log","Log"]].map(([id,l]) => (
+        <style>{`.cm-tabbar::-webkit-scrollbar{display:none}`}</style>
+        {[
+          ["people", <span style={{display:"flex",alignItems:"center",gap:5}}>Participants{sorted.length > 0 && <span style={{background:"#F3F0F4",color:SUB,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:10,borderRadius:99,padding:"1px 6px",lineHeight:1.5}}>{sorted.length}</span>}</span>],
+          ["award","Coins"],
+          ["board","Scoreboard"],
+          ["groups","Groups"],
+          ["log","Log"]
+        ].map(([id,l]) => (
           <button key={id} onClick={()=>setTab(id)}
             style={{padding:"11px 12px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
               color:tab===id?PINK:SUB,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap",
               borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",transition:"all .12s"}}>{l}
           </button>
         ))}
-        <div style={{marginLeft:"auto",paddingRight:12,display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB}}>{ses.participants.length}</span>
-        </div>
       </div>
 
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0}}>
@@ -3697,26 +3702,48 @@ function CoinmasterView({ session: init, selfId, onBack }) {
         {/* ── PARTICIPANTS TAB ── */}
         {tab==="people" && (
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0}}>
-            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",flexDirection:"column",gap:4}}>
-              <div style={{display:"flex",gap:8,alignItems:"center"}}>
-              <Inp placeholder="Add participant name" value={inlineAddName} onChange={e=>{const v=e.target.value;if(v.length>15){setInlineAddNameErr(true);}else{setInlineAddNameErr(false);setInlineAddName(v);}}}
-                onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");setInlineAddNameErr(false);}}}
-                autoComplete="off" style={{flex:1,margin:0,borderColor:inlineAddNameErr?"#EF4444":undefined}}/>
-              <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){setToast({m:`"${nm}" is already in this session`,type:"warn"});return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");setInlineAddNameErr(false);}}
-                style={{padding:"0 14px",height:40,background:GRAD,border:"none",borderRadius:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",flexShrink:0}}>
-                + Add
-              </button>
+            {/* Add participant row + Show QR */}
+            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"10px 14px",flexShrink:0,display:"flex",flexDirection:"column",gap:6}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr auto auto",gap:8,alignItems:"center"}}>
+                <Inp placeholder="Participant Name" value={inlineAddName} onChange={e=>{const v=e.target.value;if(v.length>15){setInlineAddNameErr(true);}else{setInlineAddNameErr(false);setInlineAddName(v);}}}
+                  onKeyDown={e=>{if(e.key==="Enter"){const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){notify(`"${nm}" is already in this session`,"warn");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");setInlineAddNameErr(false);}}}
+                  autoComplete="off" style={{margin:0,borderColor:inlineAddNameErr?"#EF4444":undefined}}/>
+                <button onClick={()=>{const nm=inlineAddName.trim();if(!nm)return;if(ses.participants.some(p=>p.name.trim().toLowerCase()===nm.toLowerCase())){notify(`"${nm}" is already in this session`,"warn");return;}const n=(ses.participants.reduce((m,p)=>Math.max(m,p.num),0))+1;mut(s=>{s.participants.push({id:Date.now(),name:nm,av:mkAv(nm),total:0,bk:{},gid:null,num:n});return s;});setInlineAddName("");setInlineAddNameErr(false);}}
+                  style={{padding:"0 14px",height:42,background:GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
+                  + Add
+                </button>
+                <button onClick={()=>setShowQR(true)}
+                  style={{padding:"0 12px",height:42,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
+                  Show QR
+                </button>
               </div>
               {inlineAddNameErr && <div style={{fontSize:11,color:"#EF4444",fontWeight:600,paddingLeft:2}}>Max 15 characters</div>}
             </div>
+            {/* Participant list */}
             <div style={{flex:1,overflowY:"auto",padding:"10px 14px",minHeight:0}}>
               {sorted.length===0 ? (
-                <div style={{textAlign:"center",padding:"32px 16px",color:SUB,fontSize:13}}><Ham size={48}/><div style={{marginTop:10}}>No participants yet</div></div>
+                <div style={{display:"flex",flexDirection:"column",gap:10,marginTop:4}}>
+                  <div style={{textAlign:"center",padding:"20px 0 8px",color:SUB,fontSize:13}}>
+                    <Ham size={48}/><div style={{marginTop:10}}>No participants yet</div>
+                  </div>
+                  <button onClick={()=>setShowQR(true)}
+                    style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:SOFT,border:`1.5px solid ${BORDER}`,borderRadius:14,cursor:"pointer",width:"100%",textAlign:"left"}}>
+                    <div style={{width:40,height:40,borderRadius:10,background:PINK,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="#fff"/><rect x="16" y="5" width="3" height="3" fill="#fff"/><rect x="5" y="16" width="3" height="3" fill="#fff"/></svg>
+                    </div>
+                    <div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>Show QR Code</div>
+                      <div style={{fontSize:12,color:SUB,marginTop:2}}>Participants scan to join instantly</div>
+                    </div>
+                  </button>
+                </div>
               ) : (
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                   {sorted.map(p => {
                     const grp = ses.groups.find(g=>g.id===p.gid);
                     const isEditing = editingPid === p.id;
+                    const isCMp = ses.coinmasterEnabled && ((ses.coinmasterPids||[]).includes(p.id)||(p.uid&&(ses.coinmasterUids||[]).includes(p.uid)));
                     return (
                       <div key={p.id} style={{borderBottom:`1px solid ${BORDER}`}}>
                         {isEditing ? (
@@ -3724,7 +3751,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                             <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
                             <input autoFocus value={editingPName} onChange={e=>setEditingPName(e.target.value)}
                               onKeyDown={e=>{
-                                if(e.key==="Enter"&&editingPName.trim()){const n=editingPName.trim();const taken=ses.participants.some(x=>x.id!==p.id&&x.name.trim().toLowerCase()===n.toLowerCase());if(taken){notify(`"${n}" is already in this session`);return;}mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}
+                                if(e.key==="Enter"&&editingPName.trim()){const n=editingPName.trim();const taken=ses.participants.some(x=>x.id!==p.id&&x.name.trim().toLowerCase()===n.toLowerCase());if(taken){notify(`"${n}" is already in this session`,"warn");return;}mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}
                                 if(e.key==="Escape") setEditingPid(null);
                               }}
                               style={{flex:1,padding:"7px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,outline:"none"}}/>
@@ -3734,12 +3761,19 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                               style={{padding:"0 10px",height:34,background:"none",border:`1px solid ${BORDER}`,borderRadius:9,fontSize:13,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
                           </div>
                         ) : (
-                          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",opacity:isCMp?0.45:1}}>
                             <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
                             <Av s={p.av} color={grp?.color||BLUE} size={32}/>
                             <div style={{flex:1,minWidth:0}}>
-                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
-                              <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
+                              <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
+                                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                                {isCMp && <span style={{fontSize:8,fontWeight:800,color:"#fff",background:"#9CA3AF",borderRadius:99,padding:"1px 5px",flexShrink:0}}>CM</span>}
+                                {p.uid && !isCMp && <span style={{fontSize:9,fontWeight:700,color:"#16A34A",flexShrink:0}}>● Logged in</span>}
+                              </div>
+                              <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                                <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
+                                {grp && <span style={{fontSize:10,background:`${grp.color}15`,border:`1px solid ${grp.color}40`,color:grp.color,padding:"1px 6px",borderRadius:99,fontWeight:700}}>{grp.name}</span>}
+                              </div>
                             </div>
                             <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);}}
                               title="Rename" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
@@ -3760,7 +3794,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
           </div>
         )}
 
-        {/* ── SCOREBOARD TAB ── */}
+                {/* ── SCOREBOARD TAB ── */}
         {tab==="board" && <CMBoardTab
           ses={ses}
           cmBoardSorted={[...ses.participants].filter(p=>{
