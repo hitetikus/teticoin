@@ -794,11 +794,19 @@ function CoinCustomizer({ session, onSave, onClose }) {
 }
 
 // ── Session Settings sheet (gear next to session name in session list) ──
-function SessionSettings({ session, isPro=false, atLimit=false, onRename, onToggleLive, onExport, onExportLog, onReset, onDuplicate, onArchive, onClose }) {
+function SessionSettings({ session, isPro=false, atLimit=false, existingSessionNames=[], onRename, onToggleLive, onExport, onExportLog, onReset, onDuplicate, onArchive, onClose }) {
   const [editing, setEditing] = useState(false);
   const [nameVal, setNameVal] = useState(session.name); // eslint-disable-line
+  const [nameErr, setNameErr] = useState("");
 
-  function saveName() { if (nameVal.trim() && nameVal !== session.name) { onRename(nameVal.trim()); } setEditing(false); }
+  function saveName() {
+    const trimmed = nameVal.trim();
+    if (!trimmed) return;
+    if (trimmed === session.name) { setEditing(false); setNameErr(""); return; }
+    const duplicate = existingSessionNames.some(n => n.toLowerCase() === trimmed.toLowerCase() && n.toLowerCase() !== session.name.toLowerCase());
+    if (duplicate) { setNameErr(`A session named "${trimmed}" already exists. Please choose a different name.`); return; }
+    onRename(trimmed); setEditing(false); setNameErr("");
+  }
 
   return (
     <div className="tc-modal-backdrop" style={{position:"fixed",inset:0,zIndex:500}}>
@@ -816,11 +824,14 @@ function SessionSettings({ session, isPro=false, atLimit=false, onRename, onTogg
           <div style={{background:BG,borderRadius:14,padding:"14px 16px"}}>
             <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontFamily:"Poppins,sans-serif"}}>Session Name</div>
             {editing ? (
-              <div style={{display:"flex",gap:8}}>
-                <input value={nameVal} onChange={e=>setNameVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveName()} autoFocus
-                  style={{flex:1,background:"#fff",border:`1.5px solid ${PINK}`,borderRadius:10,padding:"10px 12px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:TEXT,outline:"none"}}/>
-                <button onClick={saveName} style={{padding:"0 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Save</button>
-                <button onClick={()=>{setNameVal(session.name);setEditing(false);}} style={{padding:"0 12px",background:"none",border:`1px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>Cancel</button>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                <div style={{display:"flex",gap:8}}>
+                  <input value={nameVal} onChange={e=>{setNameVal(e.target.value);setNameErr("");}} onKeyDown={e=>e.key==="Enter"&&saveName()} autoFocus
+                    style={{flex:1,background:"#fff",border:`1.5px solid ${nameErr?"#EF4444":PINK}`,borderRadius:10,padding:"10px 12px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:TEXT,outline:"none"}}/>
+                  <button onClick={saveName} style={{padding:"0 16px",background:GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Save</button>
+                  <button onClick={()=>{setNameVal(session.name);setEditing(false);setNameErr("");}} style={{padding:"0 12px",background:"none",border:`1px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>Cancel</button>
+                </div>
+                {nameErr && <div style={{fontSize:11,color:"#EF4444",fontWeight:600,lineHeight:1.5,padding:"0 2px"}}>{nameErr}</div>}
               </div>
             ) : (
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -1282,7 +1293,7 @@ function GroupEditRow({ g, session, onUpdate }) {
   );
 }
 
-function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClose, onShowQR, onExport, onReset, onRename, onToggleLive }) {
+function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, existingSessionNames=[], onUpdate, onClose, onShowQR, onExport, onReset, onRename, onToggleLive }) {
   const isManagePro = plan !== "free";
   const [showUpgradeHint, setShowUpgradeHint] = useState(null);
   const [tab, setTab] = useState("people");
@@ -1304,7 +1315,15 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, onUpdate, onClo
   function assignCM(uid) { onUpdate(s=>{ s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==uid),uid]; return s; }); }
   function removeCM(uid) { onUpdate(s=>{ s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==uid); return s; }); }
   function toggleCoinmaster() { onUpdate(s=>{ s.coinmasterEnabled=!s.coinmasterEnabled; return s; }); }
-  function saveName() { if (nameVal.trim()) { onRename(nameVal.trim()); setEditingName(false); } } // eslint-disable-line
+  const [sessionNameErr, setSessionNameErr] = useState(""); // eslint-disable-line
+  function saveName() {
+    const trimmed = nameVal.trim();
+    if (!trimmed) return;
+    if (trimmed === session.name) { setEditingName(false); setSessionNameErr(""); return; }
+    const duplicate = existingSessionNames.some(n => n.toLowerCase() === trimmed.toLowerCase() && n.toLowerCase() !== session.name.toLowerCase());
+    if (duplicate) { setSessionNameErr(`A session named "${trimmed}" already exists. Please choose a different name.`); return; }
+    onRename(trimmed); setEditingName(false); setSessionNameErr("");
+  } // eslint-disable-line
 
   const cmEnabled = !!session.coinmasterEnabled;
 
@@ -3703,7 +3722,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                             <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:32,flexShrink:0}}>{pNum(p.num)}</span>
                             <input autoFocus value={editingPName} onChange={e=>setEditingPName(e.target.value)}
                               onKeyDown={e=>{
-                                if(e.key==="Enter"&&editingPName.trim()){const n=editingPName.trim();mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}
+                                if(e.key==="Enter"&&editingPName.trim()){const n=editingPName.trim();const taken=ses.participants.some(x=>x.id!==p.id&&x.name.trim().toLowerCase()===n.toLowerCase());if(taken){notify(`"${n}" is already in this session`);return;}mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}
                                 if(e.key==="Escape") setEditingPid(null);
                               }}
                               style={{flex:1,padding:"7px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,outline:"none"}}/>
@@ -4179,7 +4198,7 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
   }
 }
 
-function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionCount=0, onDuplicateSession, onBack, onPView, onUpgrade }) {
+function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionCount=0, allSessions=[], onDuplicateSession, onBack, onPView, onUpgrade }) {
   const isSesAdmin = plan === "superadmin";
   const isSuperadmin = plan === "superadmin";
   const isBeta = plan === "beta";
@@ -4357,7 +4376,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
     }
   }
   function goOffline() { mut(s=>{s.live=false;}); setConfirmOffline(false); notify("Session is offline"); }
-  function renameSession(name) { mut(s=>{s.name=name;}); notify("Session renamed"); }
+  function renameSession(name) {
+    const trimmed = name.trim();
+    const duplicate = allSessions.some(s => s.name.toLowerCase() === trimmed.toLowerCase() && s.name.toLowerCase() !== init.name.toLowerCase());
+    if (duplicate) { notify(`A session named "${trimmed}" already exists`); return; }
+    mut(s=>{s.name=trimmed;}); notify("Session renamed");
+  }
 
   function award(pid, type, pts, mx = window.innerWidth/2, my = 300) {
     if (!pid) { notify("Select a participant first","warn"); return; }
@@ -4570,6 +4594,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
       {showSettings && <SessionSettings session={ses}
         isPro={isPro}
         atLimit={!isPro && sessionCount >= 5}
+        existingSessionNames={typeof allSessions !== "undefined" ? allSessions.map(s=>s.name) : []}
         onRename={renameSession}
         onToggleLive={toggleLive}
         onDuplicate={()=>{
@@ -4923,7 +4948,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
                               if(e.key==="Escape") setEditingPid(null);
                             }}
                             style={{flex:1,padding:"7px 10px",border:`1.5px solid ${PINK}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,outline:"none"}}/>
-                          <button onClick={()=>{const n=editingPName.trim();if(!n)return;mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}}
+                          <button onClick={()=>{const n=editingPName.trim();if(!n)return;const taken=ses.participants.some(x=>x.id!==p.id&&x.name.trim().toLowerCase()===n.toLowerCase());if(taken){notify(`"${n}" is already in this session`);return;}mut(s=>{const x=s.participants.find(x=>x.id===p.id);if(x){x.name=n;x.av=mkAv(n);}return s;});setEditingPid(null);}}
                             style={{padding:"0 14px",height:34,background:GRAD,border:"none",borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer",flexShrink:0}}>Save</button>
                           <button onClick={()=>setEditingPid(null)}
                             style={{padding:"0 10px",height:34,background:"none",border:`1px solid ${BORDER}`,borderRadius:9,fontSize:13,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
@@ -8300,7 +8325,7 @@ export default function App() {
   }
   if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur} onBack={()=>{ window.history.replaceState({},"","/app"); setScreen("home"); setHomeReloadKey(k=>k+1); }}/></>;
   if (screen==="coinmaster" && cmSession) return <><style>{CSS}</style><CoinmasterView session={cmSession} onBack={()=>{setCmSession(null);setScreen("home"); setHomeReloadKey(k=>k+1);}}/></>;
-  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} sessionCount={sessions.filter(s=>!s.archived).length} onDuplicateSession={async()=>{ const activeCnt=sessions.filter(s=>!s.archived).length; if(isFree&&activeCnt>=sessionLimit){return;} const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }} onUpgrade={()=>openPricing()} onBack={()=>{
+  if (screen==="session" && cur) return <><style>{CSS}</style><Session session={cur} plan={plan} paxLimit={paxLimit} sessionCount={sessions.filter(s=>!s.archived).length} allSessions={sessions} onDuplicateSession={async()=>{ const activeCnt=sessions.filter(s=>!s.archived).length; if(isFree&&activeCnt>=sessionLimit){return;} const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }} onUpgrade={()=>openPricing()} onBack={()=>{
     // Navigate immediately — sync sessions_index in background
     window.history.replaceState({},"","/app"); setScreen("home");
     (async()=>{
@@ -8325,7 +8350,8 @@ export default function App() {
         <SessionSettings session={cur}
           isPro={plan !== "free"}
           atLimit={plan === "free" && sessions.filter(s=>!s.archived).length >= 5}
-          onRename={async(name)=>{ const s={...cur,name}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,name}:x); setSessions(idx); await ss("sessions_index",idx); }}
+          existingSessionNames={sessions.map(s=>s.name)}
+          onRename={async(name)=>{ const taken=sessions.some(x=>x.code!==cur.code&&x.name.toLowerCase()===name.toLowerCase()); if(taken)return; const s={...cur,name}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,name}:x); setSessions(idx); await ss("sessions_index",idx); }}
           onToggleLive={async()=>{ const goingLive = cur.live===false; const s={...cur, live:goingLive, ...(goingLive&&cur.archived?{archived:false}:{})}; await ssSession(s.code, s); setCur(s); }}
           onDuplicate={async()=>{ const activeCnt=sessions.filter(s=>!s.archived).length; if(isFree&&activeCnt>=sessionLimit)return; const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onArchive={async()=>{ if(!window.confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
