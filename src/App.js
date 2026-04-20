@@ -3491,6 +3491,8 @@ function CoinmasterView({ session: init, selfId, onBack }) {
   const [gsMultiSel, setGsMultiSel] = useState([]);
   const [gsIndivId, setGsIndivId] = useState(null);
   const [gsIndivSearch, setGsIndivSearch] = useState("");
+  const [cmAutoGroupCount, setCmAutoGroupCount] = useState(2);
+  const [cmColorPickerOpen, setCmColorPickerOpen] = useState(false);
   const aid = useRef(0);
 
   // Poll session every 3s — get full fresh copy
@@ -3585,7 +3587,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
 
       {/* TABS */}
       <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",flexShrink:0}}>
-        {[["award","Coins"],["people","Participants"],["board","Scoreboard"],["log","Log"]].map(([id,l]) => (
+        {[["award","Coins"],["people","Participants"],["board","Scoreboard"],["groups","Groups"],["log","Log"]].map(([id,l]) => (
           <button key={id} onClick={()=>setTab(id)}
             style={{padding:"11px 14px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,
               color:tab===id?PINK:SUB,cursor:"pointer",flexShrink:0,
@@ -3778,6 +3780,72 @@ function CoinmasterView({ session: init, selfId, onBack }) {
           setTab={setTab}
           onToggleBoard={()=>mut(s=>{s.boardVisible=!s.boardVisible;})}
         />}
+
+        {/* ── GROUPS TAB ── */}
+        {tab==="groups" && (
+          <div style={{flex:1,overflowY:"auto",padding:"12px 14px",display:"flex",flexDirection:"column",gap:10,minHeight:0}}>
+            <div style={{margin:"0 -14px",background:"#EBEBEB",borderBottom:`1px solid #D1D5DB`,padding:"14px 14px",marginBottom:10}}>
+              <div style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:10,alignItems:"stretch"}}>
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
+                  <div style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:PINK,textTransform:"uppercase"}}>Create a Group</div>
+                  <input placeholder="Group name" value={ses._newGroupName||""} onChange={e=>mut(s=>{s._newGroupName=e.target.value;})}
+                    onKeyDown={e=>{if(e.key==="Enter"){const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";})}}}
+                    style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:10,padding:"9px 12px",fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:13,color:TEXT,outline:"none",boxSizing:"border-box"}}/>
+                  <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"nowrap",position:"relative"}}>
+                    {GC.map(c=>{const sel=ses._newGroupColor||GC[0];return(<div key={c} onClick={()=>mut(s=>{s._newGroupColor=c;})}
+                      style={{width:18,height:18,borderRadius:"50%",background:c,cursor:"pointer",flexShrink:0,boxShadow:sel===c?`0 0 0 2px #fff, 0 0 0 3px ${c}`:"none",transition:".12s"}}/>);})}
+                    <div onClick={e=>{e.stopPropagation();setCmColorPickerOpen(v=>!v);}}
+                      style={{width:18,height:18,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",flexShrink:0}}/>
+                    {ses._sesCustomColor ? <div onClick={()=>mut(s=>{s._newGroupColor=s._sesCustomColor;})}
+                      style={{width:18,height:18,borderRadius:"50%",background:ses._sesCustomColor,cursor:"pointer",flexShrink:0,
+                        boxShadow:(ses._newGroupColor||GC[0])===ses._sesCustomColor?`0 0 0 2px #fff, 0 0 0 3px ${ses._sesCustomColor}`:"none",transition:".12s"}}/> : null}
+                    {cmColorPickerOpen ? <ColorPickerPopup value={ses._newGroupColor||GC[0]} onChange={c=>{mut(s=>{s._sesCustomColor=c;s._newGroupColor=c;});setCmColorPickerOpen(false);}} onClose={()=>setCmColorPickerOpen(false)}/> : null}
+                    <button onClick={()=>{const nm=(ses._newGroupName||"").trim();if(!nm)return;mut(s=>{s.groups=[...(s.groups||[]),{id:Date.now(),name:nm,color:s._newGroupColor||GC[0]}];s._newGroupName="";});}}
+                      style={{marginLeft:"auto",flexShrink:0,padding:"10px 18px",background:GRAD,border:"none",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
+                      + Create Group
+                    </button>
+                  </div>
+                </div>
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"14px 16px",display:"flex",flexDirection:"column",gap:10,alignItems:"center"}}>
+                  <div style={{fontSize:10,fontWeight:800,letterSpacing:1.5,color:PINK,textTransform:"uppercase",alignSelf:"flex-start"}}>Auto Create</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:TEXT,flexShrink:0}}>Create</span>
+                    <div style={{display:"flex",border:`1.5px solid ${BORDER}`,borderRadius:10,overflow:"hidden",flexShrink:0,height:36}}>
+                      <button onClick={()=>setCmAutoGroupCount(c=>Math.max(1,c-1))}
+                        style={{width:36,height:36,border:"none",borderRight:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"monospace",fontSize:20,color:"#9CA3AF",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                      <input type="text" inputMode="numeric" value={cmAutoGroupCount} onChange={e=>setCmAutoGroupCount(Math.max(1,Math.min(99,parseInt(e.target.value)||1)))}
+                        style={{width:48,height:36,border:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:16,color:TEXT,background:"#fff",outline:"none",textAlign:"center",padding:0}}/>
+                      <button onClick={()=>setCmAutoGroupCount(c=>Math.min(99,c+1))}
+                        style={{width:36,height:36,border:"none",borderLeft:`1.5px solid ${BORDER}`,background:"#fff",fontFamily:"monospace",fontSize:20,color:"#9CA3AF",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+                    </div>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:TEXT,flexShrink:0}}>Groups</span>
+                  </div>
+                  <button onClick={()=>{if(cmAutoGroupCount<1)return;mut(s=>{for(let i=0;i<cmAutoGroupCount;i++){const num=s.groups.length+1;s.groups.push({id:Date.now()+i,name:`Group ${num}`,color:GC[i%GC.length]});}return s;});}}
+                    style={{padding:"10px 16px",background:"#3B82F6",border:"none",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:"auto",alignSelf:"stretch",whiteSpace:"nowrap"}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    Auto Create Groups
+                  </button>
+                </div>
+              </div>
+            </div>
+            {ses.groups.length > 0 && (
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                <div style={{fontSize:10,fontWeight:800,letterSpacing:1.2,color:SUB,textTransform:"uppercase"}}>Groups ({ses.groups.length})</div>
+                {ses.participants.length > 0 && (
+                  <button onClick={()=>{if(!window.confirm("Group all participants randomly?"))return;const ids=ses.groups.map(g=>g.id);const shuffled=[...ses.participants].sort(()=>Math.random()-.5);mut(s=>{s.participants=s.participants.map(p=>{const i=shuffled.findIndex(x=>x.id===p.id);return{...p,gid:ids[i%ids.length]};});return s;});}}
+                    style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",background:"#fff",border:"1.5px solid #374151",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#374151",cursor:"pointer"}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="3"/><circle cx="8" cy="8" r="1.2" fill="#374151" stroke="none"/><circle cx="16" cy="8" r="1.2" fill="#374151" stroke="none"/><circle cx="8" cy="16" r="1.2" fill="#374151" stroke="none"/><circle cx="16" cy="16" r="1.2" fill="#374151" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="#374151" stroke="none"/></svg>
+                    Randomize Participants
+                  </button>
+                )}
+              </div>
+            )}
+            {ses.groups.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:24,textAlign:"center",fontSize:13,color:SUB}}>No groups yet. Add one above!</div>}
+            {ses.groups.map((g,i) => (
+              <GroupSessionCard key={g.id} g={g} i={i} mut={mut} ses={ses} pNum={pNum}/>
+            ))}
+          </div>
+        )}
 
         {/* ── LOG TAB ── */}
         {tab==="log" && (
@@ -4436,7 +4504,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
   // Scoreboard excludes participants currently assigned as coinmasters — their coins
   // are preserved but they're hidden from rankings while acting as co-hosts.
   const isCMp = (p) => isPro && ses.coinmasterEnabled && ((ses.coinmasterUids||[]).includes(p.uid) || (ses.coinmasterPids||[]).includes(p.id));
-  const boardSorted = sorted.filter(p => !isCMp(p));
+  const boardSorted = sorted.filter(p => !isCMp(p)).sort((a,b) => b.total - a.total);
   const selP = ses.participants.find(x=>x.id===selId);
   const gs = ses.groups.map(g=>({...g,total:boardSorted.filter(p=>p.gid===g.id).reduce((s,p)=>s+p.total,0),members:boardSorted.filter(p=>p.gid===g.id)})).sort((a,b)=>b.total-a.total);
 
