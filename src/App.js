@@ -4583,6 +4583,21 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Rename
             </button>
+            {isPro && ses.coinmasterEnabled && p.uid && (() => {
+              const _isCM = ((ses.coinmasterUids||[]).includes(p.uid)||(ses.coinmasterPids||[]).includes(p.id));
+              return (
+                <button onClick={()=>{
+                  if(_isCM){mut(s=>{s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);return s;});}
+                  else{mut(s=>{if(p.uid)s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==p.uid),p.uid];s.coinmasterPids=[...(s.coinmasterPids||[]).filter(x=>x!==p.id),p.id];return s;});}
+                  setPMenuOpen(null);
+                }}
+                  style={{width:"100%",padding:"11px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#7C3AED",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
+                  onMouseOver={e=>e.currentTarget.style.background="#FAF5FF"} onMouseOut={e=>e.currentTarget.style.background="none"}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill={_isCM?"#7C3AED":"none"} stroke="#7C3AED" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  {_isCM?"Remove Coinmaster":"Assign Coinmaster"}
+                </button>
+              );
+            })()}
             <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`)){mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);if(p.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;});}setPMenuOpen(null);}}
               style={{width:"100%",padding:"11px 14px",background:"none",border:"none",borderTop:`1px solid ${BORDER}`,textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:"#EF4444",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
               onMouseOver={e=>e.currentTarget.style.background="#FEF2F2"} onMouseOut={e=>e.currentTarget.style.background="none"}>
@@ -5074,7 +5089,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
                             </div>
                             <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                           </div>
-                          {/* Inline CM assign — visible when coinmaster mode on and participant is logged in */}
+                          {/* Inline CM toggle — compact star icon, visible when coinmaster mode on and participant is logged in */}
                           {canAssignCM && (
                             <button onClick={e=>{
                               e.stopPropagation();
@@ -5084,8 +5099,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
                                 mut(s=>{if(p.uid)s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==p.uid),p.uid];s.coinmasterPids=[...(s.coinmasterPids||[]).filter(x=>x!==p.id),p.id];return s;});
                               }
                             }}
-                              style={{flexShrink:0,background:"none",border:"none",cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:isCM?"#7C3AED":"#9CA3AF",whiteSpace:"nowrap",padding:"0 4px",textDecoration:"underline",textUnderlineOffset:2}}>
-                              {isCM?"Remove Coinmaster":"Assign Coinmaster"}
+                              title={isCM?"Remove Coinmaster":"Assign as Coinmaster"}
+                              style={{flexShrink:0,width:30,height:30,borderRadius:8,border:`1.5px solid ${isCM?"#C4B5FD":"#E5E7EB"}`,background:isCM?"#F5F3FF":"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill={isCM?"#7C3AED":"none"} stroke={isCM?"#7C3AED":"#9CA3AF"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                             </button>
                           )}
                           {(ses.groups.length > 0) && (
