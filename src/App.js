@@ -5078,32 +5078,17 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
                             style={{padding:"0 10px",height:34,background:"none",border:`1px solid ${BORDER}`,borderRadius:9,fontSize:13,color:SUB,cursor:"pointer",flexShrink:0}}>✕</button>
                         </div>
                       ) : (
-                        <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px"}}>
-                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,minWidth:36,flexShrink:0}}>{pNum(p.num)}</span>
-                          <Av s={p.av} color={isCM?"#7C3AED":grp?.color||BLUE} size={32}/>
+                        <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}>
+                          <Av s={p.av} color={isCM?"#7C3AED":grp?.color||BLUE} size={34}/>
                           <div style={{flex:1,minWidth:0}}>
-                            <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
-                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.name}</div>
+                            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2,flexWrap:"nowrap"}}>
+                              <span style={{fontSize:11,color:isCM?"#7C3AED":PINK,fontWeight:700}}>{p.total} pts</span>
+                              {p.num != null && <span style={{fontSize:9,color:"#ccc",fontWeight:600}}>· {pNum(p.num)}</span>}
                               {isCM && <span style={{fontSize:9,fontWeight:800,color:"#fff",background:"#7C3AED",borderRadius:99,padding:"1px 6px",flexShrink:0}}>★ CM</span>}
                               {!isCM && p.uid && <span style={{fontSize:9,fontWeight:700,color:"#16A34A",background:"#DCFCE7",border:"1px solid #86EFAC",borderRadius:99,padding:"1px 6px",flexShrink:0}}>● logged in</span>}
                             </div>
-                            <div style={{fontSize:11,color:PINK,fontWeight:600}}>{p.total} coins</div>
                           </div>
-                          {/* Inline CM toggle — compact star icon, visible when coinmaster mode on and participant is logged in */}
-                          {canAssignCM && (
-                            <button onClick={e=>{
-                              e.stopPropagation();
-                              if (isCM) {
-                                mut(s=>{s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);return s;});
-                              } else {
-                                mut(s=>{if(p.uid)s.coinmasterUids=[...(s.coinmasterUids||[]).filter(x=>x!==p.uid),p.uid];s.coinmasterPids=[...(s.coinmasterPids||[]).filter(x=>x!==p.id),p.id];return s;});
-                              }
-                            }}
-                              title={isCM?"Remove Coinmaster":"Assign as Coinmaster"}
-                              style={{flexShrink:0,width:30,height:30,borderRadius:8,border:`1.5px solid ${isCM?"#C4B5FD":"#E5E7EB"}`,background:isCM?"#F5F3FF":"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill={isCM?"#7C3AED":"none"} stroke={isCM?"#7C3AED":"#9CA3AF"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                            </button>
-                          )}
                           {(ses.groups.length > 0) && (
                             <select value={p.gid??""} onChange={e=>mut(s=>{const px=s.participants.find(x=>x.id===p.id);if(px)px.gid=e.target.value===""?null:Number(e.target.value);return s;})}
                               style={{background:SOFT,border:`1.5px solid ${grp?.color||MID}`,color:grp?.color||SUB,borderRadius:8,padding:"4px 6px",fontSize:11,fontFamily:"Poppins,sans-serif",cursor:"pointer",outline:"none",maxWidth:90,flexShrink:0,fontWeight:700}}>
