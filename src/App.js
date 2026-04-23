@@ -479,7 +479,7 @@ function PQR({ p, code, size = 160 }) {
     }
   }, [data, size]);
   return (
-    <div style={{background:"#fff",borderRadius:16,padding:20,border:`1px solid ${BORDER}`,display:"inline-flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 0 6px #fff"}}>
+    <div style={{width:size,height:size,background:"#fff",borderRadius:12,padding:12,border:`1px solid ${BORDER}`,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
       <div ref={ref}/>
     </div>
   );
@@ -702,7 +702,7 @@ function MassGive({ participants, groups, session, onAward, onClose }) {
           {flashName && (
             <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",zIndex:10000}}>
               <div style={{background:"rgba(0,0,0,.7)",borderRadius:20,padding:"28px 40px",textAlign:"center",border:`3px solid ${GREEN}`,animation:"qrFlash .35s ease-out"}}>
-                <div style={{fontSize:52,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,color:GREEN,lineHeight:1}}>+{flashName.pts}</div>
+                <div style={{fontSize:52,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,color:GREEN,lineHeight:1}}>{flashName.pts>0?"+":""}{flashName.pts}</div>
                 <div style={{fontSize:20,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,color:"#fff",marginTop:8}}>{flashName.name}</div>
               </div>
             </div>
@@ -712,7 +712,7 @@ function MassGive({ participants, groups, session, onAward, onClose }) {
               <div style={{fontSize:13,color:"rgba(255,255,255,.8)",fontWeight:600}}>
                 {scanCount===0?"Point camera at participant's QR code":`✓ ${scanCount} scanned`}
               </div>
-              <div style={{fontSize:14,color:PINK,fontWeight:900}}>+{finalAmt}</div>
+              <div style={{fontSize:14,color:PINK,fontWeight:900}}>{finalAmt>0?"+":""}{finalAmt}</div>
             </div>
             <button onClick={stopScanner}
               style={{width:"100%",padding:"14px 0",background:"rgba(255,255,255,.12)",border:"1.5px solid rgba(255,255,255,.25)",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:"#fff",cursor:"pointer"}}>
@@ -1728,7 +1728,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [pinError, setPinError] = useState("");
   const [myId, setMyId] = useState(null);
   const [live, setLive] = useState(init);
-  const [showMyQR, setShowMyQR] = useState(false);
+  const [showMyQR, setShowMyQR] = useState(true);
   const [showEarnings, setShowEarnings] = useState(false);
   const [showLoginPw, setShowLoginPw] = useState(false);
   const [editingName, setEditingName] = useState(false);
@@ -2947,21 +2947,27 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
         {/* My QR button — compact, below coin card */}
         {me && (
-          <button onClick={()=>setShowMyQR(v=>!v)}
-            style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",background:showMyQR?SOFT:"#fff",border:`1.5px solid ${showMyQR?PINK:BORDER}`,borderRadius:12,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:showMyQR?PINK:SUB,transition:"all .15s"}}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
-            {showMyQR ? "Hide My QR" : "Show My QR"}
-          </button>
-        )}
+        )}{/* end showMyQR button group */}
 
-        {showMyQR && me && (
-          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center"}}>
+        {me && showMyQR && (
+          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center",position:"relative"}}>
+            <button onClick={()=>setShowMyQR(false)}
+              style={{position:"absolute",top:10,right:10,width:28,height:28,borderRadius:"50%",background:"#F3F4F6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:SUB,flexShrink:0}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
             <PQR p={me} code={init.code} size={220}/>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:10,letterSpacing:2}}>{pNum(me.num)}</div>
             <div style={{fontSize:12,color:SUB,marginTop:2}}>{me.name}</div>
             <div style={{fontSize:11,color:SUB,marginTop:6,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
           </div>
         )}
+        {me && !showMyQR && (
+          <button onClick={()=>setShowMyQR(true)}
+            style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,transition:"all .15s"}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
+            Show My QR
+          </button>
+        )
 
         <div style={{fontSize:12,color:SUB,textAlign:"center",lineHeight:1.8}}>
           {sorted.length <= 1 ? "Waiting for others to join..." : "Scoreboard will appear when host shares it"}
