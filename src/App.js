@@ -3583,10 +3583,16 @@ function CoinmasterView({ session: init, selfId, onBack }) {
       </div>
 
       {/* COINMASTER BADGE BAR */}
-      <div style={{background:"#1A0A14",padding:"11px 14px",display:"flex",alignItems:"center",justifyContent:"center",gap:10,flexShrink:0}}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="#F5A623" stroke="#F5A623" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:"#F5A623",letterSpacing:2}}>YOU ARE A COINMASTER</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="#F5A623" stroke="#F5A623" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <style>{`
+        @keyframes cmGoldFlow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+        @keyframes cmStarTwinkle{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.35;transform:scale(0.65)}}
+        .cm-star-l{display:inline-block;animation:cmStarTwinkle 2.8s ease-in-out infinite;}
+        .cm-star-r{display:inline-block;animation:cmStarTwinkle 2.8s ease-in-out infinite;animation-delay:1.4s;}
+      `}</style>
+      <div style={{background:"linear-gradient(270deg,#7B5A00,#FFD700,#FFF0A0,#FFD700,#B8860B,#FFE566,#7B5A00)",backgroundSize:"400% 400%",animation:"cmGoldFlow 6s ease infinite",padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"center",gap:10,flexShrink:0}}>
+        <span className="cm-star-l" style={{fontSize:16,color:"#1A0F00"}}>★</span>
+        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:"#1A0F00",letterSpacing:2}}>YOU ARE A COINMASTER</span>
+        <span className="cm-star-r" style={{fontSize:16,color:"#1A0F00"}}>★</span>
       </div>
 
       {/* TABS — Participants first, Coins second; scrollable on mobile */}
