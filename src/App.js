@@ -479,7 +479,7 @@ function PQR({ p, code, size = 160 }) {
     }
   }, [data, size]);
   return (
-    <div style={{width:size,height:size,background:"#fff",borderRadius:12,padding:12,border:`1px solid ${BORDER}`,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
+    <div style={{background:"#fff",borderRadius:16,padding:20,border:`1px solid ${BORDER}`,display:"inline-flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 0 6px #fff"}}>
       <div ref={ref}/>
     </div>
   );
@@ -2956,7 +2956,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
         {showMyQR && me && (
           <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center"}}>
-            <PQR p={me} code={init.code} size={160}/>
+            <PQR p={me} code={init.code} size={220}/>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:10,letterSpacing:2}}>{pNum(me.num)}</div>
             <div style={{fontSize:12,color:SUB,marginTop:2}}>{me.name}</div>
             <div style={{fontSize:11,color:SUB,marginTop:6,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
