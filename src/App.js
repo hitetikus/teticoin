@@ -2945,10 +2945,6 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         </div>
 
 
-        {/* My QR button — compact, below coin card */}
-        {me && (
-        )}{/* end showMyQR button group */}
-
         {me && showMyQR && (
           <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center",position:"relative"}}>
             <button onClick={()=>setShowMyQR(false)}
@@ -2967,7 +2963,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
             Show My QR
           </button>
-        )
+        )}
 
         <div style={{fontSize:12,color:SUB,textAlign:"center",lineHeight:1.8}}>
           {sorted.length <= 1 ? "Waiting for others to join..." : "Scoreboard will appear when host shares it"}
