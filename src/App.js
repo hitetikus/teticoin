@@ -1943,8 +1943,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     return () => clearTimeout(t);
   }, [linkedUid, _meTotal]);
 
-  // Poll for live updates every 800ms once joined — fast enough to catch host tab-close
-  // within ~4s (host pings every 3s; if ping age >5s we treat host as gone)
+  // Poll for live updates every 800ms once joined — snappy host-close detection + coin sounds
   useEffect(() => {
     if (step !== "joined" || !init?.code) return;
     const t = setInterval(async () => {
@@ -1964,11 +1963,12 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           prevTotalRef.current = me.total;
         }
       }
-      // Host heartbeat check: host pings every 3s. If lastHostPing is >5s stale,
-      // the host tab is gone — treat session as ended regardless of live flag.
-      if (s.live) {
-        const pingAge = s.lastHostPing ? Date.now() - s.lastHostPing : Infinity;
-        if (pingAge > 5000) s.live = false;
+      // Host heartbeat check: host writes lastHostPing every 3s.
+      // Only treat as dead if lastHostPing was recently set (>0) AND is now stale (>6s).
+      // If lastHostPing is missing/0, a coin award may have just wiped it — don't end the session.
+      if (s.live && s.lastHostPing > 0) {
+        const pingAge = Date.now() - s.lastHostPing;
+        if (pingAge > 6000) s.live = false;
       }
       setLive(s);
     }, 800);
@@ -2891,11 +2891,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         {/* Earned badges — shown if logged in */}
         {linkedUid && <ParticipantBadges uid={linkedUid}/>}
 
-        {/* ── Coin card + QR drawer — wrapped together so drawer slides from beneath ── */}
-        <div style={{width:"100%",position:"relative"}}>
-
-          {/* Coin card — elevated above QR drawer */}
-          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",zIndex:2}}>
+        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",zIndex:1}}>
           {coinFlash && (
             <div key={coinFlash.key} style={{position:"absolute",top:10,right:18,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:coinFlash.pts<0?"#EF4444":PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
               {coinFlash.pts>0?"+":""}{coinFlash.pts}
@@ -2983,39 +2979,20 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
               </div>
             );
           })()}
-          </div>
-
-          {/* QR drawer — hidden wrapper animates max-height; drawer itself has no top border/radius
-              so it appears to slide out from beneath the coin card */}
-          <div style={{
-            overflow:"hidden",
-            maxHeight: me && showMyQR ? 500 : 0,
-            transition:"max-height 0.55s cubic-bezier(0.4,0,0.2,1)",
-            position:"relative",
-            zIndex:1,
-          }}>
-            <div style={{
-              background:"#fff",
-              border:`1.5px solid ${BORDER}`,
-              borderTop:"none",
-              borderRadius:"0 0 18px 18px",
-              padding:"24px 20px 18px",
-              textAlign:"center",
-              position:"relative",
-              boxShadow:"0 10px 28px rgba(0,0,0,0.10)",
-            }}>
-              <button onClick={()=>setShowMyQR(false)}
-                style={{position:"absolute",top:10,right:10,width:28,height:28,borderRadius:"50%",background:"#F3F4F6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:SUB,flexShrink:0}}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-              <PQR p={me} code={init.code} size={220}/>
-              <div style={{fontSize:11,color:SUB,marginTop:8,letterSpacing:.3}}>{me?.name} · {me ? pNum(me.num) : ""}</div>
-              <div style={{fontSize:11,color:SUB,marginTop:5,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
-            </div>
-          </div>
-
         </div>
 
+
+        {me && showMyQR && (
+          <div style={{width:"calc(100% - 32px)",background:"#fff",border:`1.5px solid ${BORDER}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"20px",textAlign:"center",position:"relative",marginTop:-4,boxShadow:"0 8px 20px rgba(0,0,0,0.08)",alignSelf:"center"}}>
+            <button onClick={()=>setShowMyQR(false)}
+              style={{position:"absolute",top:10,right:10,width:28,height:28,borderRadius:"50%",background:"#F3F4F6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:SUB,flexShrink:0}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <PQR p={me} code={init.code} size={220}/>
+            <div style={{fontSize:11,color:SUB,marginTop:8,letterSpacing:.3}}>{me.name} · {pNum(me.num)}</div>
+            <div style={{fontSize:11,color:SUB,marginTop:5,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
+          </div>
+        )}
         {me && !showMyQR && (
           <button onClick={()=>setShowMyQR(true)}
             style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,transition:"all .15s"}}>
@@ -4452,18 +4429,24 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
     return () => clearInterval(t);
   }, [ses.code]);
 
-  // ── Host heartbeat — writes lastHostPing every 20s while session is open ──
-  // Participants use this to detect if the host tab is still alive.
+  // ── Host heartbeat — writes lastHostPing every 3s while session is open ──
+  // Also updates ses state so mut() includes it in coin-award writes (prevents participants
+  // from falsely detecting session-ended when a coin award wipes lastHostPing from Firestore).
   useEffect(() => {
     const code = ses.code;
     async function ping() {
       try {
+        const now = Date.now();
         const fresh = await sgSession(code);
-        if (fresh) await ssSession(code, {...fresh, lastHostPing: Date.now()});
+        if (fresh) {
+          await ssSession(code, {...fresh, lastHostPing: now});
+          // Keep ses state in sync so mut() copies include lastHostPing
+          setSes(prev => prev.lastHostPing === now ? prev : {...prev, lastHostPing: now});
+        }
       } catch(e) {}
     }
     ping(); // immediate on mount
-    const t = setInterval(ping, 3000); // every 3s — participants detect close within ~8s
+    const t = setInterval(ping, 3000); // every 3s — participants detect close within ~9s
     return () => clearInterval(t);
   }, [ses.code]);
 
@@ -4515,12 +4498,14 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
     if (uid) ss("tourDone", true);
   }
 
-  // Firebase writes now happen directly inside mut() with the new state
+  // Firebase writes now happen directly inside mut() with the new state.
+  // lastHostPing is preserved from ses state (kept in sync by the heartbeat above)
+  // so coin awards don't wipe it and participants don't falsely see session as ended.
   function mut(fn) {
     setSes(prev => {
       const s = JSON.parse(JSON.stringify(prev));
       fn(s);
-      ssSession(s.code, s); // write to Firebase with the ACTUAL new state (not stale closure)
+      ssSession(s.code, s); // includes lastHostPing since heartbeat keeps ses state current
       return s;
     });
   }
