@@ -1728,7 +1728,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [pinError, setPinError] = useState("");
   const [myId, setMyId] = useState(null);
   const [live, setLive] = useState(init);
-  const [showMyQR, setShowMyQR] = useState(true);
+  const [showMyQR, setShowMyQR] = useState(false);
   const [showEarnings, setShowEarnings] = useState(false);
   const [showLoginPw, setShowLoginPw] = useState(false);
   const [editingName, setEditingName] = useState(false);
@@ -1963,6 +1963,10 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           prevTotalRef.current = me.total;
         }
       }
+      // Detect host tab closed via stale heartbeat (>12s) — treat as session ended
+      // even if the live flag never got written (async setOffline didn't complete on hard close)
+      const hostPresent = s.lastHostPing && (Date.now() - s.lastHostPing < 12000);
+      if (s.live && !hostPresent) s.live = false;
       setLive(s);
     }, 2000);
     return () => clearInterval(t);
@@ -2976,15 +2980,14 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
 
         {me && showMyQR && (
-          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center",position:"relative"}}>
+          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:"0 0 16px 16px",marginTop:-12,paddingTop:20,padding:"20px 20px 16px",textAlign:"center",position:"relative",animation:"slideDown .25s ease",overflow:"hidden"}}>
             <button onClick={()=>setShowMyQR(false)}
               style={{position:"absolute",top:10,right:10,width:28,height:28,borderRadius:"50%",background:"#F3F4F6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:SUB,flexShrink:0}}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
             <PQR p={me} code={init.code} size={220}/>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:10,letterSpacing:2}}>{pNum(me.num)}</div>
-            <div style={{fontSize:12,color:SUB,marginTop:2}}>{me.name}</div>
-            <div style={{fontSize:11,color:SUB,marginTop:6,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
+            <div style={{fontSize:11,color:SUB,marginTop:8,letterSpacing:.3}}>{me.name} · {pNum(me.num)}</div>
+            <div style={{fontSize:11,color:SUB,marginTop:4,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
           </div>
         )}
         {me && !showMyQR && (
@@ -9006,6 +9009,7 @@ const CSS = `
   @keyframes tcTourPulse { 0%,100%{box-shadow:0 0 0 2.5px #FF4FB8,0 0 0 6px rgba(255,79,184,0.2),0 0 24px rgba(255,79,184,0.22);} 50%{box-shadow:0 0 0 2.5px #FF4FB8,0 0 0 10px rgba(255,79,184,0.12),0 0 36px rgba(255,79,184,0.32);} }
   @keyframes tcTourFade { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
   @keyframes slideUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
+  @keyframes slideDown { from{transform:translateY(-12px);opacity:0} to{transform:translateY(0);opacity:1} }
   @keyframes qrFlash { 0%{opacity:0;transform:scale(0.7)} 40%{opacity:1;transform:scale(1.08)} 100%{opacity:1;transform:scale(1)} }
   @keyframes fadeIn { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
   @keyframes slideInRight { from{transform:translateX(100%)} to{transform:translateX(0)} }
