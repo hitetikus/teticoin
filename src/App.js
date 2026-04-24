@@ -2001,21 +2001,47 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     }
   }
 
-  function directJoin(overrideName) {
-    const currentPax = (live.participants||[]).length;
-    const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
-    if (currentPax >= limit) { setStep("full"); return; }
-    // Block host from joining their own session
+  async function directJoin(overrideName) {
     const currentUid = auth.currentUser?.uid || linkedUid || null;
     if (currentUid && live.hostUid && currentUid === live.hostUid) { setStep("hostblocked"); return; }
-    const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+    // Always fetch fresh from Firestore before writing to avoid duplicates from stale state
+    let fresh;
+    try { fresh = await sgSession(init.code); } catch(e) {}
+    const freshPax = fresh?.participants || live.participants || [];
+    const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
+    if (freshPax.length >= limit) { setStep("full"); return; }
+    // Guard: if this UID already has a slot in the fresh data, just claim it
+    if (currentUid) {
+      const alreadyIn = freshPax.find(p => p.uid === currentUid);
+      if (alreadyIn) {
+        prevTotalRef.current = alreadyIn.total ?? 0;
+        setMyId(alreadyIn.id);
+        if (fresh) setLive(fresh);
+        setStep("joined");
+        try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:alreadyIn.id})); } catch(e) {}
+        return;
+      }
+    }
+    // Guard: if this name already has a slot in the fresh data (guest), claim it
     const joinName = overrideName || name.trim();
+    const alreadyByName = freshPax.find(p => p.name.toLowerCase().trim() === joinName.toLowerCase().trim());
+    if (alreadyByName && !alreadyByName.uid) {
+      prevTotalRef.current = alreadyByName.total ?? 0;
+      setMyId(alreadyByName.id);
+      setGuestName(alreadyByName.guestName || alreadyByName.name || "");
+      if (fresh) setLive(fresh);
+      setStep("joined");
+      try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:alreadyByName.id})); } catch(e) {}
+      return;
+    }
+    const n = (freshPax.reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const baseGuestName = name.trim() || joinName;
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,uid:currentUid,guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
     prevTotalRef.current = 0;
-    const u = {...live,participants:[...(live.participants||[]),np]};
+    const base = fresh || live;
+    const u = {...base,participants:[...freshPax,np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
     // Persist so refresh restores the session
     try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
@@ -2046,21 +2072,25 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
   function notMe() { setStep("newpin"); }
 
-  function setNewPin() {
+  async function setNewPin() {
     if (pin.length !== 4) return;
-    const currentPax = (live.participants||[]).length;
-    const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
-    if (currentPax >= limit) { setStep("full"); return; }
     const currentUid = auth.currentUser?.uid || linkedUid || null;
     if (currentUid && live.hostUid && currentUid === live.hostUid) { setStep("hostblocked"); return; }
-    const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+    // Fetch fresh to avoid duplicates from stale state
+    let fresh;
+    try { fresh = await sgSession(init.code); } catch(e) {}
+    const freshPax = fresh?.participants || live.participants || [];
+    const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
+    if (freshPax.length >= limit) { setStep("full"); return; }
+    const n = (freshPax.reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const joinName = linkedName || name.trim();
     const baseGuestName = name.trim() || joinName;
-    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,pin,uid:(auth.currentUser?.uid || linkedUid || null),guestName:baseGuestName};
+    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,pin,uid:currentUid,guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
     prevTotalRef.current = 0;
-    const u = {...live,participants:[...(live.participants||[]),np]};
+    const base = fresh || live;
+    const u = {...base,participants:[...freshPax,np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
     try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
     if (np.uid) {
