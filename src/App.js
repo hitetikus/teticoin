@@ -1728,7 +1728,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [pinError, setPinError] = useState("");
   const [myId, setMyId] = useState(null);
   const [live, setLive] = useState(init);
-  const [showMyQR, setShowMyQR] = useState(false);
+  const [showMyQR, setShowMyQR] = useState(true);
   const [showEarnings, setShowEarnings] = useState(false);
   const [showLoginPw, setShowLoginPw] = useState(false);
   const [editingName, setEditingName] = useState(false);
@@ -1943,12 +1943,12 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     return () => clearTimeout(t);
   }, [linkedUid, _meTotal]);
 
-  // Poll for live updates every 2s once joined — detect coin gain for sound
+  // Poll for live updates every 500ms once joined — snappy host-close detection + coin sounds
   useEffect(() => {
     if (step !== "joined" || !init?.code) return;
     const t = setInterval(async () => {
-      if (loginModal) return; // don't re-render while login modal is open
-      if (editingName) return; // don't overwrite live state while user is typing a new name
+      if (loginModal) return;
+      if (editingName) return;
       const s = await sgSession(init.code);
       if (!s) return;
       if (myId) {
@@ -1963,12 +1963,11 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           prevTotalRef.current = me.total;
         }
       }
-      // Detect host tab closed via stale heartbeat (>12s) — treat as session ended
-      // even if the live flag never got written (async setOffline didn't complete on hard close)
-      const hostPresent = s.lastHostPing && (Date.now() - s.lastHostPing < 12000);
+      // Detect host tab closed via stale heartbeat — 8s threshold catches it fast
+      const hostPresent = s.lastHostPing && (Date.now() - s.lastHostPing < 8000);
       if (s.live && !hostPresent) s.live = false;
       setLive(s);
-    }, 2000);
+    }, 500);
     return () => clearInterval(t);
   }, [step, init?.code, myId]);
 
@@ -2888,7 +2887,9 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         {/* Earned badges — shown if logged in */}
         {linkedUid && <ParticipantBadges uid={linkedUid}/>}
 
-        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",zIndex:1}}>
+        <div style={{width:"100%",position:"relative"}}>
+          {/* ── Main coin card — sits on top (zIndex 2) ── */}
+          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",zIndex:2}}>
           {coinFlash && (
             <div key={coinFlash.key} style={{position:"absolute",top:10,right:18,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:coinFlash.pts<0?"#EF4444":PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
               {coinFlash.pts>0?"+":""}{coinFlash.pts}
@@ -2976,20 +2977,38 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
               </div>
             );
           })()}
+          </div>
+
+          {/* ── QR drawer — slides out from beneath the coin card ── */}
+          {/* Overflow-hidden wrapper for smooth max-height transition */}
+          <div style={{
+            overflow:"hidden",
+            maxHeight: me && showMyQR ? 420 : 0,
+            transition:"max-height 0.5s cubic-bezier(0.4,0,0.2,1)",
+          }}>
+            <div style={{
+              background:"#fff",
+              border:`1.5px solid ${BORDER}`,
+              borderTop:"none",
+              borderRadius:"0 0 16px 16px",
+              padding:"20px 20px 16px",
+              textAlign:"center",
+              position:"relative",
+              boxShadow:"0 8px 24px rgba(0,0,0,0.10)",
+              zIndex:1,
+            }}>
+              <button onClick={()=>setShowMyQR(false)}
+                style={{position:"absolute",top:10,right:10,width:28,height:28,borderRadius:"50%",background:"#F3F4F6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:SUB,flexShrink:0}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <PQR p={me} code={init.code} size={220}/>
+              <div style={{fontSize:11,color:SUB,marginTop:8,letterSpacing:.3}}>{me?.name} · {me ? pNum(me.num) : ""}</div>
+              <div style={{fontSize:11,color:SUB,marginTop:4,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
+            </div>
+          </div>
         </div>
 
 
-        {me && showMyQR && (
-          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:"0 0 16px 16px",marginTop:-12,paddingTop:20,padding:"20px 20px 16px",textAlign:"center",position:"relative",animation:"slideDown .25s ease",overflow:"hidden"}}>
-            <button onClick={()=>setShowMyQR(false)}
-              style={{position:"absolute",top:10,right:10,width:28,height:28,borderRadius:"50%",background:"#F3F4F6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:SUB,flexShrink:0}}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-            <PQR p={me} code={init.code} size={220}/>
-            <div style={{fontSize:11,color:SUB,marginTop:8,letterSpacing:.3}}>{me.name} · {pNum(me.num)}</div>
-            <div style={{fontSize:11,color:SUB,marginTop:4,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
-          </div>
-        )}
         {me && !showMyQR && (
           <button onClick={()=>setShowMyQR(true)}
             style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,transition:"all .15s"}}>
@@ -9009,7 +9028,6 @@ const CSS = `
   @keyframes tcTourPulse { 0%,100%{box-shadow:0 0 0 2.5px #FF4FB8,0 0 0 6px rgba(255,79,184,0.2),0 0 24px rgba(255,79,184,0.22);} 50%{box-shadow:0 0 0 2.5px #FF4FB8,0 0 0 10px rgba(255,79,184,0.12),0 0 36px rgba(255,79,184,0.32);} }
   @keyframes tcTourFade { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
   @keyframes slideUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
-  @keyframes slideDown { from{transform:translateY(-12px);opacity:0} to{transform:translateY(0);opacity:1} }
   @keyframes qrFlash { 0%{opacity:0;transform:scale(0.7)} 40%{opacity:1;transform:scale(1.08)} 100%{opacity:1;transform:scale(1)} }
   @keyframes fadeIn { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
   @keyframes slideInRight { from{transform:translateX(100%)} to{transform:translateX(0)} }
