@@ -1728,7 +1728,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [pinError, setPinError] = useState("");
   const [myId, setMyId] = useState(null);
   const [live, setLive] = useState(init);
-  const [showMyQR, setShowMyQR] = useState(true);
+  const [showMyQR, setShowMyQR] = useState(false);
   const [showEarnings, setShowEarnings] = useState(false);
   const [showLoginPw, setShowLoginPw] = useState(false);
   const [editingName, setEditingName] = useState(false);
@@ -1943,7 +1943,8 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     return () => clearTimeout(t);
   }, [linkedUid, _meTotal]);
 
-  // Poll for live updates every 500ms once joined — snappy host-close detection + coin sounds
+  // Poll for live updates every 800ms once joined — fast enough to catch host tab-close
+  // within ~4s (host pings every 3s; if ping age >5s we treat host as gone)
   useEffect(() => {
     if (step !== "joined" || !init?.code) return;
     const t = setInterval(async () => {
@@ -1963,11 +1964,14 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           prevTotalRef.current = me.total;
         }
       }
-      // Detect host tab closed via stale heartbeat — 8s threshold catches it fast
-      const hostPresent = s.lastHostPing && (Date.now() - s.lastHostPing < 8000);
-      if (s.live && !hostPresent) s.live = false;
+      // Host heartbeat check: host pings every 3s. If lastHostPing is >5s stale,
+      // the host tab is gone — treat session as ended regardless of live flag.
+      if (s.live) {
+        const pingAge = s.lastHostPing ? Date.now() - s.lastHostPing : Infinity;
+        if (pingAge > 5000) s.live = false;
+      }
       setLive(s);
-    }, 500);
+    }, 800);
     return () => clearInterval(t);
   }, [step, init?.code, myId]);
 
@@ -2887,8 +2891,10 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         {/* Earned badges — shown if logged in */}
         {linkedUid && <ParticipantBadges uid={linkedUid}/>}
 
+        {/* ── Coin card + QR drawer — wrapped together so drawer slides from beneath ── */}
         <div style={{width:"100%",position:"relative"}}>
-          {/* ── Main coin card — sits on top (zIndex 2) ── */}
+
+          {/* Coin card — elevated above QR drawer */}
           <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",zIndex:2}}>
           {coinFlash && (
             <div key={coinFlash.key} style={{position:"absolute",top:10,right:18,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:coinFlash.pts<0?"#EF4444":PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
@@ -2979,23 +2985,24 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           })()}
           </div>
 
-          {/* ── QR drawer — slides out from beneath the coin card ── */}
-          {/* Overflow-hidden wrapper for smooth max-height transition */}
+          {/* QR drawer — hidden wrapper animates max-height; drawer itself has no top border/radius
+              so it appears to slide out from beneath the coin card */}
           <div style={{
             overflow:"hidden",
-            maxHeight: me && showMyQR ? 420 : 0,
-            transition:"max-height 0.5s cubic-bezier(0.4,0,0.2,1)",
+            maxHeight: me && showMyQR ? 500 : 0,
+            transition:"max-height 0.55s cubic-bezier(0.4,0,0.2,1)",
+            position:"relative",
+            zIndex:1,
           }}>
             <div style={{
               background:"#fff",
               border:`1.5px solid ${BORDER}`,
               borderTop:"none",
-              borderRadius:"0 0 16px 16px",
-              padding:"20px 20px 16px",
+              borderRadius:"0 0 18px 18px",
+              padding:"24px 20px 18px",
               textAlign:"center",
               position:"relative",
-              boxShadow:"0 8px 24px rgba(0,0,0,0.10)",
-              zIndex:1,
+              boxShadow:"0 10px 28px rgba(0,0,0,0.10)",
             }}>
               <button onClick={()=>setShowMyQR(false)}
                 style={{position:"absolute",top:10,right:10,width:28,height:28,borderRadius:"50%",background:"#F3F4F6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:SUB,flexShrink:0}}>
@@ -3003,11 +3010,11 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
               </button>
               <PQR p={me} code={init.code} size={220}/>
               <div style={{fontSize:11,color:SUB,marginTop:8,letterSpacing:.3}}>{me?.name} · {me ? pNum(me.num) : ""}</div>
-              <div style={{fontSize:11,color:SUB,marginTop:4,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
+              <div style={{fontSize:11,color:SUB,marginTop:5,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
             </div>
           </div>
-        </div>
 
+        </div>
 
         {me && !showMyQR && (
           <button onClick={()=>setShowMyQR(true)}
