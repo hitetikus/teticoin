@@ -844,7 +844,7 @@ function SessionSettings({ session, isPro=false, atLimit=false, existingSessionN
 
           {/* Duplicate — first after session name */}
           <button onClick={atLimit ? undefined : onDuplicate} disabled={atLimit}
-            title={atLimit ? "Session limit reached — upgrade to Pro for unlimited sessions" : "Duplicate this session"}
+            data-tip={atLimit ? "Session limit reached — upgrade to Pro for unlimited sessions" : "Duplicate this session"}
             style={{width:"100%",padding:"13px 0",background:"#fff",border:`1.5px solid ${atLimit?"#E5E7EB":"#1A0A14"}`,borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:atLimit?"#9CA3AF":"#1A0A14",cursor:atLimit?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             Duplicate Session
             {atLimit && <span style={{fontSize:11,fontWeight:700,background:"#F3F4F6",border:"1px solid #E5E7EB",borderRadius:99,padding:"2px 8px",color:"#9CA3AF"}}>Limit reached</span>}
@@ -1260,9 +1260,9 @@ function GroupEditRow({ g, session, onUpdate }) {
           <input value={editName} onChange={e=>setEditName(e.target.value)}
             style={{width:"100%",padding:"8px 10px",border:`1.5px solid ${MID}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",marginBottom:8,boxSizing:"border-box",caretColor:TEXT}}/>
           <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center",marginBottom:8,position:"relative"}}>
-            {customColor && <div onClick={()=>setEditColor(customColor)} title="Custom color" style={{width:20,height:20,borderRadius:"50%",background:customColor,cursor:"pointer",outline:editColor===customColor?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s",flexShrink:0}}/>}
+            {customColor && <div onClick={()=>setEditColor(customColor)} data-tip="Custom color" style={{width:20,height:20,borderRadius:"50%",background:customColor,cursor:"pointer",outline:editColor===customColor?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s",flexShrink:0}}/>}
             {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:20,height:20,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
-            <div title="More colors" onClick={e=>{e.stopPropagation();setShowColorPicker(v=>!v);}}
+            <div data-tip="More colors" onClick={e=>{e.stopPropagation();setShowColorPicker(v=>!v);}}
               style={{width:20,height:20,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",flexShrink:0}}/>
             {showColorPicker && <ColorPickerPopup value={editColor} onChange={c=>{setCustomColor(c);setEditColor(c);}} onClose={()=>setShowColorPicker(false)}/>}
           </div>
@@ -1276,11 +1276,11 @@ function GroupEditRow({ g, session, onUpdate }) {
           <div style={{width:12,height:12,borderRadius:3,background:g.color,flexShrink:0}}/>
           <div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:g.color}}>{g.name}</div>
           <div style={{fontSize:11,color:SUB}}>{session.participants.filter(p=>p.gid===g.id).length} members</div>
-          <button onClick={()=>setShowAssign(true)} title="Assign participant"
+          <button onClick={()=>setShowAssign(true)} data-tip="Assign participant"
             style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 7px",fontSize:11,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
           </button>
-          <button onClick={()=>setShowQRAssign(true)} title="QR scan to assign"
+          <button onClick={()=>setShowQRAssign(true)} data-tip="QR scan to assign"
             style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"3px 7px",fontSize:11,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </button>
@@ -1379,7 +1379,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, existingSession
                       {session.groups.map(g=><option key={g.id} value={g.id} style={{color:g.color}}>● {g.name}</option>)}
                     </select>
                   ); })()}
-                  <button onClick={()=>{ if(p.total>0||p.uid){if(!window.confirm(`Remove ${p.name}? They have ${p.total} coins. This cannot be undone.`))return;} remP(p.id); }} title="Remove participant"
+                  <button onClick={()=>{ if(p.total>0||p.uid){if(!window.confirm(`Remove ${p.name}? They have ${p.total} coins. This cannot be undone.`))return;} remP(p.id); }} data-tip="Remove participant"
                     style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,padding:"4px 9px",fontSize:11,color:SUB,cursor:"pointer"}}>✕</button>
                 </div>
               );
@@ -1429,9 +1429,9 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, existingSession
                   {GC.map(c=>{return(<div key={c} onClick={()=>setNgc(c)}
                     style={{width:22,height:22,borderRadius:"50%",background:c,cursor:"pointer",flexShrink:0,
                       boxShadow:ngc===c?`0 0 0 2px #fff, 0 0 0 3.5px ${c}`:"none",transition:".12s"}}/>);})}
-                  <div title="More colors" onClick={()=>setManagePickerOpen(v=>!v)}
+                  <div data-tip="More colors" onClick={()=>setManagePickerOpen(v=>!v)}
                     style={{width:22,height:22,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",flexShrink:0}}/>
-                  {manageCustomColor ? <div onClick={()=>setNgc(manageCustomColor)} title="Custom color"
+                  {manageCustomColor ? <div onClick={()=>setNgc(manageCustomColor)} data-tip="Custom color"
                     style={{width:22,height:22,borderRadius:"50%",background:manageCustomColor,cursor:"pointer",flexShrink:0,
                       boxShadow:ngc===manageCustomColor?`0 0 0 2px #fff, 0 0 0 3.5px ${manageCustomColor}`:"none",transition:".12s"}}/> : null}
                   {managePickerOpen ? <ColorPickerPopup value={ngc} onChange={c=>{setManageCustomColor(c);setNgc(c);}} onClose={()=>setManagePickerOpen(false)}/> : null}
@@ -2767,7 +2767,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
                icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
                url:null},
             ].map(s => (
-              <button key={s.name} title={s.name}
+              <button key={s.name} data-tip={s.name}
                 onClick={()=>{
                   if(s.url) window.open(s.url,"_blank");
                   else { navigator.clipboard?.writeText(`I scored ${me.total} coins at "${live.name}" on Teticoin! 🎉 https://teticoin.com`); }
@@ -2899,7 +2899,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             if (next) playCoinSoundRef.current(10);
           }}
             style={{position:"absolute",bottom:me&&(live.groups||[]).find(g=>g.id===me.gid)?46:10,right:12,background:"none",border:"none",cursor:"pointer",color:participantSoundOn?PINK:"#D1D5DB",padding:4,lineHeight:0,zIndex:3}}
-            title={participantSoundOn?"Mute sounds":"Unmute sounds"}>
+            data-tip={participantSoundOn?"Mute sounds":"Unmute sounds"}>
             {participantSoundOn ? (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
             ) : (
@@ -2942,7 +2942,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
               <div style={{display:"flex",alignItems:"center",gap:6}}>
                 <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:TEXT}}>{me?.name||"—"}</span>
                 <button onClick={()=>{setEditNameVal(me?.name||"");setEditingName(true);}}
-                  title="Edit display name"
+                  data-tip="Edit display name"
                   style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,cursor:"pointer",color:SUB,padding:"3px 6px",lineHeight:1,display:"flex",alignItems:"center"}}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
@@ -3037,7 +3037,7 @@ function ParticipantBadges({ uid }) {
       <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.5,marginBottom:10}}>Your Badges</div>
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         {badges.map((b,i) => (
-          <div key={i} title={`${b.label} · ${b.sessionName||""}`}
+          <div key={i} data-tip={`${b.label} · ${b.sessionName||""}`}
             style={{display:"flex",alignItems:"center",gap:5,background:`${b.color||PINK}12`,border:`1.5px solid ${b.color||PINK}30`,borderRadius:999,padding:"5px 12px"}}>
             {b.svgData?<img src={b.svgData} alt="" style={{width:16,height:16}}/>:<span style={{fontSize:14}}>{b.icon}</span>}
             <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:b.color||PINK}}>{b.label}</span>
@@ -3203,7 +3203,7 @@ function QRModal({ session, onClose }) {
             <button onClick={()=>copy(session.code,"code")} style={{padding:"13px 0",background:copied==="code"?`${GREEN}15`:BG,border:`1.5px solid ${copied==="code"?GREEN:BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:copied==="code"?GREEN:TEXT,cursor:"pointer",transition:"all .2s"}}>
               {copied==="code"?"Copied!":"Copy Code"}
             </button>
-            <button onClick={downloadQR} title="Download QR as PNG"
+            <button onClick={downloadQR} data-tip="Download QR as PNG"
               style={{width:48,background:BG,border:`1.5px solid ${BORDER}`,borderRadius:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
@@ -3607,7 +3607,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
           <div style={{width:7,height:7,borderRadius:"50%",background:ses.live!==false?GREEN:"#EF4444"}}/>
           <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:ses.live!==false?PINK:"#EF4444",letterSpacing:.5}}>{ses.live!==false?"LIVE":"OFFLINE"}</span>
         </div>
-        <button onClick={()=>setMass(true)} style={IB} title="Bulk give coins">
+        <button onClick={()=>setMass(true)} style={IB} data-tip="Bulk give coins">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </button>
       </div>
@@ -3814,11 +3814,11 @@ function CoinmasterView({ session: init, selfId, onBack }) {
                               </div>
                             </div>
                             <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);}}
-                              title="Rename" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
+                              data-tip="Rename" style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </button>
                             <button onClick={()=>{if(window.confirm(`Remove ${p.name}?`))mut(s=>{s.participants=s.participants.filter(x=>x.id!==p.id);s.coinmasterPids=(s.coinmasterPids||[]).filter(x=>x!==p.id);if(p.uid)s.coinmasterUids=(s.coinmasterUids||[]).filter(x=>x!==p.uid);return s;});}}
-                              title="Remove" style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
+                              data-tip="Remove" style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"flex",alignItems:"center",flexShrink:0}}>
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                             </button>
                           </div>
@@ -4255,9 +4255,9 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
             onKeyDown={e=>{if(e.key==="Enter")saveEdit();if(e.key==="Escape")setEditing(false);}}
             style={{width:"100%",padding:"7px 10px",border:`1.5px solid ${editColor}`,borderRadius:9,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,background:"#fff",outline:"none",marginBottom:10,boxSizing:"border-box",caretColor:TEXT}}/>
           <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center",marginBottom:10,position:"relative"}}>
-            {customColor && <div onClick={()=>setEditColor(customColor)} title="Custom" style={{width:20,height:20,borderRadius:"50%",background:customColor,cursor:"pointer",outline:editColor===customColor?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,flexShrink:0}}/>}
+            {customColor && <div onClick={()=>setEditColor(customColor)} data-tip="Custom" style={{width:20,height:20,borderRadius:"50%",background:customColor,cursor:"pointer",outline:editColor===customColor?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,flexShrink:0}}/>}
             {GC.map(c=><div key={c} onClick={()=>setEditColor(c)} style={{width:20,height:20,borderRadius:"50%",background:c,cursor:"pointer",outline:editColor===c?`2px solid ${TEXT}`:"2px solid transparent",outlineOffset:2,transition:".12s"}}/>)}
-            <div title="More colors" onClick={e=>{e.stopPropagation();setShowColorPicker(v=>!v);}}
+            <div data-tip="More colors" onClick={e=>{e.stopPropagation();setShowColorPicker(v=>!v);}}
               style={{width:20,height:20,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",flexShrink:0}}/>
             {showColorPicker && <ColorPickerPopup value={editColor} onChange={c=>{setCustomColor(c);setEditColor(c);}} onClose={()=>setShowColorPicker(false)}/>}
           </div>
@@ -4281,21 +4281,21 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
             {/* Desktop-only buttons inline in row 1 */}
             <span className="tc-grp-btns-desktop">
               <button onClick={()=>setShowAssign(true)}
-                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB}} title="Assign">
+                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB}} data-tip="Assign">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
                 Assign
               </button>
               <button onClick={()=>setShowQRAssign(true)}
-                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB,marginLeft:4}} title="QR Scan">
+                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB,marginLeft:4}} data-tip="QR Scan">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="21" y1="17" x2="21" y2="21"/><line x1="17" y1="21" x2="17" y2="17"/><line x1="14" y1="17" x2="14" y2="21"/></svg>
                 QR Scan
               </button>
               <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditing(true);}}
-                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"inline-flex",alignItems:"center",marginLeft:4}} title="Rename">
+                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"inline-flex",alignItems:"center",marginLeft:4}} data-tip="Rename">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
               <button onClick={()=>{if(!window.confirm(`Delete group "${g.name}"?`))return;mut(s=>{s.groups=s.groups.filter(x=>x.id!==g.id);s.participants=s.participants.map(p=>p.gid===g.id?{...p,gid:null}:p);return s;});}}
-                style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"inline-flex",alignItems:"center",marginLeft:4}} title="Delete">
+                style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"inline-flex",alignItems:"center",marginLeft:4}} data-tip="Delete">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
               </button>
             </span>
@@ -4303,21 +4303,21 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
           {/* Row 2: mobile-only all-buttons row, right-aligned */}
           <div className="tc-grp-btns-mobile" style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6,marginBottom:6}}>
             <button onClick={()=>setShowAssign(true)}
-              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB}} title="Assign">
+              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB}} data-tip="Assign">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
               Assign
             </button>
             <button onClick={()=>setShowQRAssign(true)}
-              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB}} title="QR Scan">
+              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB}} data-tip="QR Scan">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="21" y1="17" x2="21" y2="21"/><line x1="17" y1="21" x2="17" y2="17"/><line x1="14" y1="17" x2="14" y2="21"/></svg>
               QR Scan
             </button>
             <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditing(true);}}
-              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Rename">
+              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center"}} data-tip="Rename">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
             <button onClick={()=>{if(!window.confirm(`Delete group "${g.name}"?`))return;mut(s=>{s.groups=s.groups.filter(x=>x.id!==g.id);s.participants=s.participants.map(p=>p.gid===g.id?{...p,gid:null}:p);return s;});}}
-              style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Delete">
+              style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center"}} data-tip="Delete">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
             </button>
           </div>
@@ -4815,22 +4815,22 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
 
       {/* ── TOP BAR ── */}
       <div className="tc-session-topbar" style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 16px",display:"flex",alignItems:"center",gap:8,height:56,flexShrink:0}}>
-        <button onClick={onBack} style={{...IB,borderRadius:"50%"}} title="Back">
+        <button onClick={onBack} style={{...IB,borderRadius:"50%"}} data-tip="Back">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div style={{flex:1,overflow:"hidden",minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center",gap:1}}>
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.2}}>{ses.name}</div>
           <div style={{fontSize:10,color:"#9CA3AF",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,letterSpacing:.3,lineHeight:1}}>{ses.code}</div>
         </div>
-        <button onClick={toggleLive} title={isLive?"Go offline":"Go live"}
+        <button onClick={toggleLive} data-tip={isLive?"Go offline":"Go live"}
           style={{display:"flex",alignItems:"center",gap:5,background:isLive?SOFT:"#FEF2F2",border:`1px solid ${isLive?MID:"#EF444455"}`,borderRadius:20,padding:"5px 12px",cursor:"pointer",flexShrink:0}}>
           <div style={{width:7,height:7,borderRadius:"50%",background:isLive?GREEN:"#EF4444",animation:isLive?"pulse 2s infinite":"none"}}/>
           <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isLive?PINK:"#EF4444",letterSpacing:.5}}>{isLive?"LIVE":"OFFLINE"}</span>
         </button>
-        <button data-tour="qr-join" onClick={()=>setShowQR(true)} style={IB} title="QR Code">
+        <button data-tour="qr-join" onClick={()=>setShowQR(true)} style={IB} data-tip="QR Code">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
         </button>
-        <button onClick={()=>setShowSettings(true)} style={IB} title="Settings">
+        <button onClick={()=>setShowSettings(true)} style={IB} data-tip="Settings">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
       </div>
@@ -4893,7 +4893,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
                 <SL style={{marginBottom:0}}>Give Coins in Bulk</SL>
                 <button onClick={()=>{ if(!isPro){setProGateHint("coinsetting");return;} setShowCoinCustomizer(true);}}
-                  title={isPro?"Customise coin values":"Customise coin values (Pro)"}
+                  data-tip={isPro?"Customise coin values":"Customise coin values (Pro)"}
                   style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:26,height:26,cursor:"pointer",color:SUB,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
                 </button>
@@ -5385,9 +5385,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
                     {GC.map(c=>{const sel=ses._newGroupColor||GC[0];return(<div key={c} onClick={()=>mut(s=>{s._newGroupColor=c;})}
                       style={{width:18,height:18,borderRadius:"50%",background:c,cursor:"pointer",flexShrink:0,
                         boxShadow:sel===c?`0 0 0 2px #fff, 0 0 0 3px ${c}`:"none",transition:".12s"}}/>);})}
-                    <div title="More colors" onClick={e=>{e.stopPropagation();setSesColorPickerOpen(v=>!v);}}
+                    <div data-tip="More colors" onClick={e=>{e.stopPropagation();setSesColorPickerOpen(v=>!v);}}
                       style={{width:18,height:18,borderRadius:"50%",background:`conic-gradient(red,yellow,lime,cyan,blue,magenta,red)`,cursor:"pointer",border:"1.5px solid #D1D5DB",flexShrink:0}}/>
-                    {ses._sesCustomColor ? <div onClick={()=>mut(s=>{s._newGroupColor=s._sesCustomColor;})} title="Custom color"
+                    {ses._sesCustomColor ? <div onClick={()=>mut(s=>{s._newGroupColor=s._sesCustomColor;})} data-tip="Custom color"
                       style={{width:18,height:18,borderRadius:"50%",background:ses._sesCustomColor,cursor:"pointer",flexShrink:0,
                         boxShadow:(ses._newGroupColor||GC[0])===ses._sesCustomColor?`0 0 0 2px #fff, 0 0 0 3px ${ses._sesCustomColor}`:"none",transition:".12s"}}/> : null}
                     {sesColorPickerOpen ? <ColorPickerPopup value={ses._newGroupColor||GC[0]} onChange={c=>{mut(s=>{s._sesCustomColor=c;s._newGroupColor=c;});setSesColorPickerOpen(false);}} onClose={()=>setSesColorPickerOpen(false)}/> : null}
@@ -5460,7 +5460,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <span style={{fontSize:11,color:SUB,fontWeight:600}}>{ses.log.length} events</span>
                     <button onClick={()=>triggerCsvDownload(buildLogCsv(ses),`teticoin-${ses.code}-log.csv`)}
-                        title="Export Log CSV"
+                        data-tip="Export Log CSV"
                         style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",background:`linear-gradient(135deg,#9D50FF,#7C3AED)`,border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:"#fff",cursor:"pointer"}}>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Export CSV
@@ -6192,7 +6192,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
   return (
     <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style>{CSS}</style>
-      <PageHeader title="My Profile"/>
+      <PageHeader data-tip="My Profile"/>
       <div style={{flex:1,overflowY:"auto",padding:"28px 24px",maxWidth:520,width:"100%",margin:"0 auto"}}>
 
         {/* Avatar */}
@@ -6472,7 +6472,7 @@ function DraggableCoinList({ coins, setCoins, onRemove }) {
             ) : (
               <div data-coin-val
                 onClick={() => { setEditIdx(i); setEditVal(String(v)); }}
-                title="Tap to edit"
+                data-tip="Tap to edit"
                 style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,
                   color:v<0?"#EF4444":PINK,minWidth:52,cursor:"text",
                   borderBottom:`1.5px dashed ${v<0?"#FCA5A5":BORDER}`,paddingBottom:1}}>
@@ -7388,7 +7388,7 @@ function SuperAdminDashboard({ onClose }) {
                       )}
                       {!isSA && (
                         <button onClick={()=>deleteUserAccount(u.uid, u.email)}
-                          title="Delete Firestore data"
+                          data-tip="Delete Firestore data"
                           style={{padding:"4px 8px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,color:SUB,cursor:"pointer",display:"flex",alignItems:"center"}}>
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                         </button>
@@ -7623,13 +7623,13 @@ function EarningsPage({ uid, name, onClose, liveOverride }) {
                 {name:"Telegram", bg:"#229ED9", url:`https://t.me/share/url?url=${encodeURIComponent("https://teticoin.com")}&text=${encodeURIComponent(shareText())}`,
                  icon:<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>},
               ].map(s=>(
-                <button key={s.name} onClick={()=>window.open(s.url,"_blank")} title={s.name}
+                <button key={s.name} onClick={()=>window.open(s.url,"_blank")} data-tip={s.name}
                   style={{width:48,height:48,borderRadius:"50%",background:s.bg,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 2px 8px ${s.bg}66`,flexShrink:0}}>
                   {s.icon}
                 </button>
               ))}
               <button onClick={()=>{navigator.clipboard?.writeText(shareText());setCopied(true);setTimeout(()=>setCopied(false),2000);}}
-                title="Copy text"
+                data-tip="Copy text"
                 style={{width:48,height:48,borderRadius:"50%",background:copied?"#22c55e":"#374151",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,.2)",flexShrink:0,transition:"background .2s"}}>
                 {copied
                   ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -8246,10 +8246,10 @@ function TipsPage({ onClose }) {
         .tp-card:hover{transform:translateY(-4px) scale(1.01)!important;box-shadow:0 12px 40px rgba(0,0,0,0.12)!important;}
         .tp-filter-btn{transition:all .2s;}.tp-filter-btn:hover{opacity:0.85;}
         .tp-close:hover{background:rgba(0,0,0,0.06)!important;}
-        @keyframes tpBulbFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
-        .tp-bulb-btn{border:none;background:none;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-        .tp-bulb-btn svg{animation:tpBulbFloat 2.5s ease-in-out infinite;transition:filter .2s;}
-        .tp-bulb-btn:hover svg{filter:brightness(1.5) saturate(1.6);animation-play-state:paused;transform:translateY(-5px);}
+        @keyframes tpBulbFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+        .tp-bulb-btn{border:none!important;background:none!important;box-shadow:none!important;outline:none!important;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+        .tp-bulb-btn svg{animation:tpBulbFloat 2.5s ease-in-out infinite;transition:filter .2s,transform .2s;}
+        .tp-bulb-btn:hover svg{filter:brightness(1.6) saturate(1.8);transform:translateY(-5px);animation-play-state:paused;}
       `}</style>
 
       <div style={{position:"relative",zIndex:1,background:"rgba(255,255,255,0.88)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:"1px solid rgba(233,30,140,0.12)",padding:"0 28px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,animation:"tpHeaderIn .5s cubic-bezier(0.22,1,0.36,1) both"}}>
@@ -8991,7 +8991,7 @@ export default function App() {
             <div style={{fontSize:11,color:SUB,fontWeight:500,marginLeft:2}}>by Tetikus</div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <button onClick={()=>setShowTips(true)} title="Host Tips" className="tp-bulb-btn" style={{width:26,height:26}}><svg width="26" height="26" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="m408 176a152 152 0 1 0 -231.058 129.836 31.744 31.744 0 0 1 15.058 27.145v43.019h128v-43.023a32.1 32.1 0 0 1 15.384-27.341 151.893 151.893 0 0 0 72.616-129.636z" fill="#ffe76c"/><path d="m320 408h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#dadcde"/><path d="m320 440h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m192 440h128a0 0 0 0 1 0 0v16a32 32 0 0 1 -32 32h-64a32 32 0 0 1 -32-32v-16a0 0 0 0 1 0 0z" fill="#dadcde"/><path d="m320 376h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m256.011 16h-.011a160.035 160.035 0 0 0 -138.868 239.516 161.029 161.029 0 0 0 55.644 57.149 23.857 23.857 0 0 1 11.224 20.315v4.4a23.977 23.977 0 0 0 -9.869 38.62 23.943 23.943 0 0 0 0 32 23.977 23.977 0 0 0 9.869 38.624v9.376a40.045 40.045 0 0 0 40 40h64a40.045 40.045 0 0 0 40-40v-9.376a23.977 23.977 0 0 0 9.869-38.624 23.943 23.943 0 0 0 0-32 23.977 23.977 0 0 0 -9.869-38.624v-4.4a23.955 23.955 0 0 1 11.568-20.523 159.891 159.891 0 0 0 76.432-136.453c0-88.218-71.771-159.994-159.989-160zm-64.011 336h128a8 8 0 0 1 0 16h-128a8 8 0 0 1 0-16zm40-96h-8a8 8 0 1 1 8-8zm16 16h16v64h-16zm80 120a8.009 8.009 0 0 1 -8 8h-128a8 8 0 0 1 0-16h128a8.009 8.009 0 0 1 8 8zm-40 88h-64a24.027 24.027 0 0 1 -24-24v-8h112v8a24.027 24.027 0 0 1 -24 24zm32-48h-128a8 8 0 0 1 0-16h128a8 8 0 0 1 0 16zm11.2-133.183a39.85 39.85 0 0 0 -19.2 34.16v3.023h-32v-64h8a24 24 0 1 0 -24-24v8h-16v-8a24 24 0 1 0 -24 24h8v64h-32v-3.02a39.95 39.95 0 0 0 -18.891-33.973 143.982 143.982 0 0 1 74.891-267.007h.011c79.395.006 143.989 64.6 143.989 144a143.156 143.156 0 0 1 -68.8 122.817zm-51.2-42.817v-8a8 8 0 1 1 8 8z"/><path d="m256 48h-8a8 8 0 0 0 0 16h8a112.127 112.127 0 0 1 112 112v8a8 8 0 0 0 16 0v-8a128.145 128.145 0 0 0 -128-128z"/></svg></button>
+          <button onClick={()=>setShowTips(true)} data-tip="Host Tips" data-tip-below="" className="tp-bulb-btn" style={{width:26,height:26}}><svg width="26" height="26" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="m408 176a152 152 0 1 0 -231.058 129.836 31.744 31.744 0 0 1 15.058 27.145v43.019h128v-43.023a32.1 32.1 0 0 1 15.384-27.341 151.893 151.893 0 0 0 72.616-129.636z" fill="#ffe76c"/><path d="m320 408h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#dadcde"/><path d="m320 440h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m192 440h128a0 0 0 0 1 0 0v16a32 32 0 0 1 -32 32h-64a32 32 0 0 1 -32-32v-16a0 0 0 0 1 0 0z" fill="#dadcde"/><path d="m320 376h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m256.011 16h-.011a160.035 160.035 0 0 0 -138.868 239.516 161.029 161.029 0 0 0 55.644 57.149 23.857 23.857 0 0 1 11.224 20.315v4.4a23.977 23.977 0 0 0 -9.869 38.62 23.943 23.943 0 0 0 0 32 23.977 23.977 0 0 0 9.869 38.624v9.376a40.045 40.045 0 0 0 40 40h64a40.045 40.045 0 0 0 40-40v-9.376a23.977 23.977 0 0 0 9.869-38.624 23.943 23.943 0 0 0 0-32 23.977 23.977 0 0 0 -9.869-38.624v-4.4a23.955 23.955 0 0 1 11.568-20.523 159.891 159.891 0 0 0 76.432-136.453c0-88.218-71.771-159.994-159.989-160zm-64.011 336h128a8 8 0 0 1 0 16h-128a8 8 0 0 1 0-16zm40-96h-8a8 8 0 1 1 8-8zm16 16h16v64h-16zm80 120a8.009 8.009 0 0 1 -8 8h-128a8 8 0 0 1 0-16h128a8.009 8.009 0 0 1 8 8zm-40 88h-64a24.027 24.027 0 0 1 -24-24v-8h112v8a24.027 24.027 0 0 1 -24 24zm32-48h-128a8 8 0 0 1 0-16h128a8 8 0 0 1 0 16zm11.2-133.183a39.85 39.85 0 0 0 -19.2 34.16v3.023h-32v-64h8a24 24 0 1 0 -24-24v8h-16v-8a24 24 0 1 0 -24 24h8v64h-32v-3.02a39.95 39.95 0 0 0 -18.891-33.973 143.982 143.982 0 0 1 74.891-267.007h.011c79.395.006 143.989 64.6 143.989 144a143.156 143.156 0 0 1 -68.8 122.817zm-51.2-42.817v-8a8 8 0 1 1 8 8z"/><path d="m256 48h-8a8 8 0 0 0 0 16h8a112.127 112.127 0 0 1 112 112v8a8 8 0 0 0 16 0v-8a128.145 128.145 0 0 0 -128-128z"/></svg></button>
           <button onClick={()=>setProfileOpen(v=>!v)}
             style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 14px 7px 10px",cursor:"pointer",transition:"all .15s"}}>
             <div style={{width:30,height:30,borderRadius:9,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
@@ -9005,11 +9005,11 @@ export default function App() {
               <>
                 <div style={{width:1,height:28,background:BORDER,marginLeft:4,flexShrink:0}}/>
                 <div style={{display:"flex",gap:10,marginLeft:2}}>
-                  <div style={{textAlign:"center"}} title="Total coins earned">
+                  <div style={{textAlign:"center"}} data-tip="Total coins earned">
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:PINK,lineHeight:1}}>{homeEarnings.totalCoins}</div>
                     <div style={{fontSize:9,color:SUB,fontWeight:600,lineHeight:1.4}}>coins</div>
                   </div>
-                  <div style={{textAlign:"center"}} title="Sessions joined">
+                  <div style={{textAlign:"center"}} data-tip="Sessions joined">
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:13,color:PURPLE,lineHeight:1}}>{homeEarnings.totalSessions}</div>
                     <div style={{fontSize:9,color:SUB,fontWeight:600,lineHeight:1.4}}>sessions</div>
                   </div>
@@ -9034,7 +9034,7 @@ export default function App() {
                 </div>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <button onClick={()=>setShowTips(true)} title="Host Tips" className="tp-bulb-btn" style={{width:22,height:22}}><svg width="22" height="22" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="m408 176a152 152 0 1 0 -231.058 129.836 31.744 31.744 0 0 1 15.058 27.145v43.019h128v-43.023a32.1 32.1 0 0 1 15.384-27.341 151.893 151.893 0 0 0 72.616-129.636z" fill="#ffe76c"/><path d="m320 408h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#dadcde"/><path d="m320 440h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m192 440h128a0 0 0 0 1 0 0v16a32 32 0 0 1 -32 32h-64a32 32 0 0 1 -32-32v-16a0 0 0 0 1 0 0z" fill="#dadcde"/><path d="m320 376h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m256.011 16h-.011a160.035 160.035 0 0 0 -138.868 239.516 161.029 161.029 0 0 0 55.644 57.149 23.857 23.857 0 0 1 11.224 20.315v4.4a23.977 23.977 0 0 0 -9.869 38.62 23.943 23.943 0 0 0 0 32 23.977 23.977 0 0 0 9.869 38.624v9.376a40.045 40.045 0 0 0 40 40h64a40.045 40.045 0 0 0 40-40v-9.376a23.977 23.977 0 0 0 9.869-38.624 23.943 23.943 0 0 0 0-32 23.977 23.977 0 0 0 -9.869-38.624v-4.4a23.955 23.955 0 0 1 11.568-20.523 159.891 159.891 0 0 0 76.432-136.453c0-88.218-71.771-159.994-159.989-160zm-64.011 336h128a8 8 0 0 1 0 16h-128a8 8 0 0 1 0-16zm40-96h-8a8 8 0 1 1 8-8zm16 16h16v64h-16zm80 120a8.009 8.009 0 0 1 -8 8h-128a8 8 0 0 1 0-16h128a8.009 8.009 0 0 1 8 8zm-40 88h-64a24.027 24.027 0 0 1 -24-24v-8h112v8a24.027 24.027 0 0 1 -24 24zm32-48h-128a8 8 0 0 1 0-16h128a8 8 0 0 1 0 16zm11.2-133.183a39.85 39.85 0 0 0 -19.2 34.16v3.023h-32v-64h8a24 24 0 1 0 -24-24v8h-16v-8a24 24 0 1 0 -24 24h8v64h-32v-3.02a39.95 39.95 0 0 0 -18.891-33.973 143.982 143.982 0 0 1 74.891-267.007h.011c79.395.006 143.989 64.6 143.989 144a143.156 143.156 0 0 1 -68.8 122.817zm-51.2-42.817v-8a8 8 0 1 1 8 8z"/><path d="m256 48h-8a8 8 0 0 0 0 16h8a112.127 112.127 0 0 1 112 112v8a8 8 0 0 0 16 0v-8a128.145 128.145 0 0 0 -128-128z"/></svg></button>
+              <button onClick={()=>setShowTips(true)} data-tip="Host Tips" data-tip-below="" className="tp-bulb-btn" style={{width:22,height:22}}><svg width="22" height="22" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="m408 176a152 152 0 1 0 -231.058 129.836 31.744 31.744 0 0 1 15.058 27.145v43.019h128v-43.023a32.1 32.1 0 0 1 15.384-27.341 151.893 151.893 0 0 0 72.616-129.636z" fill="#ffe76c"/><path d="m320 408h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#dadcde"/><path d="m320 440h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m192 440h128a0 0 0 0 1 0 0v16a32 32 0 0 1 -32 32h-64a32 32 0 0 1 -32-32v-16a0 0 0 0 1 0 0z" fill="#dadcde"/><path d="m320 376h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m256.011 16h-.011a160.035 160.035 0 0 0 -138.868 239.516 161.029 161.029 0 0 0 55.644 57.149 23.857 23.857 0 0 1 11.224 20.315v4.4a23.977 23.977 0 0 0 -9.869 38.62 23.943 23.943 0 0 0 0 32 23.977 23.977 0 0 0 9.869 38.624v9.376a40.045 40.045 0 0 0 40 40h64a40.045 40.045 0 0 0 40-40v-9.376a23.977 23.977 0 0 0 9.869-38.624 23.943 23.943 0 0 0 0-32 23.977 23.977 0 0 0 -9.869-38.624v-4.4a23.955 23.955 0 0 1 11.568-20.523 159.891 159.891 0 0 0 76.432-136.453c0-88.218-71.771-159.994-159.989-160zm-64.011 336h128a8 8 0 0 1 0 16h-128a8 8 0 0 1 0-16zm40-96h-8a8 8 0 1 1 8-8zm16 16h16v64h-16zm80 120a8.009 8.009 0 0 1 -8 8h-128a8 8 0 0 1 0-16h128a8.009 8.009 0 0 1 8 8zm-40 88h-64a24.027 24.027 0 0 1 -24-24v-8h112v8a24.027 24.027 0 0 1 -24 24zm32-48h-128a8 8 0 0 1 0-16h128a8 8 0 0 1 0 16zm11.2-133.183a39.85 39.85 0 0 0 -19.2 34.16v3.023h-32v-64h8a24 24 0 1 0 -24-24v8h-16v-8a24 24 0 1 0 -24 24h8v64h-32v-3.02a39.95 39.95 0 0 0 -18.891-33.973 143.982 143.982 0 0 1 74.891-267.007h.011c79.395.006 143.989 64.6 143.989 144a143.156 143.156 0 0 1 -68.8 122.817zm-51.2-42.817v-8a8 8 0 1 1 8 8z"/><path d="m256 48h-8a8 8 0 0 0 0 16h8a112.127 112.127 0 0 1 112 112v8a8 8 0 0 0 16 0v-8a128.145 128.145 0 0 0 -128-128z"/></svg></button>
               <button onClick={()=>setProfileOpen(v=>!v)}
                 style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 12px 7px 8px",cursor:"pointer",transition:"all .15s"}}>
                 <div style={{width:28,height:28,borderRadius:8,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
@@ -9180,14 +9180,14 @@ export default function App() {
                               if(!window.confirm("Unarchive this session? It will move to inactive sessions.")) return;
                               const full = await sgSession(s.code);
                               if (full) { await ssSession(s.code, {...full, archived:false, live:false}); setSessions(prev=>prev.map(x=>x.code===s.code?{...x,archived:false,live:false}:x)); }
-                            }} title="Unarchive" style={{padding:"0 12px",height:"100%",background:"none",border:"none",cursor:"pointer",color:"#3B82F6",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,fontSize:11,fontWeight:700,fontFamily:"Plus Jakarta Sans,sans-serif"}}>
+                            }} data-tip="Unarchive" style={{padding:"0 12px",height:"100%",background:"none",border:"none",cursor:"pointer",color:"#3B82F6",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,fontSize:11,fontWeight:700,fontFamily:"Plus Jakarta Sans,sans-serif"}}>
                               Restore
                             </button>
                             <button onClick={async()=>{
                               if(!window.confirm("Permanently delete this session? This cannot be undone.")) return;
                               await fsDel(null, s.code, true);
                               setSessions(prev=>prev.filter(x=>x.code!==s.code));
-                            }} title="Delete permanently" style={{padding:"0 12px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",color:"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,fontSize:11,fontWeight:700,fontFamily:"Plus Jakarta Sans,sans-serif"}}>
+                            }} data-tip="Delete permanently" style={{padding:"0 12px",height:"100%",background:"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:"pointer",color:"#EF4444",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,fontSize:11,fontWeight:700,fontFamily:"Plus Jakarta Sans,sans-serif"}}>
                               Delete
                             </button>
                           </div>
@@ -9284,7 +9284,7 @@ export default function App() {
                         } else {
                           setScreen("participant");
                         }
-                      }} title={isPaused ? "Session ended" : "Rejoin session"}
+                      }} data-tip={isPaused ? "Session ended" : "Rejoin session"}
                         disabled={isPaused}
                         style={{padding:"0 14px",height:"100%",background:isPaused?"#F9FAFB":"none",border:"none",borderLeft:`1px solid ${BORDER}`,cursor:isPaused?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,gap:5,color:isPaused?SUB:PINK,flexShrink:0,opacity:isPaused?0.5:1}}>
                         {isPaused ? (
@@ -9322,11 +9322,11 @@ const CSS = `
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:Poppins,sans-serif; -webkit-font-smoothing:antialiased; background:${BG}; user-select:none; -webkit-user-select:none; cursor:default; }
   /* ── Global black pill tooltips ── */
-  [title]{position:relative;}
-  [title]:hover::after{
-    content:attr(title);
+  [data-tip]{position:relative;}
+  [data-tip]:hover::after{
+    content:attr(data-tip);
     position:absolute;
-    bottom:calc(100% + 10px);
+    bottom:calc(100% + 12px);
     left:50%;
     transform:translateX(-50%);
     background:#111;
@@ -9335,29 +9335,29 @@ const CSS = `
     font-size:11px;
     font-weight:500;
     white-space:nowrap;
-    padding:5px 12px;
+    padding:5px 13px;
     border-radius:999px;
     pointer-events:none;
     z-index:99999;
     letter-spacing:.2px;
-    box-shadow:0 4px 14px rgba(0,0,0,0.25);
+    box-shadow:0 4px 14px rgba(0,0,0,0.3);
   }
-  [title]:hover::before{
+  [data-tip]:hover::before{
     content:'';
     position:absolute;
     bottom:calc(100% + 4px);
     left:50%;
     transform:translateX(-50%);
-    border:5px solid transparent;
+    border:8px solid transparent;
     border-top-color:#111;
     pointer-events:none;
     z-index:99999;
   }
-  [data-tip-below]:hover::after{
+  [data-tip][data-tip-below]:hover::after{
     bottom:auto;
-    top:calc(100% + 10px);
+    top:calc(100% + 12px);
   }
-  [data-tip-below]:hover::before{
+  [data-tip][data-tip-below]:hover::before{
     bottom:auto;
     top:calc(100% + 4px);
     border-top-color:transparent;
