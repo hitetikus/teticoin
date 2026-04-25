@@ -8697,7 +8697,7 @@ export default function App() {
       {showSuperAdmin && <SuperAdminDashboard onClose={()=>{ window.history.replaceState({},"","/app"); setShowSuperAdmin(false);}}/>}
       {showHostEarnings && trainer && <EarningsPage uid={trainer.uid} name={trainer.name} onClose={()=>{ window.history.replaceState({},"","/app"); setShowHostEarnings(false);}}/>}
       {showSettings && <SettingsPage isPro={isPro} onClose={()=>{ window.history.replaceState({},"","/app"); setShowSettings(false);}}/>}
-      {showTips && <TipsPage onClose={()=>setShowTips(false)}/>
+      {showTips && <TipsPage onClose={()=>setShowTips(false)}/>}
       {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);openPricing();}} onClose={()=>setLimitModal(null)}/>}
       {creating && <CreateModal onConfirm={handleNew} onClose={()=>setCreating(false)} existingNames={sessions.map(s=>s.name)}/>}
 
