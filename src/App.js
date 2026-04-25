@@ -8028,6 +8028,171 @@ function CoinmasterJoinModal({ onJoin, onClose }) {
   );
 }
 
+// ── TipsPage ──
+const TIPS_DATA = [
+  { tool:"QR Give", emoji:"📱", color:"#9D50FF", bg:"#F3EEFF", tips:[
+    { title:"Early Bird Entry", body:"Keep QR scanner open at the room entrance before the session starts. Anyone who scans in early gets coins — rewards punctuality without calling anyone out." },
+    { title:"Post-Break Check-In", body:"After every break, open the QR scanner for 3 minutes. First to scan back in gets a bonus. Creates a fun race back to the room." },
+    { title:"Exit Ticket", body:"At end of session, participants scan to 'check out' and earn coins. Proves attendance and gives everyone a satisfying closing ritual." },
+  ]},
+  { tool:"Give to Group", emoji:"👥", color:"#3B82F6", bg:"#EFF6FF", tips:[
+    { title:"Group Debate Scoring", body:"Split into 2 groups, assign opposing debate sides. After the debate, give coins to the winning group in one tap. No individual picking needed." },
+    { title:"Group Speed Race", body:"First team to complete a task — flip chart, roleplay, puzzle — gets group coins instantly. One tap to the winning team, done." },
+    { title:"Consolation Coins", body:"After a group challenge, quietly give a small amount to the losing group. Keeps morale up without making it obvious — the host's secret weapon." },
+  ]},
+  { tool:"Give to Everyone", emoji:"🎁", color:"#E91E8C", bg:"#FFF0F7", tips:[
+    { title:"Welcome Bonus", body:"The moment everyone joins, give everyone +10 via Mass Give. Breaks the ice, shows participants what coins feel like, and creates instant buzz." },
+    { title:"Energy Reset", body:"After a long lecture or quiet moment, silently mass give everyone +20 as a 'fresh start' before the next activity. No explanation needed." },
+    { title:"Participation Base Pay", body:"At the end, mass give everyone a base amount (e.g. +50). Top performers keep their lead but nobody leaves with zero — nobody feels left out." },
+  ]},
+  { tool:"Select Multiple", emoji:"✅", color:"#00C896", bg:"#EDFDF8", tips:[
+    { title:"Best Table Discussion", body:"Walk around during group work. Select the 3–4 people from the table with the richest conversation and award them all at once." },
+    { title:"Speed Hands Award", body:"Ask a question — first 3 hands up get selected and awarded simultaneously. Fast, fair, and visually exciting for the room." },
+    { title:"Group Rep Reward", body:"When a group presents, select all presenting members at once rather than awarding one by one. Saves time and feels more equal." },
+  ]},
+  { tool:"Quick Coins", emoji:"⚡", color:"#F59E0B", bg:"#FFFBEB", tips:[
+    { title:"Behaviour Tagging", body:"Set Quick Coins to observable soft skills: 'Eye contact', 'Clear voice', 'Structured answer'. Award with one tap during presentations without breaking flow." },
+    { title:"Rapid Fire Q&A", body:"Fire questions at the room, each correct answer gets a Quick Coin tap instantly. Speed of awarding matches the pace of the activity — no fumbling." },
+    { title:"Silent Skill Tracker", body:"Set one Quick Coin to '+5 Listened well' — a low-value but frequent award. Recognises passive participation that usually goes unnoticed." },
+  ]},
+];
+
+function TipsPage({ onClose }) {
+  const [activeGroup, setActiveGroup] = useState(null);
+  const [visibleCards, setVisibleCards] = useState([]);
+
+  useEffect(() => {
+    // stagger card reveal
+    const timers = [];
+    TIPS_DATA.forEach((_, gi) => {
+      TIPS_DATA[gi].tips.forEach((__, ti) => {
+        const idx = gi * 3 + ti;
+        timers.push(setTimeout(() => setVisibleCards(v => [...v, idx]), 80 + idx * 60));
+      });
+    });
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  const filtered = activeGroup === null ? TIPS_DATA : TIPS_DATA.filter(g => g.tool === activeGroup);
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:9000,background:"#FAFAFA",display:"flex",flexDirection:"column",overflowY:"auto"}}>
+      {/* Animated background blobs */}
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+        <div style={{position:"absolute",top:"-10%",left:"-5%",width:400,height:400,borderRadius:"50%",background:"rgba(233,30,140,0.06)",animation:"tpBlob1 8s ease-in-out infinite"}}/>
+        <div style={{position:"absolute",top:"30%",right:"-8%",width:320,height:320,borderRadius:"50%",background:"rgba(157,80,255,0.07)",animation:"tpBlob2 10s ease-in-out infinite"}}/>
+        <div style={{position:"absolute",bottom:"-5%",left:"20%",width:360,height:360,borderRadius:"50%",background:"rgba(0,200,150,0.05)",animation:"tpBlob3 12s ease-in-out infinite"}}/>
+      </div>
+
+      <style>{`
+        @keyframes tpBlob1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(30px,20px) scale(1.08);}}
+        @keyframes tpBlob2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-20px,30px) scale(1.05);}}
+        @keyframes tpBlob3{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(15px,-25px) scale(1.06);}}
+        @keyframes tpFadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+        @keyframes tpPop{0%{transform:scale(0.85);opacity:0;}60%{transform:scale(1.04);}100%{transform:scale(1);opacity:1;}}
+        @keyframes tpHeaderIn{from{opacity:0;transform:translateY(-16px);}to{opacity:1;transform:translateY(0);}}
+        .tp-card{opacity:0;transform:translateY(20px);transition:none;}
+        .tp-card.visible{animation:tpFadeUp 0.45s cubic-bezier(0.22,1,0.36,1) forwards;}
+        .tp-card:hover{transform:translateY(-4px) scale(1.01);box-shadow:0 12px 40px rgba(0,0,0,0.12)!important;}
+        .tp-filter-btn{transition:all .2s;}
+        .tp-filter-btn:hover{opacity:0.85;}
+        .tp-close:hover{background:rgba(0,0,0,0.06)!important;}
+      `}</style>
+
+      {/* Header */}
+      <div style={{position:"relative",zIndex:1,background:"rgba(255,255,255,0.85)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:"1px solid rgba(233,30,140,0.12)",padding:"0 28px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,animation:"tpHeaderIn .5s cubic-bezier(0.22,1,0.36,1) both"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:38,height:38,borderRadius:12,background:"linear-gradient(135deg,#E91E8C,#9D50FF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>💡</div>
+          <div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:17,color:"#0A0A0F",lineHeight:1}}>Host Tips</div>
+            <div style={{fontSize:11,color:"#6B7280",fontWeight:500,marginTop:2}}>Creative ways to use your giving tools</div>
+          </div>
+        </div>
+        <button className="tp-close" onClick={onClose} style={{width:36,height:36,borderRadius:10,border:"1px solid rgba(0,0,0,0.1)",background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      {/* Hero section */}
+      <div style={{position:"relative",zIndex:1,textAlign:"center",padding:"40px 24px 28px",animation:"tpHeaderIn .6s cubic-bezier(0.22,1,0.36,1) .1s both"}}>
+        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(233,30,140,0.08)",border:"1px solid rgba(233,30,140,0.2)",borderRadius:999,padding:"5px 14px",fontSize:12,fontWeight:700,color:"#E91E8C",marginBottom:16,letterSpacing:.3}}>
+          ✦ 15 tips for better sessions
+        </div>
+        <h1 style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:"clamp(26px,4vw,40px)",color:"#0A0A0F",margin:"0 0 12px",letterSpacing:-0.5,lineHeight:1.1}}>
+          Your tools are more powerful<br/>
+          <span style={{background:"linear-gradient(135deg,#E91E8C,#9D50FF)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>than you think.</span>
+        </h1>
+        <p style={{fontSize:15,color:"#6B7280",lineHeight:1.7,maxWidth:480,margin:"0 auto"}}>
+          Each giving tool has creative uses beyond the obvious. Here's how experienced hosts use them to keep energy high all session long.
+        </p>
+      </div>
+
+      {/* Filter pills */}
+      <div style={{position:"relative",zIndex:1,display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",padding:"0 24px 28px",animation:"tpHeaderIn .6s cubic-bezier(0.22,1,0.36,1) .18s both"}}>
+        <button className="tp-filter-btn" onClick={()=>setActiveGroup(null)}
+          style={{padding:"7px 16px",borderRadius:999,border:`1.5px solid ${activeGroup===null?"#E91E8C":"rgba(0,0,0,0.12)"}`,background:activeGroup===null?"#E91E8C":"transparent",color:activeGroup===null?"#fff":"#6B7280",fontFamily:"Poppins,sans-serif",fontWeight:600,fontSize:12,cursor:"pointer"}}>
+          All tips
+        </button>
+        {TIPS_DATA.map(g => (
+          <button key={g.tool} className="tp-filter-btn" onClick={()=>setActiveGroup(g.tool===activeGroup?null:g.tool)}
+            style={{padding:"7px 16px",borderRadius:999,border:`1.5px solid ${activeGroup===g.tool?g.color:"rgba(0,0,0,0.12)"}`,background:activeGroup===g.tool?g.color:"transparent",color:activeGroup===g.tool?"#fff":"#6B7280",fontFamily:"Poppins,sans-serif",fontWeight:600,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+            <span>{g.emoji}</span>{g.tool}
+          </button>
+        ))}
+      </div>
+
+      {/* Cards grid */}
+      <div style={{position:"relative",zIndex:1,padding:"0 24px 48px",maxWidth:1040,margin:"0 auto",width:"100%",boxSizing:"border-box"}}>
+        {filtered.map((group, gi) => (
+          <div key={group.tool} style={{marginBottom:36}}>
+            {/* Group header */}
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+              <div style={{width:36,height:36,borderRadius:10,background:group.bg,border:`1.5px solid ${group.color}30`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>{group.emoji}</div>
+              <div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:group.color}}>{group.tool}</div>
+                <div style={{fontSize:11,color:"#9CA3AF",fontWeight:500}}>{group.tips.length} tips</div>
+              </div>
+              <div style={{flex:1,height:1,background:`linear-gradient(to right, ${group.color}20, transparent)`,marginLeft:8}}/>
+            </div>
+
+            {/* 3-column cards */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:16}}>
+              {group.tips.map((tip, ti) => {
+                const cardIdx = TIPS_DATA.findIndex(g=>g.tool===group.tool) * 3 + ti;
+                const isVisible = visibleCards.includes(cardIdx);
+                return (
+                  <div key={ti} className={`tp-card${isVisible?" visible":""}`}
+                    style={{background:"#fff",borderRadius:18,border:"1px solid rgba(0,0,0,0.07)",padding:"22px 22px 24px",boxShadow:"0 2px 12px rgba(0,0,0,0.06)",cursor:"default",transition:"transform .25s cubic-bezier(0.22,1,0.36,1), box-shadow .25s ease",position:"relative",overflow:"hidden"}}>
+                    {/* Accent corner blob */}
+                    <div style={{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",background:group.bg,opacity:.7,pointerEvents:"none"}}/>
+                    {/* Tip number badge */}
+                    <div style={{position:"absolute",top:18,right:18,width:24,height:24,borderRadius:8,background:group.bg,border:`1px solid ${group.color}30`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:10,color:group.color}}>
+                      {ti+1}
+                    </div>
+                    {/* Icon */}
+                    <div style={{width:44,height:44,borderRadius:13,background:group.bg,border:`1.5px solid ${group.color}25`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,marginBottom:14}}>{group.emoji}</div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#0A0A0F",marginBottom:8,lineHeight:1.3,paddingRight:28}}>{tip.title}</div>
+                    <div style={{fontSize:13,color:"#6B7280",lineHeight:1.7}}>{tip.body}</div>
+                    {/* Bottom accent line */}
+                    <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,borderRadius:"0 0 18px 18px",background:`linear-gradient(to right,${group.color}40,${group.color}10)`}}/>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer note */}
+      <div style={{position:"relative",zIndex:1,textAlign:"center",padding:"0 24px 48px"}}>
+        <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(233,30,140,0.05)",border:"1px solid rgba(233,30,140,0.12)",borderRadius:14,padding:"12px 20px",fontSize:13,color:"#9CA3AF"}}>
+          💡 <span>More tips coming soon as we discover new creative uses!</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Root app ──
 export default function App() {
   const [screen, setScreen] = useState("landing");
@@ -8047,6 +8212,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSuperAdmin, setShowSuperAdmin] = useState(false);
   const [showHostEarnings, setShowHostEarnings] = useState(false);
+  const [showTips, setShowTips] = useState(false);
   const [homeEarnings, setHomeEarnings] = useState(null); // {totalCoins, totalSessions}
   const [recentJoined, setRecentJoined] = useState([]); // [{code,name,coins,joinedAt,lastUpdated}]
   const recentJoinedRef = useRef([]); // always-current ref for use inside poll interval
@@ -8531,6 +8697,7 @@ export default function App() {
       {showSuperAdmin && <SuperAdminDashboard onClose={()=>{ window.history.replaceState({},"","/app"); setShowSuperAdmin(false);}}/>}
       {showHostEarnings && trainer && <EarningsPage uid={trainer.uid} name={trainer.name} onClose={()=>{ window.history.replaceState({},"","/app"); setShowHostEarnings(false);}}/>}
       {showSettings && <SettingsPage isPro={isPro} onClose={()=>{ window.history.replaceState({},"","/app"); setShowSettings(false);}}/>}
+      {showTips && <TipsPage onClose={()=>setShowTips(false)}/>
       {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);openPricing();}} onClose={()=>setLimitModal(null)}/>}
       {creating && <CreateModal onConfirm={handleNew} onClose={()=>setCreating(false)} existingNames={sessions.map(s=>s.name)}/>}
 
@@ -8689,6 +8856,8 @@ export default function App() {
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
             <div style={{fontSize:11,color:SUB,fontWeight:500,marginLeft:2}}>by Tetikus</div>
           </div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <button onClick={()=>setShowTips(true)} title="Host Tips" style={{display:"flex",alignItems:"center",gap:7,padding:"7px 14px",borderRadius:10,border:"1px solid #FDE68A",background:"#FFFBEB",cursor:"pointer",transition:"all .15s"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.2" strokeLinecap="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.7-3.5 6l-.5 3h-6l-.5-3C6.5 13.7 5 11.5 5 9a7 7 0 0 1 7-7z"/></svg><span style={{fontFamily:"Poppins,sans-serif",fontWeight:600,fontSize:12,color:"#B45309"}}>Host Tips</span></button>
           <button onClick={()=>setProfileOpen(v=>!v)}
             style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 14px 7px 10px",cursor:"pointer",transition:"all .15s"}}>
             <div style={{width:30,height:30,borderRadius:9,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
@@ -8715,6 +8884,7 @@ export default function App() {
             )}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round" style={{transform:profileOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform .2s"}}><polyline points="6 9 12 15 18 9"/></svg>
           </button>
+          </div>
         </div>
 
         <div className="tc-home-inner">
@@ -8729,6 +8899,8 @@ export default function App() {
                   <div style={{fontSize:10,color:SUB,fontWeight:500}}>by Tetikus</div>
                 </div>
               </div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <button onClick={()=>setShowTips(true)} title="Host Tips" style={{width:36,height:36,borderRadius:10,border:"1px solid #FDE68A",background:"#FFFBEB",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.2" strokeLinecap="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.7-3.5 6l-.5 3h-6l-.5-3C6.5 13.7 5 11.5 5 9a7 7 0 0 1 7-7z"/></svg></button>
               <button onClick={()=>setProfileOpen(v=>!v)}
                 style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 12px 7px 8px",cursor:"pointer",transition:"all .15s"}}>
                 <div style={{width:28,height:28,borderRadius:8,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
@@ -8736,6 +8908,7 @@ export default function App() {
                 </div>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" strokeLinecap="round" style={{transform:profileOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform .2s"}}><polyline points="6 9 12 15 18 9"/></svg>
               </button>
+              </div>
             </div>
 
             {isFree && <UpgradeBanner sessionCount={sessions.filter(s=>!s.archived).length} onUpgrade={()=>openPricing()}/>}
