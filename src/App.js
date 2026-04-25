@@ -8029,28 +8029,58 @@ function CoinmasterJoinModal({ onJoin, onClose }) {
 }
 
 // ── TipsPage ──
+// SVG icons per category (flat, circle-friendly)
+function TpIconQR({c="#9D50FF",s=20}) { return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill={c}/><rect x="16" y="5" width="3" height="3" fill={c}/><rect x="5" y="16" width="3" height="3" fill={c}/><line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="14" y1="17" x2="14" y2="21"/><line x1="17" y1="17" x2="21" y2="17"/><line x1="21" y1="14" x2="21" y2="21"/></svg>; }
+function TpIconGroup({c="#3B82F6",s=20}) { return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>; }
+function TpIconMass({c="#E91E8C",s=20}) { return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>; }
+function TpIconMulti({c="#00C896",s=20}) { return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>; }
+function TpIconQuick({c="#F59E0B",s=20}) { return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill={c} fillOpacity=".15"/><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>; }
+// Per-tip icons (flat SVG illustrations)
+const TIP_ICONS = {
+  // QR Give
+  "Early Bird Entry": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><ellipse cx="16" cy="20" rx="10" ry="7" fill={c} fillOpacity=".15" stroke={c} strokeWidth="1.5"/><circle cx="16" cy="13" r="5" fill={c} fillOpacity=".2" stroke={c} strokeWidth="1.5"/><path d="M10 10 Q8 6 11 5 Q10 8 13 9" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none"/><path d="M22 10 Q24 6 21 5 Q22 8 19 9" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none"/><path d="M16 8 Q17 5 20 4" stroke={c} strokeWidth="1.2" strokeLinecap="round" fill="none"/><circle cx="14" cy="13" r="1" fill={c}/><circle cx="18" cy="13" r="1" fill={c}/><path d="M14 16 Q16 17.5 18 16" stroke={c} strokeWidth="1.2" strokeLinecap="round" fill="none"/><path d="M23 7 L26 5 M23 5 L26 7" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  "Post-Break Check-In": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="11" fill={c} fillOpacity=".1" stroke={c} strokeWidth="1.5"/><polyline points="16,9 16,16 21,19" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M10 4 L10 8 M22 4 L22 8" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  "Exit Ticket": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="24" height="16" rx="3" fill={c} fillOpacity=".1" stroke={c} strokeWidth="1.5"/><circle cx="10" cy="16" r="3" fill={c} fillOpacity=".3" stroke={c} strokeWidth="1.2"/><line x1="16" y1="12" x2="24" y2="12" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><line x1="16" y1="16" x2="24" y2="16" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><line x1="16" y1="20" x2="21" y2="20" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><path d="M26 19 L30 16 L26 13" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  // Give to Group
+  "Group Debate Scoring": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="12" height="8" rx="2" fill={c} fillOpacity=".15" stroke={c} strokeWidth="1.5"/><path d="M8 14 L8 17 L5 17" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><rect x="18" y="6" width="12" height="8" rx="2" fill="#E91E8C" fillOpacity=".15" stroke="#E91E8C" strokeWidth="1.5"/><path d="M24 14 L24 17 L27 17" stroke="#E91E8C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><line x1="16" y1="4" x2="16" y2="28" stroke="#D1D5DB" strokeWidth="1" strokeDasharray="2 2"/><path d="M13 22 L16 18 L19 22" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="#F59E0B" fillOpacity=".2"/></svg>,
+  "Group Speed Race": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><path d="M4 22 L28 22" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><path d="M8 22 L8 16 Q8 12 12 12 L20 12 Q24 12 24 16 L24 22" fill={c} fillOpacity=".12" stroke={c} strokeWidth="1.5"/><circle cx="11" cy="24" r="2" fill={c} fillOpacity=".4" stroke={c} strokeWidth="1.2"/><circle cx="21" cy="24" r="2" fill={c} fillOpacity=".4" stroke={c} strokeWidth="1.2"/><path d="M26 8 L30 10 L26 12" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><line x1="14" y1="10" x2="30" y2="10" stroke="#F59E0B" strokeWidth="1.2" strokeLinecap="round" strokeDasharray="2 2"/></svg>,
+  "Consolation Coins": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10" fill={c} fillOpacity=".12" stroke={c} strokeWidth="1.5"/><path d="M16 10 L16 11 M16 21 L16 22" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><path d="M13 13 Q13 11 16 11 Q19 11 19 13.5 Q19 16 16 16 Q19 16 19 18.5 Q19 21 16 21 Q13 21 13 19" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none"/></svg>,
+  // Give to Everyone
+  "Welcome Bonus": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><path d="M16 4 L17.5 11 L24 8 L20 14 L28 14 L22 18 L26 25 L16 21 L6 25 L10 18 L4 14 L12 14 L8 8 L14.5 11 Z" fill={c} fillOpacity=".2" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/></svg>,
+  "Energy Reset": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><path d="M20 4 L12 16 L18 16 L12 28 L24 14 L18 14 Z" fill={c} fillOpacity=".2" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><path d="M6 10 Q4 16 6 22" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 2"/><path d="M26 10 Q28 16 26 22" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 2"/></svg>,
+  "Participation Base Pay": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><rect x="4" y="20" width="5" height="8" rx="1" fill={c} fillOpacity=".3" stroke={c} strokeWidth="1.2"/><rect x="11" y="14" width="5" height="14" rx="1" fill={c} fillOpacity=".5" stroke={c} strokeWidth="1.2"/><rect x="18" y="8" width="5" height="20" rx="1" fill={c} fillOpacity=".7" stroke={c} strokeWidth="1.2"/><rect x="25" y="12" width="3" height="16" rx="1" fill={c} fillOpacity=".9" stroke={c} strokeWidth="1.2"/><path d="M3 6 L7 4 L13 8 L19 3 L28 7" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>,
+  // Select Multiple
+  "Best Table Discussion": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><rect x="3" y="8" width="26" height="18" rx="3" fill={c} fillOpacity=".1" stroke={c} strokeWidth="1.5"/><circle cx="9" cy="17" r="2.5" fill={c} fillOpacity=".4" stroke={c} strokeWidth="1.2"/><circle cx="16" cy="17" r="2.5" fill={c} fillOpacity=".4" stroke={c} strokeWidth="1.2"/><circle cx="23" cy="17" r="2.5" fill={c} fillOpacity=".4" stroke={c} strokeWidth="1.2"/><path d="M9 8 L9 5 M16 8 L16 5 M23 8 L23 5" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><path d="M6 26 L7 30 M26 26 L25 30" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  "Speed Hands Award": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><path d="M14 20 L14 10 Q14 8 16 8 Q18 8 18 10 L18 16 Q19 14 21 14 Q23 14 23 16 L23 17 Q24 15 26 16 Q27 17 26 18 L24 26 L12 26 L10 22 Q9 20 11 20 Q12 20 12 22 L14 20Z" fill={c} fillOpacity=".15" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><path d="M20 4 L22 2 M24 6 L27 5 M22 8 L25 9" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  "Group Rep Reward": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><circle cx="10" cy="12" r="4" fill={c} fillOpacity=".2" stroke={c} strokeWidth="1.5"/><circle cx="22" cy="12" r="4" fill={c} fillOpacity=".2" stroke={c} strokeWidth="1.5"/><circle cx="16" cy="10" r="4" fill={c} fillOpacity=".4" stroke={c} strokeWidth="1.5"/><path d="M6 26 Q6 20 10 20 L22 20 Q26 20 26 26" fill={c} fillOpacity=".1" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><circle cx="25" cy="7" r="3" fill="#F59E0B" fillOpacity=".3" stroke="#F59E0B" strokeWidth="1.2"/><path d="M25 5.5 L25 6.2 M25 7.8 L25 8.5" stroke="#F59E0B" strokeWidth="1" strokeLinecap="round"/></svg>,
+  // Quick Coins
+  "Behaviour Tagging": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><rect x="4" y="6" width="16" height="20" rx="2" fill={c} fillOpacity=".1" stroke={c} strokeWidth="1.5"/><line x1="8" y1="12" x2="16" y2="12" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><line x1="8" y1="16" x2="16" y2="16" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><line x1="8" y1="20" x2="13" y2="20" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><path d="M20 14 L28 14 M20 18 L28 18" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round"/><circle cx="19" cy="14" r="1.5" fill="#10B981"/><circle cx="19" cy="18" r="1.5" fill="#10B981"/></svg>,
+  "Rapid Fire Q&A": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><polygon points="16,3 19,13 29,13 21,19 24,29 16,23 8,29 11,19 3,13 13,13" fill={c} fillOpacity=".15" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><circle cx="16" cy="16" r="4" fill={c} fillOpacity=".3"/></svg>,
+  "Silent Skill Tracker": ({c,s=28})=><svg width={s} height={s} viewBox="0 0 32 32" fill="none"><path d="M4 20 Q4 10 16 8 Q28 10 28 20" fill={c} fillOpacity=".1" stroke={c} strokeWidth="1.5"/><path d="M8 20 Q8 14 16 12 Q24 14 24 20" fill={c} fillOpacity=".15" stroke={c} strokeWidth="1"/><circle cx="16" cy="20" r="3" fill={c} stroke={c} strokeWidth="1.5"/><line x1="16" y1="20" x2="22" y2="14" stroke={c} strokeWidth="2" strokeLinecap="round"/><line x1="4" y1="22" x2="28" y2="22" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></svg>,
+};
+
 const TIPS_DATA = [
-  { tool:"QR Give", emoji:"📱", color:"#9D50FF", bg:"#F3EEFF", tips:[
+  { tool:"QR Give", Icon:TpIconQR, color:"#9D50FF", bg:"#F3EEFF", tips:[
     { title:"Early Bird Entry", body:"Keep QR scanner open at the room entrance before the session starts. Anyone who scans in early gets coins — rewards punctuality without calling anyone out." },
     { title:"Post-Break Check-In", body:"After every break, open the QR scanner for 3 minutes. First to scan back in gets a bonus. Creates a fun race back to the room." },
     { title:"Exit Ticket", body:"At end of session, participants scan to 'check out' and earn coins. Proves attendance and gives everyone a satisfying closing ritual." },
   ]},
-  { tool:"Give to Group", emoji:"👥", color:"#3B82F6", bg:"#EFF6FF", tips:[
+  { tool:"Give to Group", Icon:TpIconGroup, color:"#3B82F6", bg:"#EFF6FF", tips:[
     { title:"Group Debate Scoring", body:"Split into 2 groups, assign opposing debate sides. After the debate, give coins to the winning group in one tap. No individual picking needed." },
     { title:"Group Speed Race", body:"First team to complete a task — flip chart, roleplay, puzzle — gets group coins instantly. One tap to the winning team, done." },
     { title:"Consolation Coins", body:"After a group challenge, quietly give a small amount to the losing group. Keeps morale up without making it obvious — the host's secret weapon." },
   ]},
-  { tool:"Give to Everyone", emoji:"🎁", color:"#E91E8C", bg:"#FFF0F7", tips:[
+  { tool:"Give to Everyone", Icon:TpIconMass, color:"#E91E8C", bg:"#FFF0F7", tips:[
     { title:"Welcome Bonus", body:"The moment everyone joins, give everyone +10 via Mass Give. Breaks the ice, shows participants what coins feel like, and creates instant buzz." },
     { title:"Energy Reset", body:"After a long lecture or quiet moment, silently mass give everyone +20 as a 'fresh start' before the next activity. No explanation needed." },
     { title:"Participation Base Pay", body:"At the end, mass give everyone a base amount (e.g. +50). Top performers keep their lead but nobody leaves with zero — nobody feels left out." },
   ]},
-  { tool:"Select Multiple", emoji:"✅", color:"#00C896", bg:"#EDFDF8", tips:[
+  { tool:"Select Multiple", Icon:TpIconMulti, color:"#00C896", bg:"#EDFDF8", tips:[
     { title:"Best Table Discussion", body:"Walk around during group work. Select the 3–4 people from the table with the richest conversation and award them all at once." },
     { title:"Speed Hands Award", body:"Ask a question — first 3 hands up get selected and awarded simultaneously. Fast, fair, and visually exciting for the room." },
     { title:"Group Rep Reward", body:"When a group presents, select all presenting members at once rather than awarding one by one. Saves time and feels more equal." },
   ]},
-  { tool:"Quick Coins", emoji:"⚡", color:"#F59E0B", bg:"#FFFBEB", tips:[
+  { tool:"Quick Coins", Icon:TpIconQuick, color:"#F59E0B", bg:"#FFFBEB", tips:[
     { title:"Behaviour Tagging", body:"Set Quick Coins to observable soft skills: 'Eye contact', 'Clear voice', 'Structured answer'. Award with one tap during presentations without breaking flow." },
     { title:"Rapid Fire Q&A", body:"Fire questions at the room, each correct answer gets a Quick Coin tap instantly. Speed of awarding matches the pace of the activity — no fumbling." },
     { title:"Silent Skill Tracker", body:"Set one Quick Coin to '+5 Listened well' — a low-value but frequent award. Recognises passive participation that usually goes unnoticed." },
@@ -8062,7 +8092,7 @@ function TipsPage({ onClose }) {
   const [visibleCards, setVisibleCards] = useState([]);
 
   useEffect(() => {
-    // stagger card reveal
+    window.history.replaceState({}, "", "/app/tips");
     const timers = [];
     TIPS_DATA.forEach((_, gi) => {
       TIPS_DATA[gi].tips.forEach((__, ti) => {
@@ -8070,14 +8100,16 @@ function TipsPage({ onClose }) {
         timers.push(setTimeout(() => setVisibleCards(v => [...v, idx]), 80 + idx * 60));
       });
     });
-    return () => timers.forEach(clearTimeout);
+    return () => {
+      timers.forEach(clearTimeout);
+      window.history.replaceState({}, "", "/app");
+    };
   }, []);
 
   const filtered = activeGroup === null ? TIPS_DATA : TIPS_DATA.filter(g => g.tool === activeGroup);
 
   return (
     <div style={{position:"fixed",inset:0,zIndex:9000,background:"#FAFAFA",display:"flex",flexDirection:"column",overflowY:"auto"}}>
-      {/* Animated background blobs */}
       <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
         <div style={{position:"absolute",top:"-10%",left:"-5%",width:400,height:400,borderRadius:"50%",background:"rgba(233,30,140,0.06)",animation:"tpBlob1 8s ease-in-out infinite"}}/>
         <div style={{position:"absolute",top:"30%",right:"-8%",width:320,height:320,borderRadius:"50%",background:"rgba(157,80,255,0.07)",animation:"tpBlob2 10s ease-in-out infinite"}}/>
@@ -8089,20 +8121,26 @@ function TipsPage({ onClose }) {
         @keyframes tpBlob2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-20px,30px) scale(1.05);}}
         @keyframes tpBlob3{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(15px,-25px) scale(1.06);}}
         @keyframes tpFadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-        @keyframes tpPop{0%{transform:scale(0.85);opacity:0;}60%{transform:scale(1.04);}100%{transform:scale(1);opacity:1;}}
         @keyframes tpHeaderIn{from{opacity:0;transform:translateY(-16px);}to{opacity:1;transform:translateY(0);}}
-        .tp-card{opacity:0;transform:translateY(20px);transition:none;}
+        @keyframes tpGlow{0%,100%{filter:drop-shadow(0 0 3px rgba(245,158,11,0.5));}50%{filter:drop-shadow(0 0 8px rgba(245,158,11,0.9)) drop-shadow(0 0 16px rgba(245,158,11,0.4));}}
+        @keyframes tpBulbPulse{0%,100%{opacity:1;}50%{opacity:0.7;}}
+        .tp-card{opacity:0;transform:translateY(20px);}
         .tp-card.visible{animation:tpFadeUp 0.45s cubic-bezier(0.22,1,0.36,1) forwards;}
-        .tp-card:hover{transform:translateY(-4px) scale(1.01);box-shadow:0 12px 40px rgba(0,0,0,0.12)!important;}
+        .tp-card:hover{transform:translateY(-4px) scale(1.01)!important;box-shadow:0 12px 40px rgba(0,0,0,0.12)!important;}
         .tp-filter-btn{transition:all .2s;}
         .tp-filter-btn:hover{opacity:0.85;}
         .tp-close:hover{background:rgba(0,0,0,0.06)!important;}
+        .tp-bulb-btn{transition:transform .15s;}
+        .tp-bulb-btn:hover{transform:scale(1.15);}
+        .tp-bulb-icon{animation:tpGlow 2.4s ease-in-out infinite, tpBulbPulse 2.4s ease-in-out infinite;}
       `}</style>
 
       {/* Header */}
-      <div style={{position:"relative",zIndex:1,background:"rgba(255,255,255,0.85)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:"1px solid rgba(233,30,140,0.12)",padding:"0 28px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,animation:"tpHeaderIn .5s cubic-bezier(0.22,1,0.36,1) both"}}>
+      <div style={{position:"relative",zIndex:1,background:"rgba(255,255,255,0.88)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:"1px solid rgba(233,30,140,0.12)",padding:"0 28px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,animation:"tpHeaderIn .5s cubic-bezier(0.22,1,0.36,1) both"}}>
         <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:38,height:38,borderRadius:12,background:"linear-gradient(135deg,#E91E8C,#9D50FF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>💡</div>
+          <div style={{width:38,height:38,borderRadius:12,background:"linear-gradient(135deg,#E91E8C,#9D50FF)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.7-3.5 6l-.5 3h-6l-.5-3C6.5 13.7 5 11.5 5 9a7 7 0 0 1 7-7z"/></svg>
+          </div>
           <div>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:17,color:"#0A0A0F",lineHeight:1}}>Host Tips</div>
             <div style={{fontSize:11,color:"#6B7280",fontWeight:500,marginTop:2}}>Creative ways to use your giving tools</div>
@@ -8113,7 +8151,7 @@ function TipsPage({ onClose }) {
         </button>
       </div>
 
-      {/* Hero section */}
+      {/* Hero */}
       <div style={{position:"relative",zIndex:1,textAlign:"center",padding:"40px 24px 28px",animation:"tpHeaderIn .6s cubic-bezier(0.22,1,0.36,1) .1s both"}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(233,30,140,0.08)",border:"1px solid rgba(233,30,140,0.2)",borderRadius:999,padding:"5px 14px",fontSize:12,fontWeight:700,color:"#E91E8C",marginBottom:16,letterSpacing:.3}}>
           ✦ 15 tips for better sessions
@@ -8135,46 +8173,48 @@ function TipsPage({ onClose }) {
         </button>
         {TIPS_DATA.map(g => (
           <button key={g.tool} className="tp-filter-btn" onClick={()=>setActiveGroup(g.tool===activeGroup?null:g.tool)}
-            style={{padding:"7px 16px",borderRadius:999,border:`1.5px solid ${activeGroup===g.tool?g.color:"rgba(0,0,0,0.12)"}`,background:activeGroup===g.tool?g.color:"transparent",color:activeGroup===g.tool?"#fff":"#6B7280",fontFamily:"Poppins,sans-serif",fontWeight:600,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
-            <span>{g.emoji}</span>{g.tool}
+            style={{padding:"7px 14px",borderRadius:999,border:`1.5px solid ${activeGroup===g.tool?g.color:"rgba(0,0,0,0.12)"}`,background:activeGroup===g.tool?g.color:"transparent",color:activeGroup===g.tool?"#fff":"#6B7280",fontFamily:"Poppins,sans-serif",fontWeight:600,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+            <div style={{width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <g.Icon c={activeGroup===g.tool?"#fff":g.color} s={16}/>
+            </div>
+            {g.tool}
           </button>
         ))}
       </div>
 
       {/* Cards grid */}
       <div style={{position:"relative",zIndex:1,padding:"0 24px 48px",maxWidth:1040,margin:"0 auto",width:"100%",boxSizing:"border-box"}}>
-        {filtered.map((group, gi) => (
+        {filtered.map((group) => (
           <div key={group.tool} style={{marginBottom:36}}>
-            {/* Group header */}
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-              <div style={{width:36,height:36,borderRadius:10,background:group.bg,border:`1.5px solid ${group.color}30`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>{group.emoji}</div>
+              <div style={{width:36,height:36,borderRadius:"50%",background:group.bg,border:`1.5px solid ${group.color}30`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <group.Icon c={group.color} s={18}/>
+              </div>
               <div>
                 <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:group.color}}>{group.tool}</div>
                 <div style={{fontSize:11,color:"#9CA3AF",fontWeight:500}}>{group.tips.length} tips</div>
               </div>
-              <div style={{flex:1,height:1,background:`linear-gradient(to right, ${group.color}20, transparent)`,marginLeft:8}}/>
+              <div style={{flex:1,height:1,background:`linear-gradient(to right, ${group.color}25, transparent)`,marginLeft:8}}/>
             </div>
 
-            {/* 3-column cards */}
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:16}}>
               {group.tips.map((tip, ti) => {
                 const cardIdx = TIPS_DATA.findIndex(g=>g.tool===group.tool) * 3 + ti;
                 const isVisible = visibleCards.includes(cardIdx);
+                const TipIcon = TIP_ICONS[tip.title];
                 return (
                   <div key={ti} className={`tp-card${isVisible?" visible":""}`}
-                    style={{background:"#fff",borderRadius:18,border:"1px solid rgba(0,0,0,0.07)",padding:"22px 22px 24px",boxShadow:"0 2px 12px rgba(0,0,0,0.06)",cursor:"default",transition:"transform .25s cubic-bezier(0.22,1,0.36,1), box-shadow .25s ease",position:"relative",overflow:"hidden"}}>
-                    {/* Accent corner blob */}
-                    <div style={{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",background:group.bg,opacity:.7,pointerEvents:"none"}}/>
-                    {/* Tip number badge */}
-                    <div style={{position:"absolute",top:18,right:18,width:24,height:24,borderRadius:8,background:group.bg,border:`1px solid ${group.color}30`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:10,color:group.color}}>
+                    style={{background:"#fff",borderRadius:18,border:"1px solid rgba(0,0,0,0.07)",padding:"22px 22px 24px",boxShadow:"0 2px 12px rgba(0,0,0,0.06)",cursor:"default",position:"relative",overflow:"hidden"}}>
+                    <div style={{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",background:group.bg,opacity:.6,pointerEvents:"none"}}/>
+                    <div style={{position:"absolute",top:16,right:16,width:22,height:22,borderRadius:7,background:group.bg,border:`1px solid ${group.color}25`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:10,color:group.color}}>
                       {ti+1}
                     </div>
-                    {/* Icon */}
-                    <div style={{width:44,height:44,borderRadius:13,background:group.bg,border:`1.5px solid ${group.color}25`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,marginBottom:14}}>{group.emoji}</div>
+                    <div style={{width:48,height:48,borderRadius:"50%",background:group.bg,border:`1.5px solid ${group.color}20`,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:14,flexShrink:0}}>
+                      {TipIcon ? <TipIcon c={group.color} s={28}/> : <group.Icon c={group.color} s={22}/>}
+                    </div>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#0A0A0F",marginBottom:8,lineHeight:1.3,paddingRight:28}}>{tip.title}</div>
                     <div style={{fontSize:13,color:"#6B7280",lineHeight:1.7}}>{tip.body}</div>
-                    {/* Bottom accent line */}
-                    <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,borderRadius:"0 0 18px 18px",background:`linear-gradient(to right,${group.color}40,${group.color}10)`}}/>
+                    <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,borderRadius:"0 0 18px 18px",background:`linear-gradient(to right,${group.color}50,${group.color}10)`}}/>
                   </div>
                 );
               })}
@@ -8183,10 +8223,10 @@ function TipsPage({ onClose }) {
         ))}
       </div>
 
-      {/* Footer note */}
       <div style={{position:"relative",zIndex:1,textAlign:"center",padding:"0 24px 48px"}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(233,30,140,0.05)",border:"1px solid rgba(233,30,140,0.12)",borderRadius:14,padding:"12px 20px",fontSize:13,color:"#9CA3AF"}}>
-          💡 <span>More tips coming soon as we discover new creative uses!</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E91E8C" strokeWidth="2" strokeLinecap="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.7-3.5 6l-.5 3h-6l-.5-3C6.5 13.7 5 11.5 5 9a7 7 0 0 1 7-7z"/></svg>
+          <span>More tips coming soon as we discover new creative uses!</span>
         </div>
       </div>
     </div>
@@ -8453,6 +8493,9 @@ export default function App() {
           } else if (restorePath === "/app/settings") {
             setScreen("home");
             setShowSettings(true);
+          } else if (restorePath === "/app/tips") {
+            setScreen("home");
+            setShowTips(true);
           } else if (restorePath === "/app/coin-settings") {
             setScreen("home");
             setShowSettings(true);
@@ -8857,7 +8900,7 @@ export default function App() {
             <div style={{fontSize:11,color:SUB,fontWeight:500,marginLeft:2}}>by Tetikus</div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <button onClick={()=>setShowTips(true)} title="Host Tips" style={{display:"flex",alignItems:"center",gap:7,padding:"7px 14px",borderRadius:10,border:"1px solid #FDE68A",background:"#FFFBEB",cursor:"pointer",transition:"all .15s"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.2" strokeLinecap="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.7-3.5 6l-.5 3h-6l-.5-3C6.5 13.7 5 11.5 5 9a7 7 0 0 1 7-7z"/></svg><span style={{fontFamily:"Poppins,sans-serif",fontWeight:600,fontSize:12,color:"#B45309"}}>Host Tips</span></button>
+          <button onClick={()=>setShowTips(true)} title="Host Tips" className="tp-bulb-btn" style={{width:38,height:38,border:"none",background:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,padding:0}}><svg className="tp-bulb-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.2" strokeLinecap="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.7-3.5 6l-.5 3h-6l-.5-3C6.5 13.7 5 11.5 5 9a7 7 0 0 1 7-7z"/></svg></button>
           <button onClick={()=>setProfileOpen(v=>!v)}
             style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 14px 7px 10px",cursor:"pointer",transition:"all .15s"}}>
             <div style={{width:30,height:30,borderRadius:9,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
@@ -8900,7 +8943,7 @@ export default function App() {
                 </div>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <button onClick={()=>setShowTips(true)} title="Host Tips" style={{width:36,height:36,borderRadius:10,border:"1px solid #FDE68A",background:"#FFFBEB",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.2" strokeLinecap="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.7-3.5 6l-.5 3h-6l-.5-3C6.5 13.7 5 11.5 5 9a7 7 0 0 1 7-7z"/></svg></button>
+              <button onClick={()=>setShowTips(true)} title="Host Tips" className="tp-bulb-btn" style={{width:36,height:36,border:"none",background:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,padding:0}}><svg className="tp-bulb-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.2" strokeLinecap="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.7-3.5 6l-.5 3h-6l-.5-3C6.5 13.7 5 11.5 5 9a7 7 0 0 1 7-7z"/></svg></button>
               <button onClick={()=>setProfileOpen(v=>!v)}
                 style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 12px 7px 8px",cursor:"pointer",transition:"all .15s"}}>
                 <div style={{width:28,height:28,borderRadius:8,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
