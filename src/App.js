@@ -8260,7 +8260,7 @@ function TipsPage({ onClose }) {
       </div>
 
       <div style={{position:"relative",zIndex:1,textAlign:"center",padding:"40px 24px 28px",animation:"tpHeaderIn .6s cubic-bezier(0.22,1,0.36,1) .1s both"}}>
-        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(233,30,140,0.08)",border:"1px solid rgba(233,30,140,0.2)",borderRadius:999,padding:"5px 14px",fontSize:12,fontWeight:700,color:"#E91E8C",marginBottom:16,letterSpacing:.3}}>✦ 15 tips for better sessions</div>
+
         <h1 style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:"clamp(26px,4vw,40px)",color:"#0A0A0F",margin:"0 0 12px",letterSpacing:-0.5,lineHeight:1.1}}>Your tools are more powerful<br/><span style={{background:"linear-gradient(135deg,#E91E8C,#9D50FF)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>than you think.</span></h1>
         <p style={{fontSize:15,color:"#6B7280",lineHeight:1.7,maxWidth:480,margin:"0 auto"}}>Each giving tool has creative uses beyond the obvious. Here is how experienced hosts use them to keep energy high all session long.</p>
       </div>
@@ -8309,7 +8309,7 @@ function TipsPage({ onClose }) {
       <div style={{position:"relative",zIndex:1,textAlign:"center",padding:"0 24px 48px"}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(233,30,140,0.05)",border:"1px solid rgba(233,30,140,0.12)",borderRadius:14,padding:"12px 20px",fontSize:13,color:"#9CA3AF"}}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E91E8C" strokeWidth="2" strokeLinecap="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.7-3.5 6l-.5 3h-6l-.5-3C6.5 13.7 5 11.5 5 9a7 7 0 0 1 7-7z"/></svg>
-          <span>More tips coming soon as we discover new creative uses!</span>
+          <span>We'll keep adding more tips! Found a creative way to use Teticoin? <a href="mailto:hi.tetikus@gmail.com" style={{color:"#E91E8C",fontWeight:600,textDecoration:"none"}}>Share it with us</a> — we may feature your idea here.</span>
         </div>
       </div>
     </div>
