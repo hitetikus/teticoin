@@ -2884,10 +2884,9 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         {/* Earned badges — shown if logged in */}
         {linkedUid && <ParticipantBadges uid={linkedUid}/>}
 
-        {/* ── Coin card + QR drawer — single wrapper, gap:0 between them ── */}
-        <div style={{width:"100%",display:"flex",flexDirection:"column",gap:0}}>
-
-          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",zIndex:2}}>
+        {/* ── Coin card + QR drawer — gap:0 so drawer sits flush beneath coin card ── */}
+        <div style={{width:"100%",display:"flex",flexDirection:"column",alignItems:"center",gap:0}}>
+        <div style={{width:"100%",background:"#fff",border:`1.5px solid ${coinFlash?PINK:BORDER}`,borderRadius:20,padding:"20px 24px 24px",textAlign:"center",boxShadow:coinFlash?`0 4px 40px ${PINK}50`:`0 4px 24px ${PINK}10`,transition:"border-color .3s,box-shadow .3s",position:"relative",zIndex:2}}>
           {coinFlash && (
             <div key={coinFlash.key} style={{position:"absolute",top:10,right:18,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:coinFlash.pts<0?"#EF4444":PINK,animation:"floatUp .9s ease forwards",pointerEvents:"none",zIndex:2}}>
               {coinFlash.pts>0?"+":""}{coinFlash.pts}
@@ -2975,22 +2974,38 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
               </div>
             );
           })()}
-          </div>
+        </div>
 
-          {/* QR drawer — no top border/radius, tucked flush against coin card */}
-          {me && showMyQR && (
-            <div style={{width:"calc(100% - 32px)",alignSelf:"center",background:"#fff",border:`1.5px solid ${BORDER}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"20px 20px 16px",textAlign:"center",position:"relative",marginTop:0,zIndex:1}}>
+
+          {/* QR drawer — overflow:hidden wrapper transitions max-height for smooth open/close.
+              width calc(100%-32px) keeps side borders inset from the coin card's corner curves.
+              No top border/radius so it flows flush against the card above. */}
+          <div style={{
+            overflow:"hidden",
+            maxHeight: showMyQR ? "420px" : "0px",
+            transition:"max-height 0.5s cubic-bezier(0.4,0,0.2,1)",
+            width:"calc(100% - 32px)",
+            alignSelf:"center",
+          }}>
+            <div style={{
+              background:"#fff",
+              border:`1.5px solid ${BORDER}`,
+              borderTop:"none",
+              borderRadius:"0 0 16px 16px",
+              padding:"20px 20px 16px",
+              textAlign:"center",
+              position:"relative",
+            }}>
               <button onClick={()=>setShowMyQR(false)}
                 style={{position:"absolute",top:10,right:10,width:28,height:28,borderRadius:"50%",background:"#F3F4F6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:SUB,flexShrink:0}}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
               <PQR p={me} code={init.code} size={220}/>
-              <div style={{fontSize:11,color:SUB,marginTop:8,letterSpacing:.3}}>{me.name} · {pNum(me.num)}</div>
+              <div style={{fontSize:11,color:SUB,marginTop:8,letterSpacing:.3}}>{me?.name} · {me ? pNum(me.num) : ""}</div>
               <div style={{fontSize:11,color:SUB,marginTop:5,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
             </div>
-          )}
-
-        </div>
+          </div>
+        </div>{/* end gap:0 wrapper */}
 
         {me && !showMyQR && (
           <button onClick={()=>setShowMyQR(true)}
@@ -4832,9 +4847,9 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
           <div style={{width:7,height:7,borderRadius:"50%",background:isLive?GREEN:"#EF4444",animation:isLive?"pulse 2s infinite":"none"}}/>
           <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isLive?PINK:"#EF4444",letterSpacing:.5}}>{isLive?"LIVE":"OFFLINE"}</span>
         </button>
-        <button data-tour="qr-join" onClick={()=>setShowQR(true)} style={{...IB,width:"auto",padding:"0 10px",gap:6}} title="QR Code">
+        <button data-tour="qr-join" onClick={()=>setShowQR(true)} style={{...IB,width:"auto",padding:"0 10px",gap:5}} title="Show QR">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
-          <span className="tc-hide-mobile" style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,whiteSpace:"nowrap"}}>Join QR</span>
+          <span className="tc-hide-mobile" style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,whiteSpace:"nowrap"}}>Show QR</span>
         </button>
         <button onClick={()=>setShowSettings(true)} style={IB} title="Settings">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
