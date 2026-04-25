@@ -8248,8 +8248,8 @@ function TipsPage({ onClose }) {
         .tp-close:hover{background:rgba(0,0,0,0.06)!important;}
         @keyframes tpBulbFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
         .tp-bulb-btn{border:none!important;background:none!important;box-shadow:none!important;outline:none!important;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-        .tp-bulb-btn svg{animation:tpBulbFloat 2.5s ease-in-out infinite;transition:filter .2s,transform .2s;}
-        .tp-bulb-btn:hover svg{filter:brightness(1.6) saturate(1.8);transform:translateY(-5px);animation-play-state:paused;}
+        .tp-bulb-btn svg{animation:tpBulbFloat 2.5s ease-in-out infinite;transition:filter .2s,transform .3s cubic-bezier(0.22,1,0.36,1);}
+        .tp-bulb-btn:hover svg{filter:brightness(1.6) saturate(1.8);transform:translateY(-7px) scale(1.08);animation-play-state:paused;}
       `}</style>
 
       <div style={{position:"relative",zIndex:1,background:"rgba(255,255,255,0.88)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:"1px solid rgba(233,30,140,0.12)",padding:"0 28px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,animation:"tpHeaderIn .5s cubic-bezier(0.22,1,0.36,1) both"}}>
@@ -9340,7 +9340,6 @@ const CSS = `
     pointer-events:none;
     z-index:99999;
     letter-spacing:.2px;
-    box-shadow:0 4px 14px rgba(0,0,0,0.3);
   }
   [data-tip]:hover::before{
     content:'';
@@ -9348,7 +9347,7 @@ const CSS = `
     bottom:calc(100% + 4px);
     left:50%;
     transform:translateX(-50%);
-    border:8px solid transparent;
+    border:7px solid transparent;
     border-top-color:#111;
     pointer-events:none;
     z-index:99999;
@@ -9359,7 +9358,7 @@ const CSS = `
   }
   [data-tip][data-tip-below]:hover::before{
     bottom:auto;
-    top:calc(100% + 4px);
+    top:calc(100% + 5px);
     border-top-color:transparent;
     border-bottom-color:#111;
   }
