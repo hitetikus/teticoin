@@ -8247,9 +8247,9 @@ function TipsPage({ onClose }) {
         .tp-filter-btn{transition:all .2s;}.tp-filter-btn:hover{opacity:0.85;}
         .tp-close:hover{background:rgba(0,0,0,0.06)!important;}
         @keyframes tpBulbFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
-        .tp-bulb-btn{border:none!important;background:none!important;box-shadow:none!important;outline:none!important;-webkit-appearance:none!important;appearance:none!important;cursor:pointer;padding:0;width:auto!important;height:auto!important;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
-        .tp-bulb-btn svg{animation:tpBulbFloat 2.5s ease-in-out infinite;transition:filter .2s,transform .3s cubic-bezier(0.22,1,0.36,1);}
-        .tp-bulb-btn:hover svg{filter:brightness(1.6) saturate(1.8);transform:translateY(-7px) scale(1.08);animation-play-state:paused;}
+        .tp-bulb-btn{border:none!important;background:none!important;box-shadow:none!important;outline:none!important;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+        .tp-bulb-btn svg{animation:tpBulbFloat 2.5s ease-in-out infinite;transition:filter .2s,transform .2s;}
+        .tp-bulb-btn:hover svg{filter:brightness(1.6) saturate(1.8);transform:translateY(-5px);animation-play-state:paused;}
       `}</style>
 
       <div style={{position:"relative",zIndex:1,background:"rgba(255,255,255,0.88)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:"1px solid rgba(233,30,140,0.12)",padding:"0 28px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,animation:"tpHeaderIn .5s cubic-bezier(0.22,1,0.36,1) both"}}>
@@ -9326,7 +9326,7 @@ const CSS = `
   [data-tip]:hover::after{
     content:attr(data-tip);
     position:absolute;
-    bottom:calc(100% + 10px);
+    bottom:calc(100% + 12px);
     left:50%;
     transform:translateX(-50%);
     background:#111;
@@ -9335,7 +9335,7 @@ const CSS = `
     font-size:10px;
     font-weight:400;
     white-space:nowrap;
-    padding:4px 11px;
+    padding:5px 13px;
     border-radius:999px;
     pointer-events:none;
     z-index:99999;
