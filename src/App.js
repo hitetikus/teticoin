@@ -8246,7 +8246,9 @@ function TipsPage({ onClose }) {
         .tp-card:hover{transform:translateY(-4px) scale(1.01)!important;box-shadow:0 12px 40px rgba(0,0,0,0.12)!important;}
         .tp-filter-btn{transition:all .2s;}.tp-filter-btn:hover{opacity:0.85;}
         .tp-close:hover{background:rgba(0,0,0,0.06)!important;}
-        .tp-bulb-btn{transition:transform .15s;}.tp-bulb-btn:hover{transform:scale(1.15);}
+        @keyframes tpBulbFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
+        .tp-bulb-btn{animation:tpBulbFloat 2.5s ease-in-out infinite;transition:filter .2s;}
+        .tp-bulb-btn:hover{filter:brightness(1.35) saturate(1.4);animation-play-state:paused;transform:translateY(-5px);}
       `}</style>
 
       <div style={{position:"relative",zIndex:1,background:"rgba(255,255,255,0.88)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:"1px solid rgba(233,30,140,0.12)",padding:"0 28px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,animation:"tpHeaderIn .5s cubic-bezier(0.22,1,0.36,1) both"}}>
