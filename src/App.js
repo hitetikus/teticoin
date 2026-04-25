@@ -8247,8 +8247,9 @@ function TipsPage({ onClose }) {
         .tp-filter-btn{transition:all .2s;}.tp-filter-btn:hover{opacity:0.85;}
         .tp-close:hover{background:rgba(0,0,0,0.06)!important;}
         @keyframes tpBulbFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
-        .tp-bulb-btn{animation:tpBulbFloat 2.5s ease-in-out infinite;transition:filter .2s;}
-        .tp-bulb-btn:hover{filter:brightness(1.35) saturate(1.4);animation-play-state:paused;transform:translateY(-5px);}
+        .tp-bulb-btn{border:none;background:none;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+        .tp-bulb-btn svg{animation:tpBulbFloat 2.5s ease-in-out infinite;transition:filter .2s;}
+        .tp-bulb-btn:hover svg{filter:brightness(1.5) saturate(1.6);animation-play-state:paused;transform:translateY(-5px);}
       `}</style>
 
       <div style={{position:"relative",zIndex:1,background:"rgba(255,255,255,0.88)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:"1px solid rgba(233,30,140,0.12)",padding:"0 28px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,animation:"tpHeaderIn .5s cubic-bezier(0.22,1,0.36,1) both"}}>
@@ -8990,7 +8991,7 @@ export default function App() {
             <div style={{fontSize:11,color:SUB,fontWeight:500,marginLeft:2}}>by Tetikus</div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <button onClick={()=>setShowTips(true)} title="Host Tips" className="tp-bulb-btn" style={{width:26,height:26,border:"none",background:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,padding:0}}><svg width="26" height="26" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="m408 176a152 152 0 1 0 -231.058 129.836 31.744 31.744 0 0 1 15.058 27.145v43.019h128v-43.023a32.1 32.1 0 0 1 15.384-27.341 151.893 151.893 0 0 0 72.616-129.636z" fill="#ffe76c"/><path d="m320 408h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#dadcde"/><path d="m320 440h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m192 440h128a0 0 0 0 1 0 0v16a32 32 0 0 1 -32 32h-64a32 32 0 0 1 -32-32v-16a0 0 0 0 1 0 0z" fill="#dadcde"/><path d="m320 376h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m256.011 16h-.011a160.035 160.035 0 0 0 -138.868 239.516 161.029 161.029 0 0 0 55.644 57.149 23.857 23.857 0 0 1 11.224 20.315v4.4a23.977 23.977 0 0 0 -9.869 38.62 23.943 23.943 0 0 0 0 32 23.977 23.977 0 0 0 9.869 38.624v9.376a40.045 40.045 0 0 0 40 40h64a40.045 40.045 0 0 0 40-40v-9.376a23.977 23.977 0 0 0 9.869-38.624 23.943 23.943 0 0 0 0-32 23.977 23.977 0 0 0 -9.869-38.624v-4.4a23.955 23.955 0 0 1 11.568-20.523 159.891 159.891 0 0 0 76.432-136.453c0-88.218-71.771-159.994-159.989-160zm-64.011 336h128a8 8 0 0 1 0 16h-128a8 8 0 0 1 0-16zm40-96h-8a8 8 0 1 1 8-8zm16 16h16v64h-16zm80 120a8.009 8.009 0 0 1 -8 8h-128a8 8 0 0 1 0-16h128a8.009 8.009 0 0 1 8 8zm-40 88h-64a24.027 24.027 0 0 1 -24-24v-8h112v8a24.027 24.027 0 0 1 -24 24zm32-48h-128a8 8 0 0 1 0-16h128a8 8 0 0 1 0 16zm11.2-133.183a39.85 39.85 0 0 0 -19.2 34.16v3.023h-32v-64h8a24 24 0 1 0 -24-24v8h-16v-8a24 24 0 1 0 -24 24h8v64h-32v-3.02a39.95 39.95 0 0 0 -18.891-33.973 143.982 143.982 0 0 1 74.891-267.007h.011c79.395.006 143.989 64.6 143.989 144a143.156 143.156 0 0 1 -68.8 122.817zm-51.2-42.817v-8a8 8 0 1 1 8 8z"/><path d="m256 48h-8a8 8 0 0 0 0 16h8a112.127 112.127 0 0 1 112 112v8a8 8 0 0 0 16 0v-8a128.145 128.145 0 0 0 -128-128z"/></svg></button>
+          <button onClick={()=>setShowTips(true)} title="Host Tips" className="tp-bulb-btn" style={{width:26,height:26}}><svg width="26" height="26" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="m408 176a152 152 0 1 0 -231.058 129.836 31.744 31.744 0 0 1 15.058 27.145v43.019h128v-43.023a32.1 32.1 0 0 1 15.384-27.341 151.893 151.893 0 0 0 72.616-129.636z" fill="#ffe76c"/><path d="m320 408h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#dadcde"/><path d="m320 440h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m192 440h128a0 0 0 0 1 0 0v16a32 32 0 0 1 -32 32h-64a32 32 0 0 1 -32-32v-16a0 0 0 0 1 0 0z" fill="#dadcde"/><path d="m320 376h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m256.011 16h-.011a160.035 160.035 0 0 0 -138.868 239.516 161.029 161.029 0 0 0 55.644 57.149 23.857 23.857 0 0 1 11.224 20.315v4.4a23.977 23.977 0 0 0 -9.869 38.62 23.943 23.943 0 0 0 0 32 23.977 23.977 0 0 0 9.869 38.624v9.376a40.045 40.045 0 0 0 40 40h64a40.045 40.045 0 0 0 40-40v-9.376a23.977 23.977 0 0 0 9.869-38.624 23.943 23.943 0 0 0 0-32 23.977 23.977 0 0 0 -9.869-38.624v-4.4a23.955 23.955 0 0 1 11.568-20.523 159.891 159.891 0 0 0 76.432-136.453c0-88.218-71.771-159.994-159.989-160zm-64.011 336h128a8 8 0 0 1 0 16h-128a8 8 0 0 1 0-16zm40-96h-8a8 8 0 1 1 8-8zm16 16h16v64h-16zm80 120a8.009 8.009 0 0 1 -8 8h-128a8 8 0 0 1 0-16h128a8.009 8.009 0 0 1 8 8zm-40 88h-64a24.027 24.027 0 0 1 -24-24v-8h112v8a24.027 24.027 0 0 1 -24 24zm32-48h-128a8 8 0 0 1 0-16h128a8 8 0 0 1 0 16zm11.2-133.183a39.85 39.85 0 0 0 -19.2 34.16v3.023h-32v-64h8a24 24 0 1 0 -24-24v8h-16v-8a24 24 0 1 0 -24 24h8v64h-32v-3.02a39.95 39.95 0 0 0 -18.891-33.973 143.982 143.982 0 0 1 74.891-267.007h.011c79.395.006 143.989 64.6 143.989 144a143.156 143.156 0 0 1 -68.8 122.817zm-51.2-42.817v-8a8 8 0 1 1 8 8z"/><path d="m256 48h-8a8 8 0 0 0 0 16h8a112.127 112.127 0 0 1 112 112v8a8 8 0 0 0 16 0v-8a128.145 128.145 0 0 0 -128-128z"/></svg></button>
           <button onClick={()=>setProfileOpen(v=>!v)}
             style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 14px 7px 10px",cursor:"pointer",transition:"all .15s"}}>
             <div style={{width:30,height:30,borderRadius:9,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
@@ -9033,7 +9034,7 @@ export default function App() {
                 </div>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <button onClick={()=>setShowTips(true)} title="Host Tips" className="tp-bulb-btn" style={{width:22,height:22,border:"none",background:"none",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,padding:0}}><svg width="22" height="22" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="m408 176a152 152 0 1 0 -231.058 129.836 31.744 31.744 0 0 1 15.058 27.145v43.019h128v-43.023a32.1 32.1 0 0 1 15.384-27.341 151.893 151.893 0 0 0 72.616-129.636z" fill="#ffe76c"/><path d="m320 408h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#dadcde"/><path d="m320 440h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m192 440h128a0 0 0 0 1 0 0v16a32 32 0 0 1 -32 32h-64a32 32 0 0 1 -32-32v-16a0 0 0 0 1 0 0z" fill="#dadcde"/><path d="m320 376h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m256.011 16h-.011a160.035 160.035 0 0 0 -138.868 239.516 161.029 161.029 0 0 0 55.644 57.149 23.857 23.857 0 0 1 11.224 20.315v4.4a23.977 23.977 0 0 0 -9.869 38.62 23.943 23.943 0 0 0 0 32 23.977 23.977 0 0 0 9.869 38.624v9.376a40.045 40.045 0 0 0 40 40h64a40.045 40.045 0 0 0 40-40v-9.376a23.977 23.977 0 0 0 9.869-38.624 23.943 23.943 0 0 0 0-32 23.977 23.977 0 0 0 -9.869-38.624v-4.4a23.955 23.955 0 0 1 11.568-20.523 159.891 159.891 0 0 0 76.432-136.453c0-88.218-71.771-159.994-159.989-160zm-64.011 336h128a8 8 0 0 1 0 16h-128a8 8 0 0 1 0-16zm40-96h-8a8 8 0 1 1 8-8zm16 16h16v64h-16zm80 120a8.009 8.009 0 0 1 -8 8h-128a8 8 0 0 1 0-16h128a8.009 8.009 0 0 1 8 8zm-40 88h-64a24.027 24.027 0 0 1 -24-24v-8h112v8a24.027 24.027 0 0 1 -24 24zm32-48h-128a8 8 0 0 1 0-16h128a8 8 0 0 1 0 16zm11.2-133.183a39.85 39.85 0 0 0 -19.2 34.16v3.023h-32v-64h8a24 24 0 1 0 -24-24v8h-16v-8a24 24 0 1 0 -24 24h8v64h-32v-3.02a39.95 39.95 0 0 0 -18.891-33.973 143.982 143.982 0 0 1 74.891-267.007h.011c79.395.006 143.989 64.6 143.989 144a143.156 143.156 0 0 1 -68.8 122.817zm-51.2-42.817v-8a8 8 0 1 1 8 8z"/><path d="m256 48h-8a8 8 0 0 0 0 16h8a112.127 112.127 0 0 1 112 112v8a8 8 0 0 0 16 0v-8a128.145 128.145 0 0 0 -128-128z"/></svg></button>
+              <button onClick={()=>setShowTips(true)} title="Host Tips" className="tp-bulb-btn" style={{width:22,height:22}}><svg width="22" height="22" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="m408 176a152 152 0 1 0 -231.058 129.836 31.744 31.744 0 0 1 15.058 27.145v43.019h128v-43.023a32.1 32.1 0 0 1 15.384-27.341 151.893 151.893 0 0 0 72.616-129.636z" fill="#ffe76c"/><path d="m320 408h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#dadcde"/><path d="m320 440h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m192 440h128a0 0 0 0 1 0 0v16a32 32 0 0 1 -32 32h-64a32 32 0 0 1 -32-32v-16a0 0 0 0 1 0 0z" fill="#dadcde"/><path d="m320 376h-128a16 16 0 0 1 -16-16 16 16 0 0 1 16-16h128a16 16 0 0 1 16 16 16 16 0 0 1 -16 16z" fill="#e9eef2"/><path d="m256.011 16h-.011a160.035 160.035 0 0 0 -138.868 239.516 161.029 161.029 0 0 0 55.644 57.149 23.857 23.857 0 0 1 11.224 20.315v4.4a23.977 23.977 0 0 0 -9.869 38.62 23.943 23.943 0 0 0 0 32 23.977 23.977 0 0 0 9.869 38.624v9.376a40.045 40.045 0 0 0 40 40h64a40.045 40.045 0 0 0 40-40v-9.376a23.977 23.977 0 0 0 9.869-38.624 23.943 23.943 0 0 0 0-32 23.977 23.977 0 0 0 -9.869-38.624v-4.4a23.955 23.955 0 0 1 11.568-20.523 159.891 159.891 0 0 0 76.432-136.453c0-88.218-71.771-159.994-159.989-160zm-64.011 336h128a8 8 0 0 1 0 16h-128a8 8 0 0 1 0-16zm40-96h-8a8 8 0 1 1 8-8zm16 16h16v64h-16zm80 120a8.009 8.009 0 0 1 -8 8h-128a8 8 0 0 1 0-16h128a8.009 8.009 0 0 1 8 8zm-40 88h-64a24.027 24.027 0 0 1 -24-24v-8h112v8a24.027 24.027 0 0 1 -24 24zm32-48h-128a8 8 0 0 1 0-16h128a8 8 0 0 1 0 16zm11.2-133.183a39.85 39.85 0 0 0 -19.2 34.16v3.023h-32v-64h8a24 24 0 1 0 -24-24v8h-16v-8a24 24 0 1 0 -24 24h8v64h-32v-3.02a39.95 39.95 0 0 0 -18.891-33.973 143.982 143.982 0 0 1 74.891-267.007h.011c79.395.006 143.989 64.6 143.989 144a143.156 143.156 0 0 1 -68.8 122.817zm-51.2-42.817v-8a8 8 0 1 1 8 8z"/><path d="m256 48h-8a8 8 0 0 0 0 16h8a112.127 112.127 0 0 1 112 112v8a8 8 0 0 0 16 0v-8a128.145 128.145 0 0 0 -128-128z"/></svg></button>
               <button onClick={()=>setProfileOpen(v=>!v)}
                 style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 12px 7px 8px",cursor:"pointer",transition:"all .15s"}}>
                 <div style={{width:28,height:28,borderRadius:8,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
@@ -9320,6 +9321,48 @@ const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:Poppins,sans-serif; -webkit-font-smoothing:antialiased; background:${BG}; user-select:none; -webkit-user-select:none; cursor:default; }
+  /* ── Global black pill tooltips ── */
+  [title]{position:relative;}
+  [title]:hover::after{
+    content:attr(title);
+    position:absolute;
+    bottom:calc(100% + 10px);
+    left:50%;
+    transform:translateX(-50%);
+    background:#111;
+    color:#fff;
+    font-family:Poppins,sans-serif;
+    font-size:11px;
+    font-weight:500;
+    white-space:nowrap;
+    padding:5px 12px;
+    border-radius:999px;
+    pointer-events:none;
+    z-index:99999;
+    letter-spacing:.2px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.25);
+  }
+  [title]:hover::before{
+    content:'';
+    position:absolute;
+    bottom:calc(100% + 4px);
+    left:50%;
+    transform:translateX(-50%);
+    border:5px solid transparent;
+    border-top-color:#111;
+    pointer-events:none;
+    z-index:99999;
+  }
+  [data-tip-below]:hover::after{
+    bottom:auto;
+    top:calc(100% + 10px);
+  }
+  [data-tip-below]:hover::before{
+    bottom:auto;
+    top:calc(100% + 4px);
+    border-top-color:transparent;
+    border-bottom-color:#111;
+  }
   @keyframes floatUp { 0%{transform:translateY(0);opacity:1} 100%{transform:translateY(-80px);opacity:0} }
   @keyframes tcTourPulse { 0%,100%{box-shadow:0 0 0 2.5px #FF4FB8,0 0 0 6px rgba(255,79,184,0.2),0 0 24px rgba(255,79,184,0.22);} 50%{box-shadow:0 0 0 2.5px #FF4FB8,0 0 0 10px rgba(255,79,184,0.12),0 0 36px rgba(255,79,184,0.32);} }
   @keyframes tcTourFade { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
