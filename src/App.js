@@ -8247,7 +8247,7 @@ function TipsPage({ onClose }) {
         .tp-filter-btn{transition:all .2s;}.tp-filter-btn:hover{opacity:0.85;}
         .tp-close:hover{background:rgba(0,0,0,0.06)!important;}
         @keyframes tpBulbFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
-        .tp-bulb-btn{border:none!important;background:none!important;box-shadow:none!important;outline:none!important;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+        .tp-bulb-btn{border:none!important;background:none!important;box-shadow:none!important;outline:none!important;-webkit-appearance:none!important;appearance:none!important;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
         .tp-bulb-btn svg{animation:tpBulbFloat 2.5s ease-in-out infinite;transition:filter .2s,transform .3s cubic-bezier(0.22,1,0.36,1);}
         .tp-bulb-btn:hover svg{filter:brightness(1.6) saturate(1.8);transform:translateY(-7px) scale(1.08);animation-play-state:paused;}
       `}</style>
@@ -9326,7 +9326,7 @@ const CSS = `
   [data-tip]:hover::after{
     content:attr(data-tip);
     position:absolute;
-    bottom:calc(100% + 12px);
+    bottom:calc(100% + 10px);
     left:50%;
     transform:translateX(-50%);
     background:#111;
@@ -9335,8 +9335,8 @@ const CSS = `
     font-size:11px;
     font-weight:500;
     white-space:nowrap;
-    padding:5px 13px;
-    border-radius:999px;
+    padding:5px 11px;
+    border-radius:7px;
     pointer-events:none;
     z-index:99999;
     letter-spacing:.2px;
@@ -9344,7 +9344,7 @@ const CSS = `
   [data-tip]:hover::before{
     content:'';
     position:absolute;
-    bottom:calc(100% + 4px);
+    bottom:calc(100% + 3px);
     left:50%;
     transform:translateX(-50%);
     border:7px solid transparent;
@@ -9354,11 +9354,11 @@ const CSS = `
   }
   [data-tip][data-tip-below]:hover::after{
     bottom:auto;
-    top:calc(100% + 12px);
+    top:calc(100% + 10px);
   }
   [data-tip][data-tip-below]:hover::before{
     bottom:auto;
-    top:calc(100% + 5px);
+    top:calc(100% + 3px);
     border-top-color:transparent;
     border-bottom-color:#111;
   }
