@@ -1728,7 +1728,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [pinError, setPinError] = useState("");
   const [myId, setMyId] = useState(null);
   const [live, setLive] = useState(init);
-  const [showMyQR, setShowMyQR] = useState(true);
+  const [showMyQR, setShowMyQR] = useState(false);
   const [showEarnings, setShowEarnings] = useState(false);
   const [showLoginPw, setShowLoginPw] = useState(false);
   const [editingName, setEditingName] = useState(false);
@@ -1942,13 +1942,6 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     }, 300); // shorter delay — live total is already accurate
     return () => clearTimeout(t);
   }, [linkedUid, _meTotal]);
-
-  // Auto-close the participant's own QR card 3s after joining
-  useEffect(() => {
-    if (step !== "joined") return;
-    const t = setTimeout(() => setShowMyQR(false), 3000);
-    return () => clearTimeout(t);
-  }, [step]);
 
   // Poll for live updates every 2s once joined — detect coin gain for sound
   useEffect(() => {
@@ -2982,26 +2975,41 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         </div>
 
 
-        {me && showMyQR && (
-          <div style={{width:"100%",background:"#fff",border:"1px solid rgba(233,30,140,0.12)",borderRadius:18,padding:"24px 20px 20px",textAlign:"center",position:"relative",
-            animation:"pQRSlideDown 0.45s cubic-bezier(0.22,1,0.36,1) both"}}>
-            <style>{`@keyframes pQRSlideDown{0%{opacity:0;transform:translateY(-18px) scaleY(0.9);}100%{opacity:1;transform:translateY(0) scaleY(1);}}`}</style>
-            <button onClick={()=>setShowMyQR(false)}
-              style={{position:"absolute",top:10,right:10,width:28,height:28,borderRadius:"50%",background:"#F3F4F6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:SUB,flexShrink:0}}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        {/* QR accordion — button + panel are one attached unit, narrower so border doesn't clip parent */}
+        {me && (
+          <div style={{width:"88%",alignSelf:"center"}}>
+            {/* Toggle button — bottom corners flatten when open so it merges into panel */}
+            <button onClick={()=>setShowMyQR(v=>!v)}
+              style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 18px",
+                background:showMyQR?SOFT:"#fff",
+                border:`1px solid ${showMyQR?PINK:BORDER}`,
+                borderRadius:showMyQR?"12px 12px 0 0":"12px",
+                cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,
+                color:showMyQR?PINK:SUB,transition:"border-radius .25s,background .2s,color .2s,border-color .2s",
+                marginBottom:0}}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/>
+              </svg>
+              {showMyQR ? "Hide My QR" : "Show My QR"}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                style={{marginLeft:"auto",transform:showMyQR?"rotate(180deg)":"rotate(0deg)",transition:"transform .3s"}}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
             </button>
-            <PQR p={me} code={init.code} size={260}/>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:12,letterSpacing:2}}>{pNum(me.num)}</div>
-            <div style={{fontSize:12,color:SUB,marginTop:2}}>{me.name}</div>
-            <div style={{fontSize:11,color:SUB,marginTop:6,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
+            {/* Panel — clips via overflow:hidden + max-height transition for smooth draw */}
+            <div style={{overflow:"hidden",maxHeight:showMyQR?"420px":"0px",transition:"max-height .35s cubic-bezier(0.4,0,0.2,1)",
+              border:showMyQR?`1px solid ${PINK}`:"none",borderTop:"none",
+              borderRadius:"0 0 12px 12px",background:"#fff"}}>
+              <div style={{padding:"18px 16px 16px",textAlign:"center"}}>
+                <PQR p={me} code={init.code} size={200}/>
+                <div style={{fontSize:11,color:SUB,marginTop:8}}>
+                  <span style={{fontWeight:700,marginRight:6}}>{pNum(me.num)}</span>{me.name}
+                </div>
+                <div style={{fontSize:11,color:SUB,marginTop:6,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
+              </div>
+            </div>
           </div>
-        )}
-        {me && !showMyQR && (
-          <button onClick={()=>setShowMyQR(true)}
-            style={{display:"flex",alignItems:"center",gap:8,padding:"10px 20px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,cursor:"pointer",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,transition:"all .15s"}}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3" rx=".5"/></svg>
-            Show My QR
-          </button>
         )}
 
         <div style={{fontSize:12,color:SUB,textAlign:"center",lineHeight:1.8}}>
