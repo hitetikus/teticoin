@@ -1943,6 +1943,13 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     return () => clearTimeout(t);
   }, [linkedUid, _meTotal]);
 
+  // Auto-close the participant's own QR card 3s after joining
+  useEffect(() => {
+    if (step !== "joined") return;
+    const t = setTimeout(() => setShowMyQR(false), 3000);
+    return () => clearTimeout(t);
+  }, [step]);
+
   // Poll for live updates every 2s once joined — detect coin gain for sound
   useEffect(() => {
     if (step !== "joined" || !init?.code) return;
@@ -2976,13 +2983,15 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
 
         {me && showMyQR && (
-          <div style={{width:"100%",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",textAlign:"center",position:"relative"}}>
+          <div style={{width:"100%",background:"#fff",border:"1px solid rgba(233,30,140,0.12)",borderRadius:18,padding:"24px 20px 20px",textAlign:"center",position:"relative",
+            animation:"pQRSlideDown 0.45s cubic-bezier(0.22,1,0.36,1) both"}}>
+            <style>{`@keyframes pQRSlideDown{0%{opacity:0;transform:translateY(-18px) scaleY(0.9);}100%{opacity:1;transform:translateY(0) scaleY(1);}}`}</style>
             <button onClick={()=>setShowMyQR(false)}
               style={{position:"absolute",top:10,right:10,width:28,height:28,borderRadius:"50%",background:"#F3F4F6",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:SUB,flexShrink:0}}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <PQR p={me} code={init.code} size={220}/>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:10,letterSpacing:2}}>{pNum(me.num)}</div>
+            <PQR p={me} code={init.code} size={260}/>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:PINK,marginTop:12,letterSpacing:2}}>{pNum(me.num)}</div>
             <div style={{fontSize:12,color:SUB,marginTop:2}}>{me.name}</div>
             <div style={{fontSize:11,color:SUB,marginTop:6,background:SOFT,borderRadius:8,padding:"4px 10px",display:"inline-block"}}>Show this to the host to earn coins</div>
           </div>
