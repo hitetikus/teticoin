@@ -70,6 +70,19 @@ async function ssParent(uid, email, name) {
 async function sgSession(code) { return await fsGetSession(code); }
 async function ssSession(code, data) { await fsSetSession(code, data); }
 
+// Partial session update — only writes the specified fields, never overwrites other fields.
+// Use this for heartbeat / status flags to avoid overwriting concurrent coin awards.
+async function ssSessionPatch(code, fields) {
+  try {
+    const { getFirestore, doc, updateDoc } = await import("firebase/firestore");
+    const db = getFirestore();
+    await updateDoc(doc(db, "sessions", code), fields);
+  } catch(e) {
+    // If doc doesn't exist yet (first write), fall back to full write
+    try { await ssSession(code, fields); } catch(_) {}
+  }
+}
+
 // Auto-claim beta invite if one exists for this email
 async function claimBetaInvite(uid, email) {
   try {
@@ -1719,9 +1732,7 @@ function Auth({ onDone, onBack, initialView="login" }) {
 }
 
 // ── Participant view ──
-function ParticipantView({ session: init, hostPlan: hostPlanProp="free", onBack }) {
-  // hostPlan from prop (when host opens their own session) or from session doc (QR join)
-  const hostPlan = hostPlanProp !== "free" ? hostPlanProp : (init?.hostPlan || "free");
+function ParticipantView({ session: init, hostPlan="free", onBack }) {
   const [step, setStep] = useState("name");
   const [name, setName] = useState("");
   const [nameErr, setNameErr] = useState(false);
@@ -1809,7 +1820,7 @@ function ParticipantView({ session: init, hostPlan: hostPlanProp="free", onBack 
       } catch(e) {}
       // Logged-in user not yet in session — auto-join directly, no name screen needed
       const currentPax = (init.participants||[]).length;
-      const limit = hostPlan !== "free" ? 99999 : FREE_PAX_LIMIT;
+      const limit = hostPlan !== "free" ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
       if (currentPax < limit && displayName.trim()) {
         const n = ((init.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
         const np = {id:Date.now(),name:displayName,av:mkAv(displayName),total:0,bk:{},gid:null,num:n,uid:u.uid,email:u.email||"",guestName:displayName};
@@ -2010,7 +2021,7 @@ function ParticipantView({ session: init, hostPlan: hostPlanProp="free", onBack 
     let fresh;
     try { fresh = await sgSession(init.code); } catch(e) {}
     const freshPax = fresh?.participants || live.participants || [];
-    const limit = isPro ? 99999 : FREE_PAX_LIMIT;
+    const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
     if (freshPax.length >= limit) { setStep("full"); return; }
     // Guard: if this UID already has a slot in the fresh data, just claim it
     if (currentUid) {
@@ -2082,7 +2093,7 @@ function ParticipantView({ session: init, hostPlan: hostPlanProp="free", onBack 
     let fresh;
     try { fresh = await sgSession(init.code); } catch(e) {}
     const freshPax = fresh?.participants || live.participants || [];
-    const limit = isPro ? 99999 : FREE_PAX_LIMIT;
+    const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
     if (freshPax.length >= limit) { setStep("full"); return; }
     const n = (freshPax.reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const joinName = linkedName || name.trim();
@@ -3530,11 +3541,19 @@ function CoinmasterView({ session: init, selfId, onBack }) {
   const [showQR, setShowQR] = useState(false);
   const aid = useRef(0);
 
-  // Poll session every 3s — get full fresh copy
+  // Poll session every 3s — get fresh copy from Firestore
+  // Guard: only update local state if Firestore data is newer than what we have locally.
+  // This prevents a poll race from overwriting a just-awarded coin with a pre-award snapshot.
   useEffect(() => {
     const t = setInterval(async () => {
       const fresh = await sgSession(ses.code);
-      if (fresh) setSes(fresh);
+      if (!fresh) return;
+      // If fresh has no updatedAt, always accept it (legacy sessions)
+      // If fresh.updatedAt is older than local, skip — local is newer (pending write)
+      setSes(prev => {
+        if (fresh.updatedAt && prev.updatedAt && fresh.updatedAt < prev.updatedAt) return prev;
+        return fresh;
+      });
     }, 3000);
     return () => clearInterval(t);
   }, [ses.code]);
@@ -3548,6 +3567,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
     setSes(prev => {
       const s = JSON.parse(JSON.stringify(prev));
       fn(s);
+      s.updatedAt = Date.now(); // stamp so poll guard knows this is newer than any in-flight Firestore snapshot
       ssSession(s.code, s);
       return s;
     });
@@ -4425,14 +4445,14 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
     return () => clearInterval(t);
   }, [ses.code]);
 
-  // ── Host heartbeat — writes lastHostPing every 20s while session is open ──
-  // Participants use this to detect if the host tab is still alive.
+  // ── Host heartbeat — writes lastHostPing every 3s while session is open ──
+  // IMPORTANT: uses ssSessionPatch (updateDoc) NOT ssSession (setDoc) to avoid
+  // overwriting concurrent coin awards with a stale Firestore snapshot.
   useEffect(() => {
     const code = ses.code;
     async function ping() {
       try {
-        const fresh = await sgSession(code);
-        if (fresh) await ssSession(code, {...fresh, lastHostPing: Date.now()});
+        await ssSessionPatch(code, { lastHostPing: Date.now() });
       } catch(e) {}
     }
     ping(); // immediate on mount
@@ -4445,8 +4465,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
     const code = ses.code;
     async function setOffline() {
       try {
-        const fresh = await sgSession(code);
-        if (fresh && fresh.live !== false) await ssSession(code, {...fresh, live:false, lastHostPing: 0});
+        await ssSessionPatch(ses.code, { live: false, lastHostPing: 0 });
       } catch(e) {}
     }
     // On true tab close: stamp lastHostPing=0 synchronously via sendBeacon so
@@ -4493,7 +4512,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
     setSes(prev => {
       const s = JSON.parse(JSON.stringify(prev));
       fn(s);
-      s.hostPlan = plan; // keep hostPlan current so QR joiners respect the correct limit
+      s.updatedAt = Date.now(); // stamp so any concurrent read-modify-write (heartbeat, poll) can detect staleness
       ssSession(s.code, s); // write to Firebase with the ACTUAL new state (not stale closure)
       return s;
     });
@@ -8736,7 +8755,7 @@ export default function App() {
     if (isFree && sessions.length >= sessionLimit) { setLimitModal("sessions"); return; }
     const code = genCode();
     const defaultCoins = await sg("defaultCoins");
-    const s = {code, name, createdAt:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), boardVisible:false, participants:[], groups:[], log:[], coinmasterEnabled:false, hostUid: _currentUid || null, hostPlan: plan, ...(defaultCoins ? {otherCoins: defaultCoins} : {})};
+    const s = {code, name, createdAt:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), boardVisible:false, participants:[], groups:[], log:[], coinmasterEnabled:false, hostUid: _currentUid || null, ...(defaultCoins ? {otherCoins: defaultCoins} : {})};
     await ssSession(code, s);
     const idx = [{code, name, date:s.createdAt, count:0}, ...sessions];
     setSessions(idx); await ss("sessions_index", idx);
@@ -8766,10 +8785,10 @@ export default function App() {
   if (screen==="auth") return <><style>{CSS}</style><Auth onDone={handleAuth} onBack={()=>{ window.history.replaceState({},"","/"); setScreen("landing"); }} initialView={authInitialView}/></>;
   // participantJoin = loaded from /join/CODE URL — always show participant view, never host view
   if (screen==="participantJoin") {
-    if (cur) return <><style>{CSS}</style><ParticipantView session={cur} hostPlan={plan} onBack={()=>{ try{localStorage.removeItem("tc_pjoin");}catch(e){} window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
+    if (cur) return <><style>{CSS}</style><ParticipantView session={cur} onBack={()=>{ try{localStorage.removeItem("tc_pjoin");}catch(e){} window.history.replaceState({},"","/"); setScreen("landing"); }}/></>;
     return <div style={{minHeight:"100vh",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}><style>{CSS}</style><HamLoading/></div>;
   }
-  if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur} hostPlan={plan} onBack={()=>{
+  if (screen==="participant" && cur) return <><style>{CSS}</style><ParticipantView session={cur} onBack={()=>{
     window.history.replaceState({},"","/app");
     // Clear stale state immediately so home never shows old zeros
     setSessions([]);
