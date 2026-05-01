@@ -78,8 +78,9 @@ async function ssSessionPatch(code, fields) {
     const db = getFirestore();
     await updateDoc(doc(db, "sessions", code), fields);
   } catch(e) {
-    // Fallback if doc doesn't exist yet
-    try { await ssSession(code, fields); } catch(_) {}
+    // Silently ignore — never fall back to ssSession(fields) because that would
+    // overwrite the entire session document with only the heartbeat fields,
+    // wiping all participants and coin data.
   }
 }
 
@@ -4001,25 +4002,29 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
     .sort((a,b) => a.name.localeCompare(b.name))
     .filter(p => !indivSearch.trim() || p.name.toLowerCase().includes(indivSearch.toLowerCase()));
 
-  const CoinButtons = ({onTap}) => (
-    <div style={{display:"flex",flexDirection:"column",gap:8,flexShrink:0}}>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-        {coins.map((v,i) => (
-          <button key={i} onClick={()=>{ setSelectedAmt(v); setCustomAmt(""); onTap(v); }}
-            style={{border:`1.5px solid ${v<0?"#FCA5A5":BORDER}`,borderRadius:12,padding:"16px 4px",textAlign:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:20,color:v<0?"#EF4444":PINK,background:"#fff",cursor:"pointer"}}>
-            {v>0?"+":""}{v}
-          </button>
-        ))}
+  // renderCoinButtons is a plain function (not a React component) so calling it
+  // never causes React to unmount/remount the input — which would dismiss the mobile keyboard.
+  function renderCoinButtons(onTap) {
+    return (
+      <div style={{display:"flex",flexDirection:"column",gap:8,flexShrink:0}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+          {coins.map((v,i) => (
+            <button key={i} onClick={()=>{ setSelectedAmt(v); setCustomAmt(""); onTap(v); }}
+              style={{border:`1.5px solid ${v<0?"#FCA5A5":BORDER}`,borderRadius:12,padding:"16px 4px",textAlign:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:20,color:v<0?"#EF4444":PINK,background:"#fff",cursor:"pointer"}}>
+              {v>0?"+":""}{v}
+            </button>
+          ))}
+        </div>
+        <input
+          type="number"
+          placeholder="Custom amount…"
+          value={customAmt}
+          onChange={e=>{ setCustomAmt(e.target.value); setSelectedAmt(null); }}
+          style={{width:"100%",background:BG,border:`1.5px solid ${customAmt!==""?PINK:BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",boxSizing:"border-box"}}
+        />
       </div>
-      <input
-        type="number"
-        placeholder="Custom amount…"
-        value={customAmt}
-        onChange={e=>{ setCustomAmt(e.target.value); setSelectedAmt(null); }}
-        style={{width:"100%",background:BG,border:`1.5px solid ${customAmt!==""?PINK:BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",boxSizing:"border-box"}}
-      />
-    </div>
-  );
+    );
+  }
 
   // Responsive wrapper: bottom-sheet on mobile, centered modal on desktop
   const isDesktop = window.innerWidth >= 900;
@@ -4072,7 +4077,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
 
           {/* Coin buttons — always pinned above keyboard */}
           <div style={{flexShrink:0}}>
-            <CoinButtons onTap={doAward}/>
+            {renderCoinButtons(doAward)}
             {customAmt !== "" && (
               <button onClick={()=>doAward()}
                 style={{width:"100%",marginTop:8,padding:"13px 0",background:`linear-gradient(135deg,${PINK},#E91E8C)`,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
@@ -4131,7 +4136,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
           <div style={{flexShrink:0}}>
             {!noGroups && (
               <>
-                <CoinButtons onTap={doAward}/>
+                {renderCoinButtons(doAward)}
                 {customAmt !== "" && (
                   <button onClick={()=>doAward()}
                     style={{width:"100%",marginTop:8,padding:"13px 0",background:`linear-gradient(135deg,${PINK},#E91E8C)`,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
@@ -4178,7 +4183,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
             })}
           </div>
           <div style={{flexShrink:0}}>
-            <CoinButtons onTap={doAward}/>
+            {renderCoinButtons(doAward)}
             {customAmt !== "" && (
               <button onClick={()=>doAward()}
                 style={{width:"100%",marginTop:8,padding:"13px 0",background:`linear-gradient(135deg,${PINK},#E91E8C)`,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
@@ -4203,7 +4208,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
           <span style={{fontSize:11,fontWeight:700,color:"#0284C7"}}>All {ses.participants.length} participants</span>
         </div>
         <div style={{flexShrink:0}}>
-          <CoinButtons onTap={v=>setConfirmAmt(v)}/>
+          {renderCoinButtons(v=>setConfirmAmt(v))}
           {customAmt !== "" && (
             <button onClick={()=>setConfirmAmt(parseInt(customAmt,10))}
               style={{width:"100%",marginTop:8,padding:"13px 0",background:`linear-gradient(135deg,${PINK},#E91E8C)`,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
@@ -5146,7 +5151,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
                           )}
                           {/* ⋯ context menu */}
                           <div style={{position:"relative",flexShrink:0}}>
-                            <button onClick={e=>{e.stopPropagation();if(menuOpen){setPMenuOpen(null);}else{const r=e.currentTarget.getBoundingClientRect();setPMenuPos({top:r.bottom+4,right:window.innerWidth-r.right});setPMenuOpen(p.id);}}}
+                            <button onClick={e=>{e.stopPropagation();if(menuOpen){setPMenuOpen(null);}else{const r=e.currentTarget.getBoundingClientRect();const menuH=130;const spaceBelow=window.innerHeight-r.bottom-8;const top=spaceBelow>=menuH?r.bottom+4:r.top-menuH-4;setPMenuPos({top,right:window.innerWidth-r.right});setPMenuOpen(p.id);}}}
                               style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center",color:SUB}}
                               onMouseOver={e=>e.currentTarget.style.borderColor=PINK}
                               onMouseOut={e=>e.currentTarget.style.borderColor=BORDER}>
