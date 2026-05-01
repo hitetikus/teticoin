@@ -5063,7 +5063,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
               <div className="tc-mobile-qc" style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                 <div style={{padding:"10px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8,background:"#2D2D2D",borderRadius:"14px 14px 0 0"}}>
                   <div style={{width:28,height:28,borderRadius:"50%",background:PINK,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#fff" strokeWidth="1.8"/><circle cx="12" cy="12" r="7" stroke="#fff" strokeWidth="1.5"/><rect x="9" y="9" width="6" height="6" rx="0.5" stroke="#fff" strokeWidth="1.5" transform="rotate(45 12 12)"/></svg>
                   </div>
                   <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",flex:1}} data-tour="quick-coins">Quick Coins</span>
                   <input placeholder="Search name…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
