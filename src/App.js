@@ -3688,7 +3688,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
               {sorted.length > 0 && (
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                   <div style={{padding:"10px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8,background:"#2D2D2D",borderRadius:"14px 14px 0 0"}}>
-                    <div style={{width:28,height:28,borderRadius:"50%",background:PINK,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="14.5" cy="12" rx="7" ry="10" stroke="#fff" stroke-width="2"/><ellipse cx="14.5" cy="12" rx="4" ry="7" stroke="#fff" stroke-width="1.5"/><line x1="7.5" y1="12" x2="3.5" y2="12" stroke="#fff" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="8" x2="4.5" y2="6.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="8" y1="16" x2="4.5" y2="17.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+                    <div style={{width:28,height:28,borderRadius:"50%",background:PINK,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="7" stroke="#fff" stroke-width="1.5" stroke-dasharray="3 2"/><polygon points="12,7 13.5,10.5 17,11 14.5,13.5 15,17 12,15 9,17 9.5,13.5 7,11 10.5,10.5" stroke="#fff" stroke-width="1.3" stroke-linejoin="round" fill="none"/></svg></div>
                     <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",flex:1}}>Quick Coins</span>
                     <input placeholder="Search name…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
                       style={{height:28,padding:"0 12px",border:"none",borderRadius:999,fontFamily:"Poppins,sans-serif",fontSize:11,color:"#1A0A14",outline:"none",width:"46%",background:"rgba(255,255,255,0.88)"}}
@@ -4386,7 +4386,7 @@ function GroupSessionCard({ g, i, mut, ses, pNum, onAward }) {
               {onAward && (
                 <button onClick={()=>setShowGive(true)}
                   style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:PINK,marginLeft:4}} title="Give Coins">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="14.5" cy="12" rx="7" ry="10" stroke={PINK} stroke-width="2"/><ellipse cx="14.5" cy="12" rx="4" ry="7" stroke={PINK} stroke-width="1.5"/><line x1="7.5" y1="12" x2="3.5" y2="12" stroke={PINK} stroke-width="2" stroke-linecap="round"/><line x1="8" y1="8" x2="4.5" y2="6.5" stroke={PINK} stroke-width="1.8" stroke-linecap="round"/><line x1="8" y1="16" x2="4.5" y2="17.5" stroke={PINK} stroke-width="1.8" stroke-linecap="round"/></svg>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke={PINK} stroke-width="1.8"/><circle cx="12" cy="12" r="7" stroke={PINK} stroke-width="1.5" stroke-dasharray="3 2"/><polygon points="12,7 13.5,10.5 17,11 14.5,13.5 15,17 12,15 9,17 9.5,13.5 7,11 10.5,10.5" stroke={PINK} stroke-width="1.3" stroke-linejoin="round" fill="none"/></svg>
                   Give
                 </button>
               )}
@@ -4413,7 +4413,7 @@ function GroupSessionCard({ g, i, mut, ses, pNum, onAward }) {
             {onAward && (
               <button onClick={()=>setShowGive(true)}
                 style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"7px 9px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Give Coins">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="14.5" cy="12" rx="7" ry="10" stroke={PINK} stroke-width="2"/><ellipse cx="14.5" cy="12" rx="4" ry="7" stroke={PINK} stroke-width="1.5"/><line x1="7.5" y1="12" x2="3.5" y2="12" stroke={PINK} stroke-width="2" stroke-linecap="round"/><line x1="8" y1="8" x2="4.5" y2="6.5" stroke={PINK} stroke-width="1.8" stroke-linecap="round"/><line x1="8" y1="16" x2="4.5" y2="17.5" stroke={PINK} stroke-width="1.8" stroke-linecap="round"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke={PINK} stroke-width="1.8"/><circle cx="12" cy="12" r="7" stroke={PINK} stroke-width="1.5" stroke-dasharray="3 2"/><polygon points="12,7 13.5,10.5 17,11 14.5,13.5 15,17 12,15 9,17 9.5,13.5 7,11 10.5,10.5" stroke={PINK} stroke-width="1.3" stroke-linejoin="round" fill="none"/></svg>
               </button>
             )}
             <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditing(true);}}
@@ -5296,7 +5296,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
               ) : (
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                   <div style={{padding:"8px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
-                    <div style={{width:22,height:22,borderRadius:"50%",background:"#E91E8C",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="14.5" cy="12" rx="7" ry="10" stroke="#fff" stroke-width="2"/><ellipse cx="14.5" cy="12" rx="4" ry="7" stroke="#fff" stroke-width="1.5"/><line x1="7.5" y1="12" x2="3.5" y2="12" stroke="#fff" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="8" x2="4.5" y2="6.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="8" y1="16" x2="4.5" y2="17.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+                    <div style={{width:22,height:22,borderRadius:"50%",background:"#E91E8C",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="7" stroke="#fff" stroke-width="1.5" stroke-dasharray="3 2"/><polygon points="12,7 13.5,10.5 17,11 14.5,13.5 15,17 12,15 9,17 9.5,13.5 7,11 10.5,10.5" stroke="#fff" stroke-width="1.3" stroke-linejoin="round" fill="none"/></svg></div>
                     <SL style={{marginBottom:0,flex:1}}>Quick Coins</SL>
                     <input placeholder="Search name…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
                       style={{height:28,padding:"0 10px",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Poppins,sans-serif",fontSize:12,color:TEXT,outline:"none",width:130,background:"#fff",caretColor:TEXT}}/>
@@ -8349,11 +8349,6 @@ function TipsPage({ onClose }) {
         .tp-filter-btn{transition:all .2s;}.tp-filter-btn:hover{opacity:0.85;}
         .tp-close:hover{background:rgba(0,0,0,0.06)!important;}
         @keyframes tpBulbFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
-        .tp-bulb-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
-        .tp-bulb-wrap::after{content:"Hosting Tips";position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#0A0A0F;color:#fff;font-family:Poppins,sans-serif;font-size:10px;font-weight:500;white-space:nowrap;padding:3px 8px;border-radius:999px;pointer-events:none;opacity:0;transition:opacity .15s;}
-        .tp-bulb-wrap:hover::after{opacity:1;}
-        .tp-bulb-btn{border:none!important;background:none!important;box-shadow:none!important;outline:none!important;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .2s ease;}
-        .tp-bulb-btn:hover{transform:translateY(-4px);}
       `}</style>
 
       <div style={{position:"relative",zIndex:1,background:"rgba(255,255,255,0.88)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderBottom:"1px solid rgba(233,30,140,0.12)",padding:"0 28px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,animation:"tpHeaderIn .5s cubic-bezier(0.22,1,0.36,1) both"}}>
@@ -9546,4 +9541,9 @@ const CSS = `
     }
     .tc-qcrow button { transition: transform 0.1s ease, box-shadow 0.1s ease; position: relative; }
   }
+  .tp-bulb-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .tp-bulb-wrap::after{content:"Hosting Tips";position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#0A0A0F;color:#fff;font-family:Poppins,sans-serif;font-size:10px;font-weight:500;white-space:nowrap;padding:3px 8px;border-radius:999px;pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:none;}
+  .tp-bulb-wrap:hover::after{opacity:1;}
+  .tp-bulb-btn{border:none!important;background:none!important;box-shadow:none!important;outline:none!important;cursor:pointer;padding:0!important;margin:0!important;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .2s ease;}
+  .tp-bulb-btn:hover{transform:translateY(-4px);}
 `;
