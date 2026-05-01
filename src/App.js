@@ -3931,7 +3931,7 @@ function CoinmasterView({ session: init, selfId, onBack }) {
             )}
             {cmGs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:24,textAlign:"center",fontSize:13,color:SUB}}>No groups yet. Add one above!</div>}
             {cmGs.map((g,i) => (
-              <GroupSessionCard key={g.id} g={g} i={i} mut={mut} ses={ses} pNum={pNum}/>
+              <GroupSessionCard key={g.id} g={g} i={i} mut={mut} ses={ses} pNum={pNum} onAward={null}/>
             ))}
           </div>
           );
@@ -4043,7 +4043,10 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
       <div onClick={e=>{ if(e.target===e.currentTarget) onClose(); }} style={backdropStyle}>
         <div style={sheetStyle}>
           <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px",flexShrink:0}}/>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:10,flexShrink:0}}>Give individual</div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,flexShrink:0}}>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>Give individual</div>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:"#9CA3AF",lineHeight:1,padding:"4px 6px"}}>×</button>
+          </div>
 
           {/* Search */}
           <div style={{position:"relative",marginBottom:8,flexShrink:0}}>
@@ -4084,7 +4087,6 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
                 Give {parseInt(customAmt,10)>0?"+":""}{customAmt} coins
               </button>
             )}
-            <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
           </div>
         </div>
       </div>
@@ -4102,7 +4104,10 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
           <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px",flexShrink:0}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,flexShrink:0}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>Give by Group</div>
-            {groupSel.length > 0 && <div style={{fontSize:12,color:PINK,fontWeight:700}}>{totalSelected} participants</div>}
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              {groupSel.length > 0 && <div style={{fontSize:12,color:PINK,fontWeight:700}}>{totalSelected} participants</div>}
+              <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:"#9CA3AF",lineHeight:1,padding:"4px 6px"}}>×</button>
+            </div>
           </div>
           {noGroups ? (
             <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,padding:"24px 0"}}>
@@ -4145,7 +4150,6 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
                 )}
               </>
             )}
-            <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
           </div>
         </div>
       </div>
@@ -4160,7 +4164,10 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
           <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px",flexShrink:0}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,flexShrink:0}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>Select multiple</div>
-            {multiSel.length > 0 && <div style={{fontSize:12,color:PINK,fontWeight:700}}>{multiSel.length} selected</div>}
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              {multiSel.length > 0 && <div style={{fontSize:12,color:PINK,fontWeight:700}}>{multiSel.length} selected</div>}
+              <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:"#9CA3AF",lineHeight:1,padding:"4px 6px"}}>×</button>
+            </div>
           </div>
           <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:4,marginBottom:12,minHeight:0}}>
             {[...sorted].sort((a,b)=>a.name.localeCompare(b.name)).map(p => {
@@ -4190,7 +4197,6 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
                 Give {parseInt(customAmt,10)>0?"+":""}{customAmt} to {multiSel.length} selected
               </button>
             )}
-            <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
           </div>
         </div>
       </div>
@@ -4202,7 +4208,10 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
     <div onClick={e=>{ if(e.target===e.currentTarget&&!confirmAmt) onClose(); }} style={backdropStyle}>
       <div style={sheetStyle}>
         <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px",flexShrink:0}}/>
-        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6,flexShrink:0}}>Give everyone</div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,flexShrink:0}}>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>Give everyone</div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:"#9CA3AF",lineHeight:1,padding:"4px 6px"}}>×</button>
+        </div>
         <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"#E0F2FE",borderRadius:8,padding:"5px 10px",marginBottom:14,flexShrink:0}}>
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0284C7" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span style={{fontSize:11,fontWeight:700,color:"#0284C7"}}>All {ses.participants.length} participants</span>
@@ -4215,7 +4224,6 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
               Give {parseInt(customAmt,10)>0?"+":""}{customAmt} to everyone
             </button>
           )}
-          <button onClick={onClose} style={{width:"100%",border:"none",background:"none",color:"#ccc",fontSize:12,padding:"10px",cursor:"pointer",marginTop:4}}>✕ Cancel</button>
         </div>
       </div>
 
@@ -4244,14 +4252,75 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
   );
 }
 
+// ── GroupGiveSheet — give coins to all members of a specific group ──
+function GroupGiveSheet({ g, members, coins, onAward, onClose }) {
+  const [customAmt, setCustomAmt] = useState("");
+  const [selectedAmt, setSelectedAmt] = useState(null);
+  const isDesktop = window.innerWidth >= 900;
+  const backdropStyle = {position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:1200,display:"flex",
+    alignItems:isDesktop?"center":"flex-end",justifyContent:isDesktop?"center":"stretch"};
+  const sheetStyle = {background:"#fff",borderRadius:isDesktop?20:"20px 20px 0 0",
+    padding:"16px 16px 28px",width:"100%",maxWidth:isDesktop?420:480,margin:isDesktop?"0":"0 auto",
+    maxHeight:isDesktop?"80vh":"85vh",display:"flex",flexDirection:"column"};
+
+  function doGive(v) {
+    const finalV = v !== undefined ? v : (customAmt !== "" ? parseInt(customAmt, 10) : null);
+    if (!finalV || isNaN(finalV)) return;
+    members.forEach(p => onAward(p.id, "token", finalV));
+    onClose();
+  }
+
+  return (
+    <div onClick={e=>{ if(e.target===e.currentTarget) onClose(); }} style={backdropStyle}>
+      <div style={sheetStyle}>
+        <div style={{width:36,height:4,background:"#e0e0e0",borderRadius:99,margin:"0 auto 14px",flexShrink:0}}/>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexShrink:0}}>
+          <div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT}}>Give to {g.name}</div>
+            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:3}}>
+              <div style={{width:8,height:8,borderRadius:"50%",background:g.color}}/>
+              <span style={{fontSize:11,color:"#9CA3AF"}}>{members.length} member{members.length!==1?"s":""}</span>
+            </div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:"#9CA3AF",lineHeight:1,padding:"4px 6px"}}>×</button>
+        </div>
+        <div style={{flexShrink:0}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8}}>
+            {coins.map((v,i) => (
+              <button key={i} onClick={()=>{ setSelectedAmt(v); setCustomAmt(""); doGive(v); }}
+                style={{border:`1.5px solid ${v<0?"#FCA5A5":BORDER}`,borderRadius:12,padding:"16px 4px",textAlign:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:20,color:v<0?"#EF4444":PINK,background:"#fff",cursor:"pointer"}}>
+                {v>0?"+":""}{v}
+              </button>
+            ))}
+          </div>
+          <input
+            type="number"
+            placeholder="Custom amount…"
+            value={customAmt}
+            onChange={e=>{ setCustomAmt(e.target.value); setSelectedAmt(null); }}
+            style={{width:"100%",background:BG,border:`1.5px solid ${customAmt!==""?PINK:BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",boxSizing:"border-box",marginBottom:8}}
+          />
+          {customAmt !== "" && (
+            <button onClick={()=>doGive()}
+              style={{width:"100%",padding:"13px 0",background:`linear-gradient(135deg,${PINK},#E91E8C)`,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",marginBottom:4}}>
+              Give {parseInt(customAmt,10)>0?"+":""}{customAmt} to {g.name}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Session screen ──
 // ── GroupSessionCard — editable group card in Session right panel ──
-function GroupSessionCard({ g, i, mut, ses, pNum }) {
+function GroupSessionCard({ g, i, mut, ses, pNum, onAward }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(g.name);
   const [editColor, setEditColor] = useState(g.color);
   const [showAssign, setShowAssign] = useState(false);
   const [showQRAssign, setShowQRAssign] = useState(false);
+  const [showGive, setShowGive] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [customColor, setCustomColor] = useState(null);
   const rankColor = i => ["#F5A623","#94A3B8","#CD7C2E"][i]||"#9A6080";
@@ -4263,6 +4332,17 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
     <>
     {showAssign && <GroupAssignModal g={g} session={ses} onUpdate={mut} onClose={()=>setShowAssign(false)}/>}
     {showQRAssign && <GroupQRModal g={g} session={ses} onUpdate={mut} onClose={()=>setShowQRAssign(false)}/>}
+    {showGive && onAward && (() => {
+      const members = ses.participants.filter(p => p.gid === g.id);
+      const TV_DEF = [10,30,50,100,150,200];
+      const coins = ses.otherCoins || TV_DEF;
+      return (
+        <GroupGiveSheet
+          g={g} members={members} coins={coins}
+          onAward={onAward} onClose={()=>setShowGive(false)}
+        />
+      );
+    })()}
     <div style={{background:"#fff",border:`1.5px solid ${editing?g.color:BORDER}`,borderRadius:14,padding:"14px 16px",transition:"border .2s"}}>
       {editing ? (
         <div>
@@ -4305,6 +4385,13 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="21" y1="17" x2="21" y2="21"/><line x1="17" y1="21" x2="17" y2="17"/><line x1="14" y1="17" x2="14" y2="21"/></svg>
                 QR Scan
               </button>
+              {onAward && (
+                <button onClick={()=>setShowGive(true)}
+                  style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:PINK,marginLeft:4}} title="Give Coins">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  Give
+                </button>
+              )}
               <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditing(true);}}
                 style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 7px",cursor:"pointer",display:"inline-flex",alignItems:"center",marginLeft:4}} title="Rename">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -4327,6 +4414,13 @@ function GroupSessionCard({ g, i, mut, ses, pNum }) {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="21" y1="17" x2="21" y2="21"/><line x1="17" y1="21" x2="17" y2="17"/><line x1="14" y1="17" x2="14" y2="21"/></svg>
               QR Scan
             </button>
+            {onAward && (
+              <button onClick={()=>setShowGive(true)}
+                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:PINK}} title="Give Coins">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Give
+              </button>
+            )}
             <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditing(true);}}
               style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Rename">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -4388,7 +4482,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
   const [editingPid, setEditingPid] = useState(null);   // participant id being renamed
   const [editingPName, setEditingPName] = useState(""); // current edit value
   const [pMenuOpen, setPMenuOpen] = useState(null);     // participant id whose ⋯ menu is open
-  const [pMenuPos, setPMenuPos]   = useState({top:0,right:0}); // fixed position of ⋯ dropdown
+  const [pMenuPos, setPMenuPos]   = useState({top:null,bottom:null,right:0}); // fixed position of ⋯ dropdown
   const [boardSubTab, setBoardSubTab] = useState("individual"); // board tab: individual | groups
   const [giveSheet, setGiveSheet] = useState(null); // null | {mode:"all"|"multi"|"individual"}
   const [gsMultiSel, setGsMultiSel] = useState([]);
@@ -4628,7 +4722,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
         const p = ses.participants.find(x=>x.id===pMenuOpen);
         if (!p) return null;
         return (
-          <div style={{position:"fixed",top:pMenuPos.top,right:pMenuPos.right,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,.14)",zIndex:9990,minWidth:170,overflow:"hidden"}}
+          <div style={{position:"fixed",top:pMenuPos.top??undefined,bottom:pMenuPos.bottom??undefined,right:pMenuPos.right,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,boxShadow:"0 8px 24px rgba(0,0,0,.14)",zIndex:9990,minWidth:170,overflow:"hidden"}}
             onMouseDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()}>
             <button onClick={()=>{setEditingPid(p.id);setEditingPName(p.name);setPMenuOpen(null);}}
               style={{width:"100%",padding:"11px 14px",background:"none",border:"none",textAlign:"left",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}
@@ -5151,7 +5245,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
                           )}
                           {/* ⋯ context menu */}
                           <div style={{position:"relative",flexShrink:0}}>
-                            <button onClick={e=>{e.stopPropagation();if(menuOpen){setPMenuOpen(null);}else{const r=e.currentTarget.getBoundingClientRect();const menuH=130;const spaceBelow=window.innerHeight-r.bottom-8;const top=spaceBelow>=menuH?r.bottom+4:r.top-menuH-4;setPMenuPos({top,right:window.innerWidth-r.right});setPMenuOpen(p.id);}}}
+                            <button onClick={e=>{e.stopPropagation();if(menuOpen){setPMenuOpen(null);}else{const r=e.currentTarget.getBoundingClientRect();const spaceBelow=window.innerHeight-r.bottom-8;const MENU_H=130;const right=window.innerWidth-r.right;if(spaceBelow>=MENU_H){setPMenuPos({top:r.bottom+4,bottom:null,right});}else{setPMenuPos({top:null,bottom:window.innerHeight-r.top+4,right});}setPMenuOpen(p.id);}}}
                               style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center",color:SUB}}
                               onMouseOver={e=>e.currentTarget.style.borderColor=PINK}
                               onMouseOut={e=>e.currentTarget.style.borderColor=BORDER}>
@@ -5460,7 +5554,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
               )}
               {gs.length===0 && <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:24,textAlign:"center",fontSize:13,color:SUB}}>No groups yet. Add one above!</div>}
               {gs.map((g,i) => (
-                <GroupSessionCard key={g.id} g={g} i={i} mut={mut} ses={ses} pNum={pNum}/>
+                <GroupSessionCard key={g.id} g={g} i={i} mut={mut} ses={ses} pNum={pNum} onAward={award}/>
               ))}
               </>}
             </div>
