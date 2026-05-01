@@ -652,7 +652,7 @@ function MassGive({ participants, groups, session, onAward, onClose }) {
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Scan QR to Give</div>
-            <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:20,lineHeight:1,padding:"4px 6px"}}>×</button>
           </div>
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"0 20px 32px"}}>
@@ -667,7 +667,7 @@ function MassGive({ participants, groups, session, onAward, onClose }) {
             ))}
           </div>
           <input type="number" placeholder="Custom amount…" value={cAmt} onChange={e=>{setCAmt(e.target.value);setAmt("custom");}}
-            style={{width:"100%",background:BG,border:`1.5px solid ${amt==="custom"?PINK:BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",marginBottom:16}}/>
+            style={{width:"100%",background:"#FFF5FA",border:`1.5px solid ${amt==="custom"?PINK:"#F9A8D4"}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",marginBottom:16}}/>
 
           {/* Open Camera button */}
           {!scanning && (
@@ -767,7 +767,7 @@ function CoinCustomizer({ session, onSave, onClose }) {
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Customise Coins</div>
-            <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:20,lineHeight:1,padding:"4px 6px"}}>×</button>
           </div>
         </div>
 
@@ -831,7 +831,7 @@ function SessionSettings({ session, isPro=false, atLimit=false, existingSessionN
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 16px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Session Settings</div>
-            <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:20,lineHeight:1,padding:"4px 6px"}}>×</button>
           </div>
         </div>
         <div style={{padding:"0 20px 36px",display:"flex",flexDirection:"column",gap:10}}>
@@ -1097,7 +1097,7 @@ function GroupAssignModal({ g, session, onUpdate, onClose }) {
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:17,color:TEXT}}>
               Assign to <span style={{color:g.color}}>{g.name}</span>
             </div>
-            <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:20,lineHeight:1,padding:"4px 6px"}}>×</button>
           </div>
           <input placeholder="Search participant…" value={q} onChange={e=>setQ(e.target.value)}
             style={{width:"100%",padding:"9px 12px",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:13,color:TEXT,outline:"none",marginBottom:12,boxSizing:"border-box",caretColor:TEXT}}/>
@@ -1195,7 +1195,7 @@ function GroupQRModal({ g, session, onUpdate, onClose }) {
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:17,color:TEXT}}>QR Assign</div>
               <div style={{fontSize:12,color:SUB,marginTop:2}}>Scan QR to add to <span style={{color:g.color,fontWeight:700}}>{g.name}</span></div>
             </div>
-            <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:20,lineHeight:1,padding:"4px 6px"}}>×</button>
           </div>
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"0 20px 28px"}}>
@@ -1356,7 +1356,7 @@ function Manage({ session, plan="free", paxLimit=FREE_PAX_LIMIT, existingSession
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 12px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Participants</div>
-            <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:20,lineHeight:1,padding:"4px 6px"}}>×</button>
           </div>
           <div style={{height:1,background:BORDER,margin:"0 -0px"}}/>
         </div>
@@ -3191,7 +3191,7 @@ function QRModal({ session, onClose }) {
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:PINK}}>{session.participants?.length||0}</span>
               </div>
-              <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+              <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:20,lineHeight:1,padding:"4px 6px"}}>×</button>
             </div>
           </div>
           <div style={{fontSize:13,color:SUB,marginBottom:20}}>Participants scan or open the link to join. No account needed.</div>
@@ -3243,7 +3243,7 @@ function LeaderSheet({ session, onToggleBoard, onClose }) {
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:TEXT}}>Scoreboard</div>
-            <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:20,lineHeight:1,padding:"4px 6px"}}>×</button>
           </div>
           {/* Board visibility toggle — lives here */}
           <div onClick={onToggleBoard}
@@ -4020,7 +4020,7 @@ function GiveSheet({ mode, ses, sorted, isPro, PINK, BORDER, SOFT, TEXT, BG, mul
           placeholder="Custom amount…"
           value={customAmt}
           onChange={e=>{ setCustomAmt(e.target.value); setSelectedAmt(null); }}
-          style={{width:"100%",background:BG,border:`1.5px solid ${customAmt!==""?PINK:BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",boxSizing:"border-box"}}
+          style={{width:"100%",background:"#FFF5FA",border:`1.5px solid ${customAmt!==""?PINK:"#F9A8D4"}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",boxSizing:"border-box"}}
         />
       </div>
     );
@@ -4298,7 +4298,7 @@ function GroupGiveSheet({ g, members, coins, onAward, onClose }) {
             placeholder="Custom amount…"
             value={customAmt}
             onChange={e=>{ setCustomAmt(e.target.value); setSelectedAmt(null); }}
-            style={{width:"100%",background:BG,border:`1.5px solid ${customAmt!==""?PINK:BORDER}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",boxSizing:"border-box",marginBottom:8}}
+            style={{width:"100%",background:"#FFF5FA",border:`1.5px solid ${customAmt!==""?PINK:"#F9A8D4"}`,borderRadius:12,padding:"10px 14px",fontFamily:"Poppins,sans-serif",fontSize:13,color:TEXT,outline:"none",boxSizing:"border-box",marginBottom:8}}
           />
           {customAmt !== "" && (
             <button onClick={()=>doGive()}
@@ -4388,7 +4388,7 @@ function GroupSessionCard({ g, i, mut, ses, pNum, onAward }) {
               {onAward && (
                 <button onClick={()=>setShowGive(true)}
                   style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"4px 8px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:PINK,marginLeft:4}} title="Give Coins">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <svg width="13" height="13" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="50" cy="50" rx="46" ry="46" fill="none" stroke={PINK} strokeWidth="8"/><ellipse cx="50" cy="50" rx="34" ry="34" fill="none" stroke={PINK} strokeWidth="6" strokeDasharray="9 7" strokeLinecap="round"/><rect x="6" y="38" width="8" height="24" rx="3" fill={PINK} transform="rotate(-15 6 38)"/><rect x="86" y="38" width="8" height="24" rx="3" fill={PINK} transform="rotate(15 86 38)"/></svg>
                   Give
                 </button>
               )}
@@ -4402,32 +4402,29 @@ function GroupSessionCard({ g, i, mut, ses, pNum, onAward }) {
               </button>
             </span>
           </div>
-          {/* Row 2: mobile-only all-buttons row, right-aligned */}
+          {/* Row 2: mobile-only all-buttons row, right-aligned — icons only */}
           <div className="tc-grp-btns-mobile" style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6,marginBottom:6}}>
             <button onClick={()=>setShowAssign(true)}
-              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB}} title="Assign">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-              Assign
+              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"7px 9px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Assign">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
             </button>
             <button onClick={()=>setShowQRAssign(true)}
-              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:SUB}} title="QR Scan">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="21" y1="17" x2="21" y2="21"/><line x1="17" y1="21" x2="17" y2="17"/><line x1="14" y1="17" x2="14" y2="21"/></svg>
-              QR Scan
+              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"7px 9px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="QR Scan">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><line x1="14" y1="14" x2="14" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="21" y1="17" x2="21" y2="21"/><line x1="17" y1="21" x2="17" y2="17"/><line x1="14" y1="17" x2="14" y2="21"/></svg>
             </button>
             {onAward && (
               <button onClick={()=>setShowGive(true)}
-                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,color:PINK}} title="Give Coins">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                Give
+                style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"7px 9px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Give Coins">
+                <svg width="14" height="14" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="50" cy="50" rx="46" ry="46" fill="none" stroke={PINK} strokeWidth="8"/><ellipse cx="50" cy="50" rx="34" ry="34" fill="none" stroke={PINK} strokeWidth="6" strokeDasharray="9 7" strokeLinecap="round"/><rect x="6" y="38" width="8" height="24" rx="3" fill={PINK} transform="rotate(-15 6 38)"/><rect x="86" y="38" width="8" height="24" rx="3" fill={PINK} transform="rotate(15 86 38)"/></svg>
               </button>
             )}
             <button onClick={()=>{setEditName(g.name);setEditColor(g.color);setEditing(true);}}
-              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Rename">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:7,padding:"7px 9px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Rename">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
             <button onClick={()=>{if(!window.confirm(`Delete group "${g.name}"?`))return;mut(s=>{s.groups=s.groups.filter(x=>x.id!==g.id);s.participants=s.participants.map(p=>p.gid===g.id?{...p,gid:null}:p);return s;});}}
-              style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"5px 8px",cursor:"pointer",display:"flex",alignItems:"center"}} title="Delete">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              style={{background:"none",border:`1px solid #FCA5A5`,borderRadius:7,padding:"7px 9px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} title="Delete">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
             </button>
           </div>
           {/* Row 2 desktop / Row 3 mobile: participant names — scrollable comma list */}
@@ -5301,7 +5298,12 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
               ) : (
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
                   <div style={{padding:"8px 14px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",gap:8}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <svg width="15" height="15" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <ellipse cx="50" cy="50" rx="46" ry="46" fill="none" stroke={PINK} strokeWidth="7"/>
+                      <ellipse cx="50" cy="50" rx="34" ry="34" fill="none" stroke={PINK} strokeWidth="5" strokeDasharray="9 7" strokeLinecap="round"/>
+                      <rect x="6" y="38" width="8" height="24" rx="3" fill={PINK} transform="rotate(-15 6 38)"/>
+                      <rect x="86" y="38" width="8" height="24" rx="3" fill={PINK} transform="rotate(15 86 38)"/>
+                    </svg>
                     <SL style={{marginBottom:0,flex:1}}>Quick Coins</SL>
                     <input placeholder="Search name…" value={qcSearch} onChange={e=>setQcSearch(e.target.value)}
                       style={{height:28,padding:"0 10px",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Poppins,sans-serif",fontSize:12,color:TEXT,outline:"none",width:130,background:"#fff",caretColor:TEXT}}/>
@@ -5734,7 +5736,7 @@ function LuckyDraw({ participants, badgeAwarded, onClose }) {
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:"#fff"}}>🎡 Lucky Draw</div>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div style={{fontSize:12,color:"rgba(255,255,255,.4)",fontWeight:600}}>{spinsLeft} spins left</div>
-            <button onClick={onClose} style={{width:30,height:30,borderRadius:8,background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.12)",color:"rgba(255,255,255,.6)",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            <button onClick={onClose} style={{background:"none",border:"none",color:"rgba(255,255,255,.5)",cursor:"pointer",fontSize:20,lineHeight:1,padding:"4px 6px"}}>×</button>
           </div>
         </div>
 
@@ -5996,7 +5998,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
         <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,background:LP_GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
           Choose a Plan
         </div>
-        <button onClick={onClose} style={{background:"none",border:"1.5px solid #E5E7EB",borderRadius:8,width:30,height:30,cursor:"pointer",color:NEUT,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:NEUT,fontSize:20,lineHeight:1,padding:"4px 6px"}}>×</button>
       </div>
 
       {/* Scrollable body */}
@@ -7924,7 +7926,7 @@ function BadgePickerModal({ participant, sessionName, hostName, onAward, onClose
           <div style={{width:36,height:4,background:BORDER,borderRadius:4,margin:"0 auto 14px"}}/>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Award Badge</div>
-            <button onClick={onClose} style={{background:"none",border:`1px solid ${BORDER}`,borderRadius:8,width:30,height:30,cursor:"pointer",color:SUB,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:SUB,fontSize:20,lineHeight:1,padding:"4px 6px"}}>×</button>
           </div>
           <div style={{fontSize:13,color:SUB,marginBottom:16}}>Awarding to <strong style={{color:TEXT}}>{participant.name}</strong></div>
         </div>
