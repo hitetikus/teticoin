@@ -6829,157 +6829,74 @@ function SettingsPage({ isPro=false, onClose }) {
 function printInvoice(inv, pd, planExpiry, viewOnly=false) {
   const invDate = new Date(inv.date.replace(/ /g, "-").replace(/([0-9]+)-([A-Za-z]+)-([0-9]+)/, (m,d,mo,y)=>`${d} ${mo} ${y}`));
   const invoiceNum = "TC-" + (planExpiry ? new Date(planExpiry).getFullYear() : new Date().getFullYear()) + "-" + String(Math.abs(invDate.getTime()) % 100000).padStart(5,"0");
-  const periodEnd = planExpiry ? new Date(planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}) : "—";
-  const periodStart = inv.date;
+  const periodEnd = planExpiry ? new Date(planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice ${invoiceNum} · Teticoin</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{background:#f4f4f4;}
-  .page{font-family:Inter,sans-serif;background:#fff;color:#111827;width:210mm;min-height:297mm;margin:0 auto;padding:14mm 16mm 14mm;font-size:13px;position:relative;}
-  /* Header band */
-  .inv-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #E91E8C;margin-bottom:24px;}
-  .brand-name{font-weight:800;font-size:22px;color:#E91E8C;letter-spacing:-0.5px;}
-  .brand-sub{font-size:10px;color:#9CA3AF;margin-top:3px;line-height:1.5;}
-  .inv-title-block{text-align:right;}
-  .inv-title{font-size:26px;font-weight:800;color:#111827;letter-spacing:-0.5px;}
-  .inv-num{font-size:12px;color:#6B7280;margin-top:3px;font-weight:600;}
-  /* Party grid */
-  .parties{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:22px;}
-  .party-box{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:14px 16px;}
-  .party-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#9CA3AF;margin-bottom:8px;}
-  .party-name{font-size:14px;font-weight:700;color:#111827;margin-bottom:3px;}
-  .party-detail{font-size:12px;color:#6B7280;line-height:1.7;}
-  /* Meta row */
-  .meta-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:24px;}
-  .meta-cell{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:10px 12px;}
-  .meta-cell .mlabel{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9CA3AF;margin-bottom:4px;}
-  .meta-cell .mval{font-size:12px;font-weight:600;color:#111827;}
-  /* Items table */
-  .items-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#9CA3AF;margin-bottom:8px;}
-  table{width:100%;border-collapse:collapse;margin-bottom:20px;}
-  thead tr{background:#F9FAFB;border-top:1px solid #E5E7EB;border-bottom:1px solid #E5E7EB;}
-  th{padding:9px 12px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9CA3AF;}
-  th.right,td.right{text-align:right;}
-  tbody tr{border-bottom:1px solid #F3F4F6;}
-  td{padding:12px 12px;font-size:13px;color:#111827;vertical-align:top;}
-  td.desc small{display:block;font-size:11px;color:#9CA3AF;margin-top:3px;line-height:1.5;}
-  /* Totals */
-  .total-wrap{display:flex;justify-content:flex-end;margin-bottom:28px;}
-  .total-box{width:240px;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;}
-  .total-row{display:flex;justify-content:space-between;padding:9px 14px;font-size:12px;border-bottom:1px solid #F3F4F6;}
-  .total-row:last-child{border-bottom:none;}
-  .total-row.grand{font-size:15px;font-weight:800;background:#F9FAFB;}
-  .total-row.grand span:last-child{color:#E91E8C;}
-  /* Status badge */
-  .badge{display:inline-flex;align-items:center;gap:5px;background:#DCFCE7;color:#15803D;font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;border:1px solid #BBF7D0;}
-  /* Note */
-  .note-box{background:#FFF0F7;border:1px solid #FECDE8;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:11px;color:#9D174D;line-height:1.7;}
-  /* Footer */
-  .inv-footer{border-top:1px solid #E5E7EB;padding-top:14px;font-size:10px;color:#9CA3AF;line-height:1.9;}
-  .inv-footer strong{color:#6B7280;}
-  /* Print */
-  @media print{html,body{background:#fff;} .page{box-shadow:none;} .no-print{display:none;}}
+  body{font-family:Inter,sans-serif;background:#fff;color:#111827;padding:52px 56px;max-width:720px;margin:0 auto;font-size:14px;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;}
+  .logo{font-weight:800;font-size:24px;background:linear-gradient(135deg,#E91E8C,#FF4FB8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .logo-sub{font-size:11px;color:#9CA3AF;margin-top:2px;}
+  .inv-label{text-align:right;}
+  .inv-label .title{font-size:28px;font-weight:800;color:#111827;}
+  .inv-label .num{font-size:12px;color:#6B7280;margin-top:4px;}
+  .section{margin-bottom:28px;}
+  .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9CA3AF;margin-bottom:5px;}
+  .value{font-size:14px;font-weight:600;color:#111827;line-height:1.5;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:32px;}
+  .divider{border:none;border-top:1px solid #F3F4F6;margin:24px 0;}
+  table{width:100%;border-collapse:collapse;}
+  thead tr{border-bottom:2px solid #F3F4F6;}
+  th{padding:10px 0;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9CA3AF;}
+  th:last-child,td:last-child{text-align:right;}
+  tbody tr{border-bottom:1px solid #F9FAFB;}
+  td{padding:14px 0;font-size:14px;color:#111827;vertical-align:top;}
+  td.desc small{display:block;font-size:12px;color:#6B7280;margin-top:2px;}
+  .total-section{display:flex;justify-content:flex-end;margin-top:20px;}
+  .total-box{min-width:220px;}
+  .total-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;}
+  .total-row.grand{font-size:17px;font-weight:800;border-top:2px solid #E5E7EB;padding-top:12px;margin-top:4px;}
+  .badge{display:inline-flex;align-items:center;gap:5px;background:#DCFCE7;color:#15803D;font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;border:1px solid #BBF7D0;}
+  .footer{margin-top:48px;padding-top:24px;border-top:1px solid #F3F4F6;font-size:11px;color:#9CA3AF;line-height:1.8;}
+  @media print{body{padding:32px;} .no-print{display:none;}}
 </style></head><body>
-<div class="page">
-
-  <!-- Header -->
-  <div class="inv-header">
-    <div>
-      <div class="brand-name">Teticoin</div>
-      <div class="brand-sub">A product by Alev Global Sdn Bhd<br>Kuala Lumpur, Malaysia · teticoin.com</div>
-    </div>
-    <div class="inv-title-block">
-      <div class="inv-title">TAX INVOICE</div>
-      <div class="inv-num">Invoice # ${invoiceNum}</div>
-    </div>
+  <div class="header">
+    <div><div class="logo">Teticoin</div><div class="logo-sub">by Tetikus · tetikus.com.my</div></div>
+    <div class="inv-label"><div class="title">Tax Invoice</div><div class="num">Invoice #${invoiceNum}</div></div>
   </div>
-
-  <!-- Parties -->
-  <div class="parties">
-    <div class="party-box">
-      <div class="party-label">From (Seller)</div>
-      <div class="party-name">Alev Global Sdn Bhd</div>
-      <div class="party-detail">
-        Teticoin Platform<br>
-        Kuala Lumpur, Malaysia<br>
-        hi.tetikus@gmail.com<br>
-        tetikus.com.my · teticoin.com
-      </div>
-    </div>
-    <div class="party-box">
-      <div class="party-label">Billed To (Customer)</div>
-      <div class="party-name">${pd.name} Plan Subscriber</div>
-      <div class="party-detail">
-        Teticoin Account Holder<br>
-        Plan: ${pd.name} (${pd.renewal === "monthly" ? "Monthly" : "Annual"})<br>
-        &nbsp;
-      </div>
-    </div>
+  <div class="grid">
+    <div class="section"><div class="label">Invoice Date</div><div class="value">${inv.date}</div></div>
+    <div class="section"><div class="label">Status</div><div class="value"><span class="badge">✓ PAID</span></div></div>
+    <div class="section"><div class="label">Billing Period</div><div class="value">${inv.date} → ${periodEnd}</div></div>
+    <div class="section"><div class="label">Plan</div><div class="value">${pd.name} (${pd.renewal})</div></div>
   </div>
-
-  <!-- Meta -->
-  <div class="meta-row">
-    <div class="meta-cell"><div class="mlabel">Invoice Date</div><div class="mval">${inv.date}</div></div>
-    <div class="meta-cell"><div class="mlabel">Period Start</div><div class="mval">${periodStart}</div></div>
-    <div class="meta-cell"><div class="mlabel">Period End</div><div class="mval">${periodEnd}</div></div>
-    <div class="meta-cell"><div class="mlabel">Status</div><div class="mval"><span class="badge">✓ PAID</span></div></div>
-  </div>
-
-  <!-- Line items -->
-  <div class="items-label">Items</div>
+  <hr class="divider"/>
   <table>
-    <thead>
-      <tr>
-        <th>Description</th>
-        <th>Qty</th>
-        <th class="right">Unit Price</th>
-        <th class="right">Amount (MYR)</th>
-      </tr>
-    </thead>
+    <thead><tr><th>Description</th><th>Qty</th><th>Amount (MYR)</th></tr></thead>
     <tbody>
       <tr>
-        <td class="desc">
-          Teticoin ${pd.name} Plan — ${pd.renewal === "monthly" ? "Monthly Subscription" : "Annual Subscription"}
-          <small>
-            Real-time session gamification platform<br>
-            Access period: ${periodStart} → ${periodEnd}
-          </small>
-        </td>
+        <td class="desc">${pd.name} Plan — ${pd.renewal==="monthly"?"Monthly subscription":"Annual subscription"}<small>Teticoin · Real-time session gamification platform<br>teticoin.com / teticoin.tetikus.com.my</small></td>
         <td>1</td>
-        <td class="right">${inv.amount}</td>
-        <td class="right">${inv.amount}</td>
+        <td>${inv.amount}</td>
       </tr>
     </tbody>
   </table>
-
-  <!-- Totals -->
-  <div class="total-wrap">
+  <div class="total-section">
     <div class="total-box">
       <div class="total-row"><span>Subtotal</span><span>${inv.amount}</span></div>
-      <div class="total-row"><span>SST (0%)</span><span>—</span></div>
-      <div class="total-row grand"><span>Total Paid (MYR)</span><span>${inv.amount}</span></div>
+      <div class="total-row"><span>Tax (0%)</span><span>—</span></div>
+      <div class="total-row grand"><span>Total Paid</span><span>${inv.amount}</span></div>
     </div>
   </div>
-
-  <!-- Note -->
-  <div class="note-box">
-    <strong>Payment Note:</strong> Payment was processed securely via <strong>Chip</strong> (chip-in.asia).
-    All amounts are in Malaysian Ringgit (MYR). This subscription will remain active until the period end date above.
-    For questions, contact <strong>hi.tetikus@gmail.com</strong>.
+  <div class="footer">
+    Payment processed securely by <strong>Chip</strong> (chip-in.asia) · All amounts in Malaysian Ringgit (MYR)<br>
+    Issued by: <strong>Tetikus</strong> · Kuala Lumpur, Malaysia · hi.tetikus@gmail.com · tetikus.com.my<br>
+    This is a computer-generated receipt. Valid without a physical signature.
   </div>
-
-  <!-- Footer -->
-  <div class="inv-footer">
-    <strong>Alev Global Sdn Bhd</strong> · Kuala Lumpur, Malaysia · hi.tetikus@gmail.com · tetikus.com.my<br>
-    This is a computer-generated tax invoice and is valid without a physical signature.<br>
-    Invoice # ${invoiceNum} · Generated on ${new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
-  </div>
-
-</div>
-${viewOnly?"":"<script>window.onload=function(){window.print();}<\/script>"}
+  ${viewOnly?"":"<script>window.onload=function(){window.print();}<\/script>"}
 </body></html>`;
-  const w = window.open("","_blank","width=860,height=1100");
+  const w = window.open("","_blank","width=780,height=960");
   if (w) { w.document.write(html); w.document.close(); }
 }
 
@@ -6988,6 +6905,29 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
   // Always fetch fresh planExpiry from Firebase on mount — the prop may be stale
   const [planExpiry, setPlanExpiry_] = useState(planExpiryProp);
   const [expiryLoading, setExpiryLoading] = useState(!planExpiryProp);
+  const [confirmingExpiry, setConfirmingExpiry] = useState(false);
+  const [expiryConfirmed, setExpiryConfirmed] = useState(false);
+
+  async function handleConfirmExpiry() {
+    setConfirmingExpiry(true);
+    try {
+      const { getFirestore, doc, setDoc } = await import("firebase/firestore");
+      const { getAuth } = await import("firebase/auth");
+      const uid = getAuth().currentUser?.uid;
+      if (!uid) { setConfirmingExpiry(false); return; }
+      const db = getFirestore();
+      const isYearly = plan === "proY";
+      const daysToAdd = isYearly ? 365 : 30;
+      const baseDate = (planExpiry && new Date(planExpiry) > new Date()) ? new Date(planExpiry) : new Date();
+      const expiry = new Date(baseDate);
+      expiry.setDate(expiry.getDate() + daysToAdd);
+      const expiryISO = expiry.toISOString();
+      await setDoc(doc(db, "users", uid, "data", "planExpiry"), { value: expiryISO, updatedAt: Date.now() });
+      setPlanExpiry_(expiryISO);
+      setExpiryConfirmed(true);
+    } catch(e) { console.error(e); }
+    setConfirmingExpiry(false);
+  }
   useEffect(() => {
     if (planExpiryProp) { setExpiryLoading(false); return; } // already have it from prop
     async function fetchExpiry() {
@@ -7036,13 +6976,19 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
   // If planExpiry missing but plan is paid, show estimated invoice from today
   const invoices = (() => {
     if (isFree || isBetaPlan) return [];
-    const refExpiry = planExpiry ? new Date(planExpiry) : null;
-    if (!refExpiry) return [];
     const isYearly = plan === "proY";
     const periodDays = isYearly ? 365 : 30;
-    const payDate = new Date(refExpiry);
-    payDate.setDate(payDate.getDate() - periodDays);
-    return [{ date: payDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid", expiry:expiryLabel }];
+    if (planExpiry) {
+      const refExpiry = new Date(planExpiry);
+      const payDate = new Date(refExpiry);
+      payDate.setDate(payDate.getDate() - periodDays);
+      return [{ date: payDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid", expiry:expiryLabel }];
+    }
+    // Plan is paid but expiry not yet confirmed — show estimated invoice
+    const today = new Date();
+    const estExpiry = new Date(today);
+    estExpiry.setDate(estExpiry.getDate() + periodDays);
+    return [{ date: today.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid", expiry: estExpiry.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), estimated: true }];
   })();
 
   return (
@@ -7093,7 +7039,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                   color:isFree?TEXT:isBetaPlan?"#065F46":isExpired?"#EF4444":pd.color}}>
                   {pd.name} Plan
                 </div>
-                <div style={{background:isExpired?"#FEE2E2":isFree?"#F3F4F6":isBetaPlan?"#059669":"#16A34A",border:`1.5px solid ${isExpired?"#EF444440":isFree?BORDER:isBetaPlan?"#059669":"#16A34A"}`,borderRadius:99,padding:"4px 14px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isExpired?"#EF4444":isFree?SUB:"#fff"}}>
+                <div style={{background:isExpired?"#FEE2E2":isFree?"#F3F4F6":`${pd.color}18`,border:`1.5px solid ${isExpired?"#EF444440":isFree?BORDER:pd.color+"44"}`,borderRadius:99,padding:"4px 14px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isExpired?"#EF4444":isFree?SUB:pd.color}}>
                   {isExpired?"Expired":isBetaPlan?"Beta Access":"Active"}
                 </div>
               </div>
@@ -7115,6 +7061,21 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                           ? `This plan will expire on ${expiryLabel}`
                           : expiryLoading ? "Loading plan details…" : "This plan is active"}
                   </div>
+                  {/* Payment confirmed but expiry not yet set — show confirm button */}
+                  {isPaidPro && !planExpiry && !expiryLoading && !expiryConfirmed && (
+                    <div style={{background:"#FFF7ED",border:"1.5px solid #FED7AA",borderRadius:10,padding:"10px 14px",marginBottom:12}}>
+                      <div style={{fontSize:12,fontWeight:600,color:"#92400E",marginBottom:8}}>
+                        ⚠ Your payment was received but the expiry date hasn't been set yet.
+                      </div>
+                      <button onClick={handleConfirmExpiry} disabled={confirmingExpiry}
+                        style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",background:"#F97316",border:"none",borderRadius:99,fontSize:12,fontWeight:700,color:"#fff",cursor:confirmingExpiry?"not-allowed":"pointer",opacity:confirmingExpiry?0.7:1}}>
+                        {confirmingExpiry ? "Setting expiry…" : "✓ Confirm my payment & set expiry"}
+                      </button>
+                    </div>
+                  )}
+                  {expiryConfirmed && (
+                    <div style={{fontSize:12,color:"#16A34A",fontWeight:600,marginBottom:12}}>✅ Expiry date confirmed!</div>
+                  )}
                   {/* Renew button — small, pill-style */}
                   {isPaidPro && (
                     <a href={renewLink} target="_blank" rel="noopener noreferrer"
@@ -7507,6 +7468,21 @@ function SuperAdminDashboard({ onClose }) {
     } catch(e) { setActionMsg("❌ Error: " + e.message); }
   }
 
+  async function setExpiryForUser(uid, email, plan) {
+    try {
+      const { getFirestore, doc, setDoc } = await import("firebase/firestore");
+      const db = getFirestore();
+      const isYearly = plan === "proY";
+      const daysToAdd = isYearly ? 365 : 30;
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + daysToAdd);
+      await setDoc(doc(db, "users", uid, "data", "planExpiry"), { value: expiry.toISOString(), updatedAt: Date.now() });
+      setUsers(u => u.map(x => x.uid === uid ? {...x, planExpiry:expiry.toISOString()} : x));
+      setActionMsg(`✅ Expiry set for ${email} — expires ${expiry.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}`);
+      setTimeout(() => setActionMsg(null), 4000);
+    } catch(e) { setActionMsg("❌ Error: " + e.message); }
+  }
+
   async function resendReset(email) {
     try {
       await sendPasswordResetEmail(auth, email, { url: "https://teticoin.com/login" });
@@ -7793,6 +7769,11 @@ function SuperAdminDashboard({ onClose }) {
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,flexWrap:"wrap",justifyContent:"flex-end"}}>
                       <span style={{background:`${planColor}15`,border:`1px solid ${planColor}40`,color:planColor,borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}>{planLabel}</span>
+                      {/* Show "Set expiry" button for paid users with missing expiry */}
+                      {!isSA && (u.plan==="pro"||u.plan==="proY"||u.plan==="oneTime") && !u.planExpiry && (
+                        <button onClick={()=>setExpiryForUser(u.uid, u.email, u.plan)}
+                          style={{padding:"4px 10px",background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:8,fontSize:11,fontWeight:700,color:"#B45309",cursor:"pointer"}}>⚠ Set expiry</button>
+                      )}
                       {!isSA && u.plan !== "beta" && (
                         <button onClick={()=>assignBeta(u.uid, u.email)}
                           style={{padding:"4px 10px",background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:8,fontSize:11,fontWeight:700,color:"#16A34A",cursor:"pointer"}}>+ Beta Pro</button>
@@ -9241,23 +9222,31 @@ export default function App() {
 
       {/* ── Payment success banner ── */}
       {paymentToast && (
-        <div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:9999,
-          background:`linear-gradient(135deg,${GREEN},#06B6D4)`,color:"#fff",
-          borderRadius:16,padding:"16px 24px",boxShadow:"0 8px 40px rgba(0,0,0,.18)",
-          display:"flex",alignItems:"center",gap:14,animation:"slideUp .3s ease",
-          maxWidth:480,width:"calc(100% - 32px)"}}>
-          <div style={{width:40,height:40,borderRadius:12,background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <div style={{flex:1}}>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,lineHeight:1.2}}>
-              🎉 Welcome to {paymentToast === "pro" ? "Pro" : "Team"}!
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9998,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#fff",borderRadius:24,padding:"32px 28px",boxShadow:"0 24px 80px rgba(0,0,0,.25)",maxWidth:440,width:"100%",textAlign:"center",animation:"slideUp .3s ease"}}>
+            <div style={{width:72,height:72,borderRadius:20,background:`linear-gradient(135deg,${GREEN},#06B6D4)`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <div style={{fontSize:12,opacity:.9,marginTop:3}}>
-              Your plan has been upgraded. All features are now unlocked.
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,marginBottom:8}}>
+              🎉 Payment Successful!
+            </div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:16,color:GREEN,marginBottom:12}}>
+              Welcome to {paymentToast === "pro" ? "Pro" : "Team"} Plan
+            </div>
+            <div style={{fontSize:13,color:SUB,lineHeight:1.6,marginBottom:24}}>
+              Your plan has been upgraded and all features are now unlocked. Check your Billing page to view your invoice and expiry date.
+            </div>
+            <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+              <button onClick={()=>{ setPaymentToast(null); setShowBilling(true); }}
+                style={{padding:"10px 22px",background:`linear-gradient(135deg,${PINK},#9D50FF)`,color:"#fff",border:"none",borderRadius:99,fontSize:14,fontWeight:700,cursor:"pointer"}}>
+                View Billing →
+              </button>
+              <button onClick={()=>setPaymentToast(null)}
+                style={{padding:"10px 22px",background:"#F9FAFB",color:SUB,border:`1px solid ${BORDER}`,borderRadius:99,fontSize:14,fontWeight:600,cursor:"pointer"}}>
+                Dismiss
+              </button>
             </div>
           </div>
-          <button onClick={()=>setPaymentToast(null)} style={{background:"none",border:"none",color:"rgba(255,255,255,.7)",cursor:"pointer",fontSize:20,padding:4,flexShrink:0}}>×</button>
         </div>
       )}
 
