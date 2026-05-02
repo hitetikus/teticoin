@@ -8729,6 +8729,7 @@ export default function App() {
   const [showCMJoin, setShowCMJoin] = useState(false);
   const [cmSession, setCmSession] = useState(null);
   const [paymentToast, setPaymentToast] = useState(null);
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(null); // { plan, expiry }
   const [showBetaWelcome, setShowBetaWelcome] = useState(false);
   const [claimToken, setClaimToken] = useState(null); // badge claim token from /claim/TOKEN URL
 
@@ -8913,14 +8914,28 @@ export default function App() {
           else if (p && p !== "free" && p !== "superadmin") {
             // Plan is paid but expiry missing — try direct fetch as fallback
             try {
-              const { getFirestore, doc, getDoc } = await import("firebase/firestore");
+              const { getFirestore, doc, getDoc, setDoc } = await import("firebase/firestore");
               const db2 = getFirestore();
               const exSnap = await getDoc(doc(db2, "users", user.uid, "data", "planExpiry"));
               if (exSnap.exists()) {
                 const exVal = exSnap.data().value;
-                if (exVal) setPlanExpiry(exVal);
+                if (exVal) { exp = exVal; setPlanExpiry(exVal); }
               }
-            } catch {}
+              // If still no expiry, the payment handler may have failed to save it.
+              // Only auto-recover if NOT returning from a fresh payment (avoid double-setting).
+              const params_ = new URLSearchParams(window.location.search);
+              if (!exp && !params_.get("payment")) {
+                // Set expiry to 30 days from today as recovery for paid plan with missing expiry
+                const recoveryExpiry = new Date();
+                recoveryExpiry.setDate(recoveryExpiry.getDate() + 30);
+                const recoveryStr = recoveryExpiry.toISOString();
+                await setDoc(doc(db2, "users", user.uid, "data", "planExpiry"), { value: recoveryStr, updatedAt: Date.now() });
+                await ss("planExpiry", recoveryStr);
+                exp = recoveryStr;
+                setPlanExpiry(recoveryStr);
+                console.log("planExpiry recovered:", recoveryStr);
+              }
+            } catch(e) { console.error("expiry fallback fetch failed:", e); }
           }
 
           // ── Handle payment return from Chip ──
@@ -8928,10 +8943,17 @@ export default function App() {
             const planVal = newPlan === "pro" ? "pro" : newPlan;
             setPlan(planVal);
             setPlanExpiry(newExpiry);
+            // Save plan first
             await ss("plan", planVal);
+            // Save expiry — primary path via ss(), plus direct Firestore write as safety net
             await ss("planExpiry", newExpiry);
-            setPaymentToast(newPlan); // show success banner
-            setTimeout(() => setPaymentToast(null), 6000);
+            try {
+              const { getFirestore, doc, setDoc } = await import("firebase/firestore");
+              const db2 = getFirestore();
+              const uid = user.uid;
+              await setDoc(doc(db2, "users", uid, "data", "planExpiry"), { value: newExpiry, updatedAt: Date.now() });
+            } catch(e) { console.error("planExpiry direct write failed:", e); }
+            setShowPaymentSuccess({ plan: planVal, expiry: newExpiry }); // show success modal
           }, exp); // pass current expiry for stacking
 
           // ── Restore the correct screen based on the current URL path ──
@@ -9201,7 +9223,36 @@ export default function App() {
       {limitModal && <LimitModal type={limitModal} onUpgrade={()=>{setLimitModal(null);openPricing();}} onClose={()=>setLimitModal(null)}/>}
       {creating && <CreateModal onConfirm={handleNew} onClose={()=>setCreating(false)} existingNames={sessions.map(s=>s.name)}/>}
 
-      {/* ── Payment success banner ── */}
+      {/* ── Payment success modal ── */}
+      {showPaymentSuccess && (
+        <div style={{position:"fixed",inset:0,zIndex:10000,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#fff",borderRadius:24,padding:"40px 32px",maxWidth:420,width:"100%",textAlign:"center",boxShadow:"0 32px 80px rgba(0,0,0,.25)",animation:"slideUp .3s ease"}}>
+            <div style={{width:72,height:72,borderRadius:"50%",background:`linear-gradient(135deg,${PINK},#9D50FF)`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:TEXT,marginBottom:8}}>
+              🎉 You're on Pro!
+            </div>
+            <div style={{fontSize:14,color:SUB,lineHeight:1.65,marginBottom:8}}>
+              Your payment was successful. All Pro features are now unlocked.
+            </div>
+            {showPaymentSuccess.expiry && (
+              <div style={{display:"inline-block",background:SOFT,border:`1px solid ${BORDER}`,borderRadius:999,padding:"6px 16px",fontSize:13,fontWeight:700,color:PINK,marginBottom:24}}>
+                Active until {new Date(showPaymentSuccess.expiry).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
+              </div>
+            )}
+            <div style={{fontSize:13,color:SUB,marginBottom:24,lineHeight:1.6}}>
+              Unlimited sessions · Up to 200 participants<br/>Groups, custom labels, Coinmaster &amp; more
+            </div>
+            <button onClick={()=>setShowPaymentSuccess(null)}
+              style={{width:"100%",padding:"13px",borderRadius:999,background:`linear-gradient(135deg,${PINK},#9D50FF)`,color:"#fff",border:"none",fontFamily:"Poppins,sans-serif",fontWeight:700,fontSize:15,cursor:"pointer"}}>
+              Start using Pro →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Payment success banner (legacy, kept for other flows) ── */}
       {paymentToast && (
         <div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",zIndex:9999,
           background:`linear-gradient(135deg,${GREEN},#06B6D4)`,color:"#fff",
