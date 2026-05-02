@@ -6837,9 +6837,9 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false, trainer=null) {
   *{box-sizing:border-box;margin:0;padding:0;}
   html,body{background:#f0f0f0;}
   .page{font-family:Inter,sans-serif;background:#fff;color:#111827;width:210mm;min-height:297mm;margin:0 auto;padding:14mm 16mm 14mm;font-size:13px;position:relative;overflow:hidden;}
-  /* Corner ribbon */
+  /* PAID corner ribbon */
   .ribbon{position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 96px 96px 0;border-color:transparent #16A34A transparent transparent;}
-  .ribbon span{position:absolute;top:22px;right:-84px;color:#fff;font-size:13px;font-weight:900;letter-spacing:2px;transform:rotate(45deg);text-shadow:0 1px 2px rgba(0,0,0,0.2);}
+  .ribbon span{position:absolute;top:22px;right:-84px;color:#fff;font-size:13px;font-weight:900;letter-spacing:2px;transform:rotate(45deg);}
   /* Header */
   .inv-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #E91E8C;margin-bottom:28px;}
   .brand-name{font-weight:800;font-size:22px;color:#E91E8C;letter-spacing:-0.5px;}
@@ -6850,6 +6850,7 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false, trainer=null) {
   /* Parties */
   .parties{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
   .party-box{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:14px 16px;}
+  .party-label-small{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#9CA3AF;margin-bottom:5px;}
   .party-name{font-size:14px;font-weight:700;color:#111827;margin-bottom:3px;}
   .party-detail{font-size:12px;color:#6B7280;line-height:1.7;}
   /* Meta */
@@ -6896,8 +6897,9 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false, trainer=null) {
       <div class="party-detail">Kuala Lumpur, Malaysia<br>hi.tetikus@gmail.com<br>www.teticoin.com</div>
     </div>
     <div class="party-box">
+      <div class="party-label-small">Bill to</div>
       <div class="party-name">${customerName}</div>
-      <div class="party-detail">${customerEmail}<br>${pd.name} Plan · ${pd.renewal === "monthly" ? "Monthly" : "Annual"}</div>
+      <div class="party-detail">${customerEmail}</div>
     </div>
   </div>
   <div class="meta-row">
@@ -6912,7 +6914,7 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false, trainer=null) {
     <tbody>
       <tr>
         <td class="desc">
-          Teticoin ${pd.name} Plan — ${pd.renewal === "monthly" ? "Monthly Subscription" : "Annual Subscription"}
+          Teticoin ${pd.name} Plan — ${pd.renewal === "monthly" ? "30-Day Subscription" : "365-Day Subscription"}
           <small>Real-time session gamification platform · www.teticoin.com</small>
         </td>
         <td>1</td>
@@ -9348,7 +9350,7 @@ export default function App() {
           </div>
         )}
         {/* Desktop top nav bar */}
-        <div className="tc-home-topnav" style={{display:"none",background:plan!=="free"?`linear-gradient(135deg,rgba(255,79,184,0.07) 0%,rgba(157,80,255,0.07) 100%)`:"#fff",borderBottom:plan!=="free"?`1px solid ${PINK}22`:`1px solid ${BORDER}`,padding:"0 32px",height:64,alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <div className="tc-home-topnav" style={{display:"none",background:plan!=="free"?"linear-gradient(90deg,#1D4ED8 0%,#06B6D4 40%,#ffffff 75%)":"#fff",borderBottom:plan!=="free"?"1px solid rgba(6,182,212,0.25)":`1px solid ${BORDER}`,padding:"0 32px",height:64,alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <Ham size={36}/>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
