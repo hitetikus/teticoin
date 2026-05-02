@@ -224,8 +224,8 @@ const CSS = `
 .lp-footer-bottom{max-width:1120px;margin:16px auto 0;border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;font-size:12px;text-align:center;color:rgba(255,255,255,0.2);}
 @media(max-width:900px){
   .lp-faq-grid{grid-template-columns:1fr !important;}
-  .lp-nav-links,.lp-nav .lp-btn-ghost{display:none;}
-  .lp-nav-login-icon{display:flex !important;}
+  .lp-nav-links,.lp-nav .lp-btn-ghost,.lp-btn-fill-desktop{display:none;}
+  .lp-nav-login-mobile{display:flex !important;}
   .lp-nav{padding:0 20px;}
   .lp-hero{padding:64px 20px 40px;}
   .lp-hero-screens{flex-direction:column;align-items:center;}
@@ -471,11 +471,12 @@ export default function LandingPage({ onGetStarted, onLogin }) {
         </div>
         <div className="lp-nav-actions">
           <button className="lp-btn-ghost" onClick={onLogin}>Log in</button>
-          <button className="lp-nav-login-icon" onClick={onLogin} title="Log in"
-            style={{display:"none",alignItems:"center",justifyContent:"center",width:36,height:36,borderRadius:"50%",border:"1.5px solid #E5E7EB",background:"none",cursor:"pointer",color:"#0A0A0F"}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          <button className="lp-nav-login-mobile" onClick={onLogin}
+            style={{display:"none",alignItems:"center",gap:6,padding:"8px 16px",borderRadius:999,border:"1.5px solid #E5E7EB",background:"none",cursor:"pointer",color:"#0A0A0F",fontFamily:"'DM Sans',sans-serif",fontWeight:600,fontSize:14}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Login
           </button>
-          <button className="lp-btn-fill" onClick={onGetStarted}>Get started free</button>
+          <button className="lp-btn-fill lp-btn-fill-desktop" onClick={onGetStarted}>Get started free</button>
         </div>
       </nav>
 

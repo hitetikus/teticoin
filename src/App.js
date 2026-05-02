@@ -5910,15 +5910,19 @@ const PAYMENT_CONFIG = {
 
 // ── Handle payment return from Chip ──
 // Call this on app load to detect ?payment=success&plan=xxx in URL
-async function handlePaymentReturn(onSuccess) {
+async function handlePaymentReturn(onSuccess, currentExpiry) {
   const params = new URLSearchParams(window.location.search);
   const payment = params.get("payment");
   const planParam = params.get("plan");
   if (payment === "success" && planParam && PAYMENT_CONFIG.planMap[planParam]) {
     const { plan, billing } = PAYMENT_CONFIG.planMap[planParam];
-    // Compute expiry: monthly = 31 days, yearly = 366 days (extra day buffer)
-    const expiry = new Date();
-    expiry.setDate(expiry.getDate() + (billing === "yearly" ? 366 : 31));
+    const daysToAdd = billing === "yearly" ? 365 : 30;
+    // Stack on top of current expiry if it's in the future, otherwise start from today
+    const baseDate = (currentExpiry && new Date(currentExpiry) > new Date())
+      ? new Date(currentExpiry)
+      : new Date();
+    const expiry = new Date(baseDate);
+    expiry.setDate(expiry.getDate() + daysToAdd);
     await onSuccess(plan, expiry.toISOString());
     // Clean URL
     window.history.replaceState({}, "", window.location.pathname);
@@ -6823,6 +6827,57 @@ function SettingsPage({ isPro=false, onClose }) {
 }
 
 // ── 4. Billing Page ──────────────────────────
+function printInvoice(inv, pd, planExpiry) {
+  const invoiceNum = "TC-" + (planExpiry ? new Date(planExpiry).getFullYear() : new Date().getFullYear()) + "-" + String(Math.abs(new Date(inv.date.replace(/ /g,"-")).getTime()) % 100000).padStart(5,"0");
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice ${invoiceNum}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:Inter,sans-serif;background:#fff;color:#111;padding:48px;max-width:680px;margin:0 auto;}
+  .logo{font-weight:800;font-size:22px;color:#E91E8C;margin-bottom:4px;}
+  .tagline{font-size:12px;color:#9CA3AF;margin-bottom:40px;}
+  .title{font-size:28px;font-weight:800;color:#111;margin-bottom:4px;}
+  .inv-num{font-size:13px;color:#6B7280;margin-bottom:32px;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px;}
+  .label{font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+  .value{font-size:14px;color:#111;font-weight:600;}
+  .line{border:none;border-top:1px solid #F3F4F6;margin:24px 0;}
+  table{width:100%;border-collapse:collapse;}
+  th{text-align:left;font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:8px 0;border-bottom:1px solid #F3F4F6;}
+  td{padding:12px 0;font-size:14px;color:#111;border-bottom:1px solid #F9FAFB;}
+  .total-row td{font-weight:800;font-size:16px;border-bottom:none;padding-top:16px;}
+  .badge{display:inline-block;background:#DCFCE7;color:#15803D;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;border:1px solid #BBF7D0;}
+  .footer{margin-top:48px;font-size:11px;color:#9CA3AF;line-height:1.7;}
+  @media print{body{padding:24px;}}
+</style></head><body>
+  <div class="logo">Teticoin</div>
+  <div class="tagline">by Tetikus · tetikus.com.my</div>
+  <div class="title">Tax Invoice</div>
+  <div class="inv-num">Invoice #${invoiceNum}</div>
+  <div class="grid">
+    <div><div class="label">Invoice Date</div><div class="value">${inv.date}</div></div>
+    <div><div class="label">Status</div><div class="value"><span class="badge">✓ PAID</span></div></div>
+    <div><div class="label">Subscription Period</div><div class="value">${inv.date} – ${planExpiry ? new Date(planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—"}</div></div>
+    <div><div class="label">Plan</div><div class="value">${pd.name} (${pd.renewal})</div></div>
+  </div>
+  <hr class="line"/>
+  <table>
+    <tr><th>Description</th><th style="text-align:right">Amount (MYR)</th></tr>
+    <tr><td>${pd.name} Plan — ${pd.renewal === "monthly" ? "1 Month" : "1 Year"} subscription<br><small style="color:#6B7280">teticoin.com · Real-time session gamification</small></td><td style="text-align:right">${inv.amount}</td></tr>
+    <tr class="total-row"><td>Total</td><td style="text-align:right">${inv.amount}</td></tr>
+  </table>
+  <hr class="line"/>
+  <div class="footer">
+    Payment processed by Chip (chip-in.asia) · All amounts in Malaysian Ringgit (MYR)<br>
+    Tetikus · Kuala Lumpur, Malaysia · hi.tetikus@gmail.com · tetikus.com.my<br>
+    This is a computer-generated receipt and is valid without a signature.
+  </div>
+  <script>window.onload=function(){window.print();}</script>
+</body></html>`;
+  const w = window.open("","_blank","width=720,height=900");
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
 function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, onUpgrade, onClose }) {
   const [cancelConfirm, setCancelConfirm] = useState(false);
 
@@ -6843,13 +6898,23 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
   const isFree = plan==="free";
   const isBetaPlan = plan==="beta";
   // Build a single real invoice from the expiry date (payment date = expiry minus billing period)
+  // Build invoice history from planExpiry. Each "invoice" is one payment period.
+  // payDate = expiry - period length. We store multiple if renewals stacked.
   const invoices = plan!=="free" && planExpiry ? (() => {
     const expDate = new Date(planExpiry);
     const isYearly = plan === "proY";
+    const periodDays = isYearly ? 365 : 30;
     const payDate = new Date(expDate);
-    payDate.setDate(payDate.getDate() - (isYearly ? 366 : 31));
+    payDate.setDate(payDate.getDate() - periodDays);
     return [{ date: payDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid" }];
   })() : [];
+  
+  const renewLink = plan === "proY"
+    ? "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
+    : "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL";
+  const daysLeft = planExpiry ? Math.ceil((new Date(planExpiry) - new Date()) / (1000*60*60*24)) : null;
+  const isExpiringSoon = daysLeft !== null && daysLeft <= 7 && daysLeft > 0;
+  const isExpired = daysLeft !== null && daysLeft <= 0;
 
   return (
     <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -6902,13 +6967,24 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
                   {!isFree && pd.renewal!=="one-time" && <div style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</div>}
                 </div>
               )}
-              <div style={{fontSize:12,color:isFree?SUB:isBetaPlan?"#065F46":pd.color,fontWeight:500,marginTop:6}}>
+              <div style={{fontSize:12,color:isFree?SUB:isBetaPlan?"#065F46":isExpired?"#EF4444":isExpiringSoon?"#F97316":pd.color,fontWeight:500,marginTop:6}}>
                 {isFree
                   ? "No time limit · No card required"
                   : isBetaPlan
                     ? `Beta access until ${pd.next || "—"}`
-                    : pd.next ? `Renews ${pd.next}` : "Active subscription"}
+                    : isExpired
+                      ? `⚠ Expired ${pd.next || "—"} — renew to continue`
+                      : isExpiringSoon
+                        ? `⚡ Expires in ${daysLeft} day${daysLeft===1?"":"s"} — ${pd.next}`
+                        : pd.next ? `Expires ${pd.next}` : "Active subscription"}
               </div>
+              {!isFree && !isBetaPlan && (
+                <a href={renewLink} target="_blank" rel="noopener noreferrer"
+                  style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:10,padding:"8px 16px",background:isExpired||isExpiringSoon?GRAD:"none",border:`1.5px solid ${PINK}`,borderRadius:99,fontSize:12,fontWeight:700,color:isExpired||isExpiringSoon?"#fff":PINK,cursor:"pointer",textDecoration:"none",transition:"all .15s"}}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  {isExpired ? "Reactivate Plan" : "Renew Early"}
+                </a>
+              )}
             </div>
 
             {/* Bottom: feature list — always white, no extra border */}
@@ -7043,13 +7119,19 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
             ) : (
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:20}}>
                 {invoices.map((inv,i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none"}}>
-                    <div style={{flex:1}}>
+                  <div key={i} style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none",flexWrap:"wrap",gap:8}}>
+                    <div style={{flex:1,minWidth:0}}>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{inv.date}</div>
                       <div style={{fontSize:12,color:SUB,marginTop:1}}>{pd.name} Plan · {pd.renewal}</div>
                     </div>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:12}}>{inv.amount}</div>
-                    <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN}}>{inv.status}</div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:8}}>{inv.amount}</div>
+                    <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN,marginRight:8}}>{inv.status}</div>
+                    <button onClick={()=>printInvoice(inv,pd,planExpiry)}
+                      title="View & download invoice"
+                      style={{padding:"5px 12px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap"}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                      PDF
+                    </button>
                   </div>
                 ))}
               </div>
@@ -7081,13 +7163,19 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
           ) : (
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
               {invoices.map((inv,i)=>(
-                <div key={i} style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none"}}>
-                  <div style={{flex:1}}>
+                <div key={i} style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none",flexWrap:"wrap",gap:8}}>
+                  <div style={{flex:1,minWidth:0}}>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{inv.date}</div>
                     <div style={{fontSize:12,color:SUB,marginTop:1}}>{pd.name} Plan · {pd.renewal}</div>
                   </div>
-                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:12}}>{inv.amount}</div>
-                  <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN}}>{inv.status}</div>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:8}}>{inv.amount}</div>
+                  <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN,marginRight:8}}>{inv.status}</div>
+                  <button onClick={()=>printInvoice(inv,pd,planExpiry)}
+                    title="View & download invoice"
+                    style={{padding:"5px 12px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap"}}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    PDF
+                  </button>
                 </div>
               ))}
             </div>
@@ -7358,10 +7446,19 @@ function SuperAdminDashboard({ onClose }) {
   const PLAN_COLORS = { free: SUB, beta: GREEN, pro: PINK, proY: PINK, oneTime: BLUE, superadmin: "#FF6B00" };
   const PLAN_LABELS = { free:"Free", beta:"Beta Pro", pro:"Pro", proY:"Pro Yearly", oneTime:"One-Time", superadmin:"Superadmin" };
 
-  const filtered = users.filter(u =>
-    u.email.toLowerCase().includes(search.toLowerCase()) ||
-    u.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const [statsFilter, setStatsFilter] = useState(null); // null=all, "pro", "beta", "free"
+  const [sortAlpha, setSortAlpha] = useState(false);
+
+  const filtered = users.filter(u => {
+    const matchSearch = u.email.toLowerCase().includes(search.toLowerCase()) ||
+      u.name.toLowerCase().includes(search.toLowerCase());
+    if (!matchSearch) return false;
+    if (!statsFilter || statsFilter === "all") return true;
+    if (statsFilter === "pro") return u.plan === "pro" || u.plan === "proY" || u.plan === "oneTime";
+    if (statsFilter === "beta") return u.plan === "beta";
+    if (statsFilter === "free") return u.plan === "free";
+    return true;
+  }).sort((a, b) => sortAlpha ? a.name.localeCompare(b.name) : 0);
 
   const stats = {
     total: users.length,
@@ -7388,18 +7485,28 @@ function SuperAdminDashboard({ onClose }) {
       </div>
 
       {/* Stats bar */}
-      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",gap:16,flexShrink:0,overflowX:"auto"}}>
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",gap:12,flexShrink:0,overflowX:"auto",alignItems:"center"}}>
         {[
-          {label:"Total Users", val:stats.total, color:TEXT},
-          {label:"Pro / Paid", val:stats.pro, color:PINK},
-          {label:"Beta Testers", val:stats.beta, color:GREEN},
-          {label:"Free", val:stats.free, color:SUB},
-        ].map(s => (
-          <div key={s.label} style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"10px 18px",flexShrink:0,minWidth:100,textAlign:"center"}}>
-            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:s.color}}>{loading ? "…" : s.val}</div>
-            <div style={{fontSize:11,color:SUB,fontWeight:600,marginTop:2}}>{s.label}</div>
-          </div>
-        ))}
+          {label:"Total Users", val:stats.total, color:TEXT, key:"all"},
+          {label:"Pro / Paid", val:stats.pro, color:PINK, key:"pro"},
+          {label:"Beta Testers", val:stats.beta, color:GREEN, key:"beta"},
+          {label:"Free", val:stats.free, color:SUB, key:"free"},
+        ].map(s => {
+          const isActive = statsFilter === s.key || (s.key === "all" && !statsFilter);
+          return (
+            <div key={s.label} onClick={()=>{ setStatsFilter(isActive ? null : s.key); setSearch(""); setSelected(new Set()); }}
+              style={{background:isActive?`${s.color}10`:"#fff",border:`1.5px solid ${isActive?s.color:BORDER}`,borderRadius:12,padding:"10px 18px",flexShrink:0,minWidth:100,textAlign:"center",cursor:"pointer",transition:"all .15s"}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:s.color}}>{loading ? "…" : s.val}</div>
+              <div style={{fontSize:11,color:isActive?s.color:SUB,fontWeight:600,marginTop:2}}>{s.label}</div>
+            </div>
+          );
+        })}
+        {statsFilter && (
+          <button onClick={()=>{setStatsFilter(null);setSearch("");}}
+            style={{marginLeft:4,padding:"6px 12px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:12,color:SUB,cursor:"pointer",flexShrink:0}}>
+            ✕ Clear filter
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -7425,9 +7532,14 @@ function SuperAdminDashboard({ onClose }) {
       <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
 
         {tab === "users" && <>
-          {/* Search + Select All */}
+          {/* Search + Sort + Select All */}
           <div style={{marginBottom:12,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
             <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:200,maxWidth:480}}/>
+            <button onClick={()=>setSortAlpha(a=>!a)}
+              style={{padding:"8px 14px",background:sortAlpha?SOFT:"#fff",border:`1.5px solid ${sortAlpha?PINK:BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:sortAlpha?PINK:SUB,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap"}}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="9" y2="18"/></svg>
+              A→Z
+            </button>
             {!loading && filtered.length > 0 && (
               <button onClick={()=>selected.size===filtered.length?setSelected(new Set()):setSelected(new Set(filtered.map(u=>u.uid)))}
                 style={{padding:"8px 14px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
@@ -7435,6 +7547,13 @@ function SuperAdminDashboard({ onClose }) {
               </button>
             )}
           </div>
+          {statsFilter && (
+            <div style={{marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:12,color:SUB}}>Showing: <strong style={{color:TEXT}}>
+                {statsFilter==="pro"?"Pro / Paid":statsFilter==="beta"?"Beta Testers":"Free"} ({filtered.length})
+              </strong></span>
+            </div>
+          )}
 
           {/* Bulk action bar */}
           {selected.size > 0 && (
@@ -8643,7 +8762,7 @@ export default function App() {
             await ss("planExpiry", newExpiry);
             setPaymentToast(newPlan); // show success banner
             setTimeout(() => setPaymentToast(null), 6000);
-          });
+          }, exp); // pass current expiry so renewal stacks correctly
 
           // ── Restore the correct screen based on the current URL path ──
           const restorePath = window.location.pathname;
