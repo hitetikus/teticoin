@@ -6836,7 +6836,7 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false) {
   html,body{background:#f0f0f0;}
   .page{font-family:Inter,sans-serif;background:#fff;color:#111827;width:210mm;min-height:297mm;margin:0 auto;padding:14mm 16mm 14mm;font-size:13px;position:relative;}
   /* PAID watermark stamp */
-  .paid-stamp{position:absolute;top:48px;right:52px;border:4px solid #16A34A;border-radius:8px;padding:6px 18px;font-size:28px;font-weight:900;color:#16A34A;letter-spacing:3px;transform:rotate(-8deg);opacity:0.85;pointer-events:none;}
+  .paid-stamp{position:fixed;top:18px;right:-18px;border:4px solid #16A34A;border-radius:8px;padding:8px 32px 8px 20px;font-size:26px;font-weight:900;color:#16A34A;letter-spacing:4px;transform:rotate(12deg);opacity:0.9;pointer-events:none;background:#fff;}
   /* Header */
   .inv-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #E91E8C;margin-bottom:28px;}
   .brand-name{font-weight:800;font-size:22px;color:#E91E8C;letter-spacing:-0.5px;}
@@ -6892,7 +6892,7 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false) {
     <div class="party-box">
       <div class="party-label">From (Seller)</div>
       <div class="party-name">Alev Global Sdn Bhd</div>
-      <div class="party-detail">Teticoin Platform<br>Kuala Lumpur, Malaysia<br>hi.tetikus@gmail.com<br>www.teticoin.com</div>
+      <div class="party-detail">Kuala Lumpur, Malaysia<br>hi.tetikus@gmail.com<br>www.teticoin.com</div>
     </div>
     <div class="party-box">
       <div class="party-label">Billed To (Customer)</div>
