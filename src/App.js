@@ -6829,19 +6829,22 @@ function SettingsPage({ isPro=false, onClose }) {
 function printInvoice(inv, pd, planExpiry, viewOnly=false, trainer=null) {
   const invDate = new Date(inv.date.replace(/ /g, "-").replace(/([0-9]+)-([A-Za-z]+)-([0-9]+)/, (m,d,mo,y)=>`${d} ${mo} ${y}`));
   const invoiceNum = "TC-" + (planExpiry ? new Date(planExpiry).getFullYear() : new Date().getFullYear()) + "-" + String(Math.abs(invDate.getTime()) % 100000).padStart(5,"0");
+  const customerName = trainer && trainer.name ? trainer.name : (pd.name + " Plan Subscriber");
+  const customerEmail = trainer && trainer.email ? trainer.email : "";
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice ${invoiceNum} · Teticoin</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
   html,body{background:#f0f0f0;}
-  .page{font-family:Inter,sans-serif;background:#fff;color:#111827;width:210mm;min-height:297mm;margin:0 auto;padding:14mm 16mm 14mm;font-size:13px;position:relative;}
-  /* PAID watermark stamp */
-  .paid-stamp{position:fixed;top:18px;right:-18px;border:4px solid #16A34A;border-radius:8px;padding:8px 32px 8px 20px;font-size:26px;font-weight:900;color:#16A34A;letter-spacing:4px;transform:rotate(12deg);opacity:0.9;pointer-events:none;background:#fff;}
+  .page{font-family:Inter,sans-serif;background:#fff;color:#111827;width:210mm;min-height:297mm;margin:0 auto;padding:14mm 16mm 14mm;font-size:13px;position:relative;overflow:hidden;}
+  /* Corner ribbon */
+  .ribbon{position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 96px 96px 0;border-color:transparent #16A34A transparent transparent;}
+  .ribbon span{position:absolute;top:22px;right:-84px;color:#fff;font-size:13px;font-weight:900;letter-spacing:2px;transform:rotate(45deg);text-shadow:0 1px 2px rgba(0,0,0,0.2);}
   /* Header */
   .inv-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #E91E8C;margin-bottom:28px;}
   .brand-name{font-weight:800;font-size:22px;color:#E91E8C;letter-spacing:-0.5px;}
   .brand-sub{font-size:10px;color:#9CA3AF;margin-top:3px;line-height:1.6;}
-  .inv-title-block{text-align:right;}
+  .inv-title-block{text-align:right;padding-right:60px;}
   .inv-title{font-size:26px;font-weight:800;color:#111827;letter-spacing:-0.5px;}
   .inv-num{font-size:12px;color:#6B7280;margin-top:3px;font-weight:600;}
   /* Parties */
@@ -6850,7 +6853,7 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false, trainer=null) {
   .party-name{font-size:14px;font-weight:700;color:#111827;margin-bottom:3px;}
   .party-detail{font-size:12px;color:#6B7280;line-height:1.7;}
   /* Meta */
-  .meta-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px;}
+  .meta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
   .meta-cell{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:10px 12px;}
   .meta-cell .mlabel{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9CA3AF;margin-bottom:4px;}
   .meta-cell .mval{font-size:12px;font-weight:600;color:#111827;}
@@ -6876,7 +6879,7 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false, trainer=null) {
   @media print{html,body{background:#fff;} .page{box-shadow:none;} .no-print{display:none;}}
 </style></head><body>
 <div class="page">
-  <div class="paid-stamp">PAID</div>
+  <div class="ribbon"><span>PAID</span></div>
   <div class="inv-header">
     <div>
       <div class="brand-name">Teticoin</div>
@@ -6893,13 +6896,12 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false, trainer=null) {
       <div class="party-detail">Kuala Lumpur, Malaysia<br>hi.tetikus@gmail.com<br>www.teticoin.com</div>
     </div>
     <div class="party-box">
-      <div class="party-name">${trainer ? trainer.name : "Teticoin Subscriber"}</div>
-      <div class="party-detail">${trainer && trainer.email ? trainer.email : ""}<br>Plan: ${pd.name} (${pd.renewal === "monthly" ? "Monthly" : "Annual"})</div>
+      <div class="party-name">${customerName}</div>
+      <div class="party-detail">${customerEmail}<br>${pd.name} Plan · ${pd.renewal === "monthly" ? "Monthly" : "Annual"}</div>
     </div>
   </div>
   <div class="meta-row">
     <div class="meta-cell"><div class="mlabel">Invoice Date</div><div class="mval">${inv.date}</div></div>
-    <div class="meta-cell"><div class="mlabel">Plan</div><div class="mval">${pd.name} · ${pd.renewal === "monthly" ? "Monthly" : "Annual"}</div></div>
     <div class="meta-cell"><div class="mlabel">Status</div><div class="mval" style="color:#16A34A;font-weight:700;">✓ Paid</div></div>
   </div>
   <div class="items-label">Items</div>
@@ -9346,7 +9348,7 @@ export default function App() {
           </div>
         )}
         {/* Desktop top nav bar */}
-        <div className="tc-home-topnav" style={{display:"none",background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"0 32px",height:64,alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <div className="tc-home-topnav" style={{display:"none",background:plan!=="free"?`linear-gradient(135deg,rgba(255,79,184,0.07) 0%,rgba(157,80,255,0.07) 100%)`:"#fff",borderBottom:plan!=="free"?`1px solid ${PINK}22`:`1px solid ${BORDER}`,padding:"0 32px",height:64,alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <Ham size={36}/>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
