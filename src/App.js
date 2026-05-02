@@ -9372,7 +9372,7 @@ export default function App() {
             </div>
             <div style={{textAlign:"left"}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,lineHeight:1.2}}>{trainer?.name}</div>
-              <div style={{fontSize:11,fontWeight:700,WebkitTextFillColor:plan==="free"?SUB:"transparent",WebkitBackgroundClip:plan!=="free"?"text":"unset",background:plan==="superadmin"?"linear-gradient(135deg,#EF4444,#B91C1C)":plan==="beta"?"linear-gradient(135deg,#06B6D4,#16A34A)":plan!=="free"?GRAD:"none",lineHeight:1.3,display:"inline-block"}}>{planLabel}</div>
+              <div style={{fontSize:11,fontWeight:700,color:plan==="superadmin"?"#EF4444":plan==="beta"?"#16A34A":plan!=="free"?"#1D4ED8":SUB,lineHeight:1.3}}>{planLabel}</div>
             </div>
             {homeEarnings && (
               <>
