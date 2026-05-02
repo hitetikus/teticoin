@@ -6900,10 +6900,32 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false) {
   if (w) { w.document.write(html); w.document.close(); }
 }
 
-function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, onUpgrade, onClose }) {
+function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount=0, maxPax=0, onUpgrade, onClose }) {
   const [cancelConfirm, setCancelConfirm] = useState(false);
+  // Always fetch fresh planExpiry from Firebase on mount — the prop may be stale
+  const [planExpiry, setPlanExpiry_] = useState(planExpiryProp);
+  const [expiryLoading, setExpiryLoading] = useState(!planExpiryProp);
+  useEffect(() => {
+    if (planExpiryProp) { setExpiryLoading(false); return; } // already have it from prop
+    async function fetchExpiry() {
+      try {
+        const { getFirestore, doc, getDoc } = await import("firebase/firestore");
+        const db = getFirestore();
+        const { getAuth } = await import("firebase/auth");
+        const uid = getAuth().currentUser?.uid;
+        if (!uid) { setExpiryLoading(false); return; }
+        const snap = await getDoc(doc(db, "users", uid, "data", "planExpiry"));
+        if (snap.exists()) {
+          const val = snap.data().value;
+          if (val) setPlanExpiry_(val);
+        }
+      } catch {}
+      setExpiryLoading(false);
+    }
+    fetchExpiry();
+  }, []);
 
-  // Format real expiry date, or fall back to a rough estimate label
+  // Format real expiry date
   const expiryLabel = planExpiry
     ? new Date(planExpiry).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" })
     : null;
@@ -7008,7 +7030,7 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
                         ? `⚡ Expires in ${daysLeft} day${daysLeft===1?"":"s"} — ${expiryLabel}`
                         : expiryLabel
                           ? `Your ${pd.name} plan expires on: ${expiryLabel}`
-                          : "Active subscription"}
+                          : expiryLoading ? "Loading plan details…" : "Active subscription"}
                   </div>
                   {/* Renew button — small, pill-style */}
                   {isPaidPro && (
@@ -7156,7 +7178,7 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
                 </div>
                 <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>No invoices yet</div>
                 <div style={{fontSize:13,color:SUB}}>
-                  {!isFree ? "Invoice will appear once your plan expiry date is confirmed. Try closing and reopening Billing." : "Invoices will appear here after your first payment."}
+                  {!isFree && expiryLoading ? "Loading invoice data…" : !isFree ? "Invoice will appear once your plan expiry date is confirmed. Try closing and reopening Billing." : "Invoices will appear here after your first payment."}
                 </div>
               </div>
             ) : (
@@ -8843,6 +8865,18 @@ export default function App() {
           }
           if (p) setPlan(p);
           if (exp) setPlanExpiry(exp);
+          else if (p && p !== "free" && p !== "superadmin") {
+            // Plan is paid but expiry missing — try direct fetch as fallback
+            try {
+              const { getFirestore, doc, getDoc } = await import("firebase/firestore");
+              const db2 = getFirestore();
+              const exSnap = await getDoc(doc(db2, "users", user.uid, "data", "planExpiry"));
+              if (exSnap.exists()) {
+                const exVal = exSnap.data().value;
+                if (exVal) setPlanExpiry(exVal);
+              }
+            } catch {}
+          }
 
           // ── Handle payment return from Chip ──
           const upgraded = await handlePaymentReturn(async (newPlan, newExpiry) => {
