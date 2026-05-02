@@ -5917,14 +5917,13 @@ async function handlePaymentReturn(onSuccess, currentExpiry) {
   if (payment === "success" && planParam && PAYMENT_CONFIG.planMap[planParam]) {
     const { plan, billing } = PAYMENT_CONFIG.planMap[planParam];
     const daysToAdd = billing === "yearly" ? 365 : 30;
-    // Stack on top of current expiry if it's in the future, otherwise start from today
+    // Stack on current expiry if still active, otherwise start from today
     const baseDate = (currentExpiry && new Date(currentExpiry) > new Date())
       ? new Date(currentExpiry)
       : new Date();
     const expiry = new Date(baseDate);
     expiry.setDate(expiry.getDate() + daysToAdd);
     await onSuccess(plan, expiry.toISOString());
-    // Clean URL
     window.history.replaceState({}, "", window.location.pathname);
     return true;
   }
@@ -6827,54 +6826,77 @@ function SettingsPage({ isPro=false, onClose }) {
 }
 
 // ── 4. Billing Page ──────────────────────────
-function printInvoice(inv, pd, planExpiry) {
-  const invoiceNum = "TC-" + (planExpiry ? new Date(planExpiry).getFullYear() : new Date().getFullYear()) + "-" + String(Math.abs(new Date(inv.date.replace(/ /g,"-")).getTime()) % 100000).padStart(5,"0");
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice ${invoiceNum}</title>
+function printInvoice(inv, pd, planExpiry, viewOnly=false) {
+  const invDate = new Date(inv.date.replace(/ /g, "-").replace(/([0-9]+)-([A-Za-z]+)-([0-9]+)/, (m,d,mo,y)=>`${d} ${mo} ${y}`));
+  const invoiceNum = "TC-" + (planExpiry ? new Date(planExpiry).getFullYear() : new Date().getFullYear()) + "-" + String(Math.abs(invDate.getTime()) % 100000).padStart(5,"0");
+  const periodEnd = planExpiry ? new Date(planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice ${invoiceNum} · Teticoin</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:Inter,sans-serif;background:#fff;color:#111;padding:48px;max-width:680px;margin:0 auto;}
-  .logo{font-weight:800;font-size:22px;color:#E91E8C;margin-bottom:4px;}
-  .tagline{font-size:12px;color:#9CA3AF;margin-bottom:40px;}
-  .title{font-size:28px;font-weight:800;color:#111;margin-bottom:4px;}
-  .inv-num{font-size:13px;color:#6B7280;margin-bottom:32px;}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px;}
-  .label{font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
-  .value{font-size:14px;color:#111;font-weight:600;}
-  .line{border:none;border-top:1px solid #F3F4F6;margin:24px 0;}
+  body{font-family:Inter,sans-serif;background:#fff;color:#111827;padding:52px 56px;max-width:720px;margin:0 auto;font-size:14px;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;}
+  .logo{font-weight:800;font-size:24px;background:linear-gradient(135deg,#E91E8C,#FF4FB8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .logo-sub{font-size:11px;color:#9CA3AF;margin-top:2px;}
+  .inv-label{text-align:right;}
+  .inv-label .title{font-size:28px;font-weight:800;color:#111827;}
+  .inv-label .num{font-size:12px;color:#6B7280;margin-top:4px;}
+  .section{margin-bottom:28px;}
+  .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9CA3AF;margin-bottom:5px;}
+  .value{font-size:14px;font-weight:600;color:#111827;line-height:1.5;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:32px;}
+  .divider{border:none;border-top:1px solid #F3F4F6;margin:24px 0;}
   table{width:100%;border-collapse:collapse;}
-  th{text-align:left;font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:8px 0;border-bottom:1px solid #F3F4F6;}
-  td{padding:12px 0;font-size:14px;color:#111;border-bottom:1px solid #F9FAFB;}
-  .total-row td{font-weight:800;font-size:16px;border-bottom:none;padding-top:16px;}
-  .badge{display:inline-block;background:#DCFCE7;color:#15803D;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;border:1px solid #BBF7D0;}
-  .footer{margin-top:48px;font-size:11px;color:#9CA3AF;line-height:1.7;}
-  @media print{body{padding:24px;}}
+  thead tr{border-bottom:2px solid #F3F4F6;}
+  th{padding:10px 0;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9CA3AF;}
+  th:last-child,td:last-child{text-align:right;}
+  tbody tr{border-bottom:1px solid #F9FAFB;}
+  td{padding:14px 0;font-size:14px;color:#111827;vertical-align:top;}
+  td.desc small{display:block;font-size:12px;color:#6B7280;margin-top:2px;}
+  .total-section{display:flex;justify-content:flex-end;margin-top:20px;}
+  .total-box{min-width:220px;}
+  .total-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;}
+  .total-row.grand{font-size:17px;font-weight:800;border-top:2px solid #E5E7EB;padding-top:12px;margin-top:4px;}
+  .badge{display:inline-flex;align-items:center;gap:5px;background:#DCFCE7;color:#15803D;font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;border:1px solid #BBF7D0;}
+  .footer{margin-top:48px;padding-top:24px;border-top:1px solid #F3F4F6;font-size:11px;color:#9CA3AF;line-height:1.8;}
+  @media print{body{padding:32px;} .no-print{display:none;}}
 </style></head><body>
-  <div class="logo">Teticoin</div>
-  <div class="tagline">by Tetikus · tetikus.com.my</div>
-  <div class="title">Tax Invoice</div>
-  <div class="inv-num">Invoice #${invoiceNum}</div>
+  <div class="header">
+    <div><div class="logo">Teticoin</div><div class="logo-sub">by Tetikus · tetikus.com.my</div></div>
+    <div class="inv-label"><div class="title">Tax Invoice</div><div class="num">Invoice #${invoiceNum}</div></div>
+  </div>
   <div class="grid">
-    <div><div class="label">Invoice Date</div><div class="value">${inv.date}</div></div>
-    <div><div class="label">Status</div><div class="value"><span class="badge">✓ PAID</span></div></div>
-    <div><div class="label">Subscription Period</div><div class="value">${inv.date} – ${planExpiry ? new Date(planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—"}</div></div>
-    <div><div class="label">Plan</div><div class="value">${pd.name} (${pd.renewal})</div></div>
+    <div class="section"><div class="label">Invoice Date</div><div class="value">${inv.date}</div></div>
+    <div class="section"><div class="label">Status</div><div class="value"><span class="badge">✓ PAID</span></div></div>
+    <div class="section"><div class="label">Billing Period</div><div class="value">${inv.date} → ${periodEnd}</div></div>
+    <div class="section"><div class="label">Plan</div><div class="value">${pd.name} (${pd.renewal})</div></div>
   </div>
-  <hr class="line"/>
+  <hr class="divider"/>
   <table>
-    <tr><th>Description</th><th style="text-align:right">Amount (MYR)</th></tr>
-    <tr><td>${pd.name} Plan — ${pd.renewal === "monthly" ? "1 Month" : "1 Year"} subscription<br><small style="color:#6B7280">teticoin.com · Real-time session gamification</small></td><td style="text-align:right">${inv.amount}</td></tr>
-    <tr class="total-row"><td>Total</td><td style="text-align:right">${inv.amount}</td></tr>
+    <thead><tr><th>Description</th><th>Qty</th><th>Amount (MYR)</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="desc">${pd.name} Plan — ${pd.renewal==="monthly"?"Monthly subscription":"Annual subscription"}<small>Teticoin · Real-time session gamification platform<br>teticoin.com / teticoin.tetikus.com.my</small></td>
+        <td>1</td>
+        <td>${inv.amount}</td>
+      </tr>
+    </tbody>
   </table>
-  <hr class="line"/>
-  <div class="footer">
-    Payment processed by Chip (chip-in.asia) · All amounts in Malaysian Ringgit (MYR)<br>
-    Tetikus · Kuala Lumpur, Malaysia · hi.tetikus@gmail.com · tetikus.com.my<br>
-    This is a computer-generated receipt and is valid without a signature.
+  <div class="total-section">
+    <div class="total-box">
+      <div class="total-row"><span>Subtotal</span><span>${inv.amount}</span></div>
+      <div class="total-row"><span>Tax (0%)</span><span>—</span></div>
+      <div class="total-row grand"><span>Total Paid</span><span>${inv.amount}</span></div>
+    </div>
   </div>
-  <script>window.onload=function(){window.print();}</script>
+  <div class="footer">
+    Payment processed securely by <strong>Chip</strong> (chip-in.asia) · All amounts in Malaysian Ringgit (MYR)<br>
+    Issued by: <strong>Tetikus</strong> · Kuala Lumpur, Malaysia · hi.tetikus@gmail.com · tetikus.com.my<br>
+    This is a computer-generated receipt. Valid without a physical signature.
+  </div>
+  ${viewOnly?"":"<script>window.onload=function(){window.print();}<\/script>"}
 </body></html>`;
-  const w = window.open("","_blank","width=720,height=900");
+  const w = window.open("","_blank","width=780,height=960");
   if (w) { w.document.write(html); w.document.close(); }
 }
 
@@ -6897,24 +6919,22 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
   const pd = planData[plan] || planData.free;
   const isFree = plan==="free";
   const isBetaPlan = plan==="beta";
-  // Build a single real invoice from the expiry date (payment date = expiry minus billing period)
-  // Build invoice history from planExpiry. Each "invoice" is one payment period.
-  // payDate = expiry - period length. We store multiple if renewals stacked.
+  const isPaidPro = plan==="pro" || plan==="proY";
+  const daysLeft = planExpiry ? Math.ceil((new Date(planExpiry)-new Date())/(1000*60*60*24)) : null;
+  const isExpiringSoon = daysLeft!==null && daysLeft<=7 && daysLeft>0;
+  const isExpired = daysLeft!==null && daysLeft<=0;
+  const renewLink = plan==="proY"
+    ? "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
+    : "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL";
+  // Build invoice history from payment date (expiry - period)
   const invoices = plan!=="free" && planExpiry ? (() => {
     const expDate = new Date(planExpiry);
     const isYearly = plan === "proY";
     const periodDays = isYearly ? 365 : 30;
     const payDate = new Date(expDate);
     payDate.setDate(payDate.getDate() - periodDays);
-    return [{ date: payDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid" }];
+    return [{ date: payDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid", expiry:expiryLabel }];
   })() : [];
-  
-  const renewLink = plan === "proY"
-    ? "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
-    : "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL";
-  const daysLeft = planExpiry ? Math.ceil((new Date(planExpiry) - new Date()) / (1000*60*60*24)) : null;
-  const isExpiringSoon = daysLeft !== null && daysLeft <= 7 && daysLeft > 0;
-  const isExpired = daysLeft !== null && daysLeft <= 0;
 
   return (
     <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -6943,46 +6963,69 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
             <div style={{
               margin:12,
               borderRadius:14,
-              border: isFree ? `2px solid ${TEXT}` : `1.5px solid ${pd.color+"66"}`,
+              border: isFree ? `2px solid ${TEXT}` : isExpired ? "1.5px solid #EF444440" : `1.5px solid ${pd.color+"66"}`,
               background: isFree
                 ? "#fff"
                 : isBetaPlan
                   ? "linear-gradient(135deg,#D1FAE5,#A7F3D0)"
-                  : pd.color===PINK
-                    ? `linear-gradient(135deg,${SOFT},#FFD6EE)`
-                    : "linear-gradient(135deg,#EDE9FE,#DDD6FE)",
+                  : isExpired
+                    ? "linear-gradient(135deg,#FEF2F2,#FEE2E2)"
+                    : pd.color===PINK
+                      ? `linear-gradient(135deg,${SOFT},#FFD6EE)`
+                      : "linear-gradient(135deg,#EDE9FE,#DDD6FE)",
               padding:"18px 16px 16px",
             }}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:isFree?TEXT:pd.color}}>{pd.name}</div>
-                <div style={{background:isFree?"#F3F4F6":`${pd.color}18`,border:`1.5px solid ${isFree?BORDER:pd.color+"44"}`,borderRadius:99,padding:"4px 14px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isFree?SUB:pd.color}}>
-                  {isBetaPlan?"Beta Access":"Active"}
+              {/* Plan name + status badge */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:28,
+                  background:isFree?"none":isBetaPlan?"none":isExpired?"none":GRAD,
+                  WebkitBackgroundClip:isFree||isBetaPlan||isExpired?"unset":"text",
+                  WebkitTextFillColor:isFree||isBetaPlan||isExpired?"unset":"transparent",
+                  color:isFree?TEXT:isBetaPlan?"#065F46":isExpired?"#EF4444":pd.color}}>
+                  {pd.name}
+                </div>
+                <div style={{background:isExpired?"#FEE2E2":isFree?"#F3F4F6":`${pd.color}18`,border:`1.5px solid ${isExpired?"#EF444440":isFree?BORDER:pd.color+"44"}`,borderRadius:99,padding:"4px 14px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isExpired?"#EF4444":isFree?SUB:pd.color}}>
+                  {isExpired?"Expired":isBetaPlan?"Beta Access":"Active"}
                 </div>
               </div>
-              {isBetaPlan ? (
-                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:17,color:"#065F46"}}>Full Pro — Complimentary</div>
-              ) : (
-                <div style={{display:"flex",alignItems:"baseline",gap:4}}>
-                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:34,color:isFree?TEXT:pd.color,lineHeight:1}}>{pd.price}</div>
-                  {!isFree && pd.renewal!=="one-time" && <div style={{fontSize:14,fontWeight:600,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</div>}
+
+              {/* Price line */}
+              {!isBetaPlan && (
+                <div style={{display:"flex",alignItems:"baseline",gap:4,marginBottom:8}}>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:isFree?TEXT:SUB}}>
+                    {isFree?"Free forever":pd.price}
+                  </div>
+                  {!isFree && pd.renewal!=="one-time" && <div style={{fontSize:13,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</div>}
                 </div>
               )}
-              <div style={{fontSize:12,color:isFree?SUB:isBetaPlan?"#065F46":isExpired?"#EF4444":isExpiringSoon?"#F97316":pd.color,fontWeight:500,marginTop:6}}>
+
+              {/* Expiry/status line */}
+              <div style={{fontSize:13,fontWeight:600,marginBottom:isPaidPro?12:0,
+                color:isExpired?"#EF4444":isExpiringSoon?"#F97316":isFree?SUB:isBetaPlan?"#065F46":pd.color}}>
                 {isFree
-                  ? "No time limit · No card required"
+                  ? "No time limit · No credit card required"
                   : isBetaPlan
                     ? `Beta access until ${pd.next || "—"}`
                     : isExpired
-                      ? `⚠ Expired ${pd.next || "—"} — renew to continue`
+                      ? `⚠ Plan expired on ${expiryLabel} — please renew`
                       : isExpiringSoon
-                        ? `⚡ Expires in ${daysLeft} day${daysLeft===1?"":"s"} — ${pd.next}`
-                        : pd.next ? `Expires ${pd.next}` : "Active subscription"}
+                        ? `⚡ Expires in ${daysLeft} day${daysLeft===1?"":"s"} (${expiryLabel})`
+                        : expiryLabel
+                          ? `Your ${pd.name} plan expires on: ${expiryLabel}`
+                          : "Active subscription"}
               </div>
-              {!isFree && !isBetaPlan && (
+
+              {/* Renew button — only for paid pro/proY */}
+              {isPaidPro && (
                 <a href={renewLink} target="_blank" rel="noopener noreferrer"
-                  style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:10,padding:"8px 16px",background:isExpired||isExpiringSoon?GRAD:"none",border:`1.5px solid ${PINK}`,borderRadius:99,fontSize:12,fontWeight:700,color:isExpired||isExpiringSoon?"#fff":PINK,cursor:"pointer",textDecoration:"none",transition:"all .15s"}}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                  {isExpired ? "Reactivate Plan" : "Renew Early"}
+                  style={{display:"inline-flex",alignItems:"center",gap:7,padding:"10px 18px",
+                    background:isExpired||isExpiringSoon?GRAD:`${PINK}15`,
+                    border:`1.5px solid ${isExpired||isExpiringSoon?"transparent":PINK+"55"}`,
+                    borderRadius:10,fontSize:13,fontWeight:700,
+                    color:isExpired||isExpiringSoon?"#fff":PINK,
+                    cursor:"pointer",textDecoration:"none"}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  {isExpired?"Reactivate — ":"Renew for next month — "}{pd.price}
                 </a>
               )}
             </div>
@@ -7119,17 +7162,22 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
             ) : (
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:20}}>
                 {invoices.map((inv,i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none",flexWrap:"wrap",gap:8}}>
-                    <div style={{flex:1,minWidth:0}}>
+                  <div key={i} onClick={()=>printInvoice(inv,pd,planExpiry,true)}
+                    style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none",cursor:"pointer",transition:"background .12s"}}
+                    onMouseOver={e=>e.currentTarget.style.background=SOFT}
+                    onMouseOut={e=>e.currentTarget.style.background="#fff"}>
+                    <div style={{flex:1}}>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{inv.date}</div>
                       <div style={{fontSize:12,color:SUB,marginTop:1}}>{pd.name} Plan · {pd.renewal}</div>
                     </div>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:8}}>{inv.amount}</div>
-                    <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN,marginRight:8}}>{inv.status}</div>
-                    <button onClick={()=>printInvoice(inv,pd,planExpiry)}
-                      title="View & download invoice"
-                      style={{padding:"5px 12px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap"}}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:10}}>{inv.amount}</div>
+                    <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN,marginRight:10}}>{inv.status}</div>
+                    <button onClick={e=>{e.stopPropagation();printInvoice(inv,pd,planExpiry,false);}}
+                      title="Download PDF invoice"
+                      style={{padding:"5px 10px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:4,flexShrink:0}}
+                      onMouseOver={e=>e.currentTarget.style.borderColor=PINK}
+                      onMouseOut={e=>e.currentTarget.style.borderColor=BORDER}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                       PDF
                     </button>
                   </div>
@@ -7163,17 +7211,22 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
           ) : (
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
               {invoices.map((inv,i)=>(
-                <div key={i} style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none",flexWrap:"wrap",gap:8}}>
-                  <div style={{flex:1,minWidth:0}}>
+                <div key={i} onClick={()=>printInvoice(inv,pd,planExpiry,true)}
+                  style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none",cursor:"pointer",transition:"background .12s"}}
+                  onMouseOver={e=>e.currentTarget.style.background=SOFT}
+                  onMouseOut={e=>e.currentTarget.style.background="#fff"}>
+                  <div style={{flex:1}}>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{inv.date}</div>
                     <div style={{fontSize:12,color:SUB,marginTop:1}}>{pd.name} Plan · {pd.renewal}</div>
                   </div>
-                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:8}}>{inv.amount}</div>
-                  <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN,marginRight:8}}>{inv.status}</div>
-                  <button onClick={()=>printInvoice(inv,pd,planExpiry)}
-                    title="View & download invoice"
-                    style={{padding:"5px 12px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap"}}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:10}}>{inv.amount}</div>
+                  <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN,marginRight:10}}>{inv.status}</div>
+                  <button onClick={e=>{e.stopPropagation();printInvoice(inv,pd,planExpiry,false);}}
+                    title="Download PDF invoice"
+                    style={{padding:"5px 10px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:4,flexShrink:0}}
+                    onMouseOver={e=>e.currentTarget.style.borderColor=PINK}
+                    onMouseOut={e=>e.currentTarget.style.borderColor=BORDER}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     PDF
                   </button>
                 </div>
@@ -7446,19 +7499,10 @@ function SuperAdminDashboard({ onClose }) {
   const PLAN_COLORS = { free: SUB, beta: GREEN, pro: PINK, proY: PINK, oneTime: BLUE, superadmin: "#FF6B00" };
   const PLAN_LABELS = { free:"Free", beta:"Beta Pro", pro:"Pro", proY:"Pro Yearly", oneTime:"One-Time", superadmin:"Superadmin" };
 
-  const [statsFilter, setStatsFilter] = useState(null); // null=all, "pro", "beta", "free"
-  const [sortAlpha, setSortAlpha] = useState(false);
-
-  const filtered = users.filter(u => {
-    const matchSearch = u.email.toLowerCase().includes(search.toLowerCase()) ||
-      u.name.toLowerCase().includes(search.toLowerCase());
-    if (!matchSearch) return false;
-    if (!statsFilter || statsFilter === "all") return true;
-    if (statsFilter === "pro") return u.plan === "pro" || u.plan === "proY" || u.plan === "oneTime";
-    if (statsFilter === "beta") return u.plan === "beta";
-    if (statsFilter === "free") return u.plan === "free";
-    return true;
-  }).sort((a, b) => sortAlpha ? a.name.localeCompare(b.name) : 0);
+  const filtered = users.filter(u =>
+    u.email.toLowerCase().includes(search.toLowerCase()) ||
+    u.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   const stats = {
     total: users.length,
@@ -7485,28 +7529,30 @@ function SuperAdminDashboard({ onClose }) {
       </div>
 
       {/* Stats bar */}
-      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",gap:12,flexShrink:0,overflowX:"auto",alignItems:"center"}}>
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",gap:10,flexShrink:0,overflowX:"auto",alignItems:"center"}}>
         {[
-          {label:"Total Users", val:stats.total, color:TEXT, key:"all"},
-          {label:"Pro / Paid", val:stats.pro, color:PINK, key:"pro"},
-          {label:"Beta Testers", val:stats.beta, color:GREEN, key:"beta"},
-          {label:"Free", val:stats.free, color:SUB, key:"free"},
+          {label:"Total Users", val:stats.total, color:TEXT,   key:"all"},
+          {label:"Pro / Paid",  val:stats.pro,   color:PINK,   key:"pro"},
+          {label:"Beta Testers",val:stats.beta,  color:GREEN,  key:"beta"},
+          {label:"Free",        val:stats.free,  color:SUB,    key:"free"},
         ].map(s => {
-          const isActive = statsFilter === s.key || (s.key === "all" && !statsFilter);
+          const active = statsFilter===s.key || (s.key==="all" && !statsFilter);
           return (
-            <div key={s.label} onClick={()=>{ setStatsFilter(isActive ? null : s.key); setSearch(""); setSelected(new Set()); }}
-              style={{background:isActive?`${s.color}10`:"#fff",border:`1.5px solid ${isActive?s.color:BORDER}`,borderRadius:12,padding:"10px 18px",flexShrink:0,minWidth:100,textAlign:"center",cursor:"pointer",transition:"all .15s"}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:s.color}}>{loading ? "…" : s.val}</div>
-              <div style={{fontSize:11,color:isActive?s.color:SUB,fontWeight:600,marginTop:2}}>{s.label}</div>
+            <div key={s.key} onClick={()=>{ setStatsFilter(active?null:s.key); setSearch(""); setSelected(new Set()); }}
+              style={{background:active?`${s.color}12`:"#fff",border:`1.5px solid ${active?s.color:BORDER}`,borderRadius:12,padding:"10px 18px",flexShrink:0,minWidth:96,textAlign:"center",cursor:"pointer",transition:"all .15s"}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:s.color}}>{loading?"…":s.val}</div>
+              <div style={{fontSize:11,color:active?s.color:SUB,fontWeight:600,marginTop:2}}>{s.label}</div>
             </div>
           );
         })}
-        {statsFilter && (
-          <button onClick={()=>{setStatsFilter(null);setSearch("");}}
-            style={{marginLeft:4,padding:"6px 12px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:12,color:SUB,cursor:"pointer",flexShrink:0}}>
-            ✕ Clear filter
-          </button>
-        )}
+        <div style={{marginLeft:"auto",display:"flex",gap:6,flexShrink:0}}>
+          {[["joined","Newest"],["alpha","A→Z"]].map(([m,l])=>(
+            <button key={m} onClick={()=>setSortMode(m)}
+              style={{padding:"6px 12px",background:sortMode===m?SOFT:"#fff",border:`1.5px solid ${sortMode===m?PINK:BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:sortMode===m?PINK:SUB,cursor:"pointer",whiteSpace:"nowrap"}}>
+              {l}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tabs */}
@@ -7532,14 +7578,9 @@ function SuperAdminDashboard({ onClose }) {
       <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
 
         {tab === "users" && <>
-          {/* Search + Sort + Select All */}
-          <div style={{marginBottom:12,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+          {/* Search + Select All */}
+          <div style={{marginBottom:8,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
             <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:200,maxWidth:480}}/>
-            <button onClick={()=>setSortAlpha(a=>!a)}
-              style={{padding:"8px 14px",background:sortAlpha?SOFT:"#fff",border:`1.5px solid ${sortAlpha?PINK:BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:sortAlpha?PINK:SUB,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap"}}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="9" y2="18"/></svg>
-              A→Z
-            </button>
             {!loading && filtered.length > 0 && (
               <button onClick={()=>selected.size===filtered.length?setSelected(new Set()):setSelected(new Set(filtered.map(u=>u.uid)))}
                 style={{padding:"8px 14px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
@@ -7548,10 +7589,10 @@ function SuperAdminDashboard({ onClose }) {
             )}
           </div>
           {statsFilter && (
-            <div style={{marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
-              <span style={{fontSize:12,color:SUB}}>Showing: <strong style={{color:TEXT}}>
-                {statsFilter==="pro"?"Pro / Paid":statsFilter==="beta"?"Beta Testers":"Free"} ({filtered.length})
-              </strong></span>
+            <div style={{marginBottom:10,fontSize:12,color:SUB}}>
+              Showing: <strong style={{color:TEXT}}>{statsFilter==="pro"?"Pro / Paid":statsFilter==="beta"?"Beta Testers":"Free"} ({filtered.length})</strong>
+              <button onClick={()=>{setStatsFilter(null);setSearch("");}}
+                style={{marginLeft:8,fontSize:11,color:PINK,background:"none",border:"none",cursor:"pointer",fontWeight:700}}>✕ clear</button>
             </div>
           )}
 
@@ -7593,7 +7634,16 @@ function SuperAdminDashboard({ onClose }) {
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{u.name}</div>
                       <div style={{fontSize:12,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</div>
-                      {expiryStr && <div style={{fontSize:11,color:SUB,marginTop:1}}>Expires {expiryStr}</div>}
+                      {expiryStr && (() => {
+                        const isPaid = u.plan==="pro"||u.plan==="proY"||u.plan==="oneTime";
+                        const dLeft = u.planExpiry ? Math.ceil((new Date(u.planExpiry)-new Date())/(1000*60*60*24)) : null;
+                        const expSoon = dLeft!==null && dLeft<=7 && dLeft>0;
+                        const expired = dLeft!==null && dLeft<=0;
+                        const col = expired?"#EF4444":expSoon?"#F97316":isPaid?PINK:SUB;
+                        return <div style={{fontSize:11,color:col,fontWeight:isPaid?700:400,marginTop:1}}>
+                          {expired?"⚠ Expired ":expSoon?`⚡ ${dLeft}d left · `:"Expires "}{expiryStr}
+                        </div>;
+                      })()}
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,flexWrap:"wrap",justifyContent:"flex-end"}}>
                       <span style={{background:`${planColor}15`,border:`1px solid ${planColor}40`,color:planColor,borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}>{planLabel}</span>
@@ -8762,7 +8812,7 @@ export default function App() {
             await ss("planExpiry", newExpiry);
             setPaymentToast(newPlan); // show success banner
             setTimeout(() => setPaymentToast(null), 6000);
-          }, exp); // pass current expiry so renewal stacks correctly
+          }, exp); // pass current expiry for stacking
 
           // ── Restore the correct screen based on the current URL path ──
           const restorePath = window.location.pathname;
@@ -9189,13 +9239,22 @@ export default function App() {
           <div style={{display:"flex",alignItems:"center",gap:10}}>
           <div className="tp-bulb-wrap"><button onClick={()=>setShowTips(true)} className="tp-bulb-btn" style={{padding:0,lineHeight:0}}><svg height="28" viewBox="-41 0 512 512" width="28" xmlns="http://www.w3.org/2000/svg"><path d="m264.28125 479.652344c0 13.722656-11.125 24.847656-24.847656 24.847656h-49.703125c-13.722657 0-24.847657-11.125-24.847657-24.847656v-14.402344h99.398438zm0 0" fill="#295d76"/><path d="m242.28125 465.25v14.402344c0 13.722656-11.125 24.847656-24.847656 24.847656h22c13.722656 0 24.847656-11.125 24.847656-24.847656v-14.402344zm0 0" fill="#1f4658"/><path d="m162.597656 471.367188h103.96875c3.3125 0 6-2.683594 6-6v-93.402344h-115.96875v93.402344c0 3.316406 2.6875 6 6 6zm0 0" fill="#e6f1fa"/><path d="m250.566406 371.964844v93.402344c0 3.316406-2.6875 6-6 6h22c3.3125 0 6-2.683594 6-6v-93.402344zm0 0" fill="#cee4f7"/><path d="m355.398438 214.582031c0-77.160156-62.0625-139.824219-138.988282-140.804687-78.011718-.992188-142.433594 62.398437-142.644531 140.417968-.148437 55.949219 32.332031 104.332032 79.488281 127.183594 2.054688.992188 3.34375 3.089844 3.34375 5.375v25.210938h115.96875v-25.214844c0-2.289062 1.300782-4.382812 3.363282-5.382812 47.035156-22.800782 79.46875-71.003907 79.46875-126.785157zm0 0" fill="#feda43"/><path d="m216.410156 73.777344c-4.304687-.054688-8.5625.097656-12.777344.425781 72.605469 5.640625 129.765626 66.328125 129.765626 140.378906 0 55.78125-32.433594 103.984375-79.46875 126.785157-2.0625 1-3.363282 3.09375-3.363282 5.386718v25.214844h22v-25.214844c0-2.292968 1.300782-4.386718 3.363282-5.386718 47.035156-22.800782 79.46875-71.003907 79.46875-126.785157 0-77.160156-62.058594-139.824219-138.988282-140.804687zm0 0" fill="#fdb53e"/><path d="m214.582031 48.132812c4.144531 0 7.5-3.359374 7.5-7.5v-33.132812c0-4.140625-3.355469-7.5-7.5-7.5s-7.5 3.359375-7.5 7.5v33.132812c0 4.140626 3.355469 7.5 7.5 7.5zm0 0"/><path d="m86.277344 96.882812c1.464844 1.464844 3.382812 2.199219 5.304687 2.199219 1.917969 0 3.839844-.734375 5.304688-2.199219 2.925781-2.929687 2.925781-7.675781 0-10.605468l-23.429688-23.425782c-2.929687-2.929687-7.679687-2.929687-10.605469 0-2.929687 2.925782-2.929687 7.675782 0 10.605469zm0 0"/><path d="m40.632812 207.082031h-33.132812c-4.144531 0-7.5 3.359375-7.5 7.5s3.355469 7.5 7.5 7.5h33.132812c4.140626 0 7.5-3.359375 7.5-7.5s-3.359374-7.5-7.5-7.5zm0 0"/><path d="m86.277344 332.28125-23.429688 23.425781c-2.929687 2.929688-2.929687 7.679688 0 10.605469 1.464844 1.464844 3.382813 2.199219 5.304688 2.199219 1.917968 0 3.839844-.734375 5.300781-2.199219l23.429687-23.425781c2.929688-2.929688 2.929688-7.675781.003907-10.605469-2.929688-2.929688-7.679688-2.929688-10.609375 0zm0 0"/><path d="m342.886719 332.28125c-2.929688-2.929688-7.675781-2.929688-10.605469 0s-2.929688 7.675781 0 10.605469l23.425781 23.425781c1.464844 1.464844 3.386719 2.199219 5.304688 2.199219s3.839843-.734375 5.304687-2.199219c2.929688-2.925781 2.929688-7.675781 0-10.605469zm0 0"/><path d="m421.664062 207.082031h-33.132812c-4.140625 0-7.5 3.359375-7.5 7.5 0 4.144531 3.359375 7.5 7.5 7.5h33.132812c4.144532 0 7.5-3.355469 7.5-7.5 0-4.140625-3.355468-7.5-7.5-7.5zm0 0"/><path d="m355.710938 62.851562-23.429688 23.425782c-2.929688 2.929687-2.929688 7.675781-.003906 10.605468 1.464844 1.464844 3.386718 2.199219 5.304687 2.199219 1.921875 0 3.839844-.734375 5.304688-2.199219l23.429687-23.425781c2.929688-2.929687 2.929688-7.679687 0-10.605469-2.929687-2.929687-7.679687-2.929687-10.605468 0zm0 0"/><path d="m362.898438 214.582031c0-81.78125-66.535157-148.316406-148.316407-148.316406-33.757812 0-66.789062 11.644531-93.019531 32.789063-3.222656 2.601562-3.730469 7.320312-1.128906 10.546874 2.597656 3.222657 7.320312 3.730469 10.542968 1.132813 23.914063-19.28125 52.824219-29.46875 83.605469-29.46875 73.511719 0 133.316407 59.804687 133.316407 133.316406 0 52.269531-30.785157 99.972657-78.425782 121.527344-2.683594 1.214844-4.40625 3.886719-4.40625 6.835937v21.519532h-26.417968v-67.832032h9.066406c13.269531 0 24.0625-10.796874 24.0625-24.066406 0-13.269531-10.792969-24.066406-24.0625-24.066406-13.273438 0-24.066406 10.796875-24.066406 24.066406v9.066406h-18.132813v-9.066406c0-13.269531-10.796875-24.066406-24.066406-24.066406s-24.066407 10.796875-24.066407 24.066406c0 13.269532 10.796876 24.066406 24.066407 24.066406h9.066406v67.832032h-26.417969v-21.519532c0-2.949218-1.722656-5.621093-4.40625-6.835937-47.640625-21.550781-78.425781-69.253906-78.425781-121.527344 0-30.421875 10.511719-60.175781 29.605469-83.777343 2.605468-3.21875 2.105468-7.941407-1.113282-10.546876-3.222656-2.605468-7.945312-2.105468-10.550781 1.113282-21.242187 26.265625-32.941406 59.367187-32.941406 93.210937 0 56.519531 32.351563 108.242188 82.832031 133.113281v16.769532h-.78125c-4.144531 0-7.5 3.359375-7.5 7.5 0 4.144531 3.355469 7.5 7.5 7.5h.78125v91.902344c0 1.988281.789063 3.898437 2.195313 5.304687s3.316406 2.195313 5.304687 2.195313h.824219c-.027344.257812-.039063.519531-.039063.78125 0 17.839843 14.511719 32.351562 32.347657 32.351562h49.703125c17.835937 0 32.347656-14.511719 32.347656-32.351562 0-.261719-.011719-.523438-.039062-.78125h.824218c4.140625 0 7.5-3.355469 7.5-7.5v-91.902344h.78125c4.144532 0 7.5-3.355469 7.5-7.5 0-4.140625-3.355468-7.5-7.5-7.5h-.78125v-16.769532c50.480469-24.871093 82.832032-76.59375 82.832032-133.113281zm-198.800782 249.285157v-9.851563h100.96875v9.851563zm0-59.550782h100.96875v9.851563h-100.96875zm0 34.699219v-9.851563h100.96875v9.851563zm100.96875-49.699219h-100.964844v-9.851562h33.90625.007813.011719 33.113281.007813.011718 33.90625zm-26.417968-116.75c0-4.996094 4.066406-9.0625 9.066406-9.0625s9.0625 4.066406 9.0625 9.0625c0 5-4.0625 9.066406-9.0625 9.066406h-9.066406zm-57.199219 9.066406c-5 0-9.066407-4.066406-9.066407-9.066406 0-4.996094 4.066407-9.0625 9.066407-9.0625s9.066406 4.066406 9.066406 9.0625v9.066406zm24.066406 15h18.132813v67.832032h-18.132813zm51.265625 183.015626c0 9.566406-7.78125 17.351562-17.347656 17.351562h-49.703125c-9.566407 0-17.347657-7.78125-17.347657-17.351562 0-.261719-.015624-.523438-.042968-.78125h84.480468c-.023437.257812-.039062.519531-.039062.78125zm0 0"/></svg></button></div>
           <button onClick={()=>setProfileOpen(v=>!v)}
-            style={{display:"flex",alignItems:"center",gap:8,background:profileOpen?SOFT:"none",border:`1px solid ${profileOpen?PINK:BORDER}`,borderRadius:12,padding:"7px 14px 7px 10px",cursor:"pointer",transition:"all .15s"}}>
+            style={{display:"flex",alignItems:"center",gap:8,
+              background: plan!=="free"&&!profileOpen
+                ? "linear-gradient(to left, rgba(233,30,140,0.08), transparent)"
+                : profileOpen?SOFT:"none",
+              border:`1px solid ${plan!=="free"?PINK+"55":profileOpen?PINK:BORDER}`,
+              borderRadius:12,padding:"7px 14px 7px 10px",cursor:"pointer",transition:"all .15s"}}>
             <div style={{width:30,height:30,borderRadius:9,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
               {(trainer?.name||"U").split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}
             </div>
             <div style={{textAlign:"left"}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,lineHeight:1.2}}>{trainer?.name}</div>
-              <div style={{fontSize:11,color:plan==="free"?SUB:PINK,fontWeight:600}}>{planLabel}</div>
+              <div style={{fontSize:11,fontWeight:700,
+                background:plan!=="free"?GRAD:"none",
+                WebkitBackgroundClip:plan!=="free"?"text":"unset",
+                WebkitTextFillColor:plan!=="free"?"transparent":"unset",
+                color:plan==="free"?SUB:"inherit"}}>{planLabel}</div>
             </div>
             {homeEarnings && (
               <>
