@@ -6826,7 +6826,7 @@ function SettingsPage({ isPro=false, onClose }) {
 }
 
 // ── 4. Billing Page ──────────────────────────
-function printInvoice(inv, pd, planExpiry, viewOnly=false) {
+function printInvoice(inv, pd, planExpiry, viewOnly=false, trainer=null) {
   const invDate = new Date(inv.date.replace(/ /g, "-").replace(/([0-9]+)-([A-Za-z]+)-([0-9]+)/, (m,d,mo,y)=>`${d} ${mo} ${y}`));
   const invoiceNum = "TC-" + (planExpiry ? new Date(planExpiry).getFullYear() : new Date().getFullYear()) + "-" + String(Math.abs(invDate.getTime()) % 100000).padStart(5,"0");
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice ${invoiceNum} · Teticoin</title>
@@ -6847,7 +6847,6 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false) {
   /* Parties */
   .parties{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
   .party-box{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:14px 16px;}
-  .party-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#9CA3AF;margin-bottom:7px;}
   .party-name{font-size:14px;font-weight:700;color:#111827;margin-bottom:3px;}
   .party-detail{font-size:12px;color:#6B7280;line-height:1.7;}
   /* Meta */
@@ -6890,14 +6889,12 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false) {
   </div>
   <div class="parties">
     <div class="party-box">
-      <div class="party-label">From (Seller)</div>
       <div class="party-name">Alev Global Sdn Bhd</div>
       <div class="party-detail">Kuala Lumpur, Malaysia<br>hi.tetikus@gmail.com<br>www.teticoin.com</div>
     </div>
     <div class="party-box">
-      <div class="party-label">Billed To (Customer)</div>
-      <div class="party-name">${pd.name} Plan Subscriber</div>
-      <div class="party-detail">Teticoin Account Holder<br>Plan: ${pd.name} (${pd.renewal === "monthly" ? "Monthly" : "Annual"})</div>
+      <div class="party-name">${trainer ? trainer.name : "Teticoin Subscriber"}</div>
+      <div class="party-detail">${trainer && trainer.email ? trainer.email : ""}<br>Plan: ${pd.name} (${pd.renewal === "monthly" ? "Monthly" : "Annual"})</div>
     </div>
   </div>
   <div class="meta-row">
@@ -6941,7 +6938,7 @@ ${viewOnly?"":"<script>window.onload=function(){window.print();}<\/script>"}
   if (w) { w.document.write(html); w.document.close(); }
 }
 
-function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount=0, maxPax=0, onUpgrade, onClose }) {
+function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount=0, maxPax=0, trainer=null, onUpgrade, onClose }) {
   const [cancelConfirm, setCancelConfirm] = useState(false);
   // Always fetch fresh planExpiry from Firebase on mount — the prop may be stale
   const [planExpiry, setPlanExpiry_] = useState(planExpiryProp);
@@ -7235,7 +7232,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                   <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.8,textAlign:"center"}}>PDF</div>
                 </div>
                 {invoices.map((inv,i)=>(
-                  <div key={i} onClick={()=>printInvoice(inv,pd,planExpiry,true)}
+                  <div key={i} onClick={()=>printInvoice(inv,pd,planExpiry,true,trainer)}
                     style={{display:"grid",gridTemplateColumns:"1fr 90px 72px 52px",gap:0,alignItems:"center",padding:"13px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none",cursor:"pointer",transition:"background .1s"}}
                     onMouseOver={e=>e.currentTarget.style.background=SOFT}
                     onMouseOut={e=>e.currentTarget.style.background="#fff"}>
@@ -7250,7 +7247,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                       </span>
                     </div>
                     <div style={{textAlign:"center"}}>
-                      <button onClick={e=>{e.stopPropagation();printInvoice(inv,pd,planExpiry,false);}}
+                      <button onClick={e=>{e.stopPropagation();printInvoice(inv,pd,planExpiry,false,trainer);}}
                         title="Download PDF"
                         style={{width:32,height:32,display:"inline-flex",alignItems:"center",justifyContent:"center",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,cursor:"pointer",transition:"all .12s",padding:0}}
                         onMouseOver={e=>{e.currentTarget.style.borderColor=PINK;e.currentTarget.style.background=SOFT;}}
@@ -7298,7 +7295,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                   <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.8,textAlign:"center"}}>PDF</div>
                 </div>
                 {invoices.map((inv,i)=>(
-                  <div key={i} onClick={()=>printInvoice(inv,pd,planExpiry,true)}
+                  <div key={i} onClick={()=>printInvoice(inv,pd,planExpiry,true,trainer)}
                     style={{display:"grid",gridTemplateColumns:"1fr 90px 72px 52px",gap:0,alignItems:"center",padding:"13px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none",cursor:"pointer",transition:"background .1s"}}
                     onMouseOver={e=>e.currentTarget.style.background=SOFT}
                     onMouseOut={e=>e.currentTarget.style.background="#fff"}>
@@ -7313,7 +7310,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                       </span>
                     </div>
                     <div style={{textAlign:"center"}}>
-                      <button onClick={e=>{e.stopPropagation();printInvoice(inv,pd,planExpiry,false);}}
+                      <button onClick={e=>{e.stopPropagation();printInvoice(inv,pd,planExpiry,false,trainer);}}
                         title="Download PDF"
                         style={{width:32,height:32,display:"inline-flex",alignItems:"center",justifyContent:"center",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,cursor:"pointer",transition:"all .12s",padding:0}}
                         onMouseOver={e=>{e.currentTarget.style.borderColor=PINK;e.currentTarget.style.background=SOFT;}}
@@ -9191,7 +9188,7 @@ export default function App() {
       <style>{CSS}</style>
 
       {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>closePricing()}/>}
-      {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} sessionCount={sessions.filter(s=>!s.archived).length} maxPax={Math.max(0,...sessions.filter(s=>!s.archived).map(s=>s.count||0))} onUpgrade={()=>{setShowBilling(false);openPricing();}} onClose={()=>{ window.history.replaceState({},"","/app"); setShowBilling(false);}}/>}
+      {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} trainer={trainer} sessionCount={sessions.filter(s=>!s.archived).length} maxPax={Math.max(0,...sessions.filter(s=>!s.archived).map(s=>s.count||0))} onUpgrade={()=>{setShowBilling(false);openPricing();}} onClose={()=>{ window.history.replaceState({},"","/app"); setShowBilling(false);}}/>}
       {showProfile && <ProfilePage trainer={trainer} onClose={()=>{ window.history.replaceState({},"","/app"); setShowProfile(false);}} onSaved={(newName)=>setTrainer(t=>({...t,name:newName}))}/>}
       {showSuperAdmin && <SuperAdminDashboard onClose={()=>{ window.history.replaceState({},"","/app"); setShowSuperAdmin(false);}}/>}
       {showTips && <TipsPage onClose={()=>setShowTips(false)}/>}
