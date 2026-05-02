@@ -6975,58 +6975,52 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
                       : "linear-gradient(135deg,#EDE9FE,#DDD6FE)",
               padding:"18px 16px 16px",
             }}>
-              {/* Plan name + status badge */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:28,
-                  background:isFree?"none":isBetaPlan?"none":isExpired?"none":GRAD,
-                  WebkitBackgroundClip:isFree||isBetaPlan||isExpired?"unset":"text",
-                  WebkitTextFillColor:isFree||isBetaPlan||isExpired?"unset":"transparent",
+              {/* Plan name + Active badge */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                <div style={{
+                  fontFamily:"Plus Jakarta Sans,sans-serif",
+                  fontWeight: isFree ? 900 : 400,
+                  fontSize:28,
                   color:isFree?TEXT:isBetaPlan?"#065F46":isExpired?"#EF4444":pd.color}}>
-                  {pd.name}
+                  {pd.name} Plan
                 </div>
                 <div style={{background:isExpired?"#FEE2E2":isFree?"#F3F4F6":`${pd.color}18`,border:`1.5px solid ${isExpired?"#EF444440":isFree?BORDER:pd.color+"44"}`,borderRadius:99,padding:"4px 14px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isExpired?"#EF4444":isFree?SUB:pd.color}}>
                   {isExpired?"Expired":isBetaPlan?"Beta Access":"Active"}
                 </div>
               </div>
 
-              {/* Price line */}
-              {!isBetaPlan && (
-                <div style={{display:"flex",alignItems:"baseline",gap:4,marginBottom:8}}>
-                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:isFree?TEXT:SUB}}>
-                    {isFree?"Free forever":pd.price}
-                  </div>
-                  {!isFree && pd.renewal!=="one-time" && <div style={{fontSize:13,color:SUB}}>/{pd.renewal==="yearly"?"yr":"mo"}</div>}
-                </div>
-              )}
-
-              {/* Expiry/status line */}
-              <div style={{fontSize:13,fontWeight:600,marginBottom:isPaidPro?12:0,
-                color:isExpired?"#EF4444":isExpiringSoon?"#F97316":isFree?SUB:isBetaPlan?"#065F46":pd.color}}>
-                {isFree
-                  ? "No time limit · No credit card required"
-                  : isBetaPlan
-                    ? `Beta access until ${pd.next || "—"}`
-                    : isExpired
-                      ? `⚠ Plan expired on ${expiryLabel} — please renew`
+              {/* Expiry / status line */}
+              {isBetaPlan ? (
+                <div style={{fontSize:13,color:"#065F46",marginBottom:4}}>Beta access until {pd.next || "—"}</div>
+              ) : isFree ? (
+                <div style={{fontSize:13,color:SUB}}>No time limit · No credit card required</div>
+              ) : (
+                <>
+                  <div style={{fontSize:13,marginBottom:12,
+                    color:isExpired?"#EF4444":isExpiringSoon?"#F97316":TEXT}}>
+                    {isExpired
+                      ? `⚠ Plan expired on ${expiryLabel}`
                       : isExpiringSoon
-                        ? `⚡ Expires in ${daysLeft} day${daysLeft===1?"":"s"} (${expiryLabel})`
+                        ? `⚡ Expires in ${daysLeft} day${daysLeft===1?"":"s"} — ${expiryLabel}`
                         : expiryLabel
                           ? `Your ${pd.name} plan expires on: ${expiryLabel}`
-                          : "Active subscription"}
-              </div>
-
-              {/* Renew button — only for paid pro/proY */}
-              {isPaidPro && (
-                <a href={renewLink} target="_blank" rel="noopener noreferrer"
-                  style={{display:"inline-flex",alignItems:"center",gap:7,padding:"10px 18px",
-                    background:isExpired||isExpiringSoon?GRAD:`${PINK}15`,
-                    border:`1.5px solid ${isExpired||isExpiringSoon?"transparent":PINK+"55"}`,
-                    borderRadius:10,fontSize:13,fontWeight:700,
-                    color:isExpired||isExpiringSoon?"#fff":PINK,
-                    cursor:"pointer",textDecoration:"none"}}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                  {isExpired?"Reactivate — ":"Renew for next month — "}{pd.price}
-                </a>
+                          : "Active — no expiry set"}
+                  </div>
+                  {/* Renew button — small, pill-style */}
+                  {isPaidPro && (
+                    <a href={renewLink} target="_blank" rel="noopener noreferrer"
+                      style={{display:"inline-flex",alignItems:"center",gap:6,
+                        padding:"7px 14px",
+                        background:isExpired||isExpiringSoon?GRAD:"none",
+                        border:`1.5px solid ${isExpired||isExpiringSoon?"transparent":PINK+"66"}`,
+                        borderRadius:99,fontSize:12,fontWeight:500,
+                        color:isExpired||isExpiringSoon?"#fff":PINK,
+                        cursor:"pointer",textDecoration:"none"}}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                      {isExpired?"Reactivate plan":"Renew for next month"} — {pd.price}
+                    </a>
+                  )}
+                </>
               )}
             </div>
 
@@ -7284,6 +7278,8 @@ function SuperAdminDashboard({ onClose }) {
   const [inviteBusy, setInviteBusy] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [pendingInvites, setPendingInvites] = useState([]);
+  const [statsFilter, setStatsFilter] = useState(null); // null=all | "pro" | "beta" | "free"
+  const [sortMode, setSortMode] = useState("joined");   // "joined" | "alpha"
 
   // Load all users — data is stored under users/{uid}/data/{key} subcollection
   useEffect(() => {
@@ -7317,6 +7313,7 @@ function SuperAdminDashboard({ onClose }) {
               plan:  plan || "free",
               planExpiry,
               sessionsCount: Array.isArray(sessionsVal) ? sessionsVal.length : 0,
+              createdAt: sentinelData.createdAt || 0,
             });
           } catch(e) {
             // user exists but has no data subcollection yet — still list them
@@ -7499,14 +7496,25 @@ function SuperAdminDashboard({ onClose }) {
   const PLAN_COLORS = { free: SUB, beta: GREEN, pro: PINK, proY: PINK, oneTime: BLUE, superadmin: "#FF6B00" };
   const PLAN_LABELS = { free:"Free", beta:"Beta Pro", pro:"Pro", proY:"Pro Yearly", oneTime:"One-Time", superadmin:"Superadmin" };
 
-  const filtered = users.filter(u =>
-    u.email.toLowerCase().includes(search.toLowerCase()) ||
-    u.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = users.filter(u => {
+    const matchSearch = u.email.toLowerCase().includes(search.toLowerCase()) ||
+      u.name.toLowerCase().includes(search.toLowerCase());
+    if (!matchSearch) return false;
+    if (!statsFilter || statsFilter === "all") return true;
+    if (statsFilter === "pro")  return u.plan === "pro" || u.plan === "proY" || u.plan === "oneTime";
+    if (statsFilter === "beta") return u.plan === "beta";
+    if (statsFilter === "free") return u.plan === "free";
+    return true;
+  }).sort((a, b) => {
+    if (a.plan === "superadmin") return -1;
+    if (b.plan === "superadmin") return 1;
+    if (sortMode === "alpha") return a.name.localeCompare(b.name);
+    return (b.createdAt || 0) - (a.createdAt || 0); // newest first
+  });
 
   const stats = {
     total: users.length,
-    pro: users.filter(u => u.plan === "pro" || u.plan === "proY" || u.plan === "oneTime").length,
+    pro:  users.filter(u => u.plan === "pro" || u.plan === "proY" || u.plan === "oneTime").length,
     beta: users.filter(u => u.plan === "beta").length,
     free: users.filter(u => u.plan === "free").length,
   };
