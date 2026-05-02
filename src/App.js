@@ -9350,7 +9350,7 @@ export default function App() {
           </div>
         )}
         {/* Desktop top nav bar */}
-        <div className="tc-home-topnav" style={{display:"none",background:plan!=="free"?"linear-gradient(90deg,#1D4ED8 0%,#06B6D4 40%,#ffffff 75%)":"#fff",borderBottom:plan!=="free"?"1px solid rgba(6,182,212,0.25)":`1px solid ${BORDER}`,padding:"0 32px",height:64,alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <div className="tc-home-topnav" style={{display:"none",background:plan!=="free"?"linear-gradient(90deg,#ffffff 0%,#ffffff 35%,#06B6D4 70%,#1D4ED8 100%)":"#fff",borderBottom:plan!=="free"?"1px solid rgba(6,182,212,0.25)":`1px solid ${BORDER}`,padding:"0 32px",height:64,alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <Ham size={36}/>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
