@@ -6829,74 +6829,157 @@ function SettingsPage({ isPro=false, onClose }) {
 function printInvoice(inv, pd, planExpiry, viewOnly=false) {
   const invDate = new Date(inv.date.replace(/ /g, "-").replace(/([0-9]+)-([A-Za-z]+)-([0-9]+)/, (m,d,mo,y)=>`${d} ${mo} ${y}`));
   const invoiceNum = "TC-" + (planExpiry ? new Date(planExpiry).getFullYear() : new Date().getFullYear()) + "-" + String(Math.abs(invDate.getTime()) % 100000).padStart(5,"0");
-  const periodEnd = planExpiry ? new Date(planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
+  const periodEnd = planExpiry ? new Date(planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}) : "—";
+  const periodStart = inv.date;
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice ${invoiceNum} · Teticoin</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:Inter,sans-serif;background:#fff;color:#111827;padding:52px 56px;max-width:720px;margin:0 auto;font-size:14px;}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;}
-  .logo{font-weight:800;font-size:24px;background:linear-gradient(135deg,#E91E8C,#FF4FB8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-  .logo-sub{font-size:11px;color:#9CA3AF;margin-top:2px;}
-  .inv-label{text-align:right;}
-  .inv-label .title{font-size:28px;font-weight:800;color:#111827;}
-  .inv-label .num{font-size:12px;color:#6B7280;margin-top:4px;}
-  .section{margin-bottom:28px;}
-  .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9CA3AF;margin-bottom:5px;}
-  .value{font-size:14px;font-weight:600;color:#111827;line-height:1.5;}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:32px;}
-  .divider{border:none;border-top:1px solid #F3F4F6;margin:24px 0;}
-  table{width:100%;border-collapse:collapse;}
-  thead tr{border-bottom:2px solid #F3F4F6;}
-  th{padding:10px 0;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9CA3AF;}
-  th:last-child,td:last-child{text-align:right;}
-  tbody tr{border-bottom:1px solid #F9FAFB;}
-  td{padding:14px 0;font-size:14px;color:#111827;vertical-align:top;}
-  td.desc small{display:block;font-size:12px;color:#6B7280;margin-top:2px;}
-  .total-section{display:flex;justify-content:flex-end;margin-top:20px;}
-  .total-box{min-width:220px;}
-  .total-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;}
-  .total-row.grand{font-size:17px;font-weight:800;border-top:2px solid #E5E7EB;padding-top:12px;margin-top:4px;}
-  .badge{display:inline-flex;align-items:center;gap:5px;background:#DCFCE7;color:#15803D;font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;border:1px solid #BBF7D0;}
-  .footer{margin-top:48px;padding-top:24px;border-top:1px solid #F3F4F6;font-size:11px;color:#9CA3AF;line-height:1.8;}
-  @media print{body{padding:32px;} .no-print{display:none;}}
+  html,body{background:#f4f4f4;}
+  .page{font-family:Inter,sans-serif;background:#fff;color:#111827;width:210mm;min-height:297mm;margin:0 auto;padding:14mm 16mm 14mm;font-size:13px;position:relative;}
+  /* Header band */
+  .inv-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #E91E8C;margin-bottom:24px;}
+  .brand-name{font-weight:800;font-size:22px;color:#E91E8C;letter-spacing:-0.5px;}
+  .brand-sub{font-size:10px;color:#9CA3AF;margin-top:3px;line-height:1.5;}
+  .inv-title-block{text-align:right;}
+  .inv-title{font-size:26px;font-weight:800;color:#111827;letter-spacing:-0.5px;}
+  .inv-num{font-size:12px;color:#6B7280;margin-top:3px;font-weight:600;}
+  /* Party grid */
+  .parties{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:22px;}
+  .party-box{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:14px 16px;}
+  .party-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#9CA3AF;margin-bottom:8px;}
+  .party-name{font-size:14px;font-weight:700;color:#111827;margin-bottom:3px;}
+  .party-detail{font-size:12px;color:#6B7280;line-height:1.7;}
+  /* Meta row */
+  .meta-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:24px;}
+  .meta-cell{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:10px 12px;}
+  .meta-cell .mlabel{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9CA3AF;margin-bottom:4px;}
+  .meta-cell .mval{font-size:12px;font-weight:600;color:#111827;}
+  /* Items table */
+  .items-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#9CA3AF;margin-bottom:8px;}
+  table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+  thead tr{background:#F9FAFB;border-top:1px solid #E5E7EB;border-bottom:1px solid #E5E7EB;}
+  th{padding:9px 12px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9CA3AF;}
+  th.right,td.right{text-align:right;}
+  tbody tr{border-bottom:1px solid #F3F4F6;}
+  td{padding:12px 12px;font-size:13px;color:#111827;vertical-align:top;}
+  td.desc small{display:block;font-size:11px;color:#9CA3AF;margin-top:3px;line-height:1.5;}
+  /* Totals */
+  .total-wrap{display:flex;justify-content:flex-end;margin-bottom:28px;}
+  .total-box{width:240px;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;}
+  .total-row{display:flex;justify-content:space-between;padding:9px 14px;font-size:12px;border-bottom:1px solid #F3F4F6;}
+  .total-row:last-child{border-bottom:none;}
+  .total-row.grand{font-size:15px;font-weight:800;background:#F9FAFB;}
+  .total-row.grand span:last-child{color:#E91E8C;}
+  /* Status badge */
+  .badge{display:inline-flex;align-items:center;gap:5px;background:#DCFCE7;color:#15803D;font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;border:1px solid #BBF7D0;}
+  /* Note */
+  .note-box{background:#FFF0F7;border:1px solid #FECDE8;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:11px;color:#9D174D;line-height:1.7;}
+  /* Footer */
+  .inv-footer{border-top:1px solid #E5E7EB;padding-top:14px;font-size:10px;color:#9CA3AF;line-height:1.9;}
+  .inv-footer strong{color:#6B7280;}
+  /* Print */
+  @media print{html,body{background:#fff;} .page{box-shadow:none;} .no-print{display:none;}}
 </style></head><body>
-  <div class="header">
-    <div><div class="logo">Teticoin</div><div class="logo-sub">by Tetikus · tetikus.com.my</div></div>
-    <div class="inv-label"><div class="title">Tax Invoice</div><div class="num">Invoice #${invoiceNum}</div></div>
+<div class="page">
+
+  <!-- Header -->
+  <div class="inv-header">
+    <div>
+      <div class="brand-name">Teticoin</div>
+      <div class="brand-sub">A product by Alev Global Sdn Bhd<br>Kuala Lumpur, Malaysia · teticoin.com</div>
+    </div>
+    <div class="inv-title-block">
+      <div class="inv-title">TAX INVOICE</div>
+      <div class="inv-num">Invoice # ${invoiceNum}</div>
+    </div>
   </div>
-  <div class="grid">
-    <div class="section"><div class="label">Invoice Date</div><div class="value">${inv.date}</div></div>
-    <div class="section"><div class="label">Status</div><div class="value"><span class="badge">✓ PAID</span></div></div>
-    <div class="section"><div class="label">Billing Period</div><div class="value">${inv.date} → ${periodEnd}</div></div>
-    <div class="section"><div class="label">Plan</div><div class="value">${pd.name} (${pd.renewal})</div></div>
+
+  <!-- Parties -->
+  <div class="parties">
+    <div class="party-box">
+      <div class="party-label">From (Seller)</div>
+      <div class="party-name">Alev Global Sdn Bhd</div>
+      <div class="party-detail">
+        Teticoin Platform<br>
+        Kuala Lumpur, Malaysia<br>
+        hi.tetikus@gmail.com<br>
+        tetikus.com.my · teticoin.com
+      </div>
+    </div>
+    <div class="party-box">
+      <div class="party-label">Billed To (Customer)</div>
+      <div class="party-name">${pd.name} Plan Subscriber</div>
+      <div class="party-detail">
+        Teticoin Account Holder<br>
+        Plan: ${pd.name} (${pd.renewal === "monthly" ? "Monthly" : "Annual"})<br>
+        &nbsp;
+      </div>
+    </div>
   </div>
-  <hr class="divider"/>
+
+  <!-- Meta -->
+  <div class="meta-row">
+    <div class="meta-cell"><div class="mlabel">Invoice Date</div><div class="mval">${inv.date}</div></div>
+    <div class="meta-cell"><div class="mlabel">Period Start</div><div class="mval">${periodStart}</div></div>
+    <div class="meta-cell"><div class="mlabel">Period End</div><div class="mval">${periodEnd}</div></div>
+    <div class="meta-cell"><div class="mlabel">Status</div><div class="mval"><span class="badge">✓ PAID</span></div></div>
+  </div>
+
+  <!-- Line items -->
+  <div class="items-label">Items</div>
   <table>
-    <thead><tr><th>Description</th><th>Qty</th><th>Amount (MYR)</th></tr></thead>
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Qty</th>
+        <th class="right">Unit Price</th>
+        <th class="right">Amount (MYR)</th>
+      </tr>
+    </thead>
     <tbody>
       <tr>
-        <td class="desc">${pd.name} Plan — ${pd.renewal==="monthly"?"Monthly subscription":"Annual subscription"}<small>Teticoin · Real-time session gamification platform<br>teticoin.com / teticoin.tetikus.com.my</small></td>
+        <td class="desc">
+          Teticoin ${pd.name} Plan — ${pd.renewal === "monthly" ? "Monthly Subscription" : "Annual Subscription"}
+          <small>
+            Real-time session gamification platform<br>
+            Access period: ${periodStart} → ${periodEnd}
+          </small>
+        </td>
         <td>1</td>
-        <td>${inv.amount}</td>
+        <td class="right">${inv.amount}</td>
+        <td class="right">${inv.amount}</td>
       </tr>
     </tbody>
   </table>
-  <div class="total-section">
+
+  <!-- Totals -->
+  <div class="total-wrap">
     <div class="total-box">
       <div class="total-row"><span>Subtotal</span><span>${inv.amount}</span></div>
-      <div class="total-row"><span>Tax (0%)</span><span>—</span></div>
-      <div class="total-row grand"><span>Total Paid</span><span>${inv.amount}</span></div>
+      <div class="total-row"><span>SST (0%)</span><span>—</span></div>
+      <div class="total-row grand"><span>Total Paid (MYR)</span><span>${inv.amount}</span></div>
     </div>
   </div>
-  <div class="footer">
-    Payment processed securely by <strong>Chip</strong> (chip-in.asia) · All amounts in Malaysian Ringgit (MYR)<br>
-    Issued by: <strong>Tetikus</strong> · Kuala Lumpur, Malaysia · hi.tetikus@gmail.com · tetikus.com.my<br>
-    This is a computer-generated receipt. Valid without a physical signature.
+
+  <!-- Note -->
+  <div class="note-box">
+    <strong>Payment Note:</strong> Payment was processed securely via <strong>Chip</strong> (chip-in.asia).
+    All amounts are in Malaysian Ringgit (MYR). This subscription will remain active until the period end date above.
+    For questions, contact <strong>hi.tetikus@gmail.com</strong>.
   </div>
-  ${viewOnly?"":"<script>window.onload=function(){window.print();}<\/script>"}
+
+  <!-- Footer -->
+  <div class="inv-footer">
+    <strong>Alev Global Sdn Bhd</strong> · Kuala Lumpur, Malaysia · hi.tetikus@gmail.com · tetikus.com.my<br>
+    This is a computer-generated tax invoice and is valid without a physical signature.<br>
+    Invoice # ${invoiceNum} · Generated on ${new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
+  </div>
+
+</div>
+${viewOnly?"":"<script>window.onload=function(){window.print();}<\/script>"}
 </body></html>`;
-  const w = window.open("","_blank","width=780,height=960");
+  const w = window.open("","_blank","width=860,height=1100");
   if (w) { w.document.write(html); w.document.close(); }
 }
 
@@ -7010,7 +7093,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                   color:isFree?TEXT:isBetaPlan?"#065F46":isExpired?"#EF4444":pd.color}}>
                   {pd.name} Plan
                 </div>
-                <div style={{background:isExpired?"#FEE2E2":isFree?"#F3F4F6":`${pd.color}18`,border:`1.5px solid ${isExpired?"#EF444440":isFree?BORDER:pd.color+"44"}`,borderRadius:99,padding:"4px 14px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isExpired?"#EF4444":isFree?SUB:pd.color}}>
+                <div style={{background:isExpired?"#FEE2E2":isFree?"#F3F4F6":isBetaPlan?"#059669":"#16A34A",border:`1.5px solid ${isExpired?"#EF444440":isFree?BORDER:isBetaPlan?"#059669":"#16A34A"}`,borderRadius:99,padding:"4px 14px",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:isExpired?"#EF4444":isFree?SUB:"#fff"}}>
                   {isExpired?"Expired":isBetaPlan?"Beta Access":"Active"}
                 </div>
               </div>
@@ -7029,8 +7112,8 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                       : isExpiringSoon
                         ? `⚡ Expires in ${daysLeft} day${daysLeft===1?"":"s"} — ${expiryLabel}`
                         : expiryLabel
-                          ? `Your ${pd.name} plan expires on: ${expiryLabel}`
-                          : expiryLoading ? "Loading plan details…" : "Active subscription"}
+                          ? `This plan will expire on ${expiryLabel}`
+                          : expiryLoading ? "Loading plan details…" : "This plan is active"}
                   </div>
                   {/* Renew button — small, pill-style */}
                   {isPaidPro && (
