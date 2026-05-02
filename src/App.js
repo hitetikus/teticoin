@@ -6927,14 +6927,18 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
     ? "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
     : "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL";
   // Build invoice history from payment date (expiry - period)
-  const invoices = plan!=="free" && planExpiry ? (() => {
-    const expDate = new Date(planExpiry);
+  // Build invoice: use planExpiry to back-calculate payment date
+  // If planExpiry missing but plan is paid, show estimated invoice from today
+  const invoices = (() => {
+    if (isFree || isBetaPlan) return [];
+    const refExpiry = planExpiry ? new Date(planExpiry) : null;
+    if (!refExpiry) return [];
     const isYearly = plan === "proY";
     const periodDays = isYearly ? 365 : 30;
-    const payDate = new Date(expDate);
+    const payDate = new Date(refExpiry);
     payDate.setDate(payDate.getDate() - periodDays);
     return [{ date: payDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid", expiry:expiryLabel }];
-  })() : [];
+  })();
 
   return (
     <div style={{position:"fixed",inset:0,zIndex:700,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -7004,7 +7008,7 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
                         ? `⚡ Expires in ${daysLeft} day${daysLeft===1?"":"s"} — ${expiryLabel}`
                         : expiryLabel
                           ? `Your ${pd.name} plan expires on: ${expiryLabel}`
-                          : "Active — no expiry set"}
+                          : "Active subscription"}
                   </div>
                   {/* Renew button — small, pill-style */}
                   {isPaidPro && (
@@ -7151,29 +7155,43 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.8" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                 </div>
                 <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>No invoices yet</div>
-                <div style={{fontSize:13,color:SUB}}>Invoices will appear here after your first payment.</div>
+                <div style={{fontSize:13,color:SUB}}>
+                  {!isFree ? "Invoice will appear once your plan expiry date is confirmed. Try closing and reopening Billing." : "Invoices will appear here after your first payment."}
+                </div>
               </div>
             ) : (
               <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:20}}>
+                {/* Table header */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 90px 72px 52px",gap:0,padding:"9px 18px",borderBottom:`1.5px solid ${BORDER}`,background:"#FAFAFA"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.8}}>Date</div>
+                  <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.8,textAlign:"right"}}>Total</div>
+                  <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.8,textAlign:"center"}}>Status</div>
+                  <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.8,textAlign:"center"}}>PDF</div>
+                </div>
                 {invoices.map((inv,i)=>(
                   <div key={i} onClick={()=>printInvoice(inv,pd,planExpiry,true)}
-                    style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none",cursor:"pointer",transition:"background .12s"}}
+                    style={{display:"grid",gridTemplateColumns:"1fr 90px 72px 52px",gap:0,alignItems:"center",padding:"13px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none",cursor:"pointer",transition:"background .1s"}}
                     onMouseOver={e=>e.currentTarget.style.background=SOFT}
                     onMouseOut={e=>e.currentTarget.style.background="#fff"}>
-                    <div style={{flex:1}}>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{inv.date}</div>
-                      <div style={{fontSize:12,color:SUB,marginTop:1}}>{pd.name} Plan · {pd.renewal}</div>
+                    <div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:14,color:TEXT}}>{inv.date}</div>
+                      <div style={{fontSize:11,color:SUB,marginTop:1}}>{pd.name} · {pd.renewal}</div>
                     </div>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:10}}>{inv.amount}</div>
-                    <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN,marginRight:10}}>{inv.status}</div>
-                    <button onClick={e=>{e.stopPropagation();printInvoice(inv,pd,planExpiry,false);}}
-                      title="Download PDF invoice"
-                      style={{padding:"5px 10px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:4,flexShrink:0}}
-                      onMouseOver={e=>e.currentTarget.style.borderColor=PINK}
-                      onMouseOut={e=>e.currentTarget.style.borderColor=BORDER}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                      PDF
-                    </button>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,textAlign:"right"}}>{inv.amount}</div>
+                    <div style={{textAlign:"center"}}>
+                      <span style={{display:"inline-flex",alignItems:"center",gap:4,background:`${GREEN}15`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:700,color:GREEN}}>
+                        ✓ {inv.status}
+                      </span>
+                    </div>
+                    <div style={{textAlign:"center"}}>
+                      <button onClick={e=>{e.stopPropagation();printInvoice(inv,pd,planExpiry,false);}}
+                        title="Download PDF"
+                        style={{width:32,height:32,display:"inline-flex",alignItems:"center",justifyContent:"center",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,cursor:"pointer",transition:"all .12s",padding:0}}
+                        onMouseOver={e=>{e.currentTarget.style.borderColor=PINK;e.currentTarget.style.background=SOFT;}}
+                        onMouseOut={e=>{e.currentTarget.style.borderColor=BORDER;e.currentTarget.style.background="#fff";}}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -7200,32 +7218,46 @@ function BillingPage({ plan="free", planExpiry=null, sessionCount=0, maxPax=0, o
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.8" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               </div>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>No invoices yet</div>
-              <div style={{fontSize:13,color:SUB}}>Invoices will appear here after your first payment.</div>
+              <div style={{fontSize:13,color:SUB}}>
+                {!isFree ? "Invoice will appear once your plan expiry date is confirmed. Try closing and reopening Billing." : "Invoices will appear here after your first payment."}
+              </div>
             </div>
           ) : (
-            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden"}}>
-              {invoices.map((inv,i)=>(
-                <div key={i} onClick={()=>printInvoice(inv,pd,planExpiry,true)}
-                  style={{display:"flex",alignItems:"center",padding:"14px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none",cursor:"pointer",transition:"background .12s"}}
-                  onMouseOver={e=>e.currentTarget.style.background=SOFT}
-                  onMouseOut={e=>e.currentTarget.style.background="#fff"}>
-                  <div style={{flex:1}}>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{inv.date}</div>
-                    <div style={{fontSize:12,color:SUB,marginTop:1}}>{pd.name} Plan · {pd.renewal}</div>
-                  </div>
-                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginRight:10}}>{inv.amount}</div>
-                  <div style={{background:`${GREEN}18`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"2px 10px",fontSize:11,fontWeight:700,color:GREEN,marginRight:10}}>{inv.status}</div>
-                  <button onClick={e=>{e.stopPropagation();printInvoice(inv,pd,planExpiry,false);}}
-                    title="Download PDF invoice"
-                    style={{padding:"5px 10px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:SUB,cursor:"pointer",display:"flex",alignItems:"center",gap:4,flexShrink:0}}
-                    onMouseOver={e=>e.currentTarget.style.borderColor=PINK}
-                    onMouseOut={e=>e.currentTarget.style.borderColor=BORDER}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    PDF
-                  </button>
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,overflow:"hidden",marginBottom:20}}>
+                {/* Table header */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 90px 72px 52px",gap:0,padding:"9px 18px",borderBottom:`1.5px solid ${BORDER}`,background:"#FAFAFA"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.8}}>Date</div>
+                  <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.8,textAlign:"right"}}>Total</div>
+                  <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.8,textAlign:"center"}}>Status</div>
+                  <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:.8,textAlign:"center"}}>PDF</div>
                 </div>
-              ))}
-            </div>
+                {invoices.map((inv,i)=>(
+                  <div key={i} onClick={()=>printInvoice(inv,pd,planExpiry,true)}
+                    style={{display:"grid",gridTemplateColumns:"1fr 90px 72px 52px",gap:0,alignItems:"center",padding:"13px 18px",borderBottom:i<invoices.length-1?`1px solid ${BORDER}`:"none",cursor:"pointer",transition:"background .1s"}}
+                    onMouseOver={e=>e.currentTarget.style.background=SOFT}
+                    onMouseOut={e=>e.currentTarget.style.background="#fff"}>
+                    <div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:14,color:TEXT}}>{inv.date}</div>
+                      <div style={{fontSize:11,color:SUB,marginTop:1}}>{pd.name} · {pd.renewal}</div>
+                    </div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,textAlign:"right"}}>{inv.amount}</div>
+                    <div style={{textAlign:"center"}}>
+                      <span style={{display:"inline-flex",alignItems:"center",gap:4,background:`${GREEN}15`,border:`1px solid ${GREEN}40`,borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:700,color:GREEN}}>
+                        ✓ {inv.status}
+                      </span>
+                    </div>
+                    <div style={{textAlign:"center"}}>
+                      <button onClick={e=>{e.stopPropagation();printInvoice(inv,pd,planExpiry,false);}}
+                        title="Download PDF"
+                        style={{width:32,height:32,display:"inline-flex",alignItems:"center",justifyContent:"center",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,cursor:"pointer",transition:"all .12s",padding:0}}
+                        onMouseOver={e=>{e.currentTarget.style.borderColor=PINK;e.currentTarget.style.background=SOFT;}}
+                        onMouseOut={e=>{e.currentTarget.style.borderColor=BORDER;e.currentTarget.style.background="#fff";}}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
           )}
           <div style={{marginTop:20,background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:12,padding:"16px 18px"}}>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,marginBottom:8}}>Payment Methods</div>
@@ -7553,14 +7585,6 @@ function SuperAdminDashboard({ onClose }) {
             </div>
           );
         })}
-        <div style={{marginLeft:"auto",display:"flex",gap:6,flexShrink:0}}>
-          {[["joined","Newest"],["alpha","A→Z"]].map(([m,l])=>(
-            <button key={m} onClick={()=>setSortMode(m)}
-              style={{padding:"6px 12px",background:sortMode===m?SOFT:"#fff",border:`1.5px solid ${sortMode===m?PINK:BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:sortMode===m?PINK:SUB,cursor:"pointer",whiteSpace:"nowrap"}}>
-              {l}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Tabs */}
@@ -7586,12 +7610,21 @@ function SuperAdminDashboard({ onClose }) {
       <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
 
         {tab === "users" && <>
-          {/* Search + Select All */}
-          <div style={{marginBottom:8,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-            <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:200,maxWidth:480}}/>
+          {/* Search + Sort + Select All */}
+          <div style={{marginBottom:8,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+            <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:160,maxWidth:400}}/>
+            {/* Sort toggle — inline with search */}
+            <div style={{display:"flex",gap:4,flexShrink:0}}>
+              {[["joined","Newest"],["alpha","A→Z"]].map(([m,l])=>(
+                <button key={m} onClick={()=>setSortMode(m)}
+                  style={{padding:"7px 12px",background:sortMode===m?SOFT:"#fff",border:`1.5px solid ${sortMode===m?PINK:BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:sortMode===m?PINK:SUB,cursor:"pointer",whiteSpace:"nowrap",transition:"all .12s"}}>
+                  {l}
+                </button>
+              ))}
+            </div>
             {!loading && filtered.length > 0 && (
               <button onClick={()=>selected.size===filtered.length?setSelected(new Set()):setSelected(new Set(filtered.map(u=>u.uid)))}
-                style={{padding:"8px 14px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
+                style={{padding:"7px 14px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
                 {selected.size===filtered.length&&filtered.length>0?"Deselect All":`Select All (${filtered.length})`}
               </button>
             )}
@@ -9244,15 +9277,17 @@ export default function App() {
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</div>
             <div style={{fontSize:11,color:SUB,fontWeight:500,marginLeft:2}}>by Tetikus</div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,
+            padding: plan!=="free" ? "0 0 0 32px" : "0",
+            background: plan!=="free" ? "linear-gradient(to right, transparent, rgba(233,30,140,0.07) 60%, rgba(233,30,140,0.12))" : "none",
+            borderRadius:12,margin: plan!=="free" ? "0 -8px 0 0" : "0"}}>
           <div className="tp-bulb-wrap"><button onClick={()=>setShowTips(true)} className="tp-bulb-btn" style={{padding:0,lineHeight:0}}><svg height="28" viewBox="-41 0 512 512" width="28" xmlns="http://www.w3.org/2000/svg"><path d="m264.28125 479.652344c0 13.722656-11.125 24.847656-24.847656 24.847656h-49.703125c-13.722657 0-24.847657-11.125-24.847657-24.847656v-14.402344h99.398438zm0 0" fill="#295d76"/><path d="m242.28125 465.25v14.402344c0 13.722656-11.125 24.847656-24.847656 24.847656h22c13.722656 0 24.847656-11.125 24.847656-24.847656v-14.402344zm0 0" fill="#1f4658"/><path d="m162.597656 471.367188h103.96875c3.3125 0 6-2.683594 6-6v-93.402344h-115.96875v93.402344c0 3.316406 2.6875 6 6 6zm0 0" fill="#e6f1fa"/><path d="m250.566406 371.964844v93.402344c0 3.316406-2.6875 6-6 6h22c3.3125 0 6-2.683594 6-6v-93.402344zm0 0" fill="#cee4f7"/><path d="m355.398438 214.582031c0-77.160156-62.0625-139.824219-138.988282-140.804687-78.011718-.992188-142.433594 62.398437-142.644531 140.417968-.148437 55.949219 32.332031 104.332032 79.488281 127.183594 2.054688.992188 3.34375 3.089844 3.34375 5.375v25.210938h115.96875v-25.214844c0-2.289062 1.300782-4.382812 3.363282-5.382812 47.035156-22.800782 79.46875-71.003907 79.46875-126.785157zm0 0" fill="#feda43"/><path d="m216.410156 73.777344c-4.304687-.054688-8.5625.097656-12.777344.425781 72.605469 5.640625 129.765626 66.328125 129.765626 140.378906 0 55.78125-32.433594 103.984375-79.46875 126.785157-2.0625 1-3.363282 3.09375-3.363282 5.386718v25.214844h22v-25.214844c0-2.292968 1.300782-4.386718 3.363282-5.386718 47.035156-22.800782 79.46875-71.003907 79.46875-126.785157 0-77.160156-62.058594-139.824219-138.988282-140.804687zm0 0" fill="#fdb53e"/><path d="m214.582031 48.132812c4.144531 0 7.5-3.359374 7.5-7.5v-33.132812c0-4.140625-3.355469-7.5-7.5-7.5s-7.5 3.359375-7.5 7.5v33.132812c0 4.140626 3.355469 7.5 7.5 7.5zm0 0"/><path d="m86.277344 96.882812c1.464844 1.464844 3.382812 2.199219 5.304687 2.199219 1.917969 0 3.839844-.734375 5.304688-2.199219 2.925781-2.929687 2.925781-7.675781 0-10.605468l-23.429688-23.425782c-2.929687-2.929687-7.679687-2.929687-10.605469 0-2.929687 2.925782-2.929687 7.675782 0 10.605469zm0 0"/><path d="m40.632812 207.082031h-33.132812c-4.144531 0-7.5 3.359375-7.5 7.5s3.355469 7.5 7.5 7.5h33.132812c4.140626 0 7.5-3.359375 7.5-7.5s-3.359374-7.5-7.5-7.5zm0 0"/><path d="m86.277344 332.28125-23.429688 23.425781c-2.929687 2.929688-2.929687 7.679688 0 10.605469 1.464844 1.464844 3.382813 2.199219 5.304688 2.199219 1.917968 0 3.839844-.734375 5.300781-2.199219l23.429687-23.425781c2.929688-2.929688 2.929688-7.675781.003907-10.605469-2.929688-2.929688-7.679688-2.929688-10.609375 0zm0 0"/><path d="m342.886719 332.28125c-2.929688-2.929688-7.675781-2.929688-10.605469 0s-2.929688 7.675781 0 10.605469l23.425781 23.425781c1.464844 1.464844 3.386719 2.199219 5.304688 2.199219s3.839843-.734375 5.304687-2.199219c2.929688-2.925781 2.929688-7.675781 0-10.605469zm0 0"/><path d="m421.664062 207.082031h-33.132812c-4.140625 0-7.5 3.359375-7.5 7.5 0 4.144531 3.359375 7.5 7.5 7.5h33.132812c4.144532 0 7.5-3.355469 7.5-7.5 0-4.140625-3.355468-7.5-7.5-7.5zm0 0"/><path d="m355.710938 62.851562-23.429688 23.425782c-2.929688 2.929687-2.929688 7.675781-.003906 10.605468 1.464844 1.464844 3.386718 2.199219 5.304687 2.199219 1.921875 0 3.839844-.734375 5.304688-2.199219l23.429687-23.425781c2.929688-2.929687 2.929688-7.679687 0-10.605469-2.929687-2.929687-7.679687-2.929687-10.605468 0zm0 0"/><path d="m362.898438 214.582031c0-81.78125-66.535157-148.316406-148.316407-148.316406-33.757812 0-66.789062 11.644531-93.019531 32.789063-3.222656 2.601562-3.730469 7.320312-1.128906 10.546874 2.597656 3.222657 7.320312 3.730469 10.542968 1.132813 23.914063-19.28125 52.824219-29.46875 83.605469-29.46875 73.511719 0 133.316407 59.804687 133.316407 133.316406 0 52.269531-30.785157 99.972657-78.425782 121.527344-2.683594 1.214844-4.40625 3.886719-4.40625 6.835937v21.519532h-26.417968v-67.832032h9.066406c13.269531 0 24.0625-10.796874 24.0625-24.066406 0-13.269531-10.792969-24.066406-24.0625-24.066406-13.273438 0-24.066406 10.796875-24.066406 24.066406v9.066406h-18.132813v-9.066406c0-13.269531-10.796875-24.066406-24.066406-24.066406s-24.066407 10.796875-24.066407 24.066406c0 13.269532 10.796876 24.066406 24.066407 24.066406h9.066406v67.832032h-26.417969v-21.519532c0-2.949218-1.722656-5.621093-4.40625-6.835937-47.640625-21.550781-78.425781-69.253906-78.425781-121.527344 0-30.421875 10.511719-60.175781 29.605469-83.777343 2.605468-3.21875 2.105468-7.941407-1.113282-10.546876-3.222656-2.605468-7.945312-2.105468-10.550781 1.113282-21.242187 26.265625-32.941406 59.367187-32.941406 93.210937 0 56.519531 32.351563 108.242188 82.832031 133.113281v16.769532h-.78125c-4.144531 0-7.5 3.359375-7.5 7.5 0 4.144531 3.355469 7.5 7.5 7.5h.78125v91.902344c0 1.988281.789063 3.898437 2.195313 5.304687s3.316406 2.195313 5.304687 2.195313h.824219c-.027344.257812-.039063.519531-.039063.78125 0 17.839843 14.511719 32.351562 32.347657 32.351562h49.703125c17.835937 0 32.347656-14.511719 32.347656-32.351562 0-.261719-.011719-.523438-.039062-.78125h.824218c4.140625 0 7.5-3.355469 7.5-7.5v-91.902344h.78125c4.144532 0 7.5-3.355469 7.5-7.5 0-4.140625-3.355468-7.5-7.5-7.5h-.78125v-16.769532c50.480469-24.871093 82.832032-76.59375 82.832032-133.113281zm-198.800782 249.285157v-9.851563h100.96875v9.851563zm0-59.550782h100.96875v9.851563h-100.96875zm0 34.699219v-9.851563h100.96875v9.851563zm100.96875-49.699219h-100.964844v-9.851562h33.90625.007813.011719 33.113281.007813.011718 33.90625zm-26.417968-116.75c0-4.996094 4.066406-9.0625 9.066406-9.0625s9.0625 4.066406 9.0625 9.0625c0 5-4.0625 9.066406-9.0625 9.066406h-9.066406zm-57.199219 9.066406c-5 0-9.066407-4.066406-9.066407-9.066406 0-4.996094 4.066407-9.0625 9.066407-9.0625s9.066406 4.066406 9.066406 9.0625v9.066406zm24.066406 15h18.132813v67.832032h-18.132813zm51.265625 183.015626c0 9.566406-7.78125 17.351562-17.347656 17.351562h-49.703125c-9.566407 0-17.347657-7.78125-17.347657-17.351562 0-.261719-.015624-.523438-.042968-.78125h84.480468c-.023437.257812-.039062.519531-.039062.78125zm0 0"/></svg></button></div>
           <button onClick={()=>setProfileOpen(v=>!v)}
             style={{display:"flex",alignItems:"center",gap:8,
-              background: plan!=="free"&&!profileOpen
-                ? "linear-gradient(to left, rgba(233,30,140,0.08), transparent)"
-                : profileOpen?SOFT:"none",
-              border:`1px solid ${plan!=="free"?PINK+"55":profileOpen?PINK:BORDER}`,
-              borderRadius:12,padding:"7px 14px 7px 10px",cursor:"pointer",transition:"all .15s"}}>
+              background: profileOpen ? SOFT : "none",
+              border:`1px solid ${plan!=="free"?PINK+"44":profileOpen?PINK:BORDER}`,
+              borderRadius:12,padding:"7px 14px 7px 10px",cursor:"pointer",transition:"all .15s",
+              position:"relative"}}>
             <div style={{width:30,height:30,borderRadius:9,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:12,color:"#fff",flexShrink:0}}>
               {(trainer?.name||"U").split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}
             </div>
