@@ -7677,7 +7677,8 @@ function SuperAdminDashboard({ onClose }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState("users"); // users | beta
+  const [tab, setTab] = useState("users"); // users | usage
+  const [usersSubtab, setUsersSubtab] = useState("all"); // all | free | beta | pro | betaMgmt
   const [betaEmail, setBetaEmail] = useState("");
   const [betaMsg, setBetaMsg] = useState(null);
   const [actionMsg, setActionMsg] = useState(null);
@@ -7686,13 +7687,14 @@ function SuperAdminDashboard({ onClose }) {
   const [inviteBusy, setInviteBusy] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [pendingInvites, setPendingInvites] = useState([]);
-  const [statsFilter, setStatsFilter] = useState(null);
   const [sortMode, setSortMode] = useState("joined");
-  const [sortDir, setSortDir] = useState(1); // 1 = desc/default, -1 = asc/reverse
+  const [sortDir, setSortDir] = useState(1);
   const [betaSearch, setBetaSearch] = useState("");
   const [betaSort, setBetaSort] = useState("newest");
   const [betaSortDir, setBetaSortDir] = useState(1);
   const [betaSelected, setBetaSelected] = useState(new Set());
+  const [usageData, setUsageData] = useState(null);
+  const [usageLoading, setUsageLoading] = useState(false);
 
   // Load all users — data is stored under users/{uid}/data/{key} subcollection
   useEffect(() => {
@@ -7919,6 +7921,51 @@ function SuperAdminDashboard({ onClose }) {
   const PLAN_COLORS = { free: SUB, beta: GREEN, pro: BLUE, proY: BLUE, oneTime: BLUE, superadmin: "#FF6B00" };
   const PLAN_LABELS = { free:"Free", beta:"Beta Pro", pro:"Pro", proY:"Pro Yearly", oneTime:"One-Time", superadmin:"Superadmin" };
 
+  async function loadUsageData() {
+    if (usageLoading) return;
+    setUsageLoading(true);
+    try {
+      const { getFirestore, collection, getDocs } = await import("firebase/firestore");
+      const db = getFirestore();
+      const sessSnap = await getDocs(collection(db, "sessions"));
+      let totalSessions = 0, totalParticipants = 0, totalCoins = 0, totalCoinmasters = 0;
+      let sessionDurations = [];
+      const sessionsByMonth = {}; // "YYYY-MM" -> count
+      sessSnap.docs.forEach(d => {
+        const s = d.data();
+        if (d.id.startsWith("cm-")) return; // skip coinmaster lookup docs
+        totalSessions++;
+        const parts = Array.isArray(s.participants) ? s.participants : [];
+        totalParticipants += parts.length;
+        parts.forEach(p => { totalCoins += (p.total || 0); });
+        if (s.coinmasterEnabled || s.coinmasterCode) totalCoinmasters++;
+        // session month
+        const ts = s.createdAt || s.startedAt || null;
+        if (ts) {
+          const d2 = new Date(ts);
+          const key = `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,"0")}`;
+          sessionsByMonth[key] = (sessionsByMonth[key] || 0) + 1;
+        }
+        // duration
+        if (s.startedAt && s.endedAt) {
+          sessionDurations.push((s.endedAt - s.startedAt) / 60000); // minutes
+        }
+      });
+      const avgDuration = sessionDurations.length
+        ? Math.round(sessionDurations.reduce((a,b)=>a+b,0) / sessionDurations.length)
+        : null;
+      setUsageData({ totalSessions, totalParticipants, totalCoins, totalCoinmasters, avgDuration, sessionsByMonth });
+    } catch(e) { console.error("Usage load error:", e); }
+    setUsageLoading(false);
+  }
+
+  // derive statsFilter from usersSubtab
+  const statsFilter = usersSubtab === "all" || usersSubtab === "betaMgmt" ? null
+    : usersSubtab === "pro" ? "pro"
+    : usersSubtab === "beta" ? "beta"
+    : usersSubtab === "free" ? "free"
+    : null;
+
   const filtered = users.filter(u => {
     const matchSearch = u.email.toLowerCase().includes(search.toLowerCase()) ||
       u.name.toLowerCase().includes(search.toLowerCase());
@@ -7946,30 +7993,53 @@ function SuperAdminDashboard({ onClose }) {
   // Derive superadmin email
   const superadminEmail = users.find(u => u.plan === "superadmin")?.email || null;
 
-  const TAB_DEFS = [
-    { key:"all",  label:"All Users",  val:stats.total, color:TEXT,      activeColor:TEXT      },
-    { key:"free", label:"Free Users", val:stats.free,  color:"#6B7280", activeColor:"#6B7280" },
-    { key:"beta", label:"Beta Pro",   val:stats.beta,  color:GREEN,     activeColor:GREEN     },
-    { key:"pro",  label:"Pro",        val:stats.pro,   color:BLUE,      activeColor:BLUE      },
+  const USERS_SUBTABS = [
+    { key:"all",  label:"All Users",  val:stats.total, color:TEXT      },
+    { key:"free", label:"Free",       val:stats.free,  color:"#6B7280" },
+    { key:"beta", label:"Beta Pro",   val:stats.beta,  color:GREEN     },
+    { key:"pro",  label:"Pro",        val:stats.pro,   color:BLUE      },
+    { key:"betaMgmt", label:"Beta Invites", val:pendingInvites.length, color:"#F59E0B" },
   ];
+
+  // User signup trend — from createdAt in users array
+  const signupsByMonth = (() => {
+    const map = {};
+    users.forEach(u => {
+      if (!u.createdAt) return;
+      const d = new Date(u.createdAt);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+      map[key] = (map[key] || 0) + 1;
+    });
+    return map;
+  })();
+
+  // Build last 12 months for signup chart
+  const last12Months = (() => {
+    const months = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+      const label = d.toLocaleString("en-GB", { month:"short" });
+      months.push({ key, label, count: signupsByMonth[key] || 0 });
+    }
+    return months;
+  })();
 
   return (
     <div style={{position:"fixed",inset:0,zIndex:900,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style>{CSS}</style>
 
-      {/* Header — white-to-red gradient, title truly centered, email floated right */}
+      {/* Header */}
       <div style={{background:"linear-gradient(90deg,#ffffff 0%,#ffffff 35%,#EF4444 75%,#B91C1C 100%)",borderBottom:"1px solid rgba(239,68,68,0.2)",padding:"0 32px",height:64,display:"flex",alignItems:"center",position:"relative",flexShrink:0}}>
-        {/* Left: Back button */}
         <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:"#374151",fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,fontWeight:600,padding:0,zIndex:1}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
-        {/* Center: title — absolutely centered */}
         <div style={{position:"absolute",left:0,right:0,display:"flex",alignItems:"center",justifyContent:"center",gap:8,pointerEvents:"none"}}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:"#0A0A0F"}}>Admin Dashboard</div>
         </div>
-        {/* Right: superadmin email floated */}
         <div style={{marginLeft:"auto",zIndex:1,display:"flex",alignItems:"center",gap:6}}>
           {superadminEmail && <>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -7979,26 +8049,6 @@ function SuperAdminDashboard({ onClose }) {
         </div>
       </div>
 
-      {/* Color-coded stat tabs — serve as primary navigation, centered */}
-      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"14px 24px",display:"flex",gap:10,flexShrink:0,justifyContent:"center",flexWrap:"wrap"}}>
-        {TAB_DEFS.map(s => {
-          const active = (tab === "beta" && s.key === "beta") ||
-                         (tab === "users" && ((s.key === "all" && !statsFilter) || statsFilter === s.key));
-          return (
-            <div key={s.key}
-              onClick={()=>{
-                setSearch(""); setSelected(new Set());
-                if (s.key === "beta") { setTab("beta"); setStatsFilter(null); }
-                else { setTab("users"); setStatsFilter(s.key === "all" ? null : s.key); }
-              }}
-              style={{background:active?`${s.activeColor}10`:"#fff",border:`2.5px solid ${s.activeColor}`,borderRadius:10,padding:"10px 24px",flexShrink:0,minWidth:110,textAlign:"center",cursor:"pointer",transition:"all .15s",opacity:active?1:0.4}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:s.activeColor}}>{loading?"…":s.val}</div>
-              <div style={{fontSize:11,color:s.activeColor,fontWeight:700,marginTop:2}}>{s.label}</div>
-            </div>
-          );
-        })}
-      </div>
-
       {/* Toast */}
       {actionMsg && (
         <div style={{position:"fixed",top:70,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:TEXT,color:"#fff",borderRadius:10,padding:"10px 20px",fontSize:13,fontWeight:600,whiteSpace:"nowrap",boxShadow:"0 4px 20px rgba(0,0,0,.2)"}}>
@@ -8006,11 +8056,48 @@ function SuperAdminDashboard({ onClose }) {
         </div>
       )}
 
-      <div style={{flex:1,overflowY:"auto"}}>
-        <div style={{maxWidth:960,margin:"0 auto",padding:"20px 32px"}}>
+      {/* Body — sidebar + content */}
+      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
 
-        {tab === "users" && (() => {
-          const ctx = statsFilter || "all";
+        {/* LEFT SIDEBAR */}
+        <div style={{width:200,borderRight:`1px solid ${BORDER}`,background:"#fff",display:"flex",flexDirection:"column",padding:"16px 0",flexShrink:0,overflowY:"auto"}}>
+          <div style={{padding:"0 12px 8px",fontSize:10,fontWeight:700,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:1.2}}>Admin</div>
+          {[
+            { key:"users", label:"Users", icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+            { key:"usage", label:"Usage", icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
+          ].map(s => (
+            <button key={s.key} onClick={()=>setTab(s.key)}
+              style={{display:"flex",alignItems:"center",gap:9,padding:"10px 16px",background:tab===s.key?SOFT:"none",borderLeft:tab===s.key?`3px solid ${PINK}`:"3px solid transparent",border:"none",cursor:"pointer",textAlign:"left",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:tab===s.key?700:500,fontSize:13,color:tab===s.key?PINK:TEXT,width:"100%",transition:"all .12s"}}>
+              <span style={{color:tab===s.key?PINK:SUB}}>{s.icon}</span>
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* MAIN CONTENT */}
+        <div style={{flex:1,overflowY:"auto"}}>
+
+        {/* ── USERS TAB ── */}
+        {tab === "users" && (
+          <div>
+            {/* Sub-tab pills */}
+            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",gap:8,flexWrap:"wrap"}}>
+              {USERS_SUBTABS.map(s => {
+                const active = usersSubtab === s.key;
+                return (
+                  <div key={s.key} onClick={()=>{ setSearch(""); setSelected(new Set()); setUsersSubtab(s.key); }}
+                    style={{background:active?`${s.color}10`:"#fff",border:`2px solid ${s.color}`,borderRadius:10,padding:"8px 18px",flexShrink:0,textAlign:"center",cursor:"pointer",transition:"all .15s",opacity:active?1:0.45}}>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:s.color}}>{loading?"…":s.val}</div>
+                    <div style={{fontSize:11,color:s.color,fontWeight:700,marginTop:1}}>{s.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{maxWidth:960,margin:"0 auto",padding:"20px 24px"}}>
+
+        {(() => {
+          const ctx = usersSubtab === "betaMgmt" ? "betaMgmt" : (statsFilter || "all");
           const sortOpts = (ctx === "pro" || ctx === "beta")
             ? [["joined","Newest"],["alpha","A→Z"],["expiry","Expiry"]]
             : [["joined","Newest"],["alpha","A→Z"]];
@@ -8027,8 +8114,170 @@ function SuperAdminDashboard({ onClose }) {
             else setSelected(new Set(eligibles));
           };
           return (<>
-          {/* Search bar — right-aligned sort links */}
-          <div style={{marginBottom:8,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+          {/* betaMgmt subtab — invite form + pending invites */}
+          {ctx === "betaMgmt" && (() => {
+            const betaUsers = users.filter(u => u.plan === "beta");
+            const toggleBetaSort = (m) => {
+              if (betaSort === m) setBetaSortDir(d => d * -1);
+              else { setBetaSort(m); setBetaSortDir(1); }
+            };
+            const betaArrow = (m) => betaSort === m ? (betaSortDir === 1 ? " ▼" : " ▲") : " ▼";
+            const betaFiltered = betaUsers
+              .filter(u => !betaSearch || u.name.toLowerCase().includes(betaSearch.toLowerCase()) || u.email.toLowerCase().includes(betaSearch.toLowerCase()))
+              .sort((a,b) => {
+                if (betaSort === "alpha") return betaSortDir * (a.name||"").localeCompare(b.name||"");
+                if (betaSort === "expiry") return betaSortDir * ((a.planExpiry||"") < (b.planExpiry||"") ? -1 : 1);
+                return betaSortDir * ((b.createdAt||0) - (a.createdAt||0));
+              });
+            const betaAllChecked = betaFiltered.length > 0 && betaFiltered.every(u => betaSelected.has(u.uid));
+            const betaSomeChecked = !betaAllChecked && betaFiltered.some(u => betaSelected.has(u.uid));
+            const toggleBetaAll = () => {
+              if (betaAllChecked || betaSomeChecked) setBetaSelected(new Set());
+              else setBetaSelected(new Set(betaFiltered.map(u => u.uid)));
+            };
+            const bulkBetaRevoke = async () => {
+              const targets = betaFiltered.filter(u => betaSelected.has(u.uid));
+              if (!targets.length) return;
+              for (const u of targets) await revokePlan(u.uid, u.email);
+              setBetaSelected(new Set());
+            };
+            const bulkBetaReset = async () => {
+              const targets = betaFiltered.filter(u => betaSelected.has(u.uid) && u.email && u.email !== "—");
+              for (const u of targets) await resendReset(u.email);
+              setBetaSelected(new Set());
+            };
+            const bulkBetaDelete = async () => {
+              const targets = betaFiltered.filter(u => betaSelected.has(u.uid));
+              if (!targets.length) return;
+              if (!window.confirm(`Delete ${targets.length} account${targets.length>1?"s":""}?\n\nAll data will be permanently removed.`)) return;
+              for (const u of targets) await deleteUserAccount(u.uid, u.email);
+              setBetaSelected(new Set());
+            };
+            return (
+              <div style={{maxWidth:1100}}>
+                <div style={{display:"grid",gridTemplateColumns:"62fr 38fr",gap:24,alignItems:"start"}}>
+                  <div>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                      <Inp placeholder="Search…" value={betaSearch} onChange={e=>{setBetaSearch(e.target.value);setBetaSelected(new Set());}} style={{flex:1,minWidth:0,borderRadius:999,fontSize:12}}/>
+                      <div style={{display:"flex",alignItems:"center",flexShrink:0,marginLeft:"auto"}}>
+                        {[["newest","Newest"],["alpha","A→Z"],["expiry","Expiry"]].map(([m,l],i) => (
+                          <span key={m} style={{display:"flex",alignItems:"center"}}>
+                            {i > 0 && <span style={{color:"#D1D5DB",margin:"0 5px",userSelect:"none",fontSize:12}}>|</span>}
+                            <button onClick={()=>toggleBetaSort(m)}
+                              style={{background:"none",border:"none",cursor:"pointer",fontSize:12,fontWeight:betaSort===m?700:500,color:betaSort===m?PINK:SUB,padding:"4px 0",whiteSpace:"nowrap"}}>
+                              {l}{betaArrow(m)}
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    {betaSelected.size > 0 && (
+                      <div style={{background:"#1A0A14",borderRadius:12,padding:"10px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",marginRight:4}}>{betaSelected.size} selected</span>
+                        <button onClick={bulkBetaRevoke} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:"#EF4444",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>Revoke Beta Pro
+                        </button>
+                        <button onClick={bulkBetaReset} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:"#2563EB",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Reset Password
+                        </button>
+                        <button onClick={bulkBetaDelete} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:"#374151",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Delete
+                        </button>
+                        <button onClick={()=>setBetaSelected(new Set())} style={{marginLeft:"auto",padding:"6px 10px",background:"none",border:"1px solid rgba(255,255,255,.25)",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"rgba(255,255,255,.6)",cursor:"pointer"}}>✕</button>
+                      </div>
+                    )}
+                    <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,overflow:"hidden"}}>
+                      {betaFiltered.length > 0 && (
+                        <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:`1px solid ${BORDER}`,background:"#FAFAFA"}}>
+                          <div onClick={toggleBetaAll} style={{width:20,height:20,borderRadius:5,border:`2px solid ${betaAllChecked?PINK:betaSomeChecked?"#9CA3AF":BORDER}`,background:betaAllChecked?PINK:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,transition:"all .12s"}}>
+                            {betaAllChecked && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>}
+                            {betaSomeChecked && !betaAllChecked && <div style={{width:8,height:2,background:"#9CA3AF",borderRadius:1}}/>}
+                          </div>
+                          <span style={{fontSize:12,color:SUB,fontWeight:500}}>{betaSelected.size > 0 ? `${betaSelected.size} of ${betaFiltered.length} selected` : `${betaFiltered.length} beta user${betaFiltered.length!==1?"s":""}`}</span>
+                        </div>
+                      )}
+                      {betaFiltered.length === 0 ? (
+                        <div style={{padding:"24px 16px",fontSize:13,color:SUB}}>{betaSearch?"No users match your search.":"No beta testers yet."}</div>
+                      ) : betaFiltered.map((u, i) => {
+                        const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
+                        const expired = u.planExpiry && new Date(u.planExpiry) < new Date();
+                        const isChecked = betaSelected.has(u.uid);
+                        return (
+                          <div key={u.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 16px",borderBottom:i<betaFiltered.length-1?`1px solid ${BORDER}`:"none",background:isChecked?SOFT:"#fff",transition:"background .1s"}}>
+                            <div onClick={()=>{ const s=new Set(betaSelected); isChecked?s.delete(u.uid):s.add(u.uid); setBetaSelected(s); }} style={{width:20,height:20,borderRadius:5,border:`2px solid ${isChecked?PINK:BORDER}`,background:isChecked?PINK:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,transition:"all .12s"}}>
+                              {isChecked && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>}
+                            </div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{marginBottom:2,lineHeight:1.5}}>
+                                <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</span>
+                                <span style={{display:"inline-block",background:GREEN+"22",color:GREEN,borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:500,textTransform:"uppercase",letterSpacing:.4,marginLeft:6,verticalAlign:"middle",whiteSpace:"nowrap"}}>Beta Pro</span>
+                              </div>
+                              <div style={{fontSize:12,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</div>
+                              <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:400,marginTop:2}}>{expired?"⚠ Expired":`Expires: ${expiryStr}`}</div>
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,flexWrap:"wrap"}}>
+                              <button onClick={()=>revokePlan(u.uid, u.email)} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:600,color:"#EF4444",cursor:"pointer",whiteSpace:"nowrap"}}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>Revoke
+                              </button>
+                              {u.email !== "—" && (
+                                <button onClick={()=>resendReset(u.email)} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:8,fontSize:11,fontWeight:600,color:"#2563EB",cursor:"pointer",whiteSpace:"nowrap"}}>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Reset Pwd
+                                </button>
+                              )}
+                              <button onClick={()=>deleteUserAccount(u.uid, u.email)} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:600,color:"#6B7280",cursor:"pointer",whiteSpace:"nowrap"}}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Delete
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"18px",marginBottom:20}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Invite to Beta Pro</div>
+                      <div style={{fontSize:12,color:SUB,marginBottom:12,lineHeight:1.6}}>Enter their email. Beta Pro activates automatically when they sign up or log in at <strong style={{color:TEXT}}>teticoin.com</strong>.</div>
+                      <div style={{display:"flex",gap:8,marginBottom:8,flexDirection:"column"}}>
+                        <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{borderRadius:999}}/>
+                        <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
+                          style={{padding:"10px 0",background:inviteBusy||!inviteEmail.trim()?"#E5E7EB":GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:inviteBusy||!inviteEmail.trim()?SUB:"#fff",cursor:inviteBusy||!inviteEmail.trim()?"not-allowed":"pointer",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all .15s"}}
+                          onMouseOver={e=>{ if(!inviteBusy&&inviteEmail.trim()) e.currentTarget.style.opacity="0.85"; }}
+                          onMouseOut={e=>{ e.currentTarget.style.opacity="1"; }}>
+                          {inviteBusy ? <span style={{display:"contents"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Sending…</span> : "Send Invite"}
+                        </button>
+                      </div>
+                      {inviteMsg && <div style={{fontSize:12,color:inviteMsg.ok?"#16A34A":"#B45309",lineHeight:1.5,padding:"8px 12px",background:inviteMsg.ok?"#F0FDF4":"#FFFBEB",borderRadius:8}}>{inviteMsg.text}</div>}
+                    </div>
+                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>
+                      Pending Invites ({pendingInvites.length})
+                    </div>
+                    {pendingInvites.length === 0 ? (
+                      <div style={{fontSize:13,color:SUB,padding:"4px 0"}}>No pending invites.</div>
+                    ) : pendingInvites.map(inv => (
+                      <div key={inv.email} style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:12,padding:"12px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:13,fontWeight:700,color:TEXT,wordBreak:"break-all"}}>{inv.email}</div>
+                          <div style={{fontSize:11,color:"#92400E",marginTop:2}}>⏳ Invited · hasn't signed up yet</div>
+                        </div>
+                        <ResendBtn email={inv.email} serviceId={EMAILJS_SERVICE_ID} templateId={EMAILJS_BETA_TEMPLATE_ID} publicKey={EMAILJS_PUBLIC_KEY}/>
+                        <button onClick={async () => {
+                          try {
+                            const { getFirestore, doc, deleteDoc } = await import("firebase/firestore");
+                            await deleteDoc(doc(getFirestore(), "betaInvites", inv.email.replace(/\./g,"_")));
+                            setPendingInvites(prev => prev.filter(i => i.email !== inv.email));
+                          } catch {}
+                        }} style={{padding:"4px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
+                          Cancel
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+          {/* Search bar — right-aligned sort links (shown for all non-betaMgmt subtabs) */}
+          {ctx !== "betaMgmt" && <>
             <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:160,maxWidth:400,borderRadius:999}}/>
             <div style={{display:"flex",alignItems:"center",flexShrink:0,marginLeft:"auto"}}>
               {sortOpts.map(([m,l],i) => (
@@ -8179,202 +8428,164 @@ function SuperAdminDashboard({ onClose }) {
               })}
             </div>
           )}
+          </>}{/* end ctx !== betaMgmt */}
         </>);})()}
 
-        {tab === "beta" && (() => {
-          const betaUsers = users.filter(u => u.plan === "beta");
-          const toggleBetaSort = (m) => {
-            if (betaSort === m) setBetaSortDir(d => d * -1);
-            else { setBetaSort(m); setBetaSortDir(1); }
-          };
-          const betaArrow = (m) => betaSort === m ? (betaSortDir === 1 ? " ▼" : " ▲") : " ▼";
-          const betaFiltered = betaUsers
-            .filter(u => !betaSearch || u.name.toLowerCase().includes(betaSearch.toLowerCase()) || u.email.toLowerCase().includes(betaSearch.toLowerCase()))
-            .sort((a,b) => {
-              if (betaSort === "alpha") return betaSortDir * (a.name||"").localeCompare(b.name||"");
-              if (betaSort === "expiry") return betaSortDir * ((a.planExpiry||"") < (b.planExpiry||"") ? -1 : 1);
-              return betaSortDir * ((b.createdAt||0) - (a.createdAt||0));
+            </div>{/* end maxWidth padding */}
+          </div>
+        )}{/* end tab=users */}
+
+        {/* ── USAGE TAB ── */}
+        {tab === "usage" && (() => {
+          const maxSignup = Math.max(...last12Months.map(m => m.count), 1);
+          const maxSess = usageData ? Math.max(...Object.values(usageData.sessionsByMonth || {}), 1) : 1;
+
+          // last 12 months for sessions chart too
+          const last12Sess = (() => {
+            if (!usageData) return [];
+            const now = new Date();
+            return Array.from({length:12},(_,i)=>{
+              const d = new Date(now.getFullYear(), now.getMonth()-11+i, 1);
+              const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+              return { key, label: d.toLocaleString("en-GB",{month:"short"}), count: usageData.sessionsByMonth[key]||0 };
             });
-          const betaAllChecked = betaFiltered.length > 0 && betaFiltered.every(u => betaSelected.has(u.uid));
-          const betaSomeChecked = !betaAllChecked && betaFiltered.some(u => betaSelected.has(u.uid));
-          const toggleBetaAll = () => {
-            if (betaAllChecked || betaSomeChecked) setBetaSelected(new Set());
-            else setBetaSelected(new Set(betaFiltered.map(u => u.uid)));
-          };
-          const bulkBetaRevoke = async () => {
-            const targets = betaFiltered.filter(u => betaSelected.has(u.uid));
-            if (!targets.length) return;
-            for (const u of targets) await revokePlan(u.uid, u.email);
-            setBetaSelected(new Set());
-          };
-          const bulkBetaReset = async () => {
-            const targets = betaFiltered.filter(u => betaSelected.has(u.uid) && u.email && u.email !== "—");
-            for (const u of targets) await resendReset(u.email);
-            setBetaSelected(new Set());
-          };
-          const bulkBetaDelete = async () => {
-            const targets = betaFiltered.filter(u => betaSelected.has(u.uid));
-            if (!targets.length) return;
-            if (!window.confirm(`Delete ${targets.length} account${targets.length>1?"s":""}?\n\nAll data will be permanently removed.`)) return;
-            for (const u of targets) await deleteUserAccount(u.uid, u.email);
-            setBetaSelected(new Set());
-          };
+          })();
+
+          const Card = ({label, value, sub, color="#0A0A0F", icon}) => (
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px 20px",display:"flex",flexDirection:"column",gap:4}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                {icon && <span style={{color:color||SUB}}>{icon}</span>}
+                <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1}}>{label}</div>
+              </div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:28,color:color||TEXT,lineHeight:1}}>{value}</div>
+              {sub && <div style={{fontSize:11,color:SUB,marginTop:2}}>{sub}</div>}
+            </div>
+          );
+
+          const BarChart = ({data, color, maxVal, title, emptyMsg}) => (
+            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px 20px"}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:16}}>{title}</div>
+              <div style={{display:"flex",alignItems:"flex-end",gap:5,height:80}}>
+                {data.map((m,i) => (
+                  <div key={m.key} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                    <div style={{fontSize:9,color:SUB,fontWeight:600,lineHeight:1}}>{m.count>0?m.count:""}</div>
+                    <div style={{width:"100%",background:m.count>0?color:"#F3F4F6",borderRadius:"4px 4px 0 0",height:m.count>0?`${Math.max(4,(m.count/maxVal)*60)}px`:"4px",transition:"height .3s"}}/>
+                    <div style={{fontSize:8,color:SUB,textAlign:"center",lineHeight:1}}>{m.label}</div>
+                  </div>
+                ))}
+              </div>
+              {data.every(m=>m.count===0) && <div style={{textAlign:"center",fontSize:12,color:SUB,marginTop:8}}>{emptyMsg||"No data yet"}</div>}
+            </div>
+          );
+
+          const totalSessionsKnown = users.reduce((a,u)=>a+u.sessionsCount,0);
+          const avgSessPerUser = users.length > 1 ? (totalSessionsKnown / (users.length-1)).toFixed(1) : "—";
+          const topUser = [...users].filter(u=>u.plan!=="superadmin").sort((a,b)=>b.sessionsCount-a.sessionsCount)[0];
+
           return (
-          <div style={{maxWidth:1100}}>
-            {/* Two-column layout */}
-            <div style={{display:"grid",gridTemplateColumns:"62fr 38fr",gap:24,alignItems:"start"}}>
+            <div style={{padding:"24px",maxWidth:960,margin:"0 auto"}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:TEXT,marginBottom:4}}>Usage Overview</div>
+              <div style={{fontSize:13,color:SUB,marginBottom:20}}>Metrics derived from user records. Session-level stats require a one-time scan.</div>
 
-              {/* LEFT — Beta Pro Users table */}
-              <div>
-                {/* Search + Sort in one row, sort right-aligned */}
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                  <Inp placeholder="Search…" value={betaSearch} onChange={e=>{setBetaSearch(e.target.value);setBetaSelected(new Set());}} style={{flex:1,minWidth:0,borderRadius:999,fontSize:12}}/>
-                  <div style={{display:"flex",alignItems:"center",flexShrink:0,marginLeft:"auto"}}>
-                    {[["newest","Newest"],["alpha","A→Z"],["expiry","Expiry"]].map(([m,l],i) => (
-                      <span key={m} style={{display:"flex",alignItems:"center"}}>
-                        {i > 0 && <span style={{color:"#D1D5DB",margin:"0 5px",userSelect:"none",fontSize:12}}>|</span>}
-                        <button onClick={()=>toggleBetaSort(m)}
-                          style={{background:"none",border:"none",cursor:"pointer",fontSize:12,fontWeight:betaSort===m?700:500,color:betaSort===m?PINK:SUB,padding:"4px 0",whiteSpace:"nowrap"}}>
-                          {l}{betaArrow(m)}
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Bulk action bar */}
-                {betaSelected.size > 0 && (
-                  <div style={{background:"#1A0A14",borderRadius:12,padding:"10px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",marginRight:4}}>{betaSelected.size} selected</span>
-                    <button onClick={bulkBetaRevoke} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:"#EF4444",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                      Revoke Beta Pro
-                    </button>
-                    <button onClick={bulkBetaReset} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:"#2563EB",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                      Reset Password
-                    </button>
-                    <button onClick={bulkBetaDelete} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:"#374151",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                      Delete Account
-                    </button>
-                    <button onClick={()=>setBetaSelected(new Set())} style={{marginLeft:"auto",padding:"6px 10px",background:"none",border:"1px solid rgba(255,255,255,.25)",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"rgba(255,255,255,.6)",cursor:"pointer"}}>✕</button>
-                  </div>
-                )}
-
-                {/* Table with master checkbox header */}
-                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,overflow:"hidden"}}>
-                  {betaFiltered.length > 0 && (
-                    <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:`1px solid ${BORDER}`,background:"#FAFAFA"}}>
-                      <div onClick={toggleBetaAll}
-                        style={{width:20,height:20,borderRadius:5,border:`2px solid ${betaAllChecked?PINK:betaSomeChecked?"#9CA3AF":BORDER}`,background:betaAllChecked?PINK:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,transition:"all .12s"}}>
-                        {betaAllChecked && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>}
-                        {betaSomeChecked && !betaAllChecked && <div style={{width:8,height:2,background:"#9CA3AF",borderRadius:1}}/>}
-                      </div>
-                      <span style={{fontSize:12,color:SUB,fontWeight:500}}>
-                        {betaSelected.size > 0 ? `${betaSelected.size} of ${betaFiltered.length} selected` : `${betaFiltered.length} user${betaFiltered.length!==1?"s":""}`}
-                      </span>
-                    </div>
-                  )}
-                  {betaFiltered.length === 0 ? (
-                    <div style={{padding:"24px 16px",fontSize:13,color:SUB}}>{betaSearch?"No users match your search.":"No beta testers yet."}</div>
-                  ) : betaFiltered.map((u, i) => {
-                    const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
-                    const expired = u.planExpiry && new Date(u.planExpiry) < new Date();
-                    const isChecked = betaSelected.has(u.uid);
-                    return (
-                      <div key={u.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 16px",borderBottom:i<betaFiltered.length-1?`1px solid ${BORDER}`:"none",background:isChecked?SOFT:"#fff",transition:"background .1s"}}>
-                        <div onClick={()=>{ const s=new Set(betaSelected); isChecked?s.delete(u.uid):s.add(u.uid); setBetaSelected(s); }}
-                          style={{width:20,height:20,borderRadius:5,border:`2px solid ${isChecked?PINK:BORDER}`,background:isChecked?PINK:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,transition:"all .12s"}}>
-                          {isChecked && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>}
-                        </div>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{marginBottom:2,lineHeight:1.5}}>
-                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</span>
-                            <span style={{display:"inline-block",background:GREEN+"22",color:GREEN,borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:500,textTransform:"uppercase",letterSpacing:.4,marginLeft:6,verticalAlign:"middle",whiteSpace:"nowrap"}}>Beta Pro</span>
-                          </div>
-                          <div style={{fontSize:12,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</div>
-                          <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:400,marginTop:2}}>
-                            {expired?"⚠ Expired":`Expires: ${expiryStr}`}
-                          </div>
-                        </div>
-                        <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,flexWrap:"wrap"}}>
-                          <button onClick={()=>revokePlan(u.uid, u.email)}
-                            style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:600,color:"#EF4444",cursor:"pointer",whiteSpace:"nowrap"}}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                            Revoke Plan
-                          </button>
-                          {u.email !== "—" && (
-                            <button onClick={()=>resendReset(u.email)}
-                              style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:8,fontSize:11,fontWeight:600,color:"#2563EB",cursor:"pointer",whiteSpace:"nowrap"}}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                              Reset Password
-                            </button>
-                          )}
-                          <button onClick={()=>deleteUserAccount(u.uid, u.email)}
-                            style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:600,color:"#6B7280",cursor:"pointer",whiteSpace:"nowrap"}}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                            Delete Account
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              {/* USER METRICS — from already-loaded users array, zero extra reads */}
+              <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1.2,marginBottom:10}}>User Metrics</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:12}}>
+                <Card label="Total Users" value={loading?"…":stats.total}
+                  color={TEXT}
+                  icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}/>
+                <Card label="Free Users" value={loading?"…":stats.free} sub={loading?"":stats.total>0?`${Math.round(stats.free/stats.total*100)}% of total`:""} color="#6B7280"
+                  icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/></svg>}/>
+                <Card label="Beta Pro" value={loading?"…":stats.beta} sub="90-day free access" color={GREEN}
+                  icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>}/>
+                <Card label="Paid Pro" value={loading?"…":stats.pro} sub="Pro / Pro Yearly / One-Time" color={BLUE}
+                  icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>}/>
+                <Card label="Avg Sessions / User" value={loading?"…":avgSessPerUser} sub="excluding superadmin"
+                  icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>} color={PINK}/>
+                <Card label="Most Active Host" value={loading||!topUser?"…":topUser.name||topUser.email||"—"} sub={topUser?`${topUser.sessionsCount} sessions`:""}
+                  icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2.2" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>} color={PURPLE}/>
               </div>
 
-              {/* RIGHT — Invite form + Pending Invites */}
-              <div>
-                {/* Invite to Beta Pro form */}
-                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"18px",marginBottom:20}}>
-                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Invite to Beta Pro</div>
-                  <div style={{fontSize:12,color:SUB,marginBottom:12,lineHeight:1.6}}>Enter their email. Beta Pro activates automatically when they sign up or log in at <strong style={{color:TEXT}}>teticoin.com</strong>.</div>
-                  <div style={{display:"flex",gap:8,marginBottom:8,flexDirection:"column"}}>
-                    <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{borderRadius:999}}/>
-                    <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
-                      style={{padding:"10px 0",background:inviteBusy||!inviteEmail.trim()?"#E5E7EB":GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:inviteBusy||!inviteEmail.trim()?SUB:"#fff",cursor:inviteBusy||!inviteEmail.trim()?"not-allowed":"pointer",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all .15s"}}
-                      onMouseOver={e=>{ if(!inviteBusy&&inviteEmail.trim()) e.currentTarget.style.opacity="0.85"; }}
-                      onMouseOut={e=>{ e.currentTarget.style.opacity="1"; }}>
-                      {inviteBusy ? (
-                        <span style={{display:"contents"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Sending…</span>
-                      ) : "Send Invite"}
-                    </button>
-                  </div>
-                  {inviteMsg && <div style={{fontSize:12,color:inviteMsg.ok?"#16A34A":"#B45309",lineHeight:1.5,padding:"8px 12px",background:inviteMsg.ok?"#F0FDF4":"#FFFBEB",borderRadius:8}}>{inviteMsg.text}</div>}
-                </div>
+              {/* User signup bar chart */}
+              <BarChart data={last12Months} color={PINK} maxVal={Math.max(...last12Months.map(m=>m.count),1)} title="New Signups — Last 12 Months" emptyMsg="No signup timestamps found"/>
 
-                {/* Pending Invites */}
-                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>
-                  Pending Invites ({pendingInvites.length})
-                </div>
-                {pendingInvites.length === 0 ? (
-                  <div style={{fontSize:13,color:SUB,padding:"4px 0"}}>No pending invites.</div>
-                ) : pendingInvites.map(inv => (
-                  <div key={inv.email} style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:12,padding:"12px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:700,color:TEXT,wordBreak:"break-all"}}>{inv.email}</div>
-                      <div style={{fontSize:11,color:"#92400E",marginTop:2}}>⏳ Invited · hasn't signed up yet</div>
+              {/* PLAN BREAKDOWN MINI TABLE */}
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px 20px",marginTop:12}}>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:12}}>Plan Breakdown</div>
+                {[
+                  {label:"Free",    count:stats.free,  color:"#6B7280", pct: stats.total?stats.free/stats.total:0},
+                  {label:"Beta Pro",count:stats.beta,  color:GREEN,     pct: stats.total?stats.beta/stats.total:0},
+                  {label:"Pro",     count:stats.pro,   color:BLUE,      pct: stats.total?stats.pro/stats.total:0},
+                ].map(row => (
+                  <div key={row.label} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                    <div style={{width:8,height:8,borderRadius:"50%",background:row.color,flexShrink:0}}/>
+                    <div style={{fontSize:12,fontWeight:600,color:TEXT,width:70}}>{row.label}</div>
+                    <div style={{flex:1,height:6,background:"#F3F4F6",borderRadius:99,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${Math.round(row.pct*100)}%`,background:row.color,borderRadius:99,transition:"width .4s"}}/>
                     </div>
-                    <ResendBtn email={inv.email} serviceId={EMAILJS_SERVICE_ID} templateId={EMAILJS_BETA_TEMPLATE_ID} publicKey={EMAILJS_PUBLIC_KEY}/>
-                    <button onClick={async () => {
-                      try {
-                        const { getFirestore, doc, deleteDoc } = await import("firebase/firestore");
-                        await deleteDoc(doc(getFirestore(), "betaInvites", inv.email.replace(/\./g,"_")));
-                        setPendingInvites(prev => prev.filter(i => i.email !== inv.email));
-                      } catch {}
-                    }} style={{padding:"4px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
-                      Cancel
-                    </button>
+                    <div style={{fontSize:12,fontWeight:700,color:row.color,width:36,textAlign:"right"}}>{row.count}</div>
+                    <div style={{fontSize:11,color:SUB,width:36,textAlign:"right"}}>{loading?"":Math.round(row.pct*100)+"%"}</div>
                   </div>
                 ))}
               </div>
 
+              {/* SESSION-LEVEL STATS — lazy load */}
+              <div style={{marginTop:20}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                  <div>
+                    <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1.2}}>Session Metrics</div>
+                    <div style={{fontSize:12,color:SUB,marginTop:2}}>Reads all sessions — load on demand</div>
+                  </div>
+                  {!usageData && (
+                    <button onClick={loadUsageData} disabled={usageLoading}
+                      style={{display:"flex",alignItems:"center",gap:6,padding:"8px 18px",background:GRAD,border:"none",borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:usageLoading?"not-allowed":"pointer",opacity:usageLoading?0.6:1}}>
+                      {usageLoading
+                        ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Loading…</>
+                        : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>Load Session Stats</>
+                      }
+                    </button>
+                  )}
+                  {usageData && (
+                    <button onClick={loadUsageData} disabled={usageLoading}
+                      style={{padding:"6px 12px",background:"none",border:`1px solid ${BORDER}`,borderRadius:999,fontSize:11,fontWeight:600,color:SUB,cursor:"pointer"}}>
+                      {usageLoading?"Refreshing…":"↻ Refresh"}
+                    </button>
+                  )}
+                </div>
+
+                {!usageData && !usageLoading && (
+                  <div style={{background:"#FAFAFA",border:`1.5px dashed ${BORDER}`,borderRadius:14,padding:"32px",textAlign:"center",color:SUB,fontSize:13}}>
+                    Click "Load Session Stats" to scan Firestore sessions
+                  </div>
+                )}
+
+                {usageData && (
+                  <>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:12}}>
+                      <Card label="Total Sessions" value={usageData.totalSessions.toLocaleString()} color={PINK}
+                        icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}/>
+                      <Card label="Total Participants" value={usageData.totalParticipants.toLocaleString()} sub={usageData.totalSessions?`avg ${(usageData.totalParticipants/usageData.totalSessions).toFixed(1)}/session`:""} color={PURPLE}
+                        icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>}/>
+                      <Card label="Total Coins Awarded" value={usageData.totalCoins.toLocaleString()} color="#F59E0B"
+                        icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}/>
+                      <Card label="Coinmaster Sessions" value={usageData.totalCoinmasters.toLocaleString()} sub="sessions with co-host enabled" color="#0891B2"
+                        icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>}/>
+                      <Card label="Avg Duration" value={usageData.avgDuration!=null?`${usageData.avgDuration} min`:"N/A"} sub="only sessions with end timestamp" color={TEXT}
+                        icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}/>
+                      <Card label="Coins / Participant" value={usageData.totalParticipants?Math.round(usageData.totalCoins/usageData.totalParticipants):"—"} sub="average across all sessions" color={GREEN}
+                        icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>}/>
+                    </div>
+                    {last12Sess.length > 0 && (
+                      <BarChart data={last12Sess} color={PURPLE} maxVal={Math.max(...last12Sess.map(m=>m.count),1)} title="Sessions Created — Last 12 Months" emptyMsg="No session timestamps found"/>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
           );
         })()}
-        </div>
-      </div>
+
+        </div>{/* end main content */}
+      </div>{/* end body flex */}
     </div>
   );
 }
