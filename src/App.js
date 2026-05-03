@@ -6946,25 +6946,37 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
   const [cancelConfirm, setCancelConfirm] = useState(false);
   // Always fetch fresh planExpiry from Firebase on mount — the prop may be stale
   const [planExpiry, setPlanExpiry_] = useState(planExpiryProp);
-  const [expiryLoading, setExpiryLoading] = useState(!planExpiryProp);
+  const [expiryLoading, setExpiryLoading] = useState(true);
+  const [storedInvoices, setStoredInvoices] = useState(null); // null = loading
   useEffect(() => {
-    if (planExpiryProp) { setExpiryLoading(false); return; } // already have it from prop
-    async function fetchExpiry() {
+    async function fetchBillingData() {
       try {
         const { getFirestore, doc, getDoc } = await import("firebase/firestore");
-        const db = getFirestore();
         const { getAuth } = await import("firebase/auth");
         const uid = getAuth().currentUser?.uid;
-        if (!uid) { setExpiryLoading(false); return; }
-        const snap = await getDoc(doc(db, "users", uid, "data", "planExpiry"));
-        if (snap.exists()) {
-          const val = snap.data().value;
+        if (!uid) { setExpiryLoading(false); setStoredInvoices([]); return; }
+        const db = getFirestore();
+        const [exSnap, invSnap] = await Promise.all([
+          getDoc(doc(db, "users", uid, "data", "planExpiry")),
+          getDoc(doc(db, "users", uid, "data", "invoices")),
+        ]);
+        if (exSnap.exists()) {
+          const val = exSnap.data().value;
           if (val) setPlanExpiry_(val);
+        } else if (planExpiryProp) {
+          setPlanExpiry_(planExpiryProp);
         }
-      } catch {}
+        if (invSnap.exists()) {
+          const invs = invSnap.data().value || [];
+          // Sort newest first
+          setStoredInvoices([...invs].reverse());
+        } else {
+          setStoredInvoices([]);
+        }
+      } catch(e) { console.error("BillingPage fetch error:", e); setStoredInvoices([]); }
       setExpiryLoading(false);
     }
-    fetchExpiry();
+    fetchBillingData();
   }, []);
 
   // Format real expiry date
@@ -6990,21 +7002,19 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
   const renewLink = plan==="proY"
     ? "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
     : "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL";
-  // Build invoice history from payment date (expiry - period)
-  // Build invoice: use planExpiry to back-calculate payment date
-  // If planExpiry missing but plan is paid, show estimated invoice from today
+  // Build invoice list — prefer stored invoices (from Firestore), fall back to computed for legacy accounts
   const invoices = (() => {
     if (isFree || isBetaPlan) return [];
+    // If stored invoices loaded and non-empty, use them
+    if (storedInvoices && storedInvoices.length > 0) return storedInvoices;
+    // Legacy fallback: derive single invoice from planExpiry
+    if (!planExpiry) return [];
     const isYearly = plan === "proY";
     const periodDays = isYearly ? 365 : 30;
-    if (planExpiry) {
-      const refExpiry = new Date(planExpiry);
-      const payDate = new Date(refExpiry);
-      payDate.setDate(payDate.getDate() - periodDays);
-      return [{ date: payDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid", expiry:expiryLabel }];
-    }
-    const today = new Date();
-    return [{ date: today.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid", expiry:"—" }];
+    const refExpiry = new Date(planExpiry);
+    const payDate = new Date(refExpiry);
+    payDate.setDate(payDate.getDate() - periodDays);
+    return [{ date: payDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid", expiry:expiryLabel }];
   })();
 
   return (
@@ -7079,17 +7089,17 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                   </div>
                   {/* Renew button — small, pill-style */}
                   {isPaidPro && (
-                    <a href={renewLink} target="_blank" rel="noopener noreferrer"
+                    <button onClick={()=>{ window.location.href = renewLink; }}
                       style={{display:"inline-flex",alignItems:"center",gap:6,
                         padding:"7px 14px",
                         background:isExpired||isExpiringSoon?GRAD:"none",
                         border:`1.5px solid ${isExpired||isExpiringSoon?"transparent":PINK+"66"}`,
                         borderRadius:99,fontSize:12,fontWeight:500,
                         color:isExpired||isExpiringSoon?"#fff":PINK,
-                        cursor:"pointer",textDecoration:"none"}}>
+                        cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                       {isExpired?"Reactivate plan":"Renew for next month"} — {pd.price}
-                    </a>
+                    </button>
                   )}
                 </>
               )}
@@ -7242,7 +7252,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                     onMouseOut={e=>e.currentTarget.style.background="#fff"}>
                     <div>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:14,color:TEXT}}>{inv.date}</div>
-                      <div style={{fontSize:11,color:SUB,marginTop:1}}>{pd.name} · {pd.renewal}</div>
+                      <div style={{fontSize:11,color:SUB,marginTop:1}}>{inv.billing ? ("Pro · " + inv.billing) : (pd.name + " · " + pd.renewal)}</div>
                     </div>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,textAlign:"right"}}>{inv.amount}</div>
                     <div style={{textAlign:"center"}}>
@@ -7305,7 +7315,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                     onMouseOut={e=>e.currentTarget.style.background="#fff"}>
                     <div>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:14,color:TEXT}}>{inv.date}</div>
-                      <div style={{fontSize:11,color:SUB,marginTop:1}}>{pd.name} · {pd.renewal}</div>
+                      <div style={{fontSize:11,color:SUB,marginTop:1}}>{inv.billing ? ("Pro · " + inv.billing) : (pd.name + " · " + pd.renewal)}</div>
                     </div>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,textAlign:"right"}}>{inv.amount}</div>
                     <div style={{textAlign:"center"}}>
@@ -8948,11 +8958,27 @@ export default function App() {
             // Save expiry — primary path via ss(), plus direct Firestore write as safety net
             await ss("planExpiry", newExpiry);
             try {
-              const { getFirestore, doc, setDoc } = await import("firebase/firestore");
+              const { getFirestore, doc, setDoc, getDoc } = await import("firebase/firestore");
               const db2 = getFirestore();
               const uid = user.uid;
+              // Write expiry
               await setDoc(doc(db2, "users", uid, "data", "planExpiry"), { value: newExpiry, updatedAt: Date.now() });
-            } catch(e) { console.error("planExpiry direct write failed:", e); }
+              // Append invoice record to stored invoice history
+              const isYearly = planVal === "proY";
+              const invSnap = await getDoc(doc(db2, "users", uid, "data", "invoices"));
+              const existingInvs = invSnap.exists() ? (invSnap.data().value || []) : [];
+              const newInv = {
+                id: Date.now().toString(),
+                date: new Date().toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}),
+                plan: planVal,
+                billing: isYearly ? "yearly" : "monthly",
+                amount: isYearly ? "RM 269" : "RM 29",
+                status: "Paid",
+                expiry: newExpiry,
+                paidAt: new Date().toISOString(),
+              };
+              await setDoc(doc(db2, "users", uid, "data", "invoices"), { value: [...existingInvs, newInv], updatedAt: Date.now() });
+            } catch(e) { console.error("payment save error:", e); }
             setShowPaymentSuccess({ plan: planVal, expiry: newExpiry }); // show success modal
           }, exp); // pass current expiry for stacking
 
