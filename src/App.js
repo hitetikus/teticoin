@@ -8278,6 +8278,8 @@ function SuperAdminDashboard({ onClose }) {
           })()}
           {/* Search bar — right-aligned sort links (shown for all non-betaMgmt subtabs) */}
           {ctx !== "betaMgmt" && <>
+          {/* Search bar */}
+          <div style={{marginBottom:8,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
             <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:160,maxWidth:400,borderRadius:999}}/>
             <div style={{display:"flex",alignItems:"center",flexShrink:0,marginLeft:"auto"}}>
               {sortOpts.map(([m,l],i) => (
