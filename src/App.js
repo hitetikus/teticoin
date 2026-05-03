@@ -5980,10 +5980,11 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
   const cardCSS = `
     .pp-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; max-width:860px; margin:0 auto; }
     @media(max-width:700px){ .pp-grid { grid-template-columns:1fr; max-width:420px; } }
-    .pp-card { background:#fff; border:1.5px solid #E5E7EB; border-radius:20px; padding:32px 24px; position:relative; display:flex; flex-direction:column; }
-    .pp-card-popular { border-color:${LP_PINK}; box-shadow:0 0 0 1px ${LP_PINK},0 8px 40px rgba(255,79,184,0.12); overflow:hidden; }
-    .pp-badge { position:absolute; top:28px; right:-44px; background:${LP_GRAD}; color:#fff; font-size:9px; font-weight:800; padding:6px 68px; letter-spacing:.8px; transform:rotate(35deg); pointer-events:none; font-family:'DM Sans',sans-serif; }
-    .pp-current-badge { position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:#0A0A0F; color:#fff; font-size:10px; font-weight:800; padding:3px 14px; border-radius:99px; white-space:nowrap; font-family:'Plus Jakarta Sans',sans-serif; }
+    .pp-card { background:#fff; border:1.5px solid #E5E7EB; border-radius:20px; padding:32px 24px; position:relative; display:flex; flex-direction:column; overflow:visible; }
+    .pp-card-popular { border-color:${LP_PINK}; box-shadow:0 0 0 1px ${LP_PINK},0 8px 40px rgba(255,79,184,0.12); overflow:visible; }
+    .pp-badge { position:absolute; top:28px; right:-44px; background:${LP_GRAD}; color:#fff; font-size:9px; font-weight:800; padding:6px 68px; letter-spacing:.8px; transform:rotate(35deg); pointer-events:none; font-family:'DM Sans',sans-serif; clip-path:none; }
+    .pp-badge-wrap { position:absolute; top:0; right:0; width:100%; height:100%; border-radius:20px; overflow:hidden; pointer-events:none; }
+    .pp-current-badge { position:absolute; top:-14px; left:50%; transform:translateX(-50%); background:#0A0A0F; color:#fff; font-size:10px; font-weight:800; padding:4px 14px; border-radius:99px; white-space:nowrap; font-family:'Plus Jakarta Sans',sans-serif; z-index:2; }
     .pp-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:12px; font-family:'DM Sans',sans-serif; }
     .pp-price { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:42px; line-height:1; margin-bottom:4px; }
     .pp-period { font-size:13px; color:${NEUT}; }
@@ -6057,7 +6058,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
             {/* PRO */}
             <div className={`pp-card pp-card-popular`} style={isPro ? {borderColor:LP_PINK,boxShadow:`0 0 0 2px ${LP_PINK}`} : {}}>
               {isPro && <div className="pp-current-badge">✓ Current Plan</div>}
-              <div className="pp-badge">POPULAR</div>
+              <div className="pp-badge-wrap"><div className="pp-badge">POPULAR</div></div>
               <div className="pp-label" style={{color:LP_PINK}}>Pro</div>
               <div style={{minHeight:80,display:"flex",flexDirection:"column",justifyContent:"flex-end",margin:"8px 0 0"}}>
                 {billing === "monthly" ? (
@@ -6904,7 +6905,7 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false, trainer=null) {
   .party-name{font-size:14px;font-weight:700;color:#111827;margin-bottom:3px;}
   .party-detail{font-size:12px;color:#6B7280;line-height:1.7;}
   /* Meta */
-  .meta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+  .meta-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px;}
   .meta-cell{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:10px 12px;}
   .meta-cell .mlabel{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9CA3AF;margin-bottom:4px;}
   .meta-cell .mval{font-size:12px;font-weight:600;color:#111827;}
@@ -6954,6 +6955,7 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false, trainer=null) {
   </div>
   <div class="meta-row">
     <div class="meta-cell"><div class="mlabel">Invoice Date</div><div class="mval">${inv.date}</div></div>
+    <div class="meta-cell"><div class="mlabel">Payment Date</div><div class="mval">${inv.paidAt ? new Date(inv.paidAt).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}) : inv.date}</div></div>
     <div class="meta-cell"><div class="mlabel">Status</div><div class="mval" style="color:#16A34A;font-weight:700;">✓ Paid</div></div>
   </div>
   <div class="items-label">Items</div>
@@ -7048,44 +7050,10 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
   const renewLink = plan==="proY"
     ? "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
     : "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL";
-  // Build invoice list — merge stored invoices (from Firestore) with legacy computed invoice
-  // so payments made before invoice-storage was introduced also appear
+  // Build invoice list — stored invoices from Firestore only (appended on each payment)
   const invoices = (() => {
     if (isFree || isBetaPlan) return [];
-    const isYearly = plan === "proY";
-    const periodDays = isYearly ? 365 : 30;
-
-    // Compute the legacy invoice (first payment, back-calculated from earliest known expiry)
-    // We derive it from the OLDEST stored invoice's expiry if available, else current planExpiry
-    let legacyInv = null;
-    if (planExpiry) {
-      // Find the earliest expiry we know about — either first stored invoice's expiry or current
-      const earliestExpiry = (storedInvoices && storedInvoices.length > 0)
-        ? storedInvoices[storedInvoices.length - 1].expiry // last in array = oldest (stored newest-first)
-        : planExpiry;
-      // Back-calculate the first payment date = earliest expiry - period
-      const firstExpiry = new Date(earliestExpiry);
-      const firstPayDate = new Date(firstExpiry);
-      firstPayDate.setDate(firstPayDate.getDate() - periodDays);
-      legacyInv = {
-        id: "legacy",
-        date: firstPayDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}),
-        amount: pd.price,
-        status: "Paid",
-        expiry: firstExpiry.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}),
-        billing: isYearly ? "yearly" : "monthly",
-        paidAt: firstPayDate.toISOString(),
-      };
-    }
-
-    const stored = storedInvoices || [];
-    // Deduplicate: only include legacy if no stored invoice has the same date
-    const storedDates = new Set(stored.map(i => i.date));
-    const merged = legacyInv && !storedDates.has(legacyInv.date)
-      ? [...stored, legacyInv]  // stored is newest-first, legacy goes at end (oldest)
-      : [...stored];
-
-    return merged.length > 0 ? merged : (legacyInv ? [legacyInv] : []);
+    return storedInvoices || [];
   })();
 
   return (
@@ -7122,16 +7090,18 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
             <div style={{
               margin:12,
               borderRadius:14,
-              border: isFree ? `2px solid ${TEXT}` : isExpired ? "1.5px solid #EF444440" : isPaidPro ? `2.5px solid ${pd.color}` : `1.5px solid ${pd.color+"66"}`,
+              border: isFree ? `2px solid ${TEXT}` : isExpired ? "1.5px solid #EF444440" : isBetaPlan && isExpiringSoon ? "1.5px solid #4ADE80" : isPaidPro ? `2.5px solid ${pd.color}` : `1.5px solid ${pd.color+"66"}`,
               background: isFree
                 ? "#fff"
                 : isBetaPlan
-                  ? "linear-gradient(135deg,#D1FAE5,#A7F3D0)"
+                  ? (isExpiringSoon ? "linear-gradient(270deg,#F0FDF4,#DCFCE7,#A7F3D0,#DCFCE7,#F0FDF4)" : "linear-gradient(135deg,#D1FAE5,#A7F3D0)")
                   : isExpired
                     ? "linear-gradient(135deg,#FEF2F2,#FEE2E2)"
                     : isPaidPro
                       ? "linear-gradient(135deg,#EFF6FF,#DBEAFE)"
                       : "linear-gradient(135deg,#EDE9FE,#DDD6FE)",
+              backgroundSize: isBetaPlan && isExpiringSoon ? "300% 300%" : "auto",
+              animation: isBetaPlan && isExpiringSoon ? "betaGreenFlow 4s ease infinite" : "none",
               padding:"18px 16px 16px",
             }}>
               {/* Plan name + Active badge */}
@@ -7150,7 +7120,20 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
 
               {/* Expiry / status line */}
               {isBetaPlan ? (
-                <div style={{fontSize:13,color:"#065F46",marginBottom:4}}>Beta access until {pd.next || "—"}</div>
+                <>
+                  <div style={{fontSize:13,color:"#065F46",marginBottom: isExpiringSoon ? 10 : 4}}>
+                    {isExpiringSoon
+                      ? (daysLeft <= 7 ? `⚡ Expiring in ${daysLeft} day${daysLeft===1?"":"s"} — ${pd.next}` : `Beta access until ${pd.next || "—"} (${daysLeft}d left)`)
+                      : `Beta access until ${pd.next || "—"}`}
+                  </div>
+                  {isExpiringSoon && (
+                    <button onClick={()=>{ onClose(); setTimeout(()=>onUpgrade(),100); }}
+                      style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",background:"#16A34A",border:"none",borderRadius:99,fontSize:12,fontWeight:700,color:"#fff",cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                      Upgrade to Pro — RM 29/mo
+                    </button>
+                  )}
+                </>
               ) : isFree ? (
                 <div style={{fontSize:13,color:SUB}}>No time limit · No credit card required</div>
               ) : (
@@ -7327,6 +7310,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                     <div>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:14,color:TEXT}}>{inv.date}</div>
                       <div style={{fontSize:11,color:SUB,marginTop:1}}>{"Pro · " + (inv.billing || pd.renewal)}</div>
+                      <div style={{fontSize:11,color:SUB,marginTop:1}}>Payment date: {inv.paidAt ? new Date(inv.paidAt).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : inv.date}</div>
                     </div>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,textAlign:"right"}}>{inv.amount}</div>
                     <div style={{textAlign:"center"}}>
@@ -7390,6 +7374,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                     <div>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:14,color:TEXT}}>{inv.date}</div>
                       <div style={{fontSize:11,color:SUB,marginTop:1}}>{"Pro · " + (inv.billing || pd.renewal)}</div>
+                      <div style={{fontSize:11,color:SUB,marginTop:1}}>Payment date: {inv.paidAt ? new Date(inv.paidAt).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : inv.date}</div>
                     </div>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,textAlign:"right"}}>{inv.amount}</div>
                     <div style={{textAlign:"center"}}>
@@ -9594,29 +9579,47 @@ export default function App() {
             {!isFree && isBeta && (() => {
               const expStr = planExpiry ? new Date(planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : null;
               const daysLeft = planExpiry ? Math.max(0,Math.ceil((new Date(planExpiry)-new Date())/(1000*60*60*24))) : null;
-              const expired = planExpiry && new Date(planExpiry) < new Date();
+              const expiringSoon = daysLeft !== null && daysLeft <= 30;
               return (
                 <div style={{
-                  background: expired ? "#FEF2F2" : "linear-gradient(270deg,#F0FDF4,#DCFCE7,#A7F3D0,#DCFCE7,#F0FDF4)",
-                  backgroundSize: expired ? "auto" : "300% 300%",
-                  animation: expired ? "none" : "betaGreenFlow 4s ease infinite",
-                  border: `1.5px solid ${expired ? "#FECACA" : "#4ADE80"}`,
-                  borderRadius:14,padding:"12px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{width:36,height:36,borderRadius:10,background:expired?"#FEF2F2":"#16A34A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={expired?"#EF4444":"#fff"} strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:expired?"#EF4444":"#15803D"}}>Beta Pro {expired?"— Expired":"— Active"}</div>
-                    <div style={{fontSize:12,color:expired?"#EF4444":"#166534",fontWeight:500}}>
-                      {expired?"Your Beta Pro access has ended."
-                        :expStr?`Full Pro access · Expires ${expStr}${daysLeft!==null?` (${daysLeft}d left)`:""}`:"Full Pro access"}
+                  background: expiringSoon
+                    ? "linear-gradient(270deg,#F0FDF4,#DCFCE7,#A7F3D0,#DCFCE7,#F0FDF4)"
+                    : "linear-gradient(135deg,#F0FDF4,#DCFCE7)",
+                  backgroundSize: expiringSoon ? "300% 300%" : "auto",
+                  animation: expiringSoon ? "betaGreenFlow 4s ease infinite" : "none",
+                  border: `1.5px solid ${expiringSoon ? "#4ADE80" : "#86EFAC"}`,
+                  borderRadius:14,padding:"12px 16px",marginBottom:12}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{width:36,height:36,borderRadius:10,background:"#16A34A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#15803D"}}>
+                        Beta Pro — Active {expiringSoon && daysLeft <= 7 ? "⚡" : ""}
+                      </div>
+                      <div style={{fontSize:12,color:"#166534",fontWeight:500}}>
+                        {expStr ? `Full Pro access · Expires ${expStr}${daysLeft!==null?` (${daysLeft}d left)`:""}` : "Full Pro access"}
+                      </div>
                     </div>
                   </div>
+                  {expiringSoon && (
+                    <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid #86EFAC",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+                      <div style={{fontSize:12,color:"#166534",lineHeight:1.5,flex:1}}>
+                        {daysLeft <= 7
+                          ? <><strong>Expiring soon!</strong> Keep your Pro features by upgrading.</>
+                          : <>Your Beta Pro expires in {daysLeft} days — lock in Pro to keep everything.</>}
+                      </div>
+                      <button onClick={()=>openPricing()}
+                        style={{flexShrink:0,padding:"7px 14px",background:"#16A34A",border:"none",borderRadius:99,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
+                        Upgrade to Pro →
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })()}
 
-            {/* Hero card */}
+                        {/* Hero card */}
             <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,lineHeight:1.1,marginBottom:6}}>
                 Ready to reward<br/>your participants?
