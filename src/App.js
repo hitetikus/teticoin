@@ -7695,6 +7695,7 @@ function SuperAdminDashboard({ onClose }) {
   const [betaSelected, setBetaSelected] = useState(new Set());
   const [usageData, setUsageData] = useState(null);
   const [usageLoading, setUsageLoading] = useState(false);
+  const [showInviteMobile, setShowInviteMobile] = useState(false);
 
   // Load all users — data is stored under users/{uid}/data/{key} subcollection
   useEffect(() => {
@@ -8086,11 +8087,21 @@ function SuperAdminDashboard({ onClose }) {
     .tc-admin-sidebar { display:none; }
     .tc-admin-mobile-tabs { display:flex; background:#fff; border-bottom:1px solid ${BORDER}; flex-shrink:0; }
     .tc-admin-mobile-tabs button { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:12px 8px; border:none; background:none; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:13px; cursor:pointer; border-bottom:2.5px solid transparent; color:${SUB}; transition:all .12s; }
-    .tc-admin-content { flex:1; overflow-y:auto; }
+    .tc-admin-content { flex:1; overflow-y:auto; overflow-x:hidden; }
+    .tc-admin-subtabs { display:flex; gap:8px; background:#fff; border-bottom:1px solid ${BORDER}; padding:12px 16px; }
+    .tc-admin-subtab { flex:1; min-width:0; text-align:center; cursor:pointer; border-radius:10px; padding:8px 4px; transition:all .15s; }
+    .tc-admin-invite-panel { display:none; }
+    .tc-admin-invite-toggle { display:flex; }
+    .tc-admin-usage-wrap { padding:20px 16px; max-width:960px; margin:0 auto; box-sizing:border-box; width:100%; }
     @media(min-width:900px) {
       .tc-admin-wrap { flex-direction:row; }
       .tc-admin-sidebar { display:flex; flex-direction:column; width:200px; flex-shrink:0; border-right:1px solid ${BORDER}; background:#fff; padding:16px 0; overflow-y:auto; }
       .tc-admin-mobile-tabs { display:none; }
+      .tc-admin-subtabs { padding:12px 24px; justify-content:center; }
+      .tc-admin-subtab { max-width:180px; }
+      .tc-admin-invite-panel { display:block; width:280px; flex-shrink:0; }
+      .tc-admin-invite-toggle { display:none; }
+      .tc-admin-usage-wrap { padding:24px; }
     }
   `;
 
@@ -8100,7 +8111,7 @@ function SuperAdminDashboard({ onClose }) {
 
       {/* Header */}
       <div style={{background:"linear-gradient(90deg,#ffffff 0%,#ffffff 35%,#EF4444 75%,#B91C1C 100%)",borderBottom:"1px solid rgba(239,68,68,0.2)",padding:"0 20px",height:64,display:"flex",alignItems:"center",position:"relative",flexShrink:0}}>
-        <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:"#374151",fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,fontWeight:600,padding:0,zIndex:1}}>
+        <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:"#374151",fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,fontWeight:600,padding:0,zIndex:1,flexShrink:0}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
@@ -8108,13 +8119,15 @@ function SuperAdminDashboard({ onClose }) {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:"#0A0A0F"}}>Admin Dashboard</div>
         </div>
-        <div style={{marginLeft:"auto",zIndex:1,display:"flex",alignItems:"center",gap:6}}>
-          {superadminEmail && <>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:12,color:"rgba(255,255,255,0.75)"}}>Superadmin</span>
-            <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>{superadminEmail}</span>
-          </>}
-        </div>
+        {superadminEmail && (
+          <div style={{marginLeft:"auto",zIndex:1,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:1}}>
+            <div style={{display:"flex",alignItems:"center",gap:4}}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:11,color:"rgba(255,255,255,0.75)"}}>Superadmin</span>
+            </div>
+            <span style={{fontSize:11,fontWeight:700,color:"#fff"}}>{superadminEmail}</span>
+          </div>
+        )}
       </div>
 
       {/* Toast */}
@@ -8161,13 +8174,14 @@ function SuperAdminDashboard({ onClose }) {
         {/* ── USERS TAB ── */}
         {tab === "users" && (
           <div>
-            {/* Sub-tab pills — equal width, centered on desktop */}
-            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",gap:8}}>
+            {/* Sub-tab pills — equal width, max-width capped on desktop */}
+            <div className="tc-admin-subtabs">
               {USERS_SUBTABS.map(s => {
                 const active = usersSubtab === s.key;
                 return (
-                  <div key={s.key} onClick={()=>{ setSearch(""); setSelected(new Set()); setUsersSubtab(s.key); }}
-                    style={{flex:1,background:active?`${s.color}10`:"#fff",border:`2px solid ${s.color}`,borderRadius:10,padding:"8px 8px",textAlign:"center",cursor:"pointer",transition:"all .15s",opacity:active?1:0.45,minWidth:0}}>
+                  <div key={s.key} onClick={()=>{ setSearch(""); setSelected(new Set()); setUsersSubtab(s.key); setShowInviteMobile(false); }}
+                    className="tc-admin-subtab"
+                    style={{background:active?`${s.color}10`:"#fff",border:`2px solid ${s.color}`,opacity:active?1:0.45}}>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:s.color}}>{loading?"…":s.val}</div>
                     <div style={{fontSize:11,color:s.color,fontWeight:700,marginTop:1}}>{s.label}</div>
                   </div>
@@ -8196,7 +8210,40 @@ function SuperAdminDashboard({ onClose }) {
             else setSelected(new Set(eligibles));
           };
           return (<div>
-          {/* Layout: table left, invite panel right (only on Pro tab) */}
+          {/* Mobile-only: show invite toggle button for Beta tab */}
+          {showInvitePanel && (
+            <div className="tc-admin-invite-toggle" style={{padding:"10px 16px",background:SOFT,borderBottom:`1px solid ${BORDER}`}}>
+              <button onClick={()=>setShowInviteMobile(v=>!v)}
+                style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:showInviteMobile?GRAD:"#fff",border:`1.5px solid ${PINK}`,borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:showInviteMobile?"#fff":PINK,cursor:"pointer",width:"100%",justifyContent:"center"}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                {showInviteMobile ? "Hide Invite Form" : "Invite to Beta Pro"}
+              </button>
+            </div>
+          )}
+          {/* Mobile invite panel — shows when toggle is open */}
+          {showInvitePanel && showInviteMobile && (
+            <div className="tc-admin-invite-toggle" style={{padding:"16px",background:"#FAFAFA",borderBottom:`1px solid ${BORDER}`}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Invite to Beta Pro</div>
+              <div style={{fontSize:12,color:SUB,marginBottom:10,lineHeight:1.6}}>Enter their email. Beta Pro activates automatically when they sign up or log in at <strong style={{color:TEXT}}>teticoin.com</strong>.</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{borderRadius:999}}/>
+                <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
+                  style={{padding:"10px 0",background:inviteBusy||!inviteEmail.trim()?"#E5E7EB":GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:inviteBusy||!inviteEmail.trim()?SUB:"#fff",cursor:inviteBusy||!inviteEmail.trim()?"not-allowed":"pointer",width:"100%"}}>
+                  {inviteBusy?"Sending…":"Send Invite"}
+                </button>
+              </div>
+              {inviteMsg && <div style={{fontSize:12,color:inviteMsg.ok?"#16A34A":"#B45309",lineHeight:1.5,padding:"8px 12px",background:inviteMsg.ok?"#F0FDF4":"#FFFBEB",borderRadius:8,marginTop:8}}>{inviteMsg.text}</div>}
+              {pendingInvites.length > 0 && (
+                <div style={{marginTop:14}}>
+                  <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Pending Invites ({pendingInvites.length})</div>
+                  {pendingInvites.slice(0,3).map(inv => (
+                    <div key={inv.email} style={{fontSize:12,color:"#92400E",background:"#FFFBEB",borderRadius:8,padding:"8px 10px",marginBottom:6}}>{inv.email} · ⏳ not signed up</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {/* Layout: table left, invite panel right (desktop only) */}
           <div style={{display:"flex",gap:24,alignItems:"start"}}>
             {/* Main table column */}
             <div style={{flex:1,minWidth:0}}>
@@ -8357,7 +8404,7 @@ function SuperAdminDashboard({ onClose }) {
 
             {/* Invite panel — only shown on Pro tab */}
             {showInvitePanel && (
-              <div style={{width:280,flexShrink:0}}>
+              <div className="tc-admin-invite-panel">
                 <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"18px",marginBottom:16}}>
                   <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Invite to Beta Pro</div>
                   <div style={{fontSize:12,color:SUB,marginBottom:12,lineHeight:1.6}}>Enter their email. Beta Pro activates automatically when they sign up or log in at <strong style={{color:TEXT}}>teticoin.com</strong>.</div>
@@ -8452,7 +8499,7 @@ function SuperAdminDashboard({ onClose }) {
           const topUser = [...users].filter(u=>u.plan!=="superadmin").sort((a,b)=>b.sessionsCount-a.sessionsCount)[0];
 
           return (
-            <div style={{padding:"24px",maxWidth:960,margin:"0 auto"}}>
+            <div className="tc-admin-usage-wrap">
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:TEXT,marginBottom:4}}>Usage Overview</div>
               <div style={{fontSize:13,color:SUB,marginBottom:20}}>Metrics derived from user records. Session-level stats require a one-time scan.</div>
 
@@ -9921,9 +9968,9 @@ export default function App() {
     if (isFree && sessions.length >= sessionLimit) { setLimitModal("sessions"); return; }
     const code = genCode();
     const defaultCoins = await sg("defaultCoins");
-    const s = {code, name, createdAt:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), boardVisible:false, participants:[], groups:[], log:[], coinmasterEnabled:false, hostUid: _currentUid || null, ...(defaultCoins ? {otherCoins: defaultCoins} : {})};
+    const s = {code, name, createdAt:Date.now(), boardVisible:false, participants:[], groups:[], log:[], coinmasterEnabled:false, hostUid: _currentUid || null, ...(defaultCoins ? {otherCoins: defaultCoins} : {})};
     await ssSession(code, s);
-    const idx = [{code, name, date:s.createdAt, count:0}, ...sessions];
+    const idx = [{code, name, date:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), count:0}, ...sessions];
     setSessions(idx); await ss("sessions_index", idx);
     setCur(s); setCreating(false);
     window.history.pushState({}, "", `/session/${code}`);
