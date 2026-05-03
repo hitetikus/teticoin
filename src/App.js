@@ -6050,6 +6050,8 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
               </ul>
               {currentPlan === "free" ? (
                 <div style={{textAlign:"center",padding:"11px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:NEUT,background:"#F3F4F6",borderRadius:999}}>✓ Your current plan</div>
+              ) : isPro ? (
+                <div style={{textAlign:"center",padding:"11px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#9CA3AF",background:"#F9FAFB",borderRadius:999,border:"1.5px solid #E5E7EB",opacity:.6}}>Not available on Pro</div>
               ) : (
                 <button className="pp-btn pp-btn-outline" onClick={onClose}>Continue with Free</button>
               )}
@@ -6090,7 +6092,12 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
                 ))}
               </ul>
               {isPro ? (
-                <div style={{textAlign:"center",padding:"11px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:LP_PINK,background:"rgba(255,79,184,0.08)",borderRadius:999}}>✓ Your current plan</div>
+                <>
+                  <button className="pp-btn pp-btn-primary" onClick={() => window.location.href = proLink}>
+                    {billing === "monthly" ? `Extend 1 month — RM ${proMonthly}` : `Extend 1 year — RM ${proYearly} (save RM ${proSaving})`}
+                  </button>
+                  <div style={{textAlign:"center",fontSize:11,color:NEUT,marginTop:8}}>Adds to your existing expiry · FPX · Card · DuitNow</div>
+                </>
               ) : (
                 <>
                   <button className="pp-btn pp-btn-primary" onClick={() => window.location.href = proLink}>
@@ -7148,22 +7155,34 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                           ? `This plan will expire on ${expiryLabel}`
                           : expiryLoading ? "Loading plan details…" : "This plan is active"}
                   </div>
-                  {/* Renew + View plans */}
+                  {/* Extend plan buttons + View all plans */}
                   {isPaidPro && (
-                    <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-                      <button onClick={()=>{ window.location.href = renewLink; }}
-                        style={{display:"inline-flex",alignItems:"center",gap:6,
-                          padding:"7px 14px",
-                          background:"none",
-                          border:`1.5px solid ${BLUE}`,
-                          borderRadius:99,fontSize:12,fontWeight:500,
-                          color:BLUE,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                        {isExpired?"Reactivate plan":"Renew for next month"} — {pd.price}
-                      </button>
+                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                        <button onClick={()=>{ window.location.href = "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL"; }}
+                          style={{display:"inline-flex",alignItems:"center",gap:6,
+                            padding:"8px 14px",
+                            background:"none",
+                            border:`1.5px solid ${BLUE}`,
+                            borderRadius:99,fontSize:12,fontWeight:600,
+                            color:BLUE,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                          {isExpired ? "Reactivate" : "Extend"} 1 month — RM 29
+                        </button>
+                        <button onClick={()=>{ window.location.href = "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"; }}
+                          style={{display:"inline-flex",alignItems:"center",gap:6,
+                            padding:"8px 14px",
+                            background:BLUE,
+                            border:"none",
+                            borderRadius:99,fontSize:12,fontWeight:600,
+                            color:"#fff",cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                          Extend 1 year — RM 269 <span style={{fontSize:10,opacity:.85}}>(save RM 79)</span>
+                        </button>
+                      </div>
                       <button onClick={()=>{ onClose(); setTimeout(()=>onUpgrade(),100); }}
-                        style={{background:"none",border:"none",fontSize:12,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif",textDecoration:"underline",padding:0}}>
-                        View all plans
+                        style={{background:"none",border:"none",fontSize:12,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif",textDecoration:"underline",padding:0,textAlign:"left"}}>
+                        View all plans →
                       </button>
                     </div>
                   )}
