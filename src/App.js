@@ -6999,18 +6999,44 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
   const renewLink = plan==="proY"
     ? "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
     : "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL";
-  // Build invoice list — prefer stored invoices (appended on each payment), fall back to computed for legacy
+  // Build invoice list — merge stored invoices (from Firestore) with legacy computed invoice
+  // so payments made before invoice-storage was introduced also appear
   const invoices = (() => {
     if (isFree || isBetaPlan) return [];
-    if (storedInvoices && storedInvoices.length > 0) return storedInvoices; // newest first
-    // Legacy fallback: derive single invoice from planExpiry
-    if (!planExpiry) return [];
     const isYearly = plan === "proY";
     const periodDays = isYearly ? 365 : 30;
-    const refExpiry = new Date(planExpiry);
-    const payDate = new Date(refExpiry);
-    payDate.setDate(payDate.getDate() - periodDays);
-    return [{ date: payDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid", expiry:expiryLabel, billing: isYearly ? "yearly" : "monthly" }];
+
+    // Compute the legacy invoice (first payment, back-calculated from earliest known expiry)
+    // We derive it from the OLDEST stored invoice's expiry if available, else current planExpiry
+    let legacyInv = null;
+    if (planExpiry) {
+      // Find the earliest expiry we know about — either first stored invoice's expiry or current
+      const earliestExpiry = (storedInvoices && storedInvoices.length > 0)
+        ? storedInvoices[storedInvoices.length - 1].expiry // last in array = oldest (stored newest-first)
+        : planExpiry;
+      // Back-calculate the first payment date = earliest expiry - period
+      const firstExpiry = new Date(earliestExpiry);
+      const firstPayDate = new Date(firstExpiry);
+      firstPayDate.setDate(firstPayDate.getDate() - periodDays);
+      legacyInv = {
+        id: "legacy",
+        date: firstPayDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}),
+        amount: pd.price,
+        status: "Paid",
+        expiry: firstExpiry.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}),
+        billing: isYearly ? "yearly" : "monthly",
+        paidAt: firstPayDate.toISOString(),
+      };
+    }
+
+    const stored = storedInvoices || [];
+    // Deduplicate: only include legacy if no stored invoice has the same date
+    const storedDates = new Set(stored.map(i => i.date));
+    const merged = legacyInv && !storedDates.has(legacyInv.date)
+      ? [...stored, legacyInv]  // stored is newest-first, legacy goes at end (oldest)
+      : [...stored];
+
+    return merged.length > 0 ? merged : (legacyInv ? [legacyInv] : []);
   })();
 
   return (
@@ -7023,7 +7049,14 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
-        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Billing &amp; Plan</div>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Billing &amp; Plan</div>
+          {trainer && (
+            <div style={{fontSize:11,color:SUB,marginTop:1}}>
+              {trainer.name}{trainer.email ? ` · ${trainer.email}` : ""}
+            </div>
+          )}
+        </div>
         <div style={{width:60}}/>
       </div>
 
