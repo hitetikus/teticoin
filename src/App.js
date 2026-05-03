@@ -6503,42 +6503,54 @@ function ProfilePage({ trainer, onClose, onSaved }) {
               </div>
             </div>
 
-            {/* Stats grid */}
-            <div style={{margin:"16px 0",background:"#FFF9FC",border:`1px solid ${BORDER}`,borderRadius:14,padding:"14px 12px"}}>
-              <div style={{fontSize:11,fontWeight:700,letterSpacing:1.2,color:SUB,textTransform:"uppercase",marginBottom:10}}>Your account summary</div>
+            {/* Stats */}
+            <div style={{margin:"16px 0",background:"#FFF9FC",border:`1px solid ${BORDER}`,borderRadius:14,padding:"14px 16px"}}>
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:1.2,color:SUB,textTransform:"uppercase",marginBottom:12}}>Your account summary</div>
               {deleteStats === null ? (
                 <div style={{textAlign:"center",padding:"12px 0",fontSize:13,color:SUB}}>Loading your data…</div>
               ) : (
                 <>
                   {/* As a host */}
-                  <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:PINK,textTransform:"uppercase",marginBottom:6}}>As a Host</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:12}}>
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:PINK,textTransform:"uppercase",marginBottom:8}}>As a Host</div>
+                  <div style={{display:"flex",alignItems:"center",marginBottom:14}}>
                     {[
-                      { num: deleteStats.hostSessionCount ?? "—", label: "Sessions\ncreated" },
-                      { num: deleteStats.totalParticipants ?? "—", label: "Participants\nhosted" },
-                      { num: deleteStats.totalCoinsGiven ?? "—", label: "Coins\nawarded" },
-                    ].map(s => (
-                      <div key={s.label} style={{background:"#fff",borderRadius:10,padding:"10px 8px",textAlign:"center",border:`1px solid ${BORDER}`}}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:PINK,lineHeight:1}}>{s.num}</div>
-                        <div style={{fontSize:9,color:SUB,marginTop:3,whiteSpace:"pre-line",lineHeight:1.3}}>{s.label}</div>
+                      { num: deleteStats.hostSessionCount ?? "—", label: "Sessions created" },
+                      { num: deleteStats.totalParticipants ?? "—", label: "Participants hosted" },
+                      { num: deleteStats.totalCoinsGiven ?? "—", label: "Coins awarded" },
+                    ].map((s, i, arr) => (
+                      <div key={s.label} style={{display:"flex",alignItems:"center",flex:1}}>
+                        <div style={{flex:1,textAlign:"center"}}>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:PINK,lineHeight:1}}>{s.num}</div>
+                          <div style={{fontSize:10,color:SUB,marginTop:3}}>{s.label}</div>
+                        </div>
+                        {i < arr.length - 1 && <div style={{width:1,height:36,background:BORDER,flexShrink:0}}/>}
                       </div>
                     ))}
                   </div>
                   {/* As a participant */}
-                  <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:PURPLE,textTransform:"uppercase",marginBottom:6}}>As a Participant</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:PURPLE,textTransform:"uppercase",marginBottom:8}}>As a Participant</div>
+                  <div style={{display:"flex",alignItems:"center"}}>
                     {[
-                      { num: deleteStats.sessionsJoined ?? "—", label: "Sessions\njoined" },
-                      { num: deleteStats.coinsEarned ?? "—", label: "Coins\nearned" },
-                    ].map(s => (
-                      <div key={s.label} style={{background:"#fff",borderRadius:10,padding:"10px 8px",textAlign:"center",border:"1px solid rgba(157,80,255,0.15)"}}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:PURPLE,lineHeight:1}}>{s.num}</div>
-                        <div style={{fontSize:9,color:SUB,marginTop:3,whiteSpace:"pre-line",lineHeight:1.3}}>{s.label}</div>
+                      { num: deleteStats.sessionsJoined ?? "—", label: "Sessions joined" },
+                      { num: deleteStats.coinsEarned ?? "—", label: "Coins earned" },
+                    ].map((s, i, arr) => (
+                      <div key={s.label} style={{display:"flex",alignItems:"center",flex:1}}>
+                        <div style={{flex:1,textAlign:"center"}}>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:PURPLE,lineHeight:1}}>{s.num}</div>
+                          <div style={{fontSize:10,color:SUB,marginTop:3}}>{s.label}</div>
+                        </div>
+                        {i < arr.length - 1 && <div style={{width:1,height:36,background:"rgba(157,80,255,0.15)",flexShrink:0}}/>}
                       </div>
                     ))}
                   </div>
                 </>
               )}
+            </div>
+
+            {/* Clarifying note */}
+            <div style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:10,padding:"10px 12px",marginBottom:14,fontSize:12,color:SUB,lineHeight:1.7}}>
+              <div>🗑️ <strong style={{color:TEXT}}>What gets deleted:</strong> your account, sessions, participants, logs, billing history, and any active Pro plan (no refund).</div>
+              <div style={{marginTop:4}}>✅ <strong style={{color:TEXT}}>What stays:</strong> coins you’ve already awarded to others remain visible in their sessions.</div>
             </div>
 
             {/* Confirmation input */}
