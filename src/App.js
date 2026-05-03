@@ -141,6 +141,20 @@ const EMAILJS_BETA_TEMPLATE_ID = "template_u65t3mv"; // beta invite template
 const EMAILJS_PUBLIC_KEY       = "jNSW4DcPKgyR6_oa4";
 
 const EMAILJS_WELCOME_TEMPLATE_ID = "template_w4i7vxj"; // welcome email
+const EMAILJS_BETA_EXPIRED_TEMPLATE_ID = "template_beta_exp"; // beta expired email — create this in EmailJS
+
+// ── Send beta-expired email ──
+async function sendBetaExpiredEmail({ toEmail, toName }) {
+  try {
+    const ejs = window.emailjs || (typeof emailjs !== "undefined" ? emailjs : null);
+    if (!ejs) return;
+    await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_EXPIRED_TEMPLATE_ID, {
+      to_email: toEmail,
+      to_name:  toName || "there",
+      pro_link: "https://teticoin.com/app",
+    }, EMAILJS_PUBLIC_KEY);
+  } catch(e) { console.warn("Beta expired email failed:", e.message); }
+}
 
 // ── Send welcome email to new signups ──
 async function sendWelcomeEmail({ toEmail, toName }) {
@@ -6984,8 +6998,8 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
   const planData = {
     free:    {name:"Free",        price:"RM 0",    renewal:null,       color:SUB,    next:null},
     oneTime: {name:"One Time",    price:"RM 29",   renewal:"one-time", color:BLUE,   next:null},
-    pro:     {name:"Pro",         price:"RM 29",   renewal:"monthly",  color:PINK,   next:expiryLabel},
-    proY:    {name:"Pro",         price:"RM 269",  renewal:"yearly",   color:PINK,   next:expiryLabel},
+    pro:     {name:"Pro",         price:"RM 29",   renewal:"monthly",  color:BLUE,   next:expiryLabel},
+    proY:    {name:"Pro",         price:"RM 269",  renewal:"yearly",   color:BLUE,   next:expiryLabel},
     beta:    {name:"Beta Pro",    price:"Free",    renewal:"beta",     color:GREEN,  next:expiryLabel},
     superadmin:{name:"Superadmin",price:"—",       renewal:null,       color:"#FF6B00",next:null},
   };
@@ -7080,8 +7094,8 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                   ? "linear-gradient(135deg,#D1FAE5,#A7F3D0)"
                   : isExpired
                     ? "linear-gradient(135deg,#FEF2F2,#FEE2E2)"
-                    : pd.color===PINK
-                      ? `linear-gradient(135deg,${SOFT},#FFD6EE)`
+                    : isPaidPro
+                      ? "linear-gradient(135deg,#EFF6FF,#DBEAFE)"
                       : "linear-gradient(135deg,#EDE9FE,#DDD6FE)",
               padding:"18px 16px 16px",
             }}>
@@ -7631,7 +7645,7 @@ function SuperAdminDashboard({ onClose }) {
     setSelected(new Set());
   }
 
-  const PLAN_COLORS = { free: SUB, beta: GREEN, pro: PINK, proY: PINK, oneTime: BLUE, superadmin: "#FF6B00" };
+  const PLAN_COLORS = { free: SUB, beta: GREEN, pro: BLUE, proY: BLUE, oneTime: BLUE, superadmin: "#FF6B00" };
   const PLAN_LABELS = { free:"Free", beta:"Beta Pro", pro:"Pro", proY:"Pro Yearly", oneTime:"One-Time", superadmin:"Superadmin" };
 
   const filtered = users.filter(u => {
@@ -8770,6 +8784,7 @@ export default function App() {
   const [paymentToast, setPaymentToast] = useState(null);
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(null); // { plan, expiry }
   const [showBetaWelcome, setShowBetaWelcome] = useState(false);
+  const [showBetaExpired, setShowBetaExpired] = useState(false);
   const [claimToken, setClaimToken] = useState(null); // badge claim token from /claim/TOKEN URL
 
   const isSuperadmin = plan === "superadmin";
@@ -8925,6 +8940,17 @@ export default function App() {
                 p = "free"; exp = null;
                 await ss("plan", "free");
                 await sd("planExpiry");
+                // Show expired popup once — check if already seen
+                const alreadySeen = await sg("betaExpiredSeen");
+                if (!alreadySeen) {
+                  setShowBetaExpired(true);
+                  await ss("betaExpiredSeen", true);
+                  // Send expired email
+                  if (user.email) {
+                    const nameDoc = await sg("name");
+                    sendBetaExpiredEmail({ toEmail: user.email, toName: nameDoc || user.displayName || "" });
+                  }
+                }
               }
             }
           }
@@ -9260,7 +9286,7 @@ export default function App() {
       {showPaymentSuccess && (
         <div style={{position:"fixed",inset:0,zIndex:10000,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
           <div style={{background:"#fff",borderRadius:24,padding:"40px 32px",maxWidth:420,width:"100%",textAlign:"center",boxShadow:"0 32px 80px rgba(0,0,0,.25)",animation:"slideUp .3s ease"}}>
-            <div style={{width:72,height:72,borderRadius:"50%",background:`linear-gradient(135deg,${PINK},#9D50FF)`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
+            <div style={{width:72,height:72,borderRadius:"50%",background:"linear-gradient(135deg,#3B82F6,#1D4ED8)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:TEXT,marginBottom:8}}>
@@ -9270,7 +9296,7 @@ export default function App() {
               Your payment was successful. All Pro features are now unlocked.
             </div>
             {showPaymentSuccess.expiry && (
-              <div style={{display:"inline-block",background:SOFT,border:`1px solid ${BORDER}`,borderRadius:999,padding:"6px 16px",fontSize:13,fontWeight:700,color:PINK,marginBottom:24}}>
+              <div style={{display:"inline-block",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:999,padding:"6px 16px",fontSize:13,fontWeight:700,color:BLUE,marginBottom:24}}>
                 Active until {new Date(showPaymentSuccess.expiry).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
               </div>
             )}
@@ -9278,7 +9304,7 @@ export default function App() {
               Unlimited sessions · Up to 200 participants<br/>Groups, custom labels, Coinmaster &amp; more
             </div>
             <button onClick={()=>setShowPaymentSuccess(null)}
-              style={{width:"100%",padding:"13px",borderRadius:999,background:`linear-gradient(135deg,${PINK},#9D50FF)`,color:"#fff",border:"none",fontFamily:"Poppins,sans-serif",fontWeight:700,fontSize:15,cursor:"pointer"}}>
+              style={{width:"100%",padding:"13px",borderRadius:999,background:"linear-gradient(135deg,#3B82F6,#1D4ED8)",color:"#fff",border:"none",fontFamily:"Poppins,sans-serif",fontWeight:700,fontSize:15,cursor:"pointer"}}>
               Start using Pro →
             </button>
           </div>
@@ -9433,7 +9459,36 @@ export default function App() {
             </div>
           </div>
         )}
-        {/* Desktop top nav bar */}
+
+        {/* ── Beta Expired modal — shown once on first login after expiry ── */}
+        {showBetaExpired && (
+          <div style={{position:"fixed",inset:0,zIndex:900,background:"rgba(0,0,0,.55)",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+            <div style={{background:"#fff",borderRadius:24,padding:"36px 28px",maxWidth:420,width:"100%",textAlign:"center",boxShadow:"0 24px 80px rgba(0,0,0,.2)",animation:"fadeIn .3s ease"}}>
+              <div style={{width:68,height:68,borderRadius:20,background:"linear-gradient(135deg,#F0FDF4,#DCFCE7)",border:"2px solid #86EFAC",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:"#15803D",marginBottom:8}}>
+                Your Beta Pro has ended 🌱
+              </div>
+              <div style={{fontSize:14,color:"#374151",lineHeight:1.75,marginBottom:20}}>
+                Thank you so much for being one of our early testers — your feedback has meant a lot to us! Your Beta Pro access has now expired, but you can continue using Teticoin on the <strong>Free plan</strong>.
+              </div>
+              <div style={{background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:12,padding:"12px 16px",marginBottom:24,fontSize:13,color:"#166534",lineHeight:1.65}}>
+                To keep enjoying unlimited sessions, up to 200 participants, groups, Coinmaster and all the features you loved — upgrade to <strong>Pro</strong> from just <strong>RM 29/mo</strong>.
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <button onClick={()=>{ setShowBetaExpired(false); openPricing(); }}
+                  style={{width:"100%",padding:"13px 0",background:"linear-gradient(135deg,#16A34A,#22C55E)",border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
+                  Upgrade to Pro →
+                </button>
+                <button onClick={()=>setShowBetaExpired(false)}
+                  style={{width:"100%",padding:"12px 0",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:14,color:SUB,cursor:"pointer"}}>
+                  Maybe later
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="tc-home-topnav" style={{display:"none",background:plan==="superadmin"?"linear-gradient(90deg,#ffffff 0%,#ffffff 35%,#EF4444 75%,#B91C1C 100%)":plan==="beta"?"linear-gradient(90deg,#ffffff 0%,#ffffff 35%,#06B6D4 70%,#16A34A 100%)":plan!=="free"?"linear-gradient(90deg,#ffffff 0%,#ffffff 35%,#06B6D4 75%,#1D4ED8 100%)":"#fff",borderBottom:plan==="superadmin"?"1px solid rgba(239,68,68,0.25)":plan==="beta"?"1px solid rgba(6,182,212,0.25)":plan!=="free"?"1px solid rgba(6,182,212,0.25)":`1px solid ${BORDER}`,padding:"0 32px",height:64,alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <Ham size={36}/>
@@ -9510,7 +9565,12 @@ export default function App() {
               const daysLeft = planExpiry ? Math.max(0,Math.ceil((new Date(planExpiry)-new Date())/(1000*60*60*24))) : null;
               const expired = planExpiry && new Date(planExpiry) < new Date();
               return (
-                <div style={{background:expired?"#FEF2F2":"linear-gradient(135deg,#F0FDF4,#DCFCE7)",border:`1.5px solid ${expired?"#FECACA":"#86EFAC"}`,borderRadius:14,padding:"12px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:12}}>
+                <div style={{
+                  background: expired ? "#FEF2F2" : "linear-gradient(270deg,#F0FDF4,#DCFCE7,#A7F3D0,#DCFCE7,#F0FDF4)",
+                  backgroundSize: expired ? "auto" : "300% 300%",
+                  animation: expired ? "none" : "betaGreenFlow 4s ease infinite",
+                  border: `1.5px solid ${expired ? "#FECACA" : "#4ADE80"}`,
+                  borderRadius:14,padding:"12px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:12}}>
                   <div style={{width:36,height:36,borderRadius:10,background:expired?"#FEF2F2":"#16A34A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={expired?"#EF4444":"#fff"} strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                   </div>
@@ -9778,6 +9838,7 @@ const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:Poppins,sans-serif; -webkit-font-smoothing:antialiased; background:${BG}; user-select:none; -webkit-user-select:none; cursor:default; }
+  @keyframes betaGreenFlow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
   @keyframes floatUp { 0%{transform:translateY(0);opacity:1} 100%{transform:translateY(-80px);opacity:0} }
   @keyframes tcTourPulse { 0%,100%{box-shadow:0 0 0 2.5px #FF4FB8,0 0 0 6px rgba(255,79,184,0.2),0 0 24px rgba(255,79,184,0.22);} 50%{box-shadow:0 0 0 2.5px #FF4FB8,0 0 0 10px rgba(255,79,184,0.12),0 0 36px rgba(255,79,184,0.32);} }
   @keyframes tcTourFade { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
