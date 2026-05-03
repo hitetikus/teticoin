@@ -7931,6 +7931,16 @@ function SuperAdminDashboard({ onClose }) {
     free: users.filter(u => u.plan === "free").length,
   };
 
+  // Derive superadmin email
+  const superadminEmail = users.find(u => u.plan === "superadmin")?.email || null;
+
+  const TAB_DEFS = [
+    { key:"all",  label:"All Users",  val:stats.total, color:TEXT,      activeColor:TEXT      },
+    { key:"free", label:"Free Users", val:stats.free,  color:"#6B7280", activeColor:"#6B7280" },
+    { key:"beta", label:"Beta Pro",   val:stats.beta,  color:GREEN,     activeColor:GREEN     },
+    { key:"pro",  label:"Pro",        val:stats.pro,   color:BLUE,      activeColor:BLUE      },
+  ];
+
   return (
     <div style={{position:"fixed",inset:0,zIndex:900,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style>{CSS}</style>
@@ -7945,39 +7955,33 @@ function SuperAdminDashboard({ onClose }) {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PINK} strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:TEXT}}>Admin Dashboard</div>
         </div>
-        <div style={{width:60}}/>
+        {superadminEmail ? (
+          <div style={{display:"flex",alignItems:"center",gap:7,background:"linear-gradient(135deg,#EF4444,#B91C1C)",borderRadius:10,padding:"5px 12px"}}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:"#fff"}}>Superadmin</span>
+            <span style={{fontSize:11,color:"rgba(255,255,255,0.8)"}}>{superadminEmail}</span>
+          </div>
+        ) : <div style={{width:60}}/>}
       </div>
 
-      {/* Stats bar */}
-      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",gap:10,flexShrink:0,overflowX:"auto",alignItems:"center"}}>
-        {[
-          {label:"Total Users", val:stats.total, color:TEXT,   key:"all"},
-          {label:"Pro / Paid",  val:stats.pro,   color:PINK,   key:"pro"},
-          {label:"Beta Testers",val:stats.beta,  color:GREEN,  key:"beta"},
-          {label:"Free",        val:stats.free,  color:SUB,    key:"free"},
-        ].map(s => {
-          const active = statsFilter===s.key || (s.key==="all" && !statsFilter);
+      {/* Color-coded stat tabs — serve as primary navigation, centered */}
+      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"14px 24px",display:"flex",gap:10,flexShrink:0,justifyContent:"center",flexWrap:"wrap"}}>
+        {TAB_DEFS.map(s => {
+          const active = (tab === "beta" && s.key === "beta") ||
+                         (tab === "users" && ((s.key === "all" && !statsFilter) || statsFilter === s.key));
           return (
-            <div key={s.key} onClick={()=>{ setStatsFilter(active?null:s.key); setSearch(""); setSelected(new Set()); }}
-              style={{background:active?`${s.color}12`:"#fff",border:`1.5px solid ${active?s.color:BORDER}`,borderRadius:12,padding:"10px 18px",flexShrink:0,minWidth:96,textAlign:"center",cursor:"pointer",transition:"all .15s"}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:s.color}}>{loading?"…":s.val}</div>
-              <div style={{fontSize:11,color:active?s.color:SUB,fontWeight:600,marginTop:2}}>{s.label}</div>
+            <div key={s.key}
+              onClick={()=>{
+                setSearch(""); setSelected(new Set());
+                if (s.key === "beta") { setTab("beta"); setStatsFilter(null); }
+                else { setTab("users"); setStatsFilter(s.key === "all" ? null : s.key); }
+              }}
+              style={{background:active?`${s.activeColor}12`:"#fff",border:`1.5px solid ${active?s.activeColor:BORDER}`,borderRadius:14,padding:"10px 24px",flexShrink:0,minWidth:110,textAlign:"center",cursor:"pointer",transition:"all .15s"}}>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:active?s.activeColor:"#9CA3AF"}}>{loading?"…":s.val}</div>
+              <div style={{fontSize:11,color:active?s.activeColor:"#9CA3AF",fontWeight:700,marginTop:2}}>{s.label}</div>
             </div>
           );
         })}
-      </div>
-
-      {/* Tabs */}
-      <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,display:"flex",flexShrink:0}}>
-        {[
-          ["users", <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, "Users"],
-          ["beta",  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, "Beta Pro"],
-        ].map(([id, icon, label]) => (
-          <button key={id} onClick={()=>setTab(id)}
-            style={{padding:"11px 20px",border:"none",background:"none",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:tab===id?PINK:SUB,cursor:"pointer",borderBottom:tab===id?`2.5px solid ${PINK}`:"2.5px solid transparent",display:"flex",alignItems:"center",gap:6}}>
-            <span style={{color:tab===id?PINK:SUB}}>{icon}</span>{label}
-          </button>
-        ))}
       </div>
 
       {/* Toast */}
@@ -7987,7 +7991,7 @@ function SuperAdminDashboard({ onClose }) {
         </div>
       )}
 
-      <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
+      <div style={{flex:1,overflowY:"auto",padding:"20px 10%"}}>
 
         {tab === "users" && <>
           {/* Search + Sort + Select All */}
@@ -8066,12 +8070,12 @@ function SuperAdminDashboard({ onClose }) {
                         </div>;
                       })()}
                     </div>
-                    {/* Badge — next to name info */}
-                    <div style={{flexShrink:0}}>
+                    {/* Plan badge — near name column */}
+                    <div style={{flexShrink:0,minWidth:80,textAlign:"right"}}>
                       <span style={{background:`${planColor}15`,border:`1px solid ${planColor}40`,color:planColor,borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}>{planLabel}</span>
                     </div>
                     {/* Action buttons — far right */}
-                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,marginLeft:"auto"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
                       {!isSA && u.plan !== "beta" && (
                         <button onClick={()=>assignBeta(u.uid, u.email)}
                           style={{padding:"4px 10px",background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:8,fontSize:11,fontWeight:700,color:"#16A34A",cursor:"pointer"}}>+ Beta Pro</button>
@@ -8135,7 +8139,7 @@ function SuperAdminDashboard({ onClose }) {
                   return (
                     <div key={u.uid} style={{background:"#fff",border:`1.5px solid ${expired?"#FECACA":BORDER}`,borderRadius:12,padding:"14px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:2}}>
                           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</div>
                           <span style={{background:`${GREEN}15`,border:`1px solid ${GREEN}40`,color:GREEN,borderRadius:99,padding:"2px 8px",fontSize:10,fontWeight:800}}>Beta Pro</span>
                         </div>
