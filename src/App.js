@@ -8169,8 +8169,7 @@ function SuperAdminDashboard({ onClose }) {
             if (allChecked || someChecked) setSelected(new Set());
             else setSelected(new Set(eligibles));
           };
-          return (<>
-          return (<>
+          return (<div>
           {/* Layout: table left, invite panel right (only on Pro tab) */}
           <div style={{display:"flex",gap:24,alignItems:"start"}}>
             {/* Main table column */}
@@ -8373,7 +8372,7 @@ function SuperAdminDashboard({ onClose }) {
               </div>
             )}
           </div>{/* end flex layout */}
-        </>);})()}
+        </div>);})()}
 
             </div>{/* end maxWidth padding */}
           </div>
