@@ -6523,7 +6523,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
                           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:PINK,lineHeight:1}}>{s.num}</div>
                           <div style={{fontSize:10,color:SUB,marginTop:3}}>{s.label}</div>
                         </div>
-                        {i < arr.length - 1 && <div style={{width:1,height:36,background:BORDER,flexShrink:0}}/>}
+                        {i < arr.length - 1 && <div style={{width:2,height:36,background:BORDER,flexShrink:0}}/>}
                       </div>
                     ))}
                   </div>
@@ -6539,7 +6539,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
                           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:PURPLE,lineHeight:1}}>{s.num}</div>
                           <div style={{fontSize:10,color:SUB,marginTop:3}}>{s.label}</div>
                         </div>
-                        {i < arr.length - 1 && <div style={{width:1,height:36,background:"rgba(157,80,255,0.15)",flexShrink:0}}/>}
+                        {i < arr.length - 1 && <div style={{width:2,height:36,background:"rgba(157,80,255,0.25)",flexShrink:0}}/>}
                       </div>
                     ))}
                   </div>
@@ -6549,8 +6549,14 @@ function ProfilePage({ trainer, onClose, onSaved }) {
 
             {/* Clarifying note */}
             <div style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:10,padding:"10px 12px",marginBottom:14,fontSize:12,color:SUB,lineHeight:1.7}}>
-              <div>🗑️ <strong style={{color:TEXT}}>What gets deleted:</strong> your account, sessions, participants, logs, billing history, and any active Pro plan (no refund).</div>
-              <div style={{marginTop:4}}>✅ <strong style={{color:TEXT}}>What stays:</strong> coins you’ve already awarded to others remain visible in their sessions.</div>
+              <div style={{display:"flex",alignItems:"flex-start",gap:7}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                <span><strong style={{color:TEXT}}>What gets deleted:</strong> your account, sessions, participants, logs, billing history, and any active Pro plan (no refund).</span>
+              </div>
+              <div style={{display:"flex",alignItems:"flex-start",gap:7,marginTop:7}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong style={{color:TEXT}}>What stays:</strong> coins you’ve already awarded to others remain visible in their sessions.</span>
+              </div>
             </div>
 
             {/* Confirmation input */}
