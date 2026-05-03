@@ -5932,12 +5932,11 @@ async function handlePaymentReturn(onSuccess, currentExpiry) {
     const { plan, billing } = PAYMENT_CONFIG.planMap[planParam];
     const daysToAdd = billing === "yearly" ? 365 : 30;
     // Stack on current expiry if still active, otherwise start from today
-    const baseDate = (currentExpiry && new Date(currentExpiry) > new Date())
-      ? new Date(currentExpiry)
-      : new Date();
+    const isExtension = !!(currentExpiry && new Date(currentExpiry) > new Date());
+    const baseDate = isExtension ? new Date(currentExpiry) : new Date();
     const expiry = new Date(baseDate);
     expiry.setDate(expiry.getDate() + daysToAdd);
-    await onSuccess(plan, expiry.toISOString());
+    await onSuccess(plan, expiry.toISOString(), billing, isExtension);
     window.history.replaceState({}, "", window.location.pathname);
     return true;
   }
@@ -9079,8 +9078,9 @@ export default function App() {
           }
 
           // ── Handle payment return from Chip ──
-          const upgraded = await handlePaymentReturn(async (newPlan, newExpiry) => {
+          const upgraded = await handlePaymentReturn(async (newPlan, newExpiry, billing, isExtension) => {
             const planVal = newPlan === "pro" ? "pro" : newPlan;
+            const isYearly = billing === "yearly";
             setPlan(planVal);
             setPlanExpiry(newExpiry);
             await ss("plan", planVal);
@@ -9092,7 +9092,6 @@ export default function App() {
               // Write expiry (double-write safety net)
               await setDoc(doc(db2, "users", uid, "data", "planExpiry"), { value: newExpiry, updatedAt: Date.now() });
               // Append invoice record to Firestore invoice history
-              const isYearly = planVal === "proY";
               const invSnap = await getDoc(doc(db2, "users", uid, "data", "invoices"));
               const existingInvs = invSnap.exists() ? (invSnap.data().value || []) : [];
               const newInv = {
@@ -9107,7 +9106,7 @@ export default function App() {
               };
               await setDoc(doc(db2, "users", uid, "data", "invoices"), { value: [...existingInvs, newInv], updatedAt: Date.now() });
             } catch(e) { console.error("payment save error:", e); }
-            setShowPaymentSuccess({ plan: planVal, expiry: newExpiry });
+            setShowPaymentSuccess({ plan: planVal, expiry: newExpiry, billing: isYearly ? "yearly" : "monthly", isExtension: !!isExtension });
           }, exp); // pass current expiry for stacking (+30 days on renewal)
 
           // ── Restore the correct screen based on the current URL path ──
@@ -9381,26 +9380,34 @@ export default function App() {
       {showPaymentSuccess && (
         <div style={{position:"fixed",inset:0,zIndex:10000,background:"rgba(0,0,0,.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
           <div style={{background:"#fff",borderRadius:24,padding:"40px 32px",maxWidth:420,width:"100%",textAlign:"center",boxShadow:"0 32px 80px rgba(0,0,0,.25)",animation:"slideUp .3s ease"}}>
-            <div style={{width:72,height:72,borderRadius:"50%",background:"linear-gradient(135deg,#3B82F6,#1D4ED8)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
+            <div style={{width:72,height:72,borderRadius:"50%",background:showPaymentSuccess.isExtension?"linear-gradient(135deg,#E91E8C,#9D50FF)":"linear-gradient(135deg,#3B82F6,#1D4ED8)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:TEXT,marginBottom:8}}>
-              🎉 You're on Pro!
+              {showPaymentSuccess.isExtension
+                ? (showPaymentSuccess.billing === "yearly" ? "🗓️ Extended by a year!" : "🗓️ Extended by a month!")
+                : "🎉 You're on Pro!"}
             </div>
             <div style={{fontSize:14,color:SUB,lineHeight:1.65,marginBottom:8}}>
-              Your payment was successful. All Pro features are now unlocked.
+              {showPaymentSuccess.isExtension
+                ? (showPaymentSuccess.billing === "yearly"
+                    ? "Payment successful. Your Pro access has been extended by 12 months."
+                    : "Payment successful. Your Pro access has been extended by 1 month.")
+                : "Your payment was successful. All Pro features are now unlocked."}
             </div>
             {showPaymentSuccess.expiry && (
-              <div style={{display:"inline-block",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:999,padding:"6px 16px",fontSize:13,fontWeight:700,color:BLUE,marginBottom:24}}>
+              <div style={{display:"inline-block",background:showPaymentSuccess.isExtension?"rgba(233,30,140,0.08)":"#EFF6FF",border:`1px solid ${showPaymentSuccess.isExtension?"rgba(233,30,140,0.25)":"#BFDBFE"}`,borderRadius:999,padding:"6px 16px",fontSize:13,fontWeight:700,color:showPaymentSuccess.isExtension?PINK:BLUE,marginBottom:24}}>
                 Active until {new Date(showPaymentSuccess.expiry).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}
               </div>
             )}
             <div style={{fontSize:13,color:SUB,marginBottom:24,lineHeight:1.6}}>
-              Unlimited sessions · Up to 200 participants<br/>Groups, custom labels, Coinmaster &amp; more
+              {showPaymentSuccess.isExtension
+                ? "Keep running unlimited sessions with all your Pro features."
+                : "Unlimited sessions · Up to 200 participants\nGroups, custom labels, Coinmaster & more"}
             </div>
             <button onClick={()=>setShowPaymentSuccess(null)}
-              style={{width:"100%",padding:"13px",borderRadius:999,background:"linear-gradient(135deg,#3B82F6,#1D4ED8)",color:"#fff",border:"none",fontFamily:"Poppins,sans-serif",fontWeight:700,fontSize:15,cursor:"pointer"}}>
-              Start using Pro →
+              style={{width:"100%",padding:"13px",borderRadius:999,background:showPaymentSuccess.isExtension?"linear-gradient(135deg,#E91E8C,#9D50FF)":"linear-gradient(135deg,#3B82F6,#1D4ED8)",color:"#fff",border:"none",fontFamily:"Poppins,sans-serif",fontWeight:700,fontSize:15,cursor:"pointer"}}>
+              {showPaymentSuccess.isExtension ? "Got it →" : "Start using Pro →"}
             </button>
           </div>
         </div>
