@@ -90,9 +90,12 @@ async function claimBetaInvite(uid, email) {
     const { getFirestore, doc, getDoc, setDoc, deleteDoc } = await import("firebase/firestore");
     const db = getFirestore();
     const key = email.toLowerCase().replace(/\./g,"_");
+    console.log("[claimBetaInvite] checking key:", key, "uid:", uid);
     const inviteSnap = await getDoc(doc(db, "betaInvites", key));
+    console.log("[claimBetaInvite] invite exists:", inviteSnap.exists());
     if (!inviteSnap.exists()) return null;
     const { expiry } = inviteSnap.data();
+    console.log("[claimBetaInvite] expiry:", expiry);
     // Already expired before they signed up — ignore
     if (new Date(expiry) < new Date()) { await deleteDoc(doc(db, "betaInvites", key)); return null; }
     // Assign beta plan
@@ -101,8 +104,9 @@ async function claimBetaInvite(uid, email) {
       setDoc(doc(db, "users", uid, "data", "planExpiry"), { value: expiry,   updatedAt: Date.now() }),
       deleteDoc(doc(db, "betaInvites", key)), // consume the invite
     ]);
+    console.log("[claimBetaInvite] SUCCESS — beta plan assigned");
     return expiry;
-  } catch(e) { console.error("claimBetaInvite error", e); return null; }
+  } catch(e) { console.error("[claimBetaInvite] ERROR:", e.code, e.message); return null; }
 }
 
 const DEMO = {
