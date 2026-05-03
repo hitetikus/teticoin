@@ -9563,29 +9563,47 @@ export default function App() {
             {!isFree && isBeta && (() => {
               const expStr = planExpiry ? new Date(planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : null;
               const daysLeft = planExpiry ? Math.max(0,Math.ceil((new Date(planExpiry)-new Date())/(1000*60*60*24))) : null;
-              const expired = planExpiry && new Date(planExpiry) < new Date();
+              const expiringSoon = daysLeft !== null && daysLeft <= 30;
               return (
                 <div style={{
-                  background: expired ? "#FEF2F2" : "linear-gradient(270deg,#F0FDF4,#DCFCE7,#A7F3D0,#DCFCE7,#F0FDF4)",
-                  backgroundSize: expired ? "auto" : "300% 300%",
-                  animation: expired ? "none" : "betaGreenFlow 4s ease infinite",
-                  border: `1.5px solid ${expired ? "#FECACA" : "#4ADE80"}`,
-                  borderRadius:14,padding:"12px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{width:36,height:36,borderRadius:10,background:expired?"#FEF2F2":"#16A34A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={expired?"#EF4444":"#fff"} strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:expired?"#EF4444":"#15803D"}}>Beta Pro {expired?"— Expired":"— Active"}</div>
-                    <div style={{fontSize:12,color:expired?"#EF4444":"#166534",fontWeight:500}}>
-                      {expired?"Your Beta Pro access has ended."
-                        :expStr?`Full Pro access · Expires ${expStr}${daysLeft!==null?` (${daysLeft}d left)`:""}`:"Full Pro access"}
+                  background: expiringSoon
+                    ? "linear-gradient(270deg,#F0FDF4,#DCFCE7,#A7F3D0,#DCFCE7,#F0FDF4)"
+                    : "linear-gradient(135deg,#F0FDF4,#DCFCE7)",
+                  backgroundSize: expiringSoon ? "300% 300%" : "auto",
+                  animation: expiringSoon ? "betaGreenFlow 4s ease infinite" : "none",
+                  border: `1.5px solid ${expiringSoon ? "#4ADE80" : "#86EFAC"}`,
+                  borderRadius:14,padding:"12px 16px",marginBottom:12}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{width:36,height:36,borderRadius:10,background:"#16A34A",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#15803D"}}>
+                        Beta Pro — Active {expiringSoon && daysLeft <= 7 ? "⚡" : ""}
+                      </div>
+                      <div style={{fontSize:12,color:"#166534",fontWeight:500}}>
+                        {expStr ? `Full Pro access · Expires ${expStr}${daysLeft!==null?` (${daysLeft}d left)`:""}` : "Full Pro access"}
+                      </div>
                     </div>
                   </div>
+                  {expiringSoon && (
+                    <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid #86EFAC",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+                      <div style={{fontSize:12,color:"#166534",lineHeight:1.5,flex:1}}>
+                        {daysLeft <= 7
+                          ? <><strong>Expiring soon!</strong> Keep your Pro features by upgrading.</>
+                          : <>Your Beta Pro expires in {daysLeft} days — lock in Pro to keep everything.</>}
+                      </div>
+                      <button onClick={()=>openPricing()}
+                        style={{flexShrink:0,padding:"7px 14px",background:"#16A34A",border:"none",borderRadius:99,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>
+                        Upgrade to Pro →
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })()}
 
-            {/* Hero card */}
+                        {/* Hero card */}
             <div style={{background:`linear-gradient(135deg,#FFF0F7,#FFE4F2)`,border:`1.5px solid ${MID}`,borderRadius:18,padding:"24px 20px",marginBottom:16,textAlign:"center"}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,color:TEXT,lineHeight:1.1,marginBottom:6}}>
                 Ready to reward<br/>your participants?
