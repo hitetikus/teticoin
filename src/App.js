@@ -7768,10 +7768,10 @@ function SuperAdminDashboard({ onClose }) {
   }
 
   async function revokePlan(uid, email) {
+    if (!window.confirm(`Revoke plan for ${email}?\n\nThey will be moved back to the Free plan immediately.`)) return;
     try {
       const { getFirestore, doc, setDoc, deleteDoc } = await import("firebase/firestore");
       const db = getFirestore();
-      // Reset plan to free, remove expiry
       await Promise.all([
         setDoc(doc(db, "users", uid, "data", "plan"),       { value: "free", updatedAt: Date.now() }),
         deleteDoc(doc(db, "users", uid, "data", "planExpiry")),
@@ -7794,15 +7794,14 @@ function SuperAdminDashboard({ onClose }) {
   }
 
   async function deleteUserAccount(uid, email) {
-    if (!window.confirm(`Delete all Firestore data for ${email}?\n\nNote: Their Firebase Auth account must be deleted separately from the Firebase Console (Authentication → Users).`)) return;
+    if (!window.confirm(`Delete account for ${email}?\n\nAll their data — sessions, coins, plan — will be permanently removed. They can re-register as a new user if they want.`)) return;
     try {
       const { getFirestore, collection, getDocs, doc, deleteDoc } = await import("firebase/firestore");
       const db = getFirestore();
-      // Delete all docs in users/{uid}/data subcollection
       const dataSnap = await getDocs(collection(db, "users", uid, "data"));
       await Promise.all(dataSnap.docs.map(d => deleteDoc(d.ref)));
       setUsers(u => u.filter(x => x.uid !== uid));
-      setActionMsg(`✅ Firestore data deleted for ${email}. Remove from Firebase Auth console too.`);
+      setActionMsg(`✅ Account data deleted for ${email}. They can re-register anytime.`);
       setTimeout(() => setActionMsg(null), 6000);
     } catch(e) { setActionMsg("❌ Error: " + e.message); }
   }
@@ -7900,7 +7899,7 @@ function SuperAdminDashboard({ onClose }) {
   async function bulkDelete() {
     const targets = filtered.filter(u => selected.has(u.uid) && u.plan !== "superadmin");
     if (!targets.length) { setActionMsg("⚠ No eligible users selected"); setTimeout(()=>setActionMsg(null),3000); return; }
-    if (!window.confirm(`Delete Firestore data for ${targets.length} user${targets.length>1?"s":""}?\n\nThis cannot be undone. Firebase Auth accounts must be removed separately.`)) return;
+    if (!window.confirm(`Delete ${targets.length} account${targets.length>1?"s":""}?\n\nAll data will be permanently removed. They can re-register as new users.`)) return;
     for (const u of targets) await deleteUserAccount(u.uid, u.email);
     setSelected(new Set());
   }
@@ -7945,23 +7944,26 @@ function SuperAdminDashboard({ onClose }) {
     <div style={{position:"fixed",inset:0,zIndex:900,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style>{CSS}</style>
 
-      {/* Header — white-to-red gradient like navbar */}
-      <div style={{background:"linear-gradient(90deg,#ffffff 0%,#ffffff 35%,#EF4444 75%,#B91C1C 100%)",borderBottom:"1px solid rgba(239,68,68,0.2)",padding:"0 32px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-        <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:"#374151",fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,fontWeight:600,padding:0}}>
+      {/* Header — white-to-red gradient, title truly centered, email floated right */}
+      <div style={{background:"linear-gradient(90deg,#ffffff 0%,#ffffff 35%,#EF4444 75%,#B91C1C 100%)",borderBottom:"1px solid rgba(239,68,68,0.2)",padding:"0 32px",height:64,display:"flex",alignItems:"center",position:"relative",flexShrink:0}}>
+        {/* Left: Back button */}
+        <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:"#374151",fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,fontWeight:600,padding:0,zIndex:1}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
+        {/* Center: title — absolutely centered */}
+        <div style={{position:"absolute",left:0,right:0,display:"flex",alignItems:"center",justifyContent:"center",gap:8,pointerEvents:"none"}}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:"#0A0A0F"}}>Admin Dashboard</div>
         </div>
-        {superadminEmail ? (
-          <div style={{display:"flex",alignItems:"center",gap:6}}>
+        {/* Right: superadmin email floated */}
+        <div style={{marginLeft:"auto",zIndex:1,display:"flex",alignItems:"center",gap:6}}>
+          {superadminEmail && <>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"rgba(255,255,255,0.75)"}}>Superadmin</span>
+            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:12,color:"rgba(255,255,255,0.75)"}}>Superadmin</span>
             <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>{superadminEmail}</span>
-          </div>
-        ) : <div style={{width:80}}/>}
+          </>}
+        </div>
       </div>
 
       {/* Color-coded stat tabs — serve as primary navigation, centered */}
@@ -8065,13 +8067,14 @@ function SuperAdminDashboard({ onClose }) {
                       </div>
                       <div style={{fontSize:12,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</div>
                       {expiryStr && (() => {
+                        const isBeta = u.plan==="beta";
                         const isPaid = u.plan==="pro"||u.plan==="proY"||u.plan==="oneTime";
                         const dLeft = u.planExpiry ? Math.ceil((new Date(u.planExpiry)-new Date())/(1000*60*60*24)) : null;
-                        const expSoon = dLeft!==null && dLeft<=7 && dLeft>0;
                         const expired = dLeft!==null && dLeft<=0;
-                        const col = expired?"#EF4444":expSoon?"#F97316":isPaid?PINK:SUB;
-                        return <div style={{fontSize:11,color:col,fontWeight:isPaid?700:400,marginTop:1}}>
-                          {expired?"⚠ Expired ":expSoon?`⚡ ${dLeft}d left · `:"Expires "}{expiryStr}
+                        const expSoon = dLeft!==null && dLeft<=7 && dLeft>0;
+                        const col = expired?"#EF4444":expSoon?"#F97316":isPaid?BLUE:isBeta?GREEN:SUB;
+                        return <div style={{fontSize:11,color:col,fontWeight:400,marginTop:1}}>
+                          {expired?"⚠ Expired":expSoon?`⚡ Expires in ${dLeft}d`:`Expires: ${expiryStr}`}
                         </div>;
                       })()}
                     </div>
@@ -8163,8 +8166,8 @@ function SuperAdminDashboard({ onClose }) {
                           <span style={{display:"inline-block",background:GREEN+"22",color:GREEN,borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:500,textTransform:"uppercase",letterSpacing:.4,marginLeft:6,verticalAlign:"middle",whiteSpace:"nowrap"}}>Beta Pro</span>
                         </div>
                         <div style={{fontSize:12,color:SUB}}>{u.email}</div>
-                        <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:600,marginTop:3}}>
-                          {expired?"⚠ Expired":"● Active"} · until {expiryStr}
+                        <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:400,marginTop:3}}>
+                          {expired?"⚠ Expired":`Expires: ${expiryStr}`}
                         </div>
                       </div>
                       <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,flexWrap:"wrap"}}>
