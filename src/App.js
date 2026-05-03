@@ -7090,7 +7090,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
             <div style={{
               margin:12,
               borderRadius:14,
-              border: isFree ? `2px solid ${TEXT}` : isExpired ? "1.5px solid #EF444440" : isBetaPlan && isExpiringSoon ? "1.5px solid #4ADE80" : isPaidPro ? `2.5px solid ${pd.color}` : `1.5px solid ${pd.color+"66"}`,
+              border: isExpired ? "1.5px solid #EF444440" : isBetaPlan && isExpiringSoon ? `3px solid #4ADE80` : `3px solid ${pd.color}`,
               background: isFree
                 ? "#fff"
                 : isBetaPlan
@@ -7272,10 +7272,10 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
 
           {/* No auto-renewal notice */}
           {!isFree && (
-            <div style={{background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:13,padding:"14px 18px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:10}}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <div style={{fontSize:12,color:SUB,lineHeight:1.65}}>
-                <strong style={{color:TEXT}}>No automatic charges.</strong> Your plan is not auto-renewed — you won't be charged unless you click Renew. Your access remains active until the expiry date shown above.
+            <div style={{background:"#0A0A0F",border:"none",borderRadius:13,padding:"14px 18px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:10}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div style={{fontSize:12,color:"rgba(255,255,255,0.7)",lineHeight:1.65}}>
+                <strong style={{color:"#fff"}}>No automatic charges.</strong> Your plan is not auto-renewed — you won't be charged unless you click Renew. Your access remains active until the expiry date shown above.
               </div>
             </div>
           )}
