@@ -1690,9 +1690,8 @@ function Auth({ onDone, onBack, initialView="login" }) {
       )}
       <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:20,padding:"32px 28px",maxWidth:400,width:"100%"}}>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:24}}>
-          <img src="/Teticoin Logo Mark.png" alt="Teticoin" style={{width:68,height:68,objectFit:"contain"}}/>
-          <img src="/Teticoin Logo Horizontal.png" alt="Teticoin" style={{height:26,width:"auto",marginTop:8}}/>
-          <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:4}}>Gamifying Interactions</div>
+          <img src="/Teticoin Logo Square.png" alt="Teticoin" style={{width:80,height:80,objectFit:"contain"}}/>
+          <div style={{fontSize:12,color:SUB,fontWeight:500,marginTop:6}}>Gamifying Interactions</div>
         </div>
 
         {view!=="forgot" && (
@@ -7689,8 +7688,10 @@ function SuperAdminDashboard({ onClose }) {
   const [pendingInvites, setPendingInvites] = useState([]);
   const [statsFilter, setStatsFilter] = useState(null);
   const [sortMode, setSortMode] = useState("joined");
+  const [sortDir, setSortDir] = useState(1); // 1 = desc/default, -1 = asc/reverse
   const [betaSearch, setBetaSearch] = useState("");
   const [betaSort, setBetaSort] = useState("newest");
+  const [betaSortDir, setBetaSortDir] = useState(1);
 
   // Load all users — data is stored under users/{uid}/data/{key} subcollection
   useEffect(() => {
@@ -7905,6 +7906,15 @@ function SuperAdminDashboard({ onClose }) {
     setSelected(new Set());
   }
 
+  async function bulkResetPassword() {
+    const targets = [...selected].map(uid => filtered.find(u => u.uid === uid)).filter(u => u && u.email && u.email !== "—");
+    if (!targets.length) { setActionMsg("⚠ No users with valid email selected"); setTimeout(()=>setActionMsg(null),3000); return; }
+    for (const u of targets) await resendReset(u.email);
+    setSelected(new Set());
+    setActionMsg(`✅ Password reset sent to ${targets.length} user${targets.length>1?"s":""}`);
+    setTimeout(()=>setActionMsg(null),3000);
+  }
+
   const PLAN_COLORS = { free: SUB, beta: GREEN, pro: BLUE, proY: BLUE, oneTime: BLUE, superadmin: "#FF6B00" };
   const PLAN_LABELS = { free:"Free", beta:"Beta Pro", pro:"Pro", proY:"Pro Yearly", oneTime:"One-Time", superadmin:"Superadmin" };
 
@@ -7920,8 +7930,9 @@ function SuperAdminDashboard({ onClose }) {
   }).sort((a, b) => {
     if (a.plan === "superadmin") return -1;
     if (b.plan === "superadmin") return 1;
-    if (sortMode === "alpha") return a.name.localeCompare(b.name);
-    return (b.createdAt || 0) - (a.createdAt || 0); // newest first
+    if (sortMode === "alpha") return sortDir * a.name.localeCompare(b.name);
+    if (sortMode === "expiry") return sortDir * ((a.planExpiry||"") < (b.planExpiry||"") ? -1 : 1);
+    return sortDir * ((b.createdAt || 0) - (a.createdAt || 0));
   });
 
   const stats = {
@@ -7997,47 +8008,69 @@ function SuperAdminDashboard({ onClose }) {
       <div style={{flex:1,overflowY:"auto"}}>
         <div style={{maxWidth:960,margin:"0 auto",padding:"20px 32px"}}>
 
-        {tab === "users" && <>
+        {tab === "users" && (() => {
+          const ctx = statsFilter || "all";
+          const sortOpts = (ctx === "pro" || ctx === "beta")
+            ? [["joined","Newest"],["alpha","A→Z"],["expiry","Expiry"]]
+            : [["joined","Newest"],["alpha","A→Z"]];
+          const toggleSort = (m) => {
+            if (sortMode === m) setSortDir(d => d * -1);
+            else { setSortMode(m); setSortDir(1); }
+          };
+          const arrow = (m) => sortMode === m ? (sortDir === 1 ? " ▼" : " ▲") : " ▼";
+          return (<>
           {/* Search + Sort + Select All */}
-          <div style={{marginBottom:8,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+          <div style={{marginBottom:8,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
             <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:160,maxWidth:400,borderRadius:999}}/>
-            {/* Sort toggle — inline with search */}
-            <div style={{display:"flex",gap:4,flexShrink:0}}>
-              {[["joined","Newest"],["alpha","A→Z"]].map(([m,l])=>(
-                <button key={m} onClick={()=>setSortMode(m)}
-                  style={{padding:"7px 12px",background:sortMode===m?SOFT:"#fff",border:`1.5px solid ${sortMode===m?PINK:BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:sortMode===m?PINK:SUB,cursor:"pointer",whiteSpace:"nowrap",transition:"all .12s"}}>
-                  {l}
-                </button>
+            <div style={{display:"flex",alignItems:"center",flexShrink:0}}>
+              {sortOpts.map(([m,l],i) => (
+                <span key={m} style={{display:"flex",alignItems:"center"}}>
+                  {i > 0 && <span style={{color:"#D1D5DB",margin:"0 6px",userSelect:"none",fontSize:12}}>|</span>}
+                  <button onClick={()=>toggleSort(m)}
+                    style={{background:"none",border:"none",cursor:"pointer",fontSize:12,fontWeight:sortMode===m?700:500,color:sortMode===m?PINK:SUB,padding:"4px 0",whiteSpace:"nowrap"}}>
+                    {l}{arrow(m)}
+                  </button>
+                </span>
               ))}
             </div>
             {!loading && filtered.length > 0 && (
-              <button onClick={()=>selected.size===filtered.length?setSelected(new Set()):setSelected(new Set(filtered.map(u=>u.uid)))}
-                style={{padding:"7px 14px",background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:SUB,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
-                {selected.size===filtered.length&&filtered.length>0?"Deselect All":`Select All (${filtered.length})`}
-              </button>
+              <>
+                <span style={{color:"#D1D5DB",fontSize:12,userSelect:"none"}}>|</span>
+                <button onClick={()=>selected.size===filtered.length?setSelected(new Set()):setSelected(new Set(filtered.map(u=>u.uid)))}
+                  style={{background:"none",border:"none",cursor:"pointer",fontSize:12,fontWeight:500,color:SUB,padding:"4px 0",flexShrink:0,whiteSpace:"nowrap"}}>
+                  {selected.size===filtered.length&&filtered.length>0?"Deselect All":`Select All (${filtered.length})`}
+                </button>
+              </>
             )}
           </div>
           {statsFilter && (
             <div style={{marginBottom:10,fontSize:12,color:SUB}}>
               Showing: <strong style={{color:TEXT}}>{statsFilter==="pro"?"Pro":statsFilter==="beta"?"Beta Pro":statsFilter==="free"?"Free Users":"All"} ({filtered.length})</strong>
-              <button onClick={()=>{setStatsFilter(null);setSearch("");}}
+              <button onClick={()=>{setStatsFilter(null);setSearch("");setSortMode("joined");setSortDir(1);}}
                 style={{marginLeft:8,fontSize:11,color:PINK,background:"none",border:"none",cursor:"pointer",fontWeight:700}}>✕ clear</button>
             </div>
           )}
 
-          {/* Bulk action bar */}
+          {/* Dynamic Bulk action bar */}
           {selected.size > 0 && (
             <div style={{background:"#1A0A14",borderRadius:12,padding:"10px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
               <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",marginRight:4}}>{selected.size} selected</span>
-              <button onClick={bulkAssignBeta} style={{padding:"6px 14px",background:"#16A34A",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>+ Beta Pro</button>
-              <button onClick={bulkRevoke} style={{padding:"6px 14px",background:"#EF4444",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>Revoke</button>
+              {(ctx === "all" || ctx === "free") && (
+                <button onClick={bulkAssignBeta} style={{padding:"6px 14px",background:"#16A34A",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>+ Beta Pro</button>
+              )}
+              {ctx === "beta" && (
+                <button onClick={bulkRevoke} style={{padding:"6px 14px",background:"#EF4444",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>Revoke Beta Pro</button>
+              )}
+              {ctx === "pro" && (
+                <button onClick={bulkRevoke} style={{padding:"6px 14px",background:"#EF4444",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>Revoke Pro</button>
+              )}
+              <button onClick={bulkResetPassword} style={{padding:"6px 14px",background:"#2563EB",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>Reset Password</button>
               <button onClick={bulkDelete} style={{padding:"6px 14px",background:"#374151",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Delete
               </button>
               <button onClick={()=>setSelected(new Set())} style={{marginLeft:"auto",padding:"6px 12px",background:"none",border:"1px solid rgba(255,255,255,.25)",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"rgba(255,255,255,.6)",cursor:"pointer"}}>✕ Clear</button>
             </div>
           )}
-
           {loading ? (
             <div style={{textAlign:"center",padding:48,color:SUB,fontSize:14}}>Loading users…</div>
           ) : (
@@ -8124,29 +8157,37 @@ function SuperAdminDashboard({ onClose }) {
               })}
             </div>
           )}
-        </>}
+        </>);})()}
 
         {tab === "beta" && (() => {
           const betaUsers = users.filter(u => u.plan === "beta");
+          const toggleBetaSort = (m) => {
+            if (betaSort === m) setBetaSortDir(d => d * -1);
+            else { setBetaSort(m); setBetaSortDir(1); }
+          };
+          const betaArrow = (m) => betaSort === m ? (betaSortDir === 1 ? " ▼" : " ▲") : " ▼";
           const betaFiltered = betaUsers
             .filter(u => !betaSearch || u.name.toLowerCase().includes(betaSearch.toLowerCase()) || u.email.toLowerCase().includes(betaSearch.toLowerCase()))
             .sort((a,b) => {
-              if (betaSort === "alpha") return (a.name||"").localeCompare(b.name||"");
-              if (betaSort === "expiry") return (a.planExpiry||"") < (b.planExpiry||"") ? -1 : 1;
-              return 0; // "newest" — keep load order
+              if (betaSort === "alpha") return betaSortDir * (a.name||"").localeCompare(b.name||"");
+              if (betaSort === "expiry") return betaSortDir * ((a.planExpiry||"") < (b.planExpiry||"") ? -1 : 1);
+              return betaSortDir * ((b.createdAt||0) - (a.createdAt||0));
             });
           return (
           <div style={{maxWidth:1100}}>
 
-            {/* Search + Sort bar */}
-            <div style={{marginBottom:16,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+            {/* Search + Sort + Select All bar */}
+            <div style={{marginBottom:16,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
               <Inp placeholder="Search beta users by name or email…" value={betaSearch} onChange={e=>setBetaSearch(e.target.value)} style={{flex:1,minWidth:160,maxWidth:400,borderRadius:999}}/>
-              <div style={{display:"flex",gap:4,flexShrink:0}}>
-                {[["newest","Newest"],["alpha","A→Z"],["expiry","Expiry"]].map(([m,l])=>(
-                  <button key={m} onClick={()=>setBetaSort(m)}
-                    style={{padding:"7px 12px",background:betaSort===m?SOFT:"#fff",border:`1.5px solid ${betaSort===m?PINK:BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:betaSort===m?PINK:SUB,cursor:"pointer",whiteSpace:"nowrap",transition:"all .12s"}}>
-                    {l}
-                  </button>
+              <div style={{display:"flex",alignItems:"center",flexShrink:0}}>
+                {[["newest","Newest"],["alpha","A→Z"],["expiry","Expiry"]].map(([m,l],i) => (
+                  <span key={m} style={{display:"flex",alignItems:"center"}}>
+                    {i > 0 && <span style={{color:"#D1D5DB",margin:"0 6px",userSelect:"none",fontSize:12}}>|</span>}
+                    <button onClick={()=>toggleBetaSort(m)}
+                      style={{background:"none",border:"none",cursor:"pointer",fontSize:12,fontWeight:betaSort===m?700:500,color:betaSort===m?PINK:SUB,padding:"4px 0",whiteSpace:"nowrap"}}>
+                      {l}{betaArrow(m)}
+                    </button>
+                  </span>
                 ))}
               </div>
               {betaSearch && (
@@ -9796,7 +9837,7 @@ export default function App() {
               <div style={{position:"absolute",top:0,left:0,right:0,height:4,background:"linear-gradient(90deg,#FF4FB8,#9D50FF,#E91E8C)"}}/>
               {/* Logo + icon */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:16}}>
-                <img src="/Teticoin Logo Mark.png" alt="Teticoin" style={{width:40,height:40,objectFit:"contain"}}/>
+                <img src="/Teticoin Logo Square.png" alt="Teticoin" style={{width:44,height:44,objectFit:"contain"}}/>
                 <div style={{width:40,height:40,borderRadius:12,background:"linear-gradient(135deg,#FF4FB8,#9D50FF)",display:"flex",alignItems:"center",justifyContent:"center"}}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </div>
