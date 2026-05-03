@@ -146,6 +146,21 @@ const EMAILJS_PUBLIC_KEY       = "jNSW4DcPKgyR6_oa4";
 
 const EMAILJS_WELCOME_TEMPLATE_ID = "template_w4i7vxj"; // welcome email
 const EMAILJS_BETA_EXPIRED_TEMPLATE_ID = "template_beta_exp"; // beta expired email — create this in EmailJS
+const EMAILJS_BETA_PROMOTED_TEMPLATE_ID = "template_beta_promo"; // beta promoted email — create this in EmailJS
+
+// ── Send beta-promoted email (existing user upgraded to Beta Pro by admin) ──
+async function sendBetaPromotedEmail({ toEmail, toName }) {
+  try {
+    const ejs = window.emailjs || (typeof emailjs !== "undefined" ? emailjs : null);
+    if (!ejs) return;
+    await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_PROMOTED_TEMPLATE_ID, {
+      to_email:   toEmail,
+      to_name:    toName || "there",
+      subject:    "You've been promoted to Teticoin Beta Pro 🎉",
+      app_url:    "https://teticoin.com",
+    }, EMAILJS_PUBLIC_KEY);
+  } catch(e) { console.warn("Beta promoted email failed:", e.message); }
+}
 
 // ── Send beta-expired email ──
 async function sendBetaExpiredEmail({ toEmail, toName }) {
@@ -7747,6 +7762,8 @@ function SuperAdminDashboard({ onClose }) {
       setUsers(u => u.map(x => x.uid === uid ? {...x, plan:"beta", planExpiry:expiry.toISOString()} : x));
       setActionMsg(`✅ Beta Pro assigned to ${email} for 90 days`);
       setTimeout(() => setActionMsg(null), 3000);
+      // Notify the user they've been promoted
+      sendBetaPromotedEmail({ toEmail: email, toName: email.split("@")[0] });
     } catch(e) { setActionMsg("❌ Error: " + e.message); }
   }
 
@@ -7994,7 +8011,7 @@ function SuperAdminDashboard({ onClose }) {
           </div>
           {statsFilter && (
             <div style={{marginBottom:10,fontSize:12,color:SUB}}>
-              Showing: <strong style={{color:TEXT}}>{statsFilter==="pro"?"Pro / Paid":statsFilter==="beta"?"Beta Testers":"Free"} ({filtered.length})</strong>
+              Showing: <strong style={{color:TEXT}}>{statsFilter==="pro"?"Pro":statsFilter==="beta"?"Beta Pro":statsFilter==="free"?"Free Users":"All"} ({filtered.length})</strong>
               <button onClick={()=>{setStatsFilter(null);setSearch("");}}
                 style={{marginLeft:8,fontSize:11,color:PINK,background:"none",border:"none",cursor:"pointer",fontWeight:700}}>✕ clear</button>
             </div>
@@ -8049,8 +8066,12 @@ function SuperAdminDashboard({ onClose }) {
                         </div>;
                       })()}
                     </div>
-                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,flexWrap:"wrap",justifyContent:"flex-end"}}>
+                    {/* Badge — next to name info */}
+                    <div style={{flexShrink:0}}>
                       <span style={{background:`${planColor}15`,border:`1px solid ${planColor}40`,color:planColor,borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800}}>{planLabel}</span>
+                    </div>
+                    {/* Action buttons — far right */}
+                    <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0,marginLeft:"auto"}}>
                       {!isSA && u.plan !== "beta" && (
                         <button onClick={()=>assignBeta(u.uid, u.email)}
                           style={{padding:"4px 10px",background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:8,fontSize:11,fontWeight:700,color:"#16A34A",cursor:"pointer"}}>+ Beta Pro</button>
@@ -8114,16 +8135,30 @@ function SuperAdminDashboard({ onClose }) {
                   return (
                     <div key={u.uid} style={{background:"#fff",border:`1.5px solid ${expired?"#FECACA":BORDER}`,borderRadius:12,padding:"14px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</div>
+                        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</div>
+                          <span style={{background:`${GREEN}15`,border:`1px solid ${GREEN}40`,color:GREEN,borderRadius:99,padding:"2px 8px",fontSize:10,fontWeight:800}}>Beta Pro</span>
+                        </div>
                         <div style={{fontSize:12,color:SUB}}>{u.email}</div>
                         <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:600,marginTop:3}}>
                           {expired?"⚠ Expired":"● Active"} · until {expiryStr}
                         </div>
                       </div>
-                      <button onClick={()=>revokePlan(u.uid, u.email)}
-                        style={{padding:"5px 12px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:12,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
-                        Revoke
-                      </button>
+                      <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+                        <button onClick={()=>revokePlan(u.uid, u.email)}
+                          style={{padding:"4px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:700,color:"#EF4444",cursor:"pointer"}}>
+                          Revoke
+                        </button>
+                        {u.email !== "—" && (
+                          <button onClick={()=>resendReset(u.email)}
+                            style={{padding:"4px 10px",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:8,fontSize:11,fontWeight:700,color:"#2563EB",cursor:"pointer"}}>Reset pw</button>
+                        )}
+                        <button onClick={()=>deleteUserAccount(u.uid, u.email)}
+                          title="Delete Firestore data"
+                          style={{padding:"4px 8px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,color:SUB,cursor:"pointer",display:"flex",alignItems:"center"}}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
