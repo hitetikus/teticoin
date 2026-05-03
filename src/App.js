@@ -5947,8 +5947,9 @@ async function handlePaymentReturn(onSuccess, currentExpiry) {
   return false;
 }
 
-function PricingPage({ currentPlan="free", onSelect, onClose }) {
+function PricingPage({ currentPlan="free", onSelect, onClose, trainer=null }) {
   const [billing, setBilling] = useState("monthly");
+  const [confirmPay, setConfirmPay] = useState(null); // { label, price, link }
 
   const proMonthly = 29;
   const proYearly  = 269;
@@ -5957,6 +5958,20 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
   const proLink = billing === "monthly"
     ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL"
     : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl";
+
+  // Build Chip URL with prefilled name+email if available
+  function chipUrl(base) {
+    const params = new URLSearchParams();
+    if (trainer?.name) params.set("name", trainer.name);
+    if (trainer?.email) params.set("email", trainer.email);
+    const qs = params.toString();
+    return qs ? `${base}?${qs}` : base;
+  }
+
+  // Open payment confirmation interstitial
+  function goToPay(label, price, link) {
+    setConfirmPay({ label, price, link: chipUrl(link) });
+  }
 
   const NEUT   = "#6B7280";
   const LP_PINK   = "#FF4FB8";
@@ -5968,6 +5983,8 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
   const LP_GRAD   = `linear-gradient(135deg,${LP_PINK},${LP_PURPLE})`;
   const isFree = currentPlan === "free";
   const isPro  = currentPlan === "pro" || currentPlan === "proY";
+  const isBeta = currentPlan === "beta";
+  const isPaidOrBeta = isPro || isBeta;
 
   function CheckIcon({ color = LP_PINK2 }) {
     return (
@@ -6003,6 +6020,35 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
   return (
     <div style={{position:"fixed",inset:0,zIndex:700,background:"#FAFAFA",display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style>{cardCSS}</style>
+
+      {/* Payment confirmation interstitial */}
+      {confirmPay && (
+        <div style={{position:"absolute",inset:0,zIndex:10,background:"rgba(10,10,15,0.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#fff",borderRadius:20,padding:"28px 24px",maxWidth:360,width:"100%",boxShadow:"0 24px 64px rgba(0,0,0,0.18)"}}>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:18,color:LP_TEXT,marginBottom:6}}>{confirmPay.label}</div>
+            <div style={{fontSize:13,color:NEUT,marginBottom:16,lineHeight:1.6}}>
+              You'll be redirected to Chip's secure payment page.
+              {trainer?.email && <> Your email <strong style={{color:LP_TEXT}}>{trainer.email}</strong> will be prefilled.</>}
+            </div>
+            <div style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:12,padding:"12px 14px",marginBottom:20}}>
+              <div style={{fontSize:12,color:NEUT,marginBottom:2}}>Amount</div>
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:22,color:LP_PINK}}>{confirmPay.price}</div>
+              <div style={{fontSize:11,color:NEUT,marginTop:3}}>Adds to your existing expiry · one-time charge</div>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setConfirmPay(null)}
+                style={{flex:1,padding:"11px 0",borderRadius:99,border:"1.5px solid #E5E7EB",background:"#fff",fontSize:14,fontWeight:600,color:NEUT,cursor:"pointer",fontFamily:"DM Sans,sans-serif"}}>
+                ← Back
+              </button>
+              <button onClick={()=>{ window.location.href = confirmPay.link; }}
+                style={{flex:2,padding:"11px 0",borderRadius:99,border:"none",background:LP_GRAD,fontSize:14,fontWeight:700,color:"#fff",cursor:"pointer",fontFamily:"DM Sans,sans-serif"}}>
+                Pay now →
+              </button>
+            </div>
+            <div style={{textAlign:"center",fontSize:11,color:"#9CA3AF",marginTop:12}}>Secure payment via <span style={{color:"#6C47FF",fontWeight:700}}>Chip</span> · FPX · Card · DuitNow</div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div style={{background:"#fff",borderBottom:`1px solid rgba(255,79,184,0.15)`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
@@ -6050,9 +6096,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
               </ul>
               {currentPlan === "free" ? (
                 <div style={{textAlign:"center",padding:"11px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:NEUT,background:"#F3F4F6",borderRadius:999}}>✓ Your current plan</div>
-              ) : isPro ? (
-                <div style={{textAlign:"center",padding:"11px 0",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#9CA3AF",background:"#F9FAFB",borderRadius:999,border:"1.5px solid #E5E7EB",opacity:.6}}>Not available on Pro</div>
-              ) : (
+              ) : isPaidOrBeta ? null : (
                 <button className="pp-btn pp-btn-outline" onClick={onClose}>Continue with Free</button>
               )}
             </div>
@@ -6093,14 +6137,22 @@ function PricingPage({ currentPlan="free", onSelect, onClose }) {
               </ul>
               {isPro ? (
                 <>
-                  <button className="pp-btn pp-btn-primary" onClick={() => window.location.href = proLink}>
+                  <button className="pp-btn pp-btn-primary" onClick={() => goToPay(
+                    billing === "monthly" ? "Extend Pro — 1 Month" : "Extend Pro — 1 Year",
+                    billing === "monthly" ? `RM ${proMonthly}` : `RM ${proYearly}`,
+                    billing === "monthly" ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL" : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
+                  )}>
                     {billing === "monthly" ? `Extend 1 month — RM ${proMonthly}` : `Extend 1 year — RM ${proYearly} (save RM ${proSaving})`}
                   </button>
                   <div style={{textAlign:"center",fontSize:11,color:NEUT,marginTop:8}}>Adds to your existing expiry · FPX · Card · DuitNow</div>
                 </>
               ) : (
                 <>
-                  <button className="pp-btn pp-btn-primary" onClick={() => window.location.href = proLink}>
+                  <button className="pp-btn pp-btn-primary" onClick={() => goToPay(
+                    billing === "monthly" ? "Upgrade to Pro — Monthly" : "Upgrade to Pro — Yearly",
+                    billing === "monthly" ? `RM ${proMonthly}/mo` : `RM ${proYearly}/yr`,
+                    billing === "monthly" ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL" : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
+                  )}>
                     {billing === "monthly" ? `Upgrade to Pro — RM ${proMonthly}/mo` : `Upgrade to Pro — RM ${proYearly}/yr`}
                   </button>
                   <div style={{textAlign:"center",fontSize:11,color:NEUT,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>
@@ -7057,6 +7109,14 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
   const renewLink = plan==="proY"
     ? "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
     : "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL";
+  // Chip URL with prefilled name+email
+  function chipUrlBilling(base) {
+    const params = new URLSearchParams();
+    if (trainer?.name) params.set("name", trainer.name);
+    if (trainer?.email) params.set("email", trainer.email);
+    const qs = params.toString();
+    return qs ? `${base}?${qs}` : base;
+  }
   // Build invoice list — stored invoices from Firestore only (appended on each payment)
   const invoices = (() => {
     if (isFree || isBetaPlan) return [];
@@ -7159,7 +7219,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                   {isPaidPro && (
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
                       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                        <button onClick={()=>{ window.location.href = "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL"; }}
+                        <button onClick={()=>{ window.location.href = chipUrlBilling("https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL"); }}
                           style={{display:"inline-flex",alignItems:"center",gap:6,
                             padding:"8px 14px",
                             background:"none",
@@ -7169,7 +7229,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                           {isExpired ? "Reactivate" : "Extend"} 1 month — RM 29
                         </button>
-                        <button onClick={()=>{ window.location.href = "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"; }}
+                        <button onClick={()=>{ window.location.href = chipUrlBilling("https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"); }}
                           style={{display:"inline-flex",alignItems:"center",gap:6,
                             padding:"8px 14px",
                             background:BLUE,
@@ -9277,7 +9337,7 @@ export default function App() {
         }
       } catch {}
     })();
-  }} onPView={()=>setScreen("participant")}/>{showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>closePricing()}/>}</>;
+  }} onPView={()=>setScreen("participant")}/>{showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>closePricing()} trainer={trainer}/>}</>;
 
   // Session settings from home list gear icon
   if (screen==="sessionSettings" && cur) return (
@@ -9307,7 +9367,7 @@ export default function App() {
     <div className="tc-app-shell" style={{minHeight:"100vh",background:BG,fontFamily:"Poppins,sans-serif",display:"flex",flexDirection:"column"}}>
       <style>{CSS}</style>
 
-      {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>closePricing()}/>}
+      {showPricing && <PricingPage currentPlan={plan} onSelect={handleSelectPlan} onClose={()=>closePricing()} trainer={trainer}/>}
       {showBilling && <BillingPage plan={plan} planExpiry={planExpiry} trainer={trainer} sessionCount={sessions.filter(s=>!s.archived).length} maxPax={Math.max(0,...sessions.filter(s=>!s.archived).map(s=>s.count||0))} onUpgrade={()=>{setShowBilling(false);openPricing();}} onClose={()=>{ window.history.replaceState({},"","/app"); setShowBilling(false);}}/>}
       {showProfile && <ProfilePage trainer={trainer} onClose={()=>{ window.history.replaceState({},"","/app"); setShowProfile(false);}} onSaved={(newName)=>setTrainer(t=>({...t,name:newName}))}/>}
       {showSuperAdmin && <SuperAdminDashboard onClose={()=>{ window.history.replaceState({},"","/app"); setShowSuperAdmin(false);}}/>}
