@@ -7692,6 +7692,7 @@ function SuperAdminDashboard({ onClose }) {
   const [betaSearch, setBetaSearch] = useState("");
   const [betaSort, setBetaSort] = useState("newest");
   const [betaSortDir, setBetaSortDir] = useState(1);
+  const [betaSelected, setBetaSelected] = useState(new Set());
 
   // Load all users — data is stored under users/{uid}/data/{key} subcollection
   useEffect(() => {
@@ -8041,14 +8042,6 @@ function SuperAdminDashboard({ onClose }) {
               ))}
             </div>
           </div>
-          {statsFilter && (
-            <div style={{marginBottom:10,fontSize:12,color:SUB}}>
-              Showing: <strong style={{color:TEXT}}>{statsFilter==="pro"?"Pro":statsFilter==="beta"?"Beta Pro":statsFilter==="free"?"Free Users":"All"} ({filtered.length})</strong>
-              <button onClick={()=>{setStatsFilter(null);setSearch("");setSortMode("joined");setSortDir(1);}}
-                style={{marginLeft:8,fontSize:11,color:PINK,background:"none",border:"none",cursor:"pointer",fontWeight:700}}>✕ clear</button>
-            </div>
-          )}
-
           {/* Dynamic Bulk action bar */}
           {selected.size > 0 && (
             <div style={{background:"#1A0A14",borderRadius:12,padding:"10px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
@@ -8202,79 +8195,132 @@ function SuperAdminDashboard({ onClose }) {
               if (betaSort === "expiry") return betaSortDir * ((a.planExpiry||"") < (b.planExpiry||"") ? -1 : 1);
               return betaSortDir * ((b.createdAt||0) - (a.createdAt||0));
             });
+          const betaAllChecked = betaFiltered.length > 0 && betaFiltered.every(u => betaSelected.has(u.uid));
+          const betaSomeChecked = !betaAllChecked && betaFiltered.some(u => betaSelected.has(u.uid));
+          const toggleBetaAll = () => {
+            if (betaAllChecked || betaSomeChecked) setBetaSelected(new Set());
+            else setBetaSelected(new Set(betaFiltered.map(u => u.uid)));
+          };
+          const bulkBetaRevoke = async () => {
+            const targets = betaFiltered.filter(u => betaSelected.has(u.uid));
+            if (!targets.length) return;
+            for (const u of targets) await revokePlan(u.uid, u.email);
+            setBetaSelected(new Set());
+          };
+          const bulkBetaReset = async () => {
+            const targets = betaFiltered.filter(u => betaSelected.has(u.uid) && u.email && u.email !== "—");
+            for (const u of targets) await resendReset(u.email);
+            setBetaSelected(new Set());
+          };
+          const bulkBetaDelete = async () => {
+            const targets = betaFiltered.filter(u => betaSelected.has(u.uid));
+            if (!targets.length) return;
+            if (!window.confirm(`Delete ${targets.length} account${targets.length>1?"s":""}?\n\nAll data will be permanently removed.`)) return;
+            for (const u of targets) await deleteUserAccount(u.uid, u.email);
+            setBetaSelected(new Set());
+          };
           return (
           <div style={{maxWidth:1100}}>
-
-            {/* Search + Sort + Select All bar */}
-            <div style={{marginBottom:16,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
-              <Inp placeholder="Search beta users by name or email…" value={betaSearch} onChange={e=>setBetaSearch(e.target.value)} style={{flex:1,minWidth:160,maxWidth:400,borderRadius:999}}/>
-              <div style={{display:"flex",alignItems:"center",flexShrink:0}}>
-                {[["newest","Newest"],["alpha","A→Z"],["expiry","Expiry"]].map(([m,l],i) => (
-                  <span key={m} style={{display:"flex",alignItems:"center"}}>
-                    {i > 0 && <span style={{color:"#D1D5DB",margin:"0 6px",userSelect:"none",fontSize:12}}>|</span>}
-                    <button onClick={()=>toggleBetaSort(m)}
-                      style={{background:"none",border:"none",cursor:"pointer",fontSize:12,fontWeight:betaSort===m?700:500,color:betaSort===m?PINK:SUB,padding:"4px 0",whiteSpace:"nowrap"}}>
-                      {l}{betaArrow(m)}
-                    </button>
-                  </span>
-                ))}
-              </div>
-              {betaSearch && (
-                <div style={{fontSize:12,color:SUB}}>
-                  {betaFiltered.length} result{betaFiltered.length!==1?"s":""} of {betaUsers.length}
-                  <button onClick={()=>setBetaSearch("")} style={{marginLeft:8,fontSize:11,color:PINK,background:"none",border:"none",cursor:"pointer",fontWeight:700}}>✕ clear</button>
-                </div>
-              )}
-            </div>
-
             {/* Two-column layout */}
             <div style={{display:"grid",gridTemplateColumns:"62fr 38fr",gap:24,alignItems:"start"}}>
 
-              {/* LEFT — Beta Pro Users (signed up) */}
+              {/* LEFT — Beta Pro Users table */}
               <div>
-                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>
-                  Beta Pro Users ({betaFiltered.length}{betaSearch?` / ${betaUsers.length}`:""})
+                {/* Search + Sort in one row, sort right-aligned */}
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                  <Inp placeholder="Search…" value={betaSearch} onChange={e=>{setBetaSearch(e.target.value);setBetaSelected(new Set());}} style={{flex:1,minWidth:0,borderRadius:999,fontSize:12}}/>
+                  <div style={{display:"flex",alignItems:"center",flexShrink:0,marginLeft:"auto"}}>
+                    {[["newest","Newest"],["alpha","A→Z"],["expiry","Expiry"]].map(([m,l],i) => (
+                      <span key={m} style={{display:"flex",alignItems:"center"}}>
+                        {i > 0 && <span style={{color:"#D1D5DB",margin:"0 5px",userSelect:"none",fontSize:12}}>|</span>}
+                        <button onClick={()=>toggleBetaSort(m)}
+                          style={{background:"none",border:"none",cursor:"pointer",fontSize:12,fontWeight:betaSort===m?700:500,color:betaSort===m?PINK:SUB,padding:"4px 0",whiteSpace:"nowrap"}}>
+                          {l}{betaArrow(m)}
+                        </button>
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                {betaFiltered.length === 0 ? (
-                  <div style={{fontSize:13,color:SUB,padding:"16px 0"}}>{betaSearch?"No users match your search.":"No beta testers yet."}</div>
-                ) : betaFiltered.map(u => {
-                  const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
-                  const expired = u.planExpiry && new Date(u.planExpiry) < new Date();
-                  return (
-                    <div key={u.uid} style={{background:"#fff",border:`1.5px solid ${expired?"#FECACA":BORDER}`,borderRadius:12,padding:"14px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{marginBottom:2,lineHeight:1.5}}>
-                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</span>
-                          <span style={{display:"inline-block",background:GREEN+"22",color:GREEN,borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:500,textTransform:"uppercase",letterSpacing:.4,marginLeft:6,verticalAlign:"middle",whiteSpace:"nowrap"}}>Beta Pro</span>
-                        </div>
-                        <div style={{fontSize:12,color:SUB}}>{u.email}</div>
-                        <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:400,marginTop:3}}>
-                          {expired?"⚠ Expired":`Expires: ${expiryStr}`}
-                        </div>
+
+                {/* Bulk action bar */}
+                {betaSelected.size > 0 && (
+                  <div style={{background:"#1A0A14",borderRadius:12,padding:"10px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                    <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",marginRight:4}}>{betaSelected.size} selected</span>
+                    <button onClick={bulkBetaRevoke} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:"#EF4444",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                      Revoke Beta Pro
+                    </button>
+                    <button onClick={bulkBetaReset} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:"#2563EB",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      Reset Password
+                    </button>
+                    <button onClick={bulkBetaDelete} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:"#374151",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                      Delete Account
+                    </button>
+                    <button onClick={()=>setBetaSelected(new Set())} style={{marginLeft:"auto",padding:"6px 10px",background:"none",border:"1px solid rgba(255,255,255,.25)",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"rgba(255,255,255,.6)",cursor:"pointer"}}>✕</button>
+                  </div>
+                )}
+
+                {/* Table with master checkbox header */}
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,overflow:"hidden"}}>
+                  {betaFiltered.length > 0 && (
+                    <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:`1px solid ${BORDER}`,background:"#FAFAFA"}}>
+                      <div onClick={toggleBetaAll}
+                        style={{width:20,height:20,borderRadius:5,border:`2px solid ${betaAllChecked?PINK:betaSomeChecked?"#9CA3AF":BORDER}`,background:betaAllChecked?PINK:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,transition:"all .12s"}}>
+                        {betaAllChecked && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>}
+                        {betaSomeChecked && !betaAllChecked && <div style={{width:8,height:2,background:"#9CA3AF",borderRadius:1}}/>}
                       </div>
-                      <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,flexWrap:"wrap"}}>
-                        <button onClick={()=>revokePlan(u.uid, u.email)}
-                          style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:600,color:"#EF4444",cursor:"pointer",whiteSpace:"nowrap"}}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                          Revoke Plan
-                        </button>
-                        {u.email !== "—" && (
-                          <button onClick={()=>resendReset(u.email)}
-                            style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:8,fontSize:11,fontWeight:600,color:"#2563EB",cursor:"pointer",whiteSpace:"nowrap"}}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                            Reset Password
-                          </button>
-                        )}
-                        <button onClick={()=>deleteUserAccount(u.uid, u.email)}
-                          title="Delete Account"
-                          style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:600,color:"#6B7280",cursor:"pointer",whiteSpace:"nowrap"}}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                          Delete Account
-                        </button>
-                      </div>
+                      <span style={{fontSize:12,color:SUB,fontWeight:500}}>
+                        {betaSelected.size > 0 ? `${betaSelected.size} of ${betaFiltered.length} selected` : `${betaFiltered.length} user${betaFiltered.length!==1?"s":""}`}
+                      </span>
                     </div>
-                  );
-                })}
+                  )}
+                  {betaFiltered.length === 0 ? (
+                    <div style={{padding:"24px 16px",fontSize:13,color:SUB}}>{betaSearch?"No users match your search.":"No beta testers yet."}</div>
+                  ) : betaFiltered.map((u, i) => {
+                    const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
+                    const expired = u.planExpiry && new Date(u.planExpiry) < new Date();
+                    const isChecked = betaSelected.has(u.uid);
+                    return (
+                      <div key={u.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 16px",borderBottom:i<betaFiltered.length-1?`1px solid ${BORDER}`:"none",background:isChecked?SOFT:"#fff",transition:"background .1s"}}>
+                        <div onClick={()=>{ const s=new Set(betaSelected); isChecked?s.delete(u.uid):s.add(u.uid); setBetaSelected(s); }}
+                          style={{width:20,height:20,borderRadius:5,border:`2px solid ${isChecked?PINK:BORDER}`,background:isChecked?PINK:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,transition:"all .12s"}}>
+                          {isChecked && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>}
+                        </div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{marginBottom:2,lineHeight:1.5}}>
+                            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</span>
+                            <span style={{display:"inline-block",background:GREEN+"22",color:GREEN,borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:500,textTransform:"uppercase",letterSpacing:.4,marginLeft:6,verticalAlign:"middle",whiteSpace:"nowrap"}}>Beta Pro</span>
+                          </div>
+                          <div style={{fontSize:12,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</div>
+                          <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:400,marginTop:2}}>
+                            {expired?"⚠ Expired":`Expires: ${expiryStr}`}
+                          </div>
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,flexWrap:"wrap"}}>
+                          <button onClick={()=>revokePlan(u.uid, u.email)}
+                            style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:600,color:"#EF4444",cursor:"pointer",whiteSpace:"nowrap"}}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                            Revoke Plan
+                          </button>
+                          {u.email !== "—" && (
+                            <button onClick={()=>resendReset(u.email)}
+                              style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:8,fontSize:11,fontWeight:600,color:"#2563EB",cursor:"pointer",whiteSpace:"nowrap"}}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                              Reset Password
+                            </button>
+                          )}
+                          <button onClick={()=>deleteUserAccount(u.uid, u.email)}
+                            style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:600,color:"#6B7280",cursor:"pointer",whiteSpace:"nowrap"}}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            Delete Account
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* RIGHT — Invite form + Pending Invites */}
