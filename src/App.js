@@ -9410,10 +9410,15 @@ export default function App() {
     // Load plan in background
     (async () => {
       const claimedExpiry = await claimBetaInvite(t.uid, t.email);
-      let p = await sg("plan"); if (!p) { ss("plan", "free"); p = "free"; }
       if (claimedExpiry) {
-        p = "beta"; setPlan("beta"); setPlanExpiry(claimedExpiry); setShowBetaWelcome(true);
-      } else if (p) { setPlan(p); }
+        // Beta invite just claimed — claimBetaInvite already wrote plan="beta" to Firestore.
+        // Skip reading plan back here to avoid a race where sg("plan") still returns null
+        // for a brand-new user and we overwrite the freshly-written beta plan with "free".
+        setPlan("beta"); setPlanExpiry(claimedExpiry); setShowBetaWelcome(true);
+      } else {
+        let p = await sg("plan"); if (!p) { ss("plan", "free"); p = "free"; }
+        if (p) { setPlan(p); }
+      }
     })();
     loadHomeEarnings(t.uid);
     // Send welcome email to brand-new signups
