@@ -6358,7 +6358,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
         </div>
 
         {/* Link Google */}
-        <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"16px 18px"}}>
+        <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"16px 18px",marginBottom:20}}>
           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Sign-in Methods</div>
           <div style={{fontSize:12,color:SUB,marginBottom:12}}>Link your Google account so you can sign in with either method.</div>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -6374,6 +6374,42 @@ function ProfilePage({ trainer, onClose, onSaved }) {
               </button>
             )}
           </div>
+        </div>
+
+        {/* Delete Account */}
+        <div style={{background:"#FEF2F2",border:"1.5px solid #FECACA",borderRadius:14,padding:"16px 18px",marginBottom:28}}>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:"#EF4444",marginBottom:4}}>Delete Account</div>
+          <div style={{fontSize:12,color:"#6B7280",marginBottom:14,lineHeight:1.65}}>
+            Permanently delete your account and all associated data — sessions, participants, logs, and billing history. This cannot be undone. If you have an active plan, it will not be refunded.
+          </div>
+          <button onClick={async()=>{
+            if (!window.confirm("Are you sure you want to delete your account?\n\nAll your sessions, data, and billing history will be permanently removed. This cannot be undone.")) return;
+            if (!window.confirm("Last confirmation — delete everything permanently?")) return;
+            try {
+              const { getFirestore, collection, getDocs, doc, deleteDoc } = await import("firebase/firestore");
+              const { getAuth, deleteUser } = await import("firebase/auth");
+              const auth2 = getAuth();
+              const uid = auth2.currentUser?.uid;
+              if (!uid) return;
+              const db2 = getFirestore();
+              // Delete all Firestore data
+              const dataSnap = await getDocs(collection(db2, "users", uid, "data"));
+              await Promise.all(dataSnap.docs.map(d => deleteDoc(d.ref)));
+              await deleteDoc(doc(db2, "users", uid));
+              // Delete Firebase Auth account
+              await deleteUser(auth2.currentUser);
+              // Auth state change will redirect to landing
+            } catch(e) {
+              if (e.code === "auth/requires-recent-login") {
+                alert("For security, please sign out and sign back in before deleting your account.");
+              } else {
+                alert("Could not delete account: " + e.message);
+              }
+            }
+          }}
+            style={{padding:"10px 18px",background:"#EF4444",border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#fff",cursor:"pointer"}}>
+            Delete My Account
+          </button>
         </div>
 
       </div>
@@ -6868,7 +6904,7 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false, trainer=null) {
   .party-name{font-size:14px;font-weight:700;color:#111827;margin-bottom:3px;}
   .party-detail{font-size:12px;color:#6B7280;line-height:1.7;}
   /* Meta */
-  .meta-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px;}
+  .meta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
   .meta-cell{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:10px 12px;}
   .meta-cell .mlabel{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9CA3AF;margin-bottom:4px;}
   .meta-cell .mval{font-size:12px;font-weight:600;color:#111827;}
@@ -6918,7 +6954,6 @@ function printInvoice(inv, pd, planExpiry, viewOnly=false, trainer=null) {
   </div>
   <div class="meta-row">
     <div class="meta-cell"><div class="mlabel">Invoice Date</div><div class="mval">${inv.date}</div></div>
-    <div class="meta-cell"><div class="mlabel">Payment Date</div><div class="mval">${inv.paidAt ? new Date(inv.paidAt).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}) : inv.date}</div></div>
     <div class="meta-cell"><div class="mlabel">Status</div><div class="mval" style="color:#16A34A;font-weight:700;">✓ Paid</div></div>
   </div>
   <div class="items-label">Items</div>
@@ -6958,7 +6993,6 @@ ${viewOnly?"":"<script>window.onload=function(){window.print();}<\/script>"}
 }
 
 function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount=0, maxPax=0, trainer=null, onUpgrade, onClose }) {
-  const [cancelConfirm, setCancelConfirm] = useState(false);
   const [planExpiry, setPlanExpiry_] = useState(planExpiryProp);
   const [expiryLoading, setExpiryLoading] = useState(true);
   const [storedInvoices, setStoredInvoices] = useState(null); // null=loading, []+=loaded
@@ -7014,10 +7048,44 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
   const renewLink = plan==="proY"
     ? "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
     : "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL";
-  // Build invoice list — stored invoices from Firestore only (appended on each payment)
+  // Build invoice list — merge stored invoices (from Firestore) with legacy computed invoice
+  // so payments made before invoice-storage was introduced also appear
   const invoices = (() => {
     if (isFree || isBetaPlan) return [];
-    return storedInvoices || [];
+    const isYearly = plan === "proY";
+    const periodDays = isYearly ? 365 : 30;
+
+    // Compute the legacy invoice (first payment, back-calculated from earliest known expiry)
+    // We derive it from the OLDEST stored invoice's expiry if available, else current planExpiry
+    let legacyInv = null;
+    if (planExpiry) {
+      // Find the earliest expiry we know about — either first stored invoice's expiry or current
+      const earliestExpiry = (storedInvoices && storedInvoices.length > 0)
+        ? storedInvoices[storedInvoices.length - 1].expiry // last in array = oldest (stored newest-first)
+        : planExpiry;
+      // Back-calculate the first payment date = earliest expiry - period
+      const firstExpiry = new Date(earliestExpiry);
+      const firstPayDate = new Date(firstExpiry);
+      firstPayDate.setDate(firstPayDate.getDate() - periodDays);
+      legacyInv = {
+        id: "legacy",
+        date: firstPayDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}),
+        amount: pd.price,
+        status: "Paid",
+        expiry: firstExpiry.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}),
+        billing: isYearly ? "yearly" : "monthly",
+        paidAt: firstPayDate.toISOString(),
+      };
+    }
+
+    const stored = storedInvoices || [];
+    // Deduplicate: only include legacy if no stored invoice has the same date
+    const storedDates = new Set(stored.map(i => i.date));
+    const merged = legacyInv && !storedDates.has(legacyInv.date)
+      ? [...stored, legacyInv]  // stored is newest-first, legacy goes at end (oldest)
+      : [...stored];
+
+    return merged.length > 0 ? merged : (legacyInv ? [legacyInv] : []);
   })();
 
   return (
@@ -7054,7 +7122,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
             <div style={{
               margin:12,
               borderRadius:14,
-              border: isFree ? `2px solid ${TEXT}` : isExpired ? "1.5px solid #EF444440" : `1.5px solid ${pd.color+"66"}`,
+              border: isFree ? `2px solid ${TEXT}` : isExpired ? "1.5px solid #EF444440" : isPaidPro ? `2.5px solid ${pd.color}` : `1.5px solid ${pd.color+"66"}`,
               background: isFree
                 ? "#fff"
                 : isBetaPlan
@@ -7097,19 +7165,24 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                           ? `This plan will expire on ${expiryLabel}`
                           : expiryLoading ? "Loading plan details…" : "This plan is active"}
                   </div>
-                  {/* Renew button — small, pill-style */}
+                  {/* Renew + View plans */}
                   {isPaidPro && (
-                    <button onClick={()=>{ window.location.href = renewLink; }}
-                      style={{display:"inline-flex",alignItems:"center",gap:6,
-                        padding:"7px 14px",
-                        background:isExpired||isExpiringSoon?GRAD:"none",
-                        border:`1.5px solid ${isExpired||isExpiringSoon?"transparent":PINK+"66"}`,
-                        borderRadius:99,fontSize:12,fontWeight:500,
-                        color:isExpired||isExpiringSoon?"#fff":PINK,
-                        cursor:"pointer",fontFamily:"Poppins,sans-serif",border:"none"}}>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                      {isExpired?"Reactivate plan":"Renew for next month"} — {pd.price}
-                    </button>
+                    <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                      <button onClick={()=>{ window.location.href = renewLink; }}
+                        style={{display:"inline-flex",alignItems:"center",gap:6,
+                          padding:"7px 14px",
+                          background:"none",
+                          border:`1.5px solid ${BLUE}`,
+                          borderRadius:99,fontSize:12,fontWeight:500,
+                          color:BLUE,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                        {isExpired?"Reactivate plan":"Renew for next month"} — {pd.price}
+                      </button>
+                      <button onClick={()=>{ onClose(); setTimeout(()=>onUpgrade(),100); }}
+                        style={{background:"none",border:"none",fontSize:12,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif",textDecoration:"underline",padding:0}}>
+                        View all plans
+                      </button>
+                    </div>
                   )}
                 </>
               )}
@@ -7118,7 +7191,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
             {/* Bottom: feature list — always white, no extra border */}
             <div style={{padding:"0 20px 16px"}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:TEXT,margin:"4px 0 12px"}}>
-                {isFree ? "What's included" : "Everything in your plan"}
+                {isFree ? "What's included" : `Everything in your ${pd.name} Plan`}
               </div>
               {isFree ? (
                 <>
@@ -7214,23 +7287,14 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
             )}
           </div>
 
-          {/* Cancel */}
+          {/* No auto-renewal notice */}
           {!isFree && (
-            cancelConfirm ? (
-              <div style={{background:"#FEF2F2",border:"1.5px solid #EF444440",borderRadius:14,padding:"16px",marginBottom:20}}>
-                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#EF4444",marginBottom:6}}>Cancel subscription?</div>
-                <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>You'll keep your plan features until the end of the billing period. Data preserved for 90 days after.</div>
-                <div style={{display:"flex",gap:8}}>
-                  <button onClick={()=>setCancelConfirm(false)} style={{flex:1,padding:"11px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:SUB,cursor:"pointer"}}>Keep Plan</button>
-                  <button style={{flex:1,padding:"11px 0",background:"#EF4444",border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",cursor:"pointer"}}>Yes, Cancel</button>
-                </div>
+            <div style={{background:"#F9FAFB",border:`1px solid ${BORDER}`,borderRadius:13,padding:"14px 18px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:10}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div style={{fontSize:12,color:SUB,lineHeight:1.65}}>
+                <strong style={{color:TEXT}}>No automatic charges.</strong> Your plan is not auto-renewed — you won't be charged unless you click Renew. Your access remains active until the expiry date shown above.
               </div>
-            ) : (
-              <button onClick={()=>setCancelConfirm(true)}
-                style={{width:"100%",padding:"12px 0",background:"none",border:`1px solid ${BORDER}`,borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:13,color:SUB,cursor:"pointer",marginBottom:20}}>
-                Cancel Subscription
-              </button>
-            )
+            </div>
           )}
 
           {/* Invoice History — below CTA on mobile, hidden here on desktop (shown in right col) */}
@@ -7243,7 +7307,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                 </div>
                 <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>No invoices yet</div>
                 <div style={{fontSize:13,color:SUB}}>
-                  {expiryLoading ? "Loading invoice data…" : "Invoices will appear here after your first payment."}
+                  {!isFree && expiryLoading ? "Loading invoice data…" : !isFree ? "Invoice will appear once your plan expiry date is confirmed. Try closing and reopening Billing." : "Invoices will appear here after your first payment."}
                 </div>
               </div>
             ) : (
@@ -7263,7 +7327,6 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                     <div>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:14,color:TEXT}}>{inv.date}</div>
                       <div style={{fontSize:11,color:SUB,marginTop:1}}>{"Pro · " + (inv.billing || pd.renewal)}</div>
-                      <div style={{fontSize:11,color:SUB,marginTop:1}}>Payment date: {inv.paidAt ? new Date(inv.paidAt).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : inv.date}</div>
                     </div>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,textAlign:"right"}}>{inv.amount}</div>
                     <div style={{textAlign:"center"}}>
@@ -7307,7 +7370,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
               </div>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:6}}>No invoices yet</div>
               <div style={{fontSize:13,color:SUB}}>
-                {"Invoices will appear here after your first payment."}
+                {!isFree ? "Invoice will appear once your plan expiry date is confirmed. Try closing and reopening Billing." : "Invoices will appear here after your first payment."}
               </div>
             </div>
           ) : (
@@ -7327,7 +7390,6 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                     <div>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:14,color:TEXT}}>{inv.date}</div>
                       <div style={{fontSize:11,color:SUB,marginTop:1}}>{"Pro · " + (inv.billing || pd.renewal)}</div>
-                      <div style={{fontSize:11,color:SUB,marginTop:1}}>Payment date: {inv.paidAt ? new Date(inv.paidAt).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : inv.date}</div>
                     </div>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,textAlign:"right"}}>{inv.amount}</div>
                     <div style={{textAlign:"center"}}>
