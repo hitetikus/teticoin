@@ -7991,13 +7991,13 @@ function SuperAdminDashboard({ onClose }) {
         </div>
       )}
 
-      <div style={{flex:1,overflowY:"auto",padding:"20px 0"}}>
-        <div style={{maxWidth:900,margin:"0 auto",padding:"0 24px"}}>
+      <div style={{flex:1,overflowY:"auto"}}>
+        <div style={{maxWidth:960,margin:"0 auto",padding:"20px 32px"}}>
 
         {tab === "users" && <>
           {/* Search + Sort + Select All */}
           <div style={{marginBottom:8,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-            <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:160,maxWidth:400}}/>
+            <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:160,maxWidth:400,borderRadius:999}}/>
             {/* Sort toggle — inline with search */}
             <div style={{display:"flex",gap:4,flexShrink:0}}>
               {[["joined","Newest"],["alpha","A→Z"]].map(([m,l])=>(
@@ -8058,10 +8058,10 @@ function SuperAdminDashboard({ onClose }) {
                       {(u.name||"?")[0].toUpperCase()}
                     </div>
                     <div style={{flex:1,minWidth:0}}>
-                      {/* Name + badge inline */}
-                      <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap",marginBottom:2}}>
+                      {/* Name + badge inline — badge follows name even on wrap */}
+                      <div style={{marginBottom:2,lineHeight:1.5}}>
                         <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</span>
-                        <span style={{background:planColor,color:"#fff",borderRadius:99,padding:"2px 9px",fontSize:11,fontWeight:700,flexShrink:0}}>{planLabel}</span>
+                        <span style={{display:"inline-block",background:planColor+"22",color:planColor,borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:500,textTransform:"uppercase",letterSpacing:.4,marginLeft:6,verticalAlign:"middle",whiteSpace:"nowrap"}}>{planLabel}</span>
                       </div>
                       <div style={{fontSize:12,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</div>
                       {expiryStr && (() => {
@@ -8080,7 +8080,7 @@ function SuperAdminDashboard({ onClose }) {
                       const menuKey = "menu-"+u.uid;
                       const menuOpen = selected.has(menuKey);
                       const actions = [
-                        (!isSA && u.plan !== "beta") ? { label:"Promote to Beta Pro", color:"#16A34A", bg:"#F0FDF4", border:"#BBF7D0", icon:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>, fn:()=>assignBeta(u.uid,u.email) } : null,
+                        (!isSA && u.plan === "free") ? { label:"Promote to Beta Pro", color:"#16A34A", bg:"#F0FDF4", border:"#BBF7D0", icon:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>, fn:()=>assignBeta(u.uid,u.email) } : null,
                         (!isSA && u.plan !== "free") ? { label:"Revoke Plan", color:"#EF4444", bg:"#FEF2F2", border:"#FECACA", icon:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>, fn:()=>revokePlan(u.uid,u.email) } : null,
                         (u.email !== "—") ? { label:"Reset Password", color:"#2563EB", bg:"#EFF6FF", border:"#BFDBFE", icon:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, fn:()=>resendReset(u.email) } : null,
                         (!isSA) ? { label:"Delete Account", color:"#6B7280", bg:"none", border:BORDER, icon:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>, fn:()=>deleteUserAccount(u.uid,u.email) } : null,
@@ -8129,7 +8129,7 @@ function SuperAdminDashboard({ onClose }) {
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>Add Beta Tester</div>
               <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>Enter their email below. When they sign up or log in at <strong>teticoin.com</strong>, Beta Pro activates automatically and they'll see a welcome message. Then let them know to sign up!</div>
               <div style={{display:"flex",gap:10,marginBottom:8}}>
-                <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{flex:1}}/>
+                <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{flex:1,borderRadius:999}}/>
                 <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
                   style={{padding:"0 20px",background:inviteBusy||!inviteEmail.trim()?"#E5E7EB":GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:inviteBusy||!inviteEmail.trim()?SUB:"#fff",cursor:inviteBusy||!inviteEmail.trim()?"not-allowed":"pointer",flexShrink:0,transition:"all .15s",minWidth:110,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}
                   onMouseOver={e=>{ if(!inviteBusy&&inviteEmail.trim()) e.currentTarget.style.opacity="0.85"; }}
@@ -8143,7 +8143,7 @@ function SuperAdminDashboard({ onClose }) {
             </div>
 
             {/* Two-column layout */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24,alignItems:"start"}}>
+            <div style={{display:"grid",gridTemplateColumns:"65fr 35fr",gap:24,alignItems:"start"}}>
 
               {/* LEFT — Beta Pro Users (signed up) */}
               <div>
@@ -8158,28 +8158,33 @@ function SuperAdminDashboard({ onClose }) {
                   return (
                     <div key={u.uid} style={{background:"#fff",border:`1.5px solid ${expired?"#FECACA":BORDER}`,borderRadius:12,padding:"14px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:2}}>
-                          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</div>
-                          <span style={{background:GREEN,color:"#fff",borderRadius:99,padding:"2px 9px",fontSize:11,fontWeight:700}}>Beta Pro</span>
+                        <div style={{marginBottom:2,lineHeight:1.5}}>
+                          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</span>
+                          <span style={{display:"inline-block",background:GREEN+"22",color:GREEN,borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:500,textTransform:"uppercase",letterSpacing:.4,marginLeft:6,verticalAlign:"middle",whiteSpace:"nowrap"}}>Beta Pro</span>
                         </div>
                         <div style={{fontSize:12,color:SUB}}>{u.email}</div>
                         <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:600,marginTop:3}}>
                           {expired?"⚠ Expired":"● Active"} · until {expiryStr}
                         </div>
                       </div>
-                      <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,flexWrap:"wrap"}}>
                         <button onClick={()=>revokePlan(u.uid, u.email)}
-                          style={{padding:"4px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:700,color:"#EF4444",cursor:"pointer"}}>
-                          Revoke
+                          style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:600,color:"#EF4444",cursor:"pointer",whiteSpace:"nowrap"}}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                          Revoke Plan
                         </button>
                         {u.email !== "—" && (
                           <button onClick={()=>resendReset(u.email)}
-                            style={{padding:"4px 10px",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:8,fontSize:11,fontWeight:700,color:"#2563EB",cursor:"pointer"}}>Reset pw</button>
+                            style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:8,fontSize:11,fontWeight:600,color:"#2563EB",cursor:"pointer",whiteSpace:"nowrap"}}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            Reset Password
+                          </button>
                         )}
                         <button onClick={()=>deleteUserAccount(u.uid, u.email)}
-                          title="Delete Firestore data"
-                          style={{padding:"4px 8px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,color:SUB,cursor:"pointer",display:"flex",alignItems:"center"}}>
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                          title="Delete Account"
+                          style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:600,color:"#6B7280",cursor:"pointer",whiteSpace:"nowrap"}}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                          Delete Account
                         </button>
                       </div>
                     </div>
