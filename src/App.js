@@ -8081,12 +8081,25 @@ function SuperAdminDashboard({ onClose }) {
     return months;
   })();
 
+  const adminCSS = `
+    .tc-admin-wrap { display:flex; flex-direction:column; flex:1; overflow:hidden; }
+    .tc-admin-sidebar { display:none; }
+    .tc-admin-mobile-tabs { display:flex; background:#fff; border-bottom:1px solid ${BORDER}; flex-shrink:0; }
+    .tc-admin-mobile-tabs button { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:12px 8px; border:none; background:none; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:13px; cursor:pointer; border-bottom:2.5px solid transparent; color:${SUB}; transition:all .12s; }
+    .tc-admin-content { flex:1; overflow-y:auto; }
+    @media(min-width:900px) {
+      .tc-admin-wrap { flex-direction:row; }
+      .tc-admin-sidebar { display:flex; flex-direction:column; width:200px; flex-shrink:0; border-right:1px solid ${BORDER}; background:#fff; padding:16px 0; overflow-y:auto; }
+      .tc-admin-mobile-tabs { display:none; }
+    }
+  `;
+
   return (
     <div style={{position:"fixed",inset:0,zIndex:900,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <style>{CSS}</style>
+      <style>{CSS}{adminCSS}</style>
 
       {/* Header */}
-      <div style={{background:"linear-gradient(90deg,#ffffff 0%,#ffffff 35%,#EF4444 75%,#B91C1C 100%)",borderBottom:"1px solid rgba(239,68,68,0.2)",padding:"0 32px",height:64,display:"flex",alignItems:"center",position:"relative",flexShrink:0}}>
+      <div style={{background:"linear-gradient(90deg,#ffffff 0%,#ffffff 35%,#EF4444 75%,#B91C1C 100%)",borderBottom:"1px solid rgba(239,68,68,0.2)",padding:"0 20px",height:64,display:"flex",alignItems:"center",position:"relative",flexShrink:0}}>
         <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:"#374151",fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,fontWeight:600,padding:0,zIndex:1}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
@@ -8111,11 +8124,11 @@ function SuperAdminDashboard({ onClose }) {
         </div>
       )}
 
-      {/* Body — sidebar + content */}
-      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+      {/* Body */}
+      <div className="tc-admin-wrap">
 
-        {/* LEFT SIDEBAR */}
-        <div style={{width:200,borderRight:`1px solid ${BORDER}`,background:"#fff",display:"flex",flexDirection:"column",padding:"16px 0",flexShrink:0,overflowY:"auto"}}>
+        {/* Sidebar — desktop only */}
+        <div className="tc-admin-sidebar">
           <div style={{padding:"0 12px 8px",fontSize:10,fontWeight:700,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:1.2}}>Admin</div>
           {[
             { key:"users", label:"Users", icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
@@ -8129,19 +8142,32 @@ function SuperAdminDashboard({ onClose }) {
           ))}
         </div>
 
-        {/* MAIN CONTENT */}
-        <div style={{flex:1,overflowY:"auto"}}>
+        {/* Mobile top tab bar — hidden on desktop */}
+        <div className="tc-admin-mobile-tabs">
+          {[
+            { key:"users", label:"Users", icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> },
+            { key:"usage", label:"Usage", icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
+          ].map(s => (
+            <button key={s.key} onClick={()=>setTab(s.key)}
+              style={{color:tab===s.key?PINK:SUB,borderBottom:tab===s.key?`2.5px solid ${PINK}`:"2.5px solid transparent"}}>
+              {s.icon}{s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Main content */}
+        <div className="tc-admin-content">
 
         {/* ── USERS TAB ── */}
         {tab === "users" && (
           <div>
-            {/* Sub-tab pills — centered */}
-            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
+            {/* Sub-tab pills — equal width, centered on desktop */}
+            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",gap:8}}>
               {USERS_SUBTABS.map(s => {
                 const active = usersSubtab === s.key;
                 return (
                   <div key={s.key} onClick={()=>{ setSearch(""); setSelected(new Set()); setUsersSubtab(s.key); }}
-                    style={{background:active?`${s.color}10`:"#fff",border:`2px solid ${s.color}`,borderRadius:10,padding:"8px 18px",flexShrink:0,textAlign:"center",cursor:"pointer",transition:"all .15s",opacity:active?1:0.45}}>
+                    style={{flex:1,background:active?`${s.color}10`:"#fff",border:`2px solid ${s.color}`,borderRadius:10,padding:"8px 8px",textAlign:"center",cursor:"pointer",transition:"all .15s",opacity:active?1:0.45,minWidth:0}}>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:s.color}}>{loading?"…":s.val}</div>
                     <div style={{fontSize:11,color:s.color,fontWeight:700,marginTop:1}}>{s.label}</div>
                   </div>
@@ -8613,8 +8639,8 @@ function SuperAdminDashboard({ onClose }) {
           );
         })()}
 
-        </div>{/* end main content */}
-      </div>{/* end body flex */}
+        </div>{/* end tc-admin-content */}
+      </div>{/* end tc-admin-wrap */}
     </div>
   );
 }
