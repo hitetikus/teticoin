@@ -7087,16 +7087,18 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
             <div style={{
               margin:12,
               borderRadius:14,
-              border: isFree ? `2px solid ${TEXT}` : isExpired ? "1.5px solid #EF444440" : `1.5px solid ${pd.color+"66"}`,
+              border: isFree ? `2px solid ${TEXT}` : isExpired ? "1.5px solid #EF444440" : isBetaPlan && isExpiringSoon ? "1.5px solid #4ADE80" : `1.5px solid ${pd.color+"66"}`,
               background: isFree
                 ? "#fff"
                 : isBetaPlan
-                  ? "linear-gradient(135deg,#D1FAE5,#A7F3D0)"
+                  ? (isExpiringSoon ? "linear-gradient(270deg,#F0FDF4,#DCFCE7,#A7F3D0,#DCFCE7,#F0FDF4)" : "linear-gradient(135deg,#D1FAE5,#A7F3D0)")
                   : isExpired
                     ? "linear-gradient(135deg,#FEF2F2,#FEE2E2)"
                     : isPaidPro
                       ? "linear-gradient(135deg,#EFF6FF,#DBEAFE)"
                       : "linear-gradient(135deg,#EDE9FE,#DDD6FE)",
+              backgroundSize: isBetaPlan && isExpiringSoon ? "300% 300%" : "auto",
+              animation: isBetaPlan && isExpiringSoon ? "betaGreenFlow 4s ease infinite" : "none",
               padding:"18px 16px 16px",
             }}>
               {/* Plan name + Active badge */}
@@ -7115,7 +7117,22 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
 
               {/* Expiry / status line */}
               {isBetaPlan ? (
-                <div style={{fontSize:13,color:"#065F46",marginBottom:4}}>Beta access until {pd.next || "—"}</div>
+                <>
+                  <div style={{fontSize:13,color:"#065F46",marginBottom: isExpiringSoon ? 10 : 4}}>
+                    {isExpiringSoon
+                      ? (daysLeft <= 7
+                          ? `⚡ Expiring in ${daysLeft} day${daysLeft===1?"":"s"} — ${pd.next}`
+                          : `Beta access until ${pd.next || "—"} (${daysLeft}d left)`)
+                      : `Beta access until ${pd.next || "—"}`}
+                  </div>
+                  {isExpiringSoon && (
+                    <button onClick={()=>{ onClose(); setTimeout(()=>onUpgrade(),100); }}
+                      style={{display:"inline-flex",alignItems:"center",gap:6,padding:"7px 14px",background:"#16A34A",border:"none",borderRadius:99,fontSize:12,fontWeight:700,color:"#fff",cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                      Upgrade to Pro — RM 29/mo
+                    </button>
+                  )}
+                </>
               ) : isFree ? (
                 <div style={{fontSize:13,color:SUB}}>No time limit · No credit card required</div>
               ) : (
