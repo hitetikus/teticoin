@@ -7928,39 +7928,95 @@ function SuperAdminDashboard({ onClose }) {
       const { getFirestore, collection, getDocs } = await import("firebase/firestore");
       const db = getFirestore();
       const sessSnap = await getDocs(collection(db, "sessions"));
-      let totalSessions = 0, totalParticipants = 0, totalCoins = 0, totalCoinmasters = 0;
-      let sessionDurations = [];
+      let totalSessions = 0, totalParticipants = 0, totalCoins = 0;
+      let totalCoinmastersEnabled = 0; // sessions that have CM enabled
+      let totalCoinmastersAssigned = 0; // unique CM codes across all sessions
+      let totalGroups = 0;
+      let sessionDurations = []; // minutes
       const sessionsByMonth = {}; // "YYYY-MM" -> count
+      const hourlyActivity = new Array(24).fill(0); // index = hour of day
+      const coinAmounts = {}; // amount -> count of times given
+      const participantSessions = {}; // participantName -> Set of session codes they joined
+
       sessSnap.docs.forEach(d => {
         const s = d.data();
         if (d.id.startsWith("cm-")) return; // skip coinmaster lookup docs
         totalSessions++;
+
+        // participants
         const parts = Array.isArray(s.participants) ? s.participants : [];
         totalParticipants += parts.length;
-        parts.forEach(p => { totalCoins += (p.total || 0); });
-        if (s.coinmasterEnabled || s.coinmasterCode) totalCoinmasters++;
-        // session month
+        parts.forEach(p => {
+          totalCoins += (p.total || 0);
+          // track participant across sessions (by normalised name)
+          const key = (p.name || "").trim().toLowerCase();
+          if (key) {
+            if (!participantSessions[key]) participantSessions[key] = { name: p.name, count: 0 };
+            participantSessions[key].count++;
+          }
+        });
+
+        // log entries — coin amounts
+        const log = Array.isArray(s.log) ? s.log : [];
+        log.forEach(entry => {
+          const amt = Math.abs(entry.pts || 0);
+          if (amt > 0) coinAmounts[amt] = (coinAmounts[amt] || 0) + 1;
+        });
+
+        // coinmaster
+        if (s.coinmasterEnabled || s.coinmasterCode) {
+          totalCoinmastersEnabled++;
+          totalCoinmastersAssigned++; // 1 CM code per session max (could extend to array later)
+        }
+
+        // groups
+        const grps = Array.isArray(s.groups) ? s.groups : [];
+        totalGroups += grps.length;
+
+        // session month + hour
         const ts = s.createdAt || s.startedAt || null;
         if (ts) {
           const d2 = new Date(ts);
           const key = `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,"0")}`;
           sessionsByMonth[key] = (sessionsByMonth[key] || 0) + 1;
+          hourlyActivity[d2.getHours()]++;
         }
+
         // duration
         if (s.startedAt && s.endedAt) {
-          sessionDurations.push((s.endedAt - s.startedAt) / 60000); // minutes
+          const dur = (s.endedAt - s.startedAt) / 60000;
+          if (dur > 0 && dur < 1440) sessionDurations.push(dur); // ignore >24h (bad data)
         }
       });
+
       const avgDuration = sessionDurations.length
         ? Math.round(sessionDurations.reduce((a,b)=>a+b,0) / sessionDurations.length)
         : null;
-      setUsageData({ totalSessions, totalParticipants, totalCoins, totalCoinmasters, avgDuration, sessionsByMonth });
+
+      // most popular coin amounts — top 5
+      const topCoinAmounts = Object.entries(coinAmounts)
+        .sort((a,b) => b[1]-a[1])
+        .slice(0,5)
+        .map(([amt, count]) => ({ amt: Number(amt), count }));
+
+      // most active participant — top 3
+      const topParticipants = Object.values(participantSessions)
+        .sort((a,b) => b.count-a.count)
+        .slice(0,3);
+
+      setUsageData({
+        totalSessions, totalParticipants, totalCoins,
+        totalCoinmastersEnabled, totalCoinmastersAssigned,
+        totalGroups,
+        avgDuration, sessionsByMonth, hourlyActivity,
+        topCoinAmounts, topParticipants,
+      });
     } catch(e) { console.error("Usage load error:", e); }
     setUsageLoading(false);
   }
 
   // derive statsFilter from usersSubtab
-  const statsFilter = usersSubtab === "all" || usersSubtab === "betaMgmt" ? null
+  const statsFilter = usersSubtab === "all" ? null
     : usersSubtab === "pro" ? "pro"
     : usersSubtab === "beta" ? "beta"
     : usersSubtab === "free" ? "free"
@@ -7998,7 +8054,6 @@ function SuperAdminDashboard({ onClose }) {
     { key:"free", label:"Free",       val:stats.free,  color:"#6B7280" },
     { key:"beta", label:"Beta Pro",   val:stats.beta,  color:GREEN     },
     { key:"pro",  label:"Pro",        val:stats.pro,   color:BLUE      },
-    { key:"betaMgmt", label:"Beta Invites", val:pendingInvites.length, color:"#F59E0B" },
   ];
 
   // User signup trend — from createdAt in users array
@@ -8080,8 +8135,8 @@ function SuperAdminDashboard({ onClose }) {
         {/* ── USERS TAB ── */}
         {tab === "users" && (
           <div>
-            {/* Sub-tab pills */}
-            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",gap:8,flexWrap:"wrap"}}>
+            {/* Sub-tab pills — centered */}
+            <div style={{background:"#fff",borderBottom:`1px solid ${BORDER}`,padding:"12px 24px",display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
               {USERS_SUBTABS.map(s => {
                 const active = usersSubtab === s.key;
                 return (
@@ -8097,7 +8152,8 @@ function SuperAdminDashboard({ onClose }) {
             <div style={{maxWidth:960,margin:"0 auto",padding:"20px 24px"}}>
 
         {(() => {
-          const ctx = usersSubtab === "betaMgmt" ? "betaMgmt" : (statsFilter || "all");
+          const ctx = statsFilter || "all";
+          const showInvitePanel = usersSubtab === "pro";
           const sortOpts = (ctx === "pro" || ctx === "beta")
             ? [["joined","Newest"],["alpha","A→Z"],["expiry","Expiry"]]
             : [["joined","Newest"],["alpha","A→Z"]];
@@ -8114,172 +8170,14 @@ function SuperAdminDashboard({ onClose }) {
             else setSelected(new Set(eligibles));
           };
           return (<>
-          {/* betaMgmt subtab — invite form + pending invites */}
-          {ctx === "betaMgmt" && (() => {
-            const betaUsers = users.filter(u => u.plan === "beta");
-            const toggleBetaSort = (m) => {
-              if (betaSort === m) setBetaSortDir(d => d * -1);
-              else { setBetaSort(m); setBetaSortDir(1); }
-            };
-            const betaArrow = (m) => betaSort === m ? (betaSortDir === 1 ? " ▼" : " ▲") : " ▼";
-            const betaFiltered = betaUsers
-              .filter(u => !betaSearch || u.name.toLowerCase().includes(betaSearch.toLowerCase()) || u.email.toLowerCase().includes(betaSearch.toLowerCase()))
-              .sort((a,b) => {
-                if (betaSort === "alpha") return betaSortDir * (a.name||"").localeCompare(b.name||"");
-                if (betaSort === "expiry") return betaSortDir * ((a.planExpiry||"") < (b.planExpiry||"") ? -1 : 1);
-                return betaSortDir * ((b.createdAt||0) - (a.createdAt||0));
-              });
-            const betaAllChecked = betaFiltered.length > 0 && betaFiltered.every(u => betaSelected.has(u.uid));
-            const betaSomeChecked = !betaAllChecked && betaFiltered.some(u => betaSelected.has(u.uid));
-            const toggleBetaAll = () => {
-              if (betaAllChecked || betaSomeChecked) setBetaSelected(new Set());
-              else setBetaSelected(new Set(betaFiltered.map(u => u.uid)));
-            };
-            const bulkBetaRevoke = async () => {
-              const targets = betaFiltered.filter(u => betaSelected.has(u.uid));
-              if (!targets.length) return;
-              for (const u of targets) await revokePlan(u.uid, u.email);
-              setBetaSelected(new Set());
-            };
-            const bulkBetaReset = async () => {
-              const targets = betaFiltered.filter(u => betaSelected.has(u.uid) && u.email && u.email !== "—");
-              for (const u of targets) await resendReset(u.email);
-              setBetaSelected(new Set());
-            };
-            const bulkBetaDelete = async () => {
-              const targets = betaFiltered.filter(u => betaSelected.has(u.uid));
-              if (!targets.length) return;
-              if (!window.confirm(`Delete ${targets.length} account${targets.length>1?"s":""}?\n\nAll data will be permanently removed.`)) return;
-              for (const u of targets) await deleteUserAccount(u.uid, u.email);
-              setBetaSelected(new Set());
-            };
-            return (
-              <div style={{maxWidth:1100}}>
-                <div style={{display:"grid",gridTemplateColumns:"62fr 38fr",gap:24,alignItems:"start"}}>
-                  <div>
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                      <Inp placeholder="Search…" value={betaSearch} onChange={e=>{setBetaSearch(e.target.value);setBetaSelected(new Set());}} style={{flex:1,minWidth:0,borderRadius:999,fontSize:12}}/>
-                      <div style={{display:"flex",alignItems:"center",flexShrink:0,marginLeft:"auto"}}>
-                        {[["newest","Newest"],["alpha","A→Z"],["expiry","Expiry"]].map(([m,l],i) => (
-                          <span key={m} style={{display:"flex",alignItems:"center"}}>
-                            {i > 0 && <span style={{color:"#D1D5DB",margin:"0 5px",userSelect:"none",fontSize:12}}>|</span>}
-                            <button onClick={()=>toggleBetaSort(m)}
-                              style={{background:"none",border:"none",cursor:"pointer",fontSize:12,fontWeight:betaSort===m?700:500,color:betaSort===m?PINK:SUB,padding:"4px 0",whiteSpace:"nowrap"}}>
-                              {l}{betaArrow(m)}
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    {betaSelected.size > 0 && (
-                      <div style={{background:"#1A0A14",borderRadius:12,padding:"10px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",marginRight:4}}>{betaSelected.size} selected</span>
-                        <button onClick={bulkBetaRevoke} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:"#EF4444",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>Revoke Beta Pro
-                        </button>
-                        <button onClick={bulkBetaReset} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:"#2563EB",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Reset Password
-                        </button>
-                        <button onClick={bulkBetaDelete} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",background:"#374151",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Delete
-                        </button>
-                        <button onClick={()=>setBetaSelected(new Set())} style={{marginLeft:"auto",padding:"6px 10px",background:"none",border:"1px solid rgba(255,255,255,.25)",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"rgba(255,255,255,.6)",cursor:"pointer"}}>✕</button>
-                      </div>
-                    )}
-                    <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,overflow:"hidden"}}>
-                      {betaFiltered.length > 0 && (
-                        <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",borderBottom:`1px solid ${BORDER}`,background:"#FAFAFA"}}>
-                          <div onClick={toggleBetaAll} style={{width:20,height:20,borderRadius:5,border:`2px solid ${betaAllChecked?PINK:betaSomeChecked?"#9CA3AF":BORDER}`,background:betaAllChecked?PINK:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,transition:"all .12s"}}>
-                            {betaAllChecked && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>}
-                            {betaSomeChecked && !betaAllChecked && <div style={{width:8,height:2,background:"#9CA3AF",borderRadius:1}}/>}
-                          </div>
-                          <span style={{fontSize:12,color:SUB,fontWeight:500}}>{betaSelected.size > 0 ? `${betaSelected.size} of ${betaFiltered.length} selected` : `${betaFiltered.length} beta user${betaFiltered.length!==1?"s":""}`}</span>
-                        </div>
-                      )}
-                      {betaFiltered.length === 0 ? (
-                        <div style={{padding:"24px 16px",fontSize:13,color:SUB}}>{betaSearch?"No users match your search.":"No beta testers yet."}</div>
-                      ) : betaFiltered.map((u, i) => {
-                        const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
-                        const expired = u.planExpiry && new Date(u.planExpiry) < new Date();
-                        const isChecked = betaSelected.has(u.uid);
-                        return (
-                          <div key={u.uid} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 16px",borderBottom:i<betaFiltered.length-1?`1px solid ${BORDER}`:"none",background:isChecked?SOFT:"#fff",transition:"background .1s"}}>
-                            <div onClick={()=>{ const s=new Set(betaSelected); isChecked?s.delete(u.uid):s.add(u.uid); setBetaSelected(s); }} style={{width:20,height:20,borderRadius:5,border:`2px solid ${isChecked?PINK:BORDER}`,background:isChecked?PINK:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,transition:"all .12s"}}>
-                              {isChecked && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>}
-                            </div>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{marginBottom:2,lineHeight:1.5}}>
-                                <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</span>
-                                <span style={{display:"inline-block",background:GREEN+"22",color:GREEN,borderRadius:99,padding:"1px 8px",fontSize:10,fontWeight:500,textTransform:"uppercase",letterSpacing:.4,marginLeft:6,verticalAlign:"middle",whiteSpace:"nowrap"}}>Beta Pro</span>
-                              </div>
-                              <div style={{fontSize:12,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</div>
-                              <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:400,marginTop:2}}>{expired?"⚠ Expired":`Expires: ${expiryStr}`}</div>
-                            </div>
-                            <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,flexWrap:"wrap"}}>
-                              <button onClick={()=>revokePlan(u.uid, u.email)} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:600,color:"#EF4444",cursor:"pointer",whiteSpace:"nowrap"}}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>Revoke
-                              </button>
-                              {u.email !== "—" && (
-                                <button onClick={()=>resendReset(u.email)} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:8,fontSize:11,fontWeight:600,color:"#2563EB",cursor:"pointer",whiteSpace:"nowrap"}}>
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Reset Pwd
-                                </button>
-                              )}
-                              <button onClick={()=>deleteUserAccount(u.uid, u.email)} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:11,fontWeight:600,color:"#6B7280",cursor:"pointer",whiteSpace:"nowrap"}}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Delete
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"18px",marginBottom:20}}>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Invite to Beta Pro</div>
-                      <div style={{fontSize:12,color:SUB,marginBottom:12,lineHeight:1.6}}>Enter their email. Beta Pro activates automatically when they sign up or log in at <strong style={{color:TEXT}}>teticoin.com</strong>.</div>
-                      <div style={{display:"flex",gap:8,marginBottom:8,flexDirection:"column"}}>
-                        <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{borderRadius:999}}/>
-                        <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
-                          style={{padding:"10px 0",background:inviteBusy||!inviteEmail.trim()?"#E5E7EB":GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:inviteBusy||!inviteEmail.trim()?SUB:"#fff",cursor:inviteBusy||!inviteEmail.trim()?"not-allowed":"pointer",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all .15s"}}
-                          onMouseOver={e=>{ if(!inviteBusy&&inviteEmail.trim()) e.currentTarget.style.opacity="0.85"; }}
-                          onMouseOut={e=>{ e.currentTarget.style.opacity="1"; }}>
-                          {inviteBusy ? <span style={{display:"contents"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Sending…</span> : "Send Invite"}
-                        </button>
-                      </div>
-                      {inviteMsg && <div style={{fontSize:12,color:inviteMsg.ok?"#16A34A":"#B45309",lineHeight:1.5,padding:"8px 12px",background:inviteMsg.ok?"#F0FDF4":"#FFFBEB",borderRadius:8}}>{inviteMsg.text}</div>}
-                    </div>
-                    <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>
-                      Pending Invites ({pendingInvites.length})
-                    </div>
-                    {pendingInvites.length === 0 ? (
-                      <div style={{fontSize:13,color:SUB,padding:"4px 0"}}>No pending invites.</div>
-                    ) : pendingInvites.map(inv => (
-                      <div key={inv.email} style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:12,padding:"12px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:13,fontWeight:700,color:TEXT,wordBreak:"break-all"}}>{inv.email}</div>
-                          <div style={{fontSize:11,color:"#92400E",marginTop:2}}>⏳ Invited · hasn't signed up yet</div>
-                        </div>
-                        <ResendBtn email={inv.email} serviceId={EMAILJS_SERVICE_ID} templateId={EMAILJS_BETA_TEMPLATE_ID} publicKey={EMAILJS_PUBLIC_KEY}/>
-                        <button onClick={async () => {
-                          try {
-                            const { getFirestore, doc, deleteDoc } = await import("firebase/firestore");
-                            await deleteDoc(doc(getFirestore(), "betaInvites", inv.email.replace(/\./g,"_")));
-                            setPendingInvites(prev => prev.filter(i => i.email !== inv.email));
-                          } catch {}
-                        }} style={{padding:"4px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:700,color:"#EF4444",cursor:"pointer",flexShrink:0}}>
-                          Cancel
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-          {/* Search bar — right-aligned sort links (shown for all non-betaMgmt subtabs) */}
-          {ctx !== "betaMgmt" && <>
+          return (<>
+          {/* Layout: table left, invite panel right (only on Pro tab) */}
+          <div style={{display:"flex",gap:24,alignItems:"start"}}>
+            {/* Main table column */}
+            <div style={{flex:1,minWidth:0}}>
           {/* Search bar */}
           <div style={{marginBottom:8,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+
             <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:160,maxWidth:400,borderRadius:999}}/>
             <div style={{display:"flex",alignItems:"center",flexShrink:0,marginLeft:"auto"}}>
               {sortOpts.map(([m,l],i) => (
@@ -8430,7 +8328,51 @@ function SuperAdminDashboard({ onClose }) {
               })}
             </div>
           )}
-          </>}{/* end ctx !== betaMgmt */}
+            </div>{/* end main table column */}
+
+            {/* Invite panel — only shown on Pro tab */}
+            {showInvitePanel && (
+              <div style={{width:280,flexShrink:0}}>
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"18px",marginBottom:16}}>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Invite to Beta Pro</div>
+                  <div style={{fontSize:12,color:SUB,marginBottom:12,lineHeight:1.6}}>Enter their email. Beta Pro activates automatically when they sign up or log in at <strong style={{color:TEXT}}>teticoin.com</strong>.</div>
+                  <div style={{display:"flex",gap:8,marginBottom:8,flexDirection:"column"}}>
+                    <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{borderRadius:999}}/>
+                    <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
+                      style={{padding:"10px 0",background:inviteBusy||!inviteEmail.trim()?"#E5E7EB":GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:inviteBusy||!inviteEmail.trim()?SUB:"#fff",cursor:inviteBusy||!inviteEmail.trim()?"not-allowed":"pointer",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all .15s"}}
+                      onMouseOver={e=>{ if(!inviteBusy&&inviteEmail.trim()) e.currentTarget.style.opacity="0.85"; }}
+                      onMouseOut={e=>{ e.currentTarget.style.opacity="1"; }}>
+                      {inviteBusy ? <span style={{display:"contents"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Sending…</span> : "Send Invite"}
+                    </button>
+                  </div>
+                  {inviteMsg && <div style={{fontSize:12,color:inviteMsg.ok?"#16A34A":"#B45309",lineHeight:1.5,padding:"8px 12px",background:inviteMsg.ok?"#F0FDF4":"#FFFBEB",borderRadius:8}}>{inviteMsg.text}</div>}
+                </div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:11,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>
+                  Pending Invites ({pendingInvites.length})
+                </div>
+                {pendingInvites.length === 0 ? (
+                  <div style={{fontSize:13,color:SUB}}>No pending invites.</div>
+                ) : pendingInvites.map(inv => (
+                  <div key={inv.email} style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+                    <div style={{fontSize:12,fontWeight:700,color:TEXT,wordBreak:"break-all",marginBottom:4}}>{inv.email}</div>
+                    <div style={{fontSize:11,color:"#92400E",marginBottom:8}}>⏳ Invited · hasn't signed up yet</div>
+                    <div style={{display:"flex",gap:6}}>
+                      <ResendBtn email={inv.email} serviceId={EMAILJS_SERVICE_ID} templateId={EMAILJS_BETA_TEMPLATE_ID} publicKey={EMAILJS_PUBLIC_KEY}/>
+                      <button onClick={async () => {
+                        try {
+                          const { getFirestore, doc, deleteDoc } = await import("firebase/firestore");
+                          await deleteDoc(doc(getFirestore(), "betaInvites", inv.email.replace(/\./g,"_")));
+                          setPendingInvites(prev => prev.filter(i => i.email !== inv.email));
+                        } catch {}
+                      }} style={{padding:"4px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:11,fontWeight:700,color:"#EF4444",cursor:"pointer"}}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>{/* end flex layout */}
         </>);})()}
 
             </div>{/* end maxWidth padding */}
@@ -8562,6 +8504,7 @@ function SuperAdminDashboard({ onClose }) {
 
                 {usageData && (
                   <>
+                    {/* Row 1: core session numbers */}
                     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:12}}>
                       <Card label="Total Sessions" value={usageData.totalSessions.toLocaleString()} color={PINK}
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}/>
@@ -8569,13 +8512,98 @@ function SuperAdminDashboard({ onClose }) {
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>}/>
                       <Card label="Total Coins Awarded" value={usageData.totalCoins.toLocaleString()} color="#F59E0B"
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}/>
-                      <Card label="Coinmaster Sessions" value={usageData.totalCoinmasters.toLocaleString()} sub="sessions with co-host enabled" color="#0891B2"
+                    </div>
+                    {/* Row 2: coinmaster + groups + duration */}
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:12}}>
+                      <Card label="Coinmaster Sessions" value={usageData.totalCoinmastersEnabled.toLocaleString()} sub={usageData.totalSessions?`${Math.round(usageData.totalCoinmastersEnabled/usageData.totalSessions*100)}% of sessions had co-host`:""} color="#0891B2"
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>}/>
-                      <Card label="Avg Duration" value={usageData.avgDuration!=null?`${usageData.avgDuration} min`:"N/A"} sub="only sessions with end timestamp" color={TEXT}
+                      <Card label="Total Coinmaster Codes" value={usageData.totalCoinmastersAssigned.toLocaleString()} sub={usageData.totalSessions?`avg ${(usageData.totalCoinmastersAssigned/usageData.totalSessions).toFixed(2)}/session`:""} color="#0891B2"
+                        icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}/>
+                      <Card label="Avg Session Duration" value={usageData.avgDuration!=null?`${usageData.avgDuration} min`:"N/A"} sub={usageData.avgDuration!=null?"based on sessions with end timestamp":"no end timestamps recorded yet"} color={TEXT}
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}/>
-                      <Card label="Coins / Participant" value={usageData.totalParticipants?Math.round(usageData.totalCoins/usageData.totalParticipants):"—"} sub="average across all sessions" color={GREEN}
+                    </div>
+                    {/* Row 3: groups + avg coin/participant */}
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:12}}>
+                      <Card label="Total Groups Created" value={usageData.totalGroups.toLocaleString()} sub={usageData.totalSessions?`avg ${(usageData.totalGroups/usageData.totalSessions).toFixed(1)}/session`:""} color={GREEN}
+                        icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}/>
+                      <Card label="Avg Coin per Participant" value={usageData.totalParticipants?Math.round(usageData.totalCoins/usageData.totalParticipants).toLocaleString():"—"} sub="average across all sessions" color={GREEN}
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>}/>
                     </div>
+
+                    {/* Most Popular Coin Amounts */}
+                    {usageData.topCoinAmounts.length > 0 && (
+                      <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px 20px",marginBottom:12}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:14}}>Most Popular Coin Amounts</div>
+                        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                          {usageData.topCoinAmounts.map((item, i) => {
+                            const maxCount = usageData.topCoinAmounts[0].count;
+                            const pct = Math.round(item.count/maxCount*100);
+                            const colors = [PINK, PURPLE, "#F59E0B", GREEN, "#0891B2"];
+                            return (
+                              <div key={item.amt} style={{display:"flex",alignItems:"center",gap:10}}>
+                                <div style={{width:36,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:colors[i],textAlign:"right",flexShrink:0}}>+{item.amt}</div>
+                                <div style={{flex:1,height:8,background:"#F3F4F6",borderRadius:99,overflow:"hidden"}}>
+                                  <div style={{height:"100%",width:`${pct}%`,background:colors[i],borderRadius:99,transition:"width .4s"}}/>
+                                </div>
+                                <div style={{fontSize:12,color:SUB,width:70,flexShrink:0}}>{item.count.toLocaleString()} times</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Most Active Participants */}
+                    {usageData.topParticipants.length > 0 && (
+                      <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px 20px",marginBottom:12}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Most Active Participants</div>
+                        <div style={{fontSize:12,color:SUB,marginBottom:14}}>Participants who joined the most different sessions (matched by name)</div>
+                        {usageData.topParticipants.map((p, i) => (
+                          <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:i<usageData.topParticipants.length-1?`1px solid ${BORDER}`:"none"}}>
+                            <div style={{width:24,height:24,borderRadius:8,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:10,color:"#fff",flexShrink:0}}>{i+1}</div>
+                            <div style={{flex:1,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{p.name}</div>
+                            <div style={{fontSize:12,fontWeight:600,color:PINK}}>{p.count} session{p.count!==1?"s":""}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Hourly activity chart */}
+                    {(() => {
+                      const hourData = usageData.hourlyActivity.map((count, h) => ({
+                        key: String(h),
+                        label: h % 3 === 0 ? `${h.toString().padStart(2,"0")}:00` : "",
+                        count
+                      }));
+                      const maxH = Math.max(...hourData.map(h=>h.count), 1);
+                      const peakHour = hourData.reduce((a,b)=>a.count>=b.count?a:b);
+                      return (
+                        <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px 20px",marginBottom:12}}>
+                          <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:16}}>
+                            <div>
+                              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>Sessions by Hour of Day</div>
+                              <div style={{fontSize:12,color:SUB,marginTop:2}}>When are hosts most active? (based on session creation time)</div>
+                            </div>
+                            {peakHour.count > 0 && (
+                              <div style={{background:SOFT,border:`1px solid ${BORDER}`,borderRadius:8,padding:"6px 12px",textAlign:"center",flexShrink:0}}>
+                                <div style={{fontSize:10,color:SUB,fontWeight:700}}>PEAK HOUR</div>
+                                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:16,color:PINK}}>{String(Number(peakHour.key)).padStart(2,"0")}:00</div>
+                              </div>
+                            )}
+                          </div>
+                          <div style={{display:"flex",alignItems:"flex-end",gap:3,height:72}}>
+                            {hourData.map(h => (
+                              <div key={h.key} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                                <div style={{width:"100%",background:h.count>0?`${PINK}${h.count===Math.max(...hourData.map(x=>x.count))?"":"88"}`:"#F3F4F6",borderRadius:"3px 3px 0 0",height:h.count>0?`${Math.max(4,(h.count/maxH)*56)}px`:"4px",transition:"height .3s"}}/>
+                                <div style={{fontSize:7,color:SUB,textAlign:"center",lineHeight:1,whiteSpace:"nowrap"}}>{h.label}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Sessions by month */}
                     {last12Sess.length > 0 && (
                       <BarChart data={last12Sess} color={PURPLE} maxVal={Math.max(...last12Sess.map(m=>m.count),1)} title="Sessions Created — Last 12 Months" emptyMsg="No session timestamps found"/>
                     )}
