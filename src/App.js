@@ -6313,6 +6313,10 @@ function ProfilePage({ trainer, onClose, onSaved }) {
   const [linkBusy, setLinkBusy] = useState(false);
   const [linked, setLinked] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteStats, setDeleteStats] = useState(null); // null=loading, {}=loaded
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   // Check if Google is already linked
   useEffect(() => {
@@ -6442,29 +6446,39 @@ function ProfilePage({ trainer, onClose, onSaved }) {
             Permanently delete your account and all associated data — sessions, participants, logs, and billing history. This cannot be undone. If you have an active plan, it will not be refunded.
           </div>
           <button onClick={async()=>{
-            if (!window.confirm("Are you sure you want to delete your account?\n\nAll your sessions, data, and billing history will be permanently removed. This cannot be undone.")) return;
-            if (!window.confirm("Last confirmation — delete everything permanently?")) return;
+            setShowDeleteConfirm(true);
+            setDeleteStats(null);
+            setDeleteConfirmText("");
+            // Fetch stats
             try {
-              const { getFirestore, collection, getDocs, doc, deleteDoc } = await import("firebase/firestore");
-              const { getAuth, deleteUser } = await import("firebase/auth");
-              const auth2 = getAuth();
-              const uid = auth2.currentUser?.uid;
-              if (!uid) return;
+              const { getFirestore, collection, getDocs, doc, getDoc } = await import("firebase/firestore");
+              const { getAuth } = await import("firebase/auth");
+              const uid = getAuth().currentUser?.uid;
+              if (!uid) { setDeleteStats({}); return; }
               const db2 = getFirestore();
-              // Delete all Firestore data
-              const dataSnap = await getDocs(collection(db2, "users", uid, "data"));
-              await Promise.all(dataSnap.docs.map(d => deleteDoc(d.ref)));
-              await deleteDoc(doc(db2, "users", uid));
-              // Delete Firebase Auth account
-              await deleteUser(auth2.currentUser);
-              // Auth state change will redirect to landing
-            } catch(e) {
-              if (e.code === "auth/requires-recent-login") {
-                alert("For security, please sign out and sign back in before deleting your account.");
-              } else {
-                alert("Could not delete account: " + e.message);
-              }
-            }
+              // Host stats — sessions index
+              const sessionsSnap = await getDoc(doc(db2, "users", uid, "data", "sessions_index"));
+              const sessionsIndex = sessionsSnap.exists() ? (sessionsSnap.data().value || []) : [];
+              const hostSessionCount = sessionsIndex.length;
+              // Fetch actual session docs for participant + coin counts
+              let totalParticipants = 0, totalCoinsGiven = 0;
+              await Promise.all(sessionsIndex.map(async s => {
+                try {
+                  const sSnap = await getDoc(doc(db2, "sessions", s.code));
+                  if (sSnap.exists()) {
+                    const sd = sSnap.data();
+                    totalParticipants += (sd.participants || []).length;
+                    totalCoinsGiven += (sd.participants || []).reduce((acc, p) => acc + (p.total || 0), 0);
+                  }
+                } catch {}
+              }));
+              // Participant stats — earnings index
+              const earnSnap = await getDoc(doc(db2, "users", uid, "data", "earnings"));
+              const earnings = earnSnap.exists() ? (earnSnap.data().value || []) : [];
+              const sessionsJoined = earnings.length;
+              const coinsEarned = earnings.reduce((acc, e) => acc + (e.coins || 0), 0);
+              setDeleteStats({ hostSessionCount, totalParticipants, totalCoinsGiven, sessionsJoined, coinsEarned });
+            } catch(e) { setDeleteStats({}); }
           }}
             style={{padding:"10px 18px",background:"#EF4444",border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:"#fff",cursor:"pointer"}}>
             Delete My Account
@@ -6472,6 +6486,119 @@ function ProfilePage({ trainer, onClose, onSaved }) {
         </div>
 
       </div>
+
+      {/* ── Delete Account Confirmation Modal ── */}
+      {showDeleteConfirm && (
+        <div style={{position:"fixed",inset:0,zIndex:800,background:"rgba(10,10,15,0.6)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#fff",borderRadius:20,padding:"28px 24px",maxWidth:440,width:"100%",boxShadow:"0 24px 64px rgba(0,0,0,0.2)"}}>
+
+            {/* Header */}
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
+              <div style={{width:36,height:36,borderRadius:10,background:"#FEF2F2",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </div>
+              <div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:16,color:"#EF4444"}}>Delete Account</div>
+                <div style={{fontSize:11,color:SUB}}>This cannot be undone</div>
+              </div>
+            </div>
+
+            {/* Stats grid */}
+            <div style={{margin:"16px 0",background:"#FFF9FC",border:`1px solid ${BORDER}`,borderRadius:14,padding:"14px 12px"}}>
+              <div style={{fontSize:11,fontWeight:700,letterSpacing:1.2,color:SUB,textTransform:"uppercase",marginBottom:10}}>Your account summary</div>
+              {deleteStats === null ? (
+                <div style={{textAlign:"center",padding:"12px 0",fontSize:13,color:SUB}}>Loading your data…</div>
+              ) : (
+                <>
+                  {/* As a host */}
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:PINK,textTransform:"uppercase",marginBottom:6}}>As a Host</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:12}}>
+                    {[
+                      { num: deleteStats.hostSessionCount ?? "—", label: "Sessions\ncreated" },
+                      { num: deleteStats.totalParticipants ?? "—", label: "Participants\nhosted" },
+                      { num: deleteStats.totalCoinsGiven ?? "—", label: "Coins\nawarded" },
+                    ].map(s => (
+                      <div key={s.label} style={{background:"#fff",borderRadius:10,padding:"10px 8px",textAlign:"center",border:`1px solid ${BORDER}`}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:PINK,lineHeight:1}}>{s.num}</div>
+                        <div style={{fontSize:9,color:SUB,marginTop:3,whiteSpace:"pre-line",lineHeight:1.3}}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* As a participant */}
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:PURPLE,textTransform:"uppercase",marginBottom:6}}>As a Participant</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                    {[
+                      { num: deleteStats.sessionsJoined ?? "—", label: "Sessions\njoined" },
+                      { num: deleteStats.coinsEarned ?? "—", label: "Coins\nearned" },
+                    ].map(s => (
+                      <div key={s.label} style={{background:"#fff",borderRadius:10,padding:"10px 8px",textAlign:"center",border:"1px solid rgba(157,80,255,0.15)"}}>
+                        <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:20,color:PURPLE,lineHeight:1}}>{s.num}</div>
+                        <div style={{fontSize:9,color:SUB,marginTop:3,whiteSpace:"pre-line",lineHeight:1.3}}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Confirmation input */}
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:12,color:SUB,marginBottom:6}}>
+                Type <strong style={{color:"#EF4444"}}>DELETE</strong> to confirm
+              </div>
+              <input
+                value={deleteConfirmText}
+                onChange={e=>setDeleteConfirmText(e.target.value)}
+                placeholder="Type DELETE here"
+                style={{width:"100%",padding:"10px 12px",border:`1.5px solid ${deleteConfirmText==="DELETE"?"#EF4444":"#E5E7EB"}`,borderRadius:10,fontSize:14,fontFamily:"Poppins,sans-serif",outline:"none",boxSizing:"border-box",color:TEXT}}
+              />
+            </div>
+
+            {/* Actions */}
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>{ setShowDeleteConfirm(false); setDeleteConfirmText(""); }}
+                style={{flex:1,padding:"11px 0",borderRadius:99,border:"1.5px solid #E5E7EB",background:"#fff",fontSize:14,fontWeight:600,color:SUB,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>
+                Cancel
+              </button>
+              <button
+                disabled={deleteConfirmText !== "DELETE" || deleteBusy}
+                onClick={async()=>{
+                  if (deleteConfirmText !== "DELETE") return;
+                  setDeleteBusy(true);
+                  try {
+                    const { getFirestore, collection, getDocs, doc, deleteDoc } = await import("firebase/firestore");
+                    const { getAuth, deleteUser } = await import("firebase/auth");
+                    const auth2 = getAuth();
+                    const uid = auth2.currentUser?.uid;
+                    if (!uid) return;
+                    const db2 = getFirestore();
+                    const dataSnap = await getDocs(collection(db2, "users", uid, "data"));
+                    await Promise.all(dataSnap.docs.map(d => deleteDoc(d.ref)));
+                    await deleteDoc(doc(db2, "users", uid));
+                    await deleteUser(auth2.currentUser);
+                  } catch(e) {
+                    setDeleteBusy(false);
+                    if (e.code === "auth/requires-recent-login") {
+                      alert("For security, please sign out and sign back in before deleting your account.");
+                    } else {
+                      alert("Could not delete account: " + e.message);
+                    }
+                  }
+                }}
+                style={{flex:1,padding:"11px 0",borderRadius:99,border:"none",
+                  background:deleteConfirmText==="DELETE"?"#EF4444":"#F3F4F6",
+                  fontSize:14,fontWeight:700,
+                  color:deleteConfirmText==="DELETE"?"#fff":"#9CA3AF",
+                  cursor:deleteConfirmText==="DELETE"?"pointer":"not-allowed",
+                  fontFamily:"Poppins,sans-serif",transition:"all .15s"}}>
+                {deleteBusy ? "Deleting…" : "Delete forever"}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
