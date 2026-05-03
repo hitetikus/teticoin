@@ -8018,11 +8018,18 @@ function SuperAdminDashboard({ onClose }) {
             else { setSortMode(m); setSortDir(1); }
           };
           const arrow = (m) => sortMode === m ? (sortDir === 1 ? " ▼" : " ▲") : " ▼";
+          const allChecked = !loading && filtered.length > 0 && filtered.every(u => selected.has(u.uid) || u.plan === "superadmin");
+          const someChecked = !allChecked && filtered.some(u => selected.has(u.uid));
+          const toggleAll = () => {
+            const eligibles = filtered.filter(u => u.plan !== "superadmin").map(u => u.uid);
+            if (allChecked || someChecked) setSelected(new Set());
+            else setSelected(new Set(eligibles));
+          };
           return (<>
-          {/* Search + Sort + Select All */}
-          <div style={{marginBottom:8,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+          {/* Search bar — right-aligned sort links */}
+          <div style={{marginBottom:8,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
             <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:160,maxWidth:400,borderRadius:999}}/>
-            <div style={{display:"flex",alignItems:"center",flexShrink:0}}>
+            <div style={{display:"flex",alignItems:"center",flexShrink:0,marginLeft:"auto"}}>
               {sortOpts.map(([m,l],i) => (
                 <span key={m} style={{display:"flex",alignItems:"center"}}>
                   {i > 0 && <span style={{color:"#D1D5DB",margin:"0 6px",userSelect:"none",fontSize:12}}>|</span>}
@@ -8033,15 +8040,6 @@ function SuperAdminDashboard({ onClose }) {
                 </span>
               ))}
             </div>
-            {!loading && filtered.length > 0 && (
-              <>
-                <span style={{color:"#D1D5DB",fontSize:12,userSelect:"none"}}>|</span>
-                <button onClick={()=>selected.size===filtered.length?setSelected(new Set()):setSelected(new Set(filtered.map(u=>u.uid)))}
-                  style={{background:"none",border:"none",cursor:"pointer",fontSize:12,fontWeight:500,color:SUB,padding:"4px 0",flexShrink:0,whiteSpace:"nowrap"}}>
-                  {selected.size===filtered.length&&filtered.length>0?"Deselect All":`Select All (${filtered.length})`}
-                </button>
-              </>
-            )}
           </div>
           {statsFilter && (
             <div style={{marginBottom:10,fontSize:12,color:SUB}}>
@@ -8055,18 +8053,36 @@ function SuperAdminDashboard({ onClose }) {
           {selected.size > 0 && (
             <div style={{background:"#1A0A14",borderRadius:12,padding:"10px 16px",marginBottom:12,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
               <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:"#fff",marginRight:4}}>{selected.size} selected</span>
-              {(ctx === "all" || ctx === "free") && (
-                <button onClick={bulkAssignBeta} style={{padding:"6px 14px",background:"#16A34A",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>+ Beta Pro</button>
+              {/* Free tab: Promote to Beta Pro */}
+              {ctx === "free" && (
+                <button onClick={bulkAssignBeta} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",background:"#16A34A",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                  Promote to Beta Pro
+                </button>
               )}
+              {/* Beta tab: Revoke Beta Pro */}
               {ctx === "beta" && (
-                <button onClick={bulkRevoke} style={{padding:"6px 14px",background:"#EF4444",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>Revoke Beta Pro</button>
+                <button onClick={bulkRevoke} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",background:"#EF4444",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  Revoke Beta Pro
+                </button>
               )}
+              {/* Pro tab: Revoke Pro */}
               {ctx === "pro" && (
-                <button onClick={bulkRevoke} style={{padding:"6px 14px",background:"#EF4444",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>Revoke Pro</button>
+                <button onClick={bulkRevoke} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",background:"#EF4444",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  Revoke Pro
+                </button>
               )}
-              <button onClick={bulkResetPassword} style={{padding:"6px 14px",background:"#2563EB",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>Reset Password</button>
-              <button onClick={bulkDelete} style={{padding:"6px 14px",background:"#374151",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Delete
+              {/* Reset Password — all tabs */}
+              <button onClick={bulkResetPassword} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",background:"#2563EB",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Reset Password
+              </button>
+              {/* Delete Account — all tabs */}
+              <button onClick={bulkDelete} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",background:"#374151",border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#fff",cursor:"pointer"}}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                Delete Account
               </button>
               <button onClick={()=>setSelected(new Set())} style={{marginLeft:"auto",padding:"6px 12px",background:"none",border:"1px solid rgba(255,255,255,.25)",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"rgba(255,255,255,.6)",cursor:"pointer"}}>✕ Clear</button>
             </div>
@@ -8075,6 +8091,19 @@ function SuperAdminDashboard({ onClose }) {
             <div style={{textAlign:"center",padding:48,color:SUB,fontSize:14}}>Loading users…</div>
           ) : (
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,overflow:"hidden"}}>
+              {/* Gmail-style master checkbox header */}
+              {filtered.length > 0 && (
+                <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 18px",borderBottom:`1px solid ${BORDER}`,background:"#FAFAFA"}}>
+                  <div onClick={toggleAll}
+                    style={{width:20,height:20,borderRadius:5,border:`2px solid ${allChecked?PINK:someChecked?"#9CA3AF":BORDER}`,background:allChecked?PINK:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,transition:"all .12s",position:"relative"}}>
+                    {allChecked && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>}
+                    {someChecked && !allChecked && <div style={{width:8,height:2,background:"#9CA3AF",borderRadius:1}}/>}
+                  </div>
+                  <span style={{fontSize:12,color:SUB,fontWeight:500}}>
+                    {selected.size > 0 ? `${selected.size} of ${filtered.filter(u=>u.plan!=="superadmin").length} selected` : `${filtered.length} user${filtered.length!==1?"s":""}`}
+                  </span>
+                </div>
+              )}
               {filtered.length === 0 ? (
                 <div style={{padding:32,textAlign:"center",color:SUB,fontSize:13}}>No users found</div>
               ) : filtered.map((u,i) => {
