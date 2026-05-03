@@ -958,7 +958,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       <footer className="lp-footer">
         <div className="lp-footer-inner">
           <div>
-            <img src="/Teticoin Logo Horizontal.png" alt="Teticoin" style={{height:24,width:"auto",filter:"brightness(0) invert(1)",opacity:0.85}}/>
+            <img src="/Teticoin Logo White Horizontal.png" alt="Teticoin" style={{height:24,width:"auto"}}/>
             <div style={{fontSize:12,color:"rgba(255,255,255,0.2)",marginTop:6}}>Simple engagement tool for modern training & events</div>
             <div style={{fontSize:11,color:"rgba(255,255,255,0.15)",marginTop:2}}>© 2026</div>
           </div>
