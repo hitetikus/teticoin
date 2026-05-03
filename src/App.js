@@ -7945,23 +7945,23 @@ function SuperAdminDashboard({ onClose }) {
     <div style={{position:"fixed",inset:0,zIndex:900,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style>{CSS}</style>
 
-      {/* Header — gradient if superadmin */}
-      <div style={{background:superadminEmail?"linear-gradient(135deg,#EF4444,#B91C1C)":"#fff",borderBottom:superadminEmail?"none":`1px solid ${BORDER}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-        <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:superadminEmail?"rgba(255,255,255,0.8)":SUB,fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,fontWeight:500,padding:0}}>
+      {/* Header — white-to-red gradient like navbar */}
+      <div style={{background:"linear-gradient(90deg,#ffffff 0%,#ffffff 35%,#EF4444 75%,#B91C1C 100%)",borderBottom:"1px solid rgba(239,68,68,0.2)",padding:"0 32px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:"#374151",fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,fontWeight:600,padding:0}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={superadminEmail?"rgba(255,255,255,0.85)":PINK} strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:superadminEmail?"#fff":TEXT}}>Admin Dashboard</div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:"#0A0A0F"}}>Admin Dashboard</div>
         </div>
         {superadminEmail ? (
           <div style={{display:"flex",alignItems:"center",gap:6}}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"rgba(255,255,255,0.7)"}}>Superadmin</span>
-            <span style={{fontSize:12,color:"rgba(255,255,255,0.95)",fontWeight:600}}>{superadminEmail}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"rgba(255,255,255,0.75)"}}>Superadmin</span>
+            <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>{superadminEmail}</span>
           </div>
-        ) : <div style={{width:60}}/>}
+        ) : <div style={{width:80}}/>}
       </div>
 
       {/* Color-coded stat tabs — serve as primary navigation, centered */}
@@ -7976,7 +7976,7 @@ function SuperAdminDashboard({ onClose }) {
                 if (s.key === "beta") { setTab("beta"); setStatsFilter(null); }
                 else { setTab("users"); setStatsFilter(s.key === "all" ? null : s.key); }
               }}
-              style={{background:active?`${s.activeColor}12`:"#fff",border:`1.5px solid ${s.activeColor}`,borderRadius:10,padding:"10px 24px",flexShrink:0,minWidth:110,textAlign:"center",cursor:"pointer",transition:"all .15s",opacity:active?1:0.45}}>
+              style={{background:active?`${s.activeColor}10`:"#fff",border:`2.5px solid ${s.activeColor}`,borderRadius:10,padding:"10px 24px",flexShrink:0,minWidth:110,textAlign:"center",cursor:"pointer",transition:"all .15s",opacity:active?1:0.4}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:24,color:s.activeColor}}>{loading?"…":s.val}</div>
               <div style={{fontSize:11,color:s.activeColor,fontWeight:700,marginTop:2}}>{s.label}</div>
             </div>
@@ -7991,12 +7991,13 @@ function SuperAdminDashboard({ onClose }) {
         </div>
       )}
 
-      <div style={{flex:1,overflowY:"auto",padding:"20px 10%"}}>
+      <div style={{flex:1,overflowY:"auto",padding:"20px 0"}}>
+        <div style={{maxWidth:900,margin:"0 auto",padding:"0 24px"}}>
 
         {tab === "users" && <>
           {/* Search + Sort + Select All */}
           <div style={{marginBottom:8,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-            <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:160,maxWidth:400,borderRadius:999}}/>
+            <Inp placeholder="Search by name or email…" value={search} onChange={e=>{setSearch(e.target.value);setSelected(new Set());}} style={{flex:1,minWidth:160,maxWidth:400}}/>
             {/* Sort toggle — inline with search */}
             <div style={{display:"flex",gap:4,flexShrink:0}}>
               {[["joined","Newest"],["alpha","A→Z"]].map(([m,l])=>(
@@ -8057,7 +8058,11 @@ function SuperAdminDashboard({ onClose }) {
                       {(u.name||"?")[0].toUpperCase()}
                     </div>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{u.name}</div>
+                      {/* Name + badge inline */}
+                      <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap",marginBottom:2}}>
+                        <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</span>
+                        <span style={{background:planColor,color:"#fff",borderRadius:99,padding:"2px 9px",fontSize:11,fontWeight:700,flexShrink:0}}>{planLabel}</span>
+                      </div>
                       <div style={{fontSize:12,color:SUB,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.email}</div>
                       {expiryStr && (() => {
                         const isPaid = u.plan==="pro"||u.plan==="proY"||u.plan==="oneTime";
@@ -8070,57 +8075,36 @@ function SuperAdminDashboard({ onClose }) {
                         </div>;
                       })()}
                     </div>
-                    {/* Action buttons — far right, with 3-dot overflow on mobile */}
+                    {/* Action buttons — far right. Desktop: full labels. Mobile: 3-dot dropdown. */}
                     {(() => {
+                      const menuKey = "menu-"+u.uid;
+                      const menuOpen = selected.has(menuKey);
                       const actions = [
-                        !isSA && u.plan !== "beta" ? {
-                          label:"Promote to Beta Pro", shortLabel:"Promote to Beta Pro",
-                          color:"#16A34A", bg:"#F0FDF4", border:"#BBF7D0",
-                          icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>,
-                          fn:()=>assignBeta(u.uid, u.email)
-                        } : null,
-                        !isSA && u.plan !== "free" ? {
-                          label:"Revoke Plan", shortLabel:"Revoke Plan",
-                          color:"#EF4444", bg:"#FEF2F2", border:"#FECACA",
-                          icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>,
-                          fn:()=>revokePlan(u.uid, u.email)
-                        } : null,
-                        u.email !== "—" ? {
-                          label:"Reset Password", shortLabel:"Reset Password",
-                          color:"#2563EB", bg:"#EFF6FF", border:"#BFDBFE",
-                          icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
-                          fn:()=>resendReset(u.email)
-                        } : null,
-                        !isSA ? {
-                          label:"Delete Account", shortLabel:"Delete Account",
-                          color:"#6B7280", bg:"none", border:BORDER,
-                          icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>,
-                          fn:()=>deleteUserAccount(u.uid, u.email)
-                        } : null,
+                        (!isSA && u.plan !== "beta") ? { label:"Promote to Beta Pro", color:"#16A34A", bg:"#F0FDF4", border:"#BBF7D0", icon:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>, fn:()=>assignBeta(u.uid,u.email) } : null,
+                        (!isSA && u.plan !== "free") ? { label:"Revoke Plan", color:"#EF4444", bg:"#FEF2F2", border:"#FECACA", icon:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>, fn:()=>revokePlan(u.uid,u.email) } : null,
+                        (u.email !== "—") ? { label:"Reset Password", color:"#2563EB", bg:"#EFF6FF", border:"#BFDBFE", icon:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, fn:()=>resendReset(u.email) } : null,
+                        (!isSA) ? { label:"Delete Account", color:"#6B7280", bg:"none", border:BORDER, icon:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>, fn:()=>deleteUserAccount(u.uid,u.email) } : null,
                       ].filter(Boolean);
                       return (
                         <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
-                          {/* Badge inline before buttons */}
-                          <span style={{background:`${planColor}15`,border:`1px solid ${planColor}40`,color:planColor,borderRadius:99,padding:"3px 10px",fontSize:11,fontWeight:800,marginRight:6,whiteSpace:"nowrap"}}>{planLabel}</span>
                           {/* Desktop: full labeled buttons */}
-                          <div className="tc-admin-btns-desktop" style={{display:"flex",alignItems:"center",gap:4}}>
+                          <div className="tc-admin-btns-desktop">
                             {actions.map((a,ai) => (
-                              <button key={ai} onClick={a.fn}
-                                style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:a.bg,border:`1px solid ${a.border}`,borderRadius:8,fontSize:11,fontWeight:700,color:a.color,cursor:"pointer",whiteSpace:"nowrap"}}>
+                              <button key={ai} onClick={a.fn} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:a.bg,border:`1px solid ${a.border}`,borderRadius:8,fontSize:11,fontWeight:700,color:a.color,cursor:"pointer",whiteSpace:"nowrap",marginLeft:ai===0?0:4}}>
                                 {a.icon}{a.label}
                               </button>
                             ))}
                           </div>
-                          {/* Mobile: 3-dot menu */}
+                          {/* Mobile: 3-dot dropdown */}
                           <div className="tc-admin-btns-mobile" style={{position:"relative"}}>
-                            <button onClick={()=>{ const s=new Set(selected); s.has("menu-"+u.uid)?s.delete("menu-"+u.uid):s.add("menu-"+u.uid); setSelected(s); }}
-                              style={{width:32,height:32,borderRadius:8,border:`1px solid ${BORDER}`,background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="5" r="1.5" fill={SUB}/><circle cx="12" cy="12" r="1.5" fill={SUB}/><circle cx="12" cy="19" r="1.5" fill={SUB}/></svg>
+                            <button onClick={()=>{ const s=new Set(selected); menuOpen?s.delete(menuKey):s.add(menuKey); setSelected(s); }}
+                              style={{width:32,height:32,borderRadius:8,border:`1px solid ${BORDER}`,background:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                              <svg width="4" height="16" viewBox="0 0 4 20" fill={SUB}><circle cx="2" cy="2" r="2"/><circle cx="2" cy="10" r="2"/><circle cx="2" cy="18" r="2"/></svg>
                             </button>
-                            {selected.has("menu-"+u.uid) && (
-                              <div style={{position:"absolute",right:0,top:36,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:"6px",zIndex:100,minWidth:180,boxShadow:"0 8px 24px rgba(0,0,0,0.12)"}}>
+                            {menuOpen && (
+                              <div style={{position:"absolute",right:0,top:36,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:12,padding:6,zIndex:200,minWidth:192,boxShadow:"0 8px 24px rgba(0,0,0,.12)"}}>
                                 {actions.map((a,ai) => (
-                                  <button key={ai} onClick={()=>{ a.fn(); const s=new Set(selected); s.delete("menu-"+u.uid); setSelected(s); }}
+                                  <button key={ai} onClick={()=>{ a.fn(); const s=new Set(selected); s.delete(menuKey); setSelected(s); }}
                                     style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"9px 12px",background:"none",border:"none",borderRadius:8,fontSize:12,fontWeight:700,color:a.color,cursor:"pointer",textAlign:"left"}}>
                                     {a.icon}{a.label}
                                   </button>
@@ -8176,7 +8160,7 @@ function SuperAdminDashboard({ onClose }) {
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:2}}>
                           <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT}}>{u.name}</div>
-                          <span style={{background:`${GREEN}15`,border:`1px solid ${GREEN}40`,color:GREEN,borderRadius:99,padding:"2px 8px",fontSize:10,fontWeight:800}}>Beta Pro</span>
+                          <span style={{background:GREEN,color:"#fff",borderRadius:99,padding:"2px 9px",fontSize:11,fontWeight:700}}>Beta Pro</span>
                         </div>
                         <div style={{fontSize:12,color:SUB}}>{u.email}</div>
                         <div style={{fontSize:11,color:expired?"#EF4444":GREEN,fontWeight:600,marginTop:3}}>
@@ -8233,6 +8217,7 @@ function SuperAdminDashboard({ onClose }) {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
@@ -10333,7 +10318,7 @@ const CSS = `
   /* Group card: desktop shows inline buttons, hides mobile button row */
   .tc-grp-btns-desktop { display: inline-flex; align-items: center; }
   .tc-grp-btns-mobile  { display: none !important; }
-  .tc-admin-btns-desktop { display: flex; align-items: center; gap: 4px; }
+  .tc-admin-btns-desktop { display: flex; align-items: center; }
   .tc-admin-btns-mobile  { display: none !important; }
   @media (max-width: 899px) {
     .tc-groups-creator { grid-template-columns: 1fr !important; }
