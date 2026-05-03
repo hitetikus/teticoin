@@ -332,7 +332,7 @@ export function PrivacyPage({ onBack }) {
       <style>{CSS}</style>
       <nav style={{borderBottom:`1px solid ${BORDER}`,padding:"0 48px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={onBack}>
-          <Ham size={28}/><span style={{fontFamily:"'Nunito',sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</span>
+          <img src="/Teticoin Logo Horizontal.png" alt="Teticoin" style={{height:28,width:"auto"}}/>
         </div>
         <button onClick={onBack} style={{fontSize:14,color:NEUT,background:"none",border:"none",cursor:"pointer"}}>← Back</button>
       </nav>
@@ -373,7 +373,7 @@ export function TermsPage({ onBack }) {
       <style>{CSS}</style>
       <nav style={{borderBottom:`1px solid ${BORDER}`,padding:"0 48px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={onBack}>
-          <Ham size={28}/><span style={{fontFamily:"'Nunito',sans-serif",fontWeight:900,fontSize:20,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</span>
+          <img src="/Teticoin Logo Horizontal.png" alt="Teticoin" style={{height:28,width:"auto"}}/>
         </div>
         <button onClick={onBack} style={{fontSize:14,color:NEUT,background:"none",border:"none",cursor:"pointer"}}>← Back</button>
       </nav>
@@ -463,7 +463,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
 
       {/* NAV */}
       <nav className="lp-nav">
-        <div className="lp-nav-logo" onClick={() => window.scrollTo({top:0, behavior:"smooth"})}><Ham size={28}/><span>Teticoin</span></div>
+        <div className="lp-nav-logo" onClick={() => window.scrollTo({top:0, behavior:"smooth"})}><img src="/Teticoin Logo Horizontal.png" alt="Teticoin" style={{height:28,width:"auto"}}/></div>
         <div className="lp-nav-links">
           <a href="#how" onClick={(e)=>{e.preventDefault();scrollTo("how")}}>How it works</a>
           <a href="#features" onClick={(e)=>{e.preventDefault();scrollTo("features")}}>Features</a>
@@ -497,7 +497,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           <div className="lp-screen-side" style={{transform:"translateY(32px) rotate(-3deg)"}}>
             <div style={{background:"linear-gradient(145deg,#FFF0F7,#FCE7F3)",borderRadius:20,width:"100%",padding:20,display:"flex",flexDirection:"column",gap:10,minHeight:380}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                <Ham size={22}/>
+                <img src="/Teticoin Logo Mark.png" alt="Teticoin" style={{width:22,height:22,objectFit:"contain"}}/>
                 <span style={{...N,fontWeight:800,fontSize:14,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</span>
               </div>
               <div style={{background:"#fff",borderRadius:14,padding:16,textAlign:"center",marginTop:4}}>
@@ -560,7 +560,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           <div className="lp-screen-side" style={{transform:"translateY(32px) rotate(3deg)"}}>
             <div style={{background:"#0A0A0F",borderRadius:20,padding:20,minHeight:380}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                <Ham size={20}/>
+                <img src="/Teticoin Logo Mark.png" alt="Teticoin" style={{width:20,height:20,objectFit:"contain"}}/>
                 <span style={{...N,fontWeight:800,fontSize:13,background:GRAD,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Teticoin</span>
                 <span style={{marginLeft:"auto",background:"#2A2A2F",borderRadius:8,padding:"4px 10px",fontSize:10,color:"rgba(255,255,255,0.5)"}}>Back</span>
               </div>
@@ -958,9 +958,9 @@ export default function LandingPage({ onGetStarted, onLogin }) {
       <footer className="lp-footer">
         <div className="lp-footer-inner">
           <div>
-            <div className="lp-footer-logo">Teticoin</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,0.2)",marginTop:4}}>Simple engagement tool for modern training & events</div>
-            <div style={{fontSize:11,color:"rgba(255,255,255,0.15)",marginTop:2}}>by Tetikus · © 2026</div>
+            <img src="/Teticoin Logo Horizontal.png" alt="Teticoin" style={{height:24,width:"auto",filter:"brightness(0) invert(1)",opacity:0.85}}/>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.2)",marginTop:6}}>Simple engagement tool for modern training & events</div>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.15)",marginTop:2}}>© 2026</div>
           </div>
           <div className="lp-footer-links">
             <button onClick={() => setSubpage("privacy")}>Privacy Policy</button>
