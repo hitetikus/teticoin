@@ -8153,7 +8153,7 @@ function SuperAdminDashboard({ onClose }) {
 
         {(() => {
           const ctx = statsFilter || "all";
-          const showInvitePanel = usersSubtab === "pro";
+          const showInvitePanel = usersSubtab === "beta";
           const sortOpts = (ctx === "pro" || ctx === "beta")
             ? [["joined","Newest"],["alpha","A→Z"],["expiry","Expiry"]]
             : [["joined","Newest"],["alpha","A→Z"]];
