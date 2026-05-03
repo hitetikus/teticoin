@@ -7687,8 +7687,10 @@ function SuperAdminDashboard({ onClose }) {
   const [inviteBusy, setInviteBusy] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [pendingInvites, setPendingInvites] = useState([]);
-  const [statsFilter, setStatsFilter] = useState(null); // null=all | "pro" | "beta" | "free"
-  const [sortMode, setSortMode] = useState("joined");   // "joined" | "alpha"
+  const [statsFilter, setStatsFilter] = useState(null);
+  const [sortMode, setSortMode] = useState("joined");
+  const [betaSearch, setBetaSearch] = useState("");
+  const [betaSort, setBetaSort] = useState("newest");
 
   // Load all users — data is stored under users/{uid}/data/{key} subcollection
   useEffect(() => {
@@ -8124,37 +8126,48 @@ function SuperAdminDashboard({ onClose }) {
           )}
         </>}
 
-        {tab === "beta" && (
+        {tab === "beta" && (() => {
+          const betaUsers = users.filter(u => u.plan === "beta");
+          const betaFiltered = betaUsers
+            .filter(u => !betaSearch || u.name.toLowerCase().includes(betaSearch.toLowerCase()) || u.email.toLowerCase().includes(betaSearch.toLowerCase()))
+            .sort((a,b) => {
+              if (betaSort === "alpha") return (a.name||"").localeCompare(b.name||"");
+              if (betaSort === "expiry") return (a.planExpiry||"") < (b.planExpiry||"") ? -1 : 1;
+              return 0; // "newest" — keep load order
+            });
+          return (
           <div style={{maxWidth:1100}}>
-            {/* Send invite email — full width on top */}
-            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"20px",marginBottom:20}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:TEXT,marginBottom:4}}>Add Beta Tester</div>
-              <div style={{fontSize:13,color:SUB,marginBottom:14,lineHeight:1.6}}>Enter their email below. When they sign up or log in at <strong>teticoin.com</strong>, Beta Pro activates automatically and they'll see a welcome message. Then let them know to sign up!</div>
-              <div style={{display:"flex",gap:10,marginBottom:8}}>
-                <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{flex:1,borderRadius:999}}/>
-                <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
-                  style={{padding:"0 20px",background:inviteBusy||!inviteEmail.trim()?"#E5E7EB":GRAD,border:"none",borderRadius:12,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:inviteBusy||!inviteEmail.trim()?SUB:"#fff",cursor:inviteBusy||!inviteEmail.trim()?"not-allowed":"pointer",flexShrink:0,transition:"all .15s",minWidth:110,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}
-                  onMouseOver={e=>{ if(!inviteBusy&&inviteEmail.trim()) e.currentTarget.style.opacity="0.85"; }}
-                  onMouseOut={e=>{ e.currentTarget.style.opacity="1"; }}>
-                  {inviteBusy ? (
-                    <span style={{display:"contents"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Adding…</span>
-                  ) : "Add to Beta"}
-                </button>
+
+            {/* Search + Sort bar */}
+            <div style={{marginBottom:16,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+              <Inp placeholder="Search beta users by name or email…" value={betaSearch} onChange={e=>setBetaSearch(e.target.value)} style={{flex:1,minWidth:160,maxWidth:400,borderRadius:999}}/>
+              <div style={{display:"flex",gap:4,flexShrink:0}}>
+                {[["newest","Newest"],["alpha","A→Z"],["expiry","Expiry"]].map(([m,l])=>(
+                  <button key={m} onClick={()=>setBetaSort(m)}
+                    style={{padding:"7px 12px",background:betaSort===m?SOFT:"#fff",border:`1.5px solid ${betaSort===m?PINK:BORDER}`,borderRadius:8,fontSize:11,fontWeight:700,color:betaSort===m?PINK:SUB,cursor:"pointer",whiteSpace:"nowrap",transition:"all .12s"}}>
+                    {l}
+                  </button>
+                ))}
               </div>
-              {inviteMsg && <div style={{fontSize:12,color:inviteMsg.ok?"#16A34A":"#B45309",marginTop:4,lineHeight:1.5,padding:"8px 12px",background:inviteMsg.ok?"#F0FDF4":"#FFFBEB",borderRadius:8}}>{inviteMsg.text}</div>}
+              {betaSearch && (
+                <div style={{fontSize:12,color:SUB}}>
+                  {betaFiltered.length} result{betaFiltered.length!==1?"s":""} of {betaUsers.length}
+                  <button onClick={()=>setBetaSearch("")} style={{marginLeft:8,fontSize:11,color:PINK,background:"none",border:"none",cursor:"pointer",fontWeight:700}}>✕ clear</button>
+                </div>
+              )}
             </div>
 
             {/* Two-column layout */}
-            <div style={{display:"grid",gridTemplateColumns:"65fr 35fr",gap:24,alignItems:"start"}}>
+            <div style={{display:"grid",gridTemplateColumns:"62fr 38fr",gap:24,alignItems:"start"}}>
 
               {/* LEFT — Beta Pro Users (signed up) */}
               <div>
                 <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>
-                  Beta Pro Users ({users.filter(u=>u.plan==="beta").length})
+                  Beta Pro Users ({betaFiltered.length}{betaSearch?` / ${betaUsers.length}`:""})
                 </div>
-                {users.filter(u=>u.plan==="beta").length === 0 ? (
-                  <div style={{fontSize:13,color:SUB,padding:"16px 0"}}>No beta testers yet.</div>
-                ) : users.filter(u=>u.plan==="beta").map(u => {
+                {betaFiltered.length === 0 ? (
+                  <div style={{fontSize:13,color:SUB,padding:"16px 0"}}>{betaSearch?"No users match your search.":"No beta testers yet."}</div>
+                ) : betaFiltered.map(u => {
                   const expiryStr = u.planExpiry ? new Date(u.planExpiry).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
                   const expired = u.planExpiry && new Date(u.planExpiry) < new Date();
                   return (
@@ -8194,13 +8207,32 @@ function SuperAdminDashboard({ onClose }) {
                 })}
               </div>
 
-              {/* RIGHT — Pending Invites (not yet signed up) */}
+              {/* RIGHT — Invite form + Pending Invites */}
               <div>
+                {/* Invite to Beta Pro form */}
+                <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:16,padding:"18px",marginBottom:20}}>
+                  <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Invite to Beta Pro</div>
+                  <div style={{fontSize:12,color:SUB,marginBottom:12,lineHeight:1.6}}>Enter their email. Beta Pro activates automatically when they sign up or log in at <strong style={{color:TEXT}}>teticoin.com</strong>.</div>
+                  <div style={{display:"flex",gap:8,marginBottom:8,flexDirection:"column"}}>
+                    <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{borderRadius:999}}/>
+                    <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
+                      style={{padding:"10px 0",background:inviteBusy||!inviteEmail.trim()?"#E5E7EB":GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:inviteBusy||!inviteEmail.trim()?SUB:"#fff",cursor:inviteBusy||!inviteEmail.trim()?"not-allowed":"pointer",width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all .15s"}}
+                      onMouseOver={e=>{ if(!inviteBusy&&inviteEmail.trim()) e.currentTarget.style.opacity="0.85"; }}
+                      onMouseOut={e=>{ e.currentTarget.style.opacity="1"; }}>
+                      {inviteBusy ? (
+                        <span style={{display:"contents"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{animation:"spin .7s linear infinite"}}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Sending…</span>
+                      ) : "Send Invite"}
+                    </button>
+                  </div>
+                  {inviteMsg && <div style={{fontSize:12,color:inviteMsg.ok?"#16A34A":"#B45309",lineHeight:1.5,padding:"8px 12px",background:inviteMsg.ok?"#F0FDF4":"#FFFBEB",borderRadius:8}}>{inviteMsg.text}</div>}
+                </div>
+
+                {/* Pending Invites */}
                 <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>
                   Pending Invites ({pendingInvites.length})
                 </div>
                 {pendingInvites.length === 0 ? (
-                  <div style={{fontSize:13,color:SUB,padding:"16px 0"}}>No pending invites.</div>
+                  <div style={{fontSize:13,color:SUB,padding:"4px 0"}}>No pending invites.</div>
                 ) : pendingInvites.map(inv => (
                   <div key={inv.email} style={{background:"#FFFBEB",border:"1.5px solid #FDE68A",borderRadius:12,padding:"12px 16px",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
                     <div style={{flex:1,minWidth:0}}>
@@ -8223,7 +8255,8 @@ function SuperAdminDashboard({ onClose }) {
 
             </div>
           </div>
-        )}
+          );
+        })()}
         </div>
       </div>
     </div>
