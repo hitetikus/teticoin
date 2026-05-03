@@ -7647,7 +7647,7 @@ function ResendBtn({ email, serviceId, templateId, publicKey }) {
     setBusy(true);
     try {
       const ejs = window.emailjs || (typeof emailjs !== "undefined" ? emailjs : null);
-      if (ejs) await ejs.send(serviceId, templateId, { to_email: email }, publicKey);
+      if (ejs) await ejs.send(serviceId, templateId, { to_email: email, subject: "You're Invited to Teticoin Beta Pro 🎉" }, publicKey);
       setSent(true);
     } catch {}
     setBusy(false);
@@ -7827,7 +7827,7 @@ function SuperAdminDashboard({ onClose }) {
         // Resend the email but don't overwrite expiry
         try {
           const ejs = window.emailjs || (typeof emailjs !== "undefined" ? emailjs : null);
-          if (ejs) await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_TEMPLATE_ID, { to_email: email }, EMAILJS_PUBLIC_KEY);
+          if (ejs) await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_TEMPLATE_ID, { to_email: email, subject: "You're Invited to Teticoin Beta Pro 🎉" }, EMAILJS_PUBLIC_KEY);
         } catch {}
         setInviteMsg({ ok: true, text: `📨 ${email} was already invited. Invite email resent.` });
         setInviteEmail("");
@@ -7845,7 +7845,7 @@ function SuperAdminDashboard({ onClose }) {
       try {
         const ejs = window.emailjs || (typeof emailjs !== "undefined" ? emailjs : null);
         if (ejs) {
-          await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_TEMPLATE_ID, { to_email: email }, EMAILJS_PUBLIC_KEY);
+          await ejs.send(EMAILJS_SERVICE_ID, EMAILJS_BETA_TEMPLATE_ID, { to_email: email, subject: "You're Invited to Teticoin Beta Pro 🎉" }, EMAILJS_PUBLIC_KEY);
           setInviteMsg({ ok: true, text: `✅ Invite email sent to ${email}. Beta Pro activates automatically when they sign up.` });
         } else {
           setInviteMsg({ ok: true, text: `✅ ${email} added to beta list. (Tell them to sign up at teticoin.com)` });
@@ -9665,14 +9665,14 @@ export default function App() {
 
         {/* ── Beta Pro Welcome Modal ── */}
         {showBetaWelcome && (
-          <div style={{position:"fixed",inset:0,zIndex:900,background:"rgba(26,10,20,.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{position:"fixed",inset:0,zIndex:900,background:"rgba(26,10,20,.65)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
             {/* Confetti canvas */}
             <canvas id="beta-confetti" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:1}}
               ref={el=>{
                 if(!el||el._started) return; el._started=true;
                 el.width=window.innerWidth; el.height=window.innerHeight;
-                const cols=["#E91E8C","#FF4FB8","#16A34A","#22C55E","#F5A623","#3B82F6","#A855F7","#fff"];
-                const pts=Array.from({length:120},()=>({
+                const cols=["#E91E8C","#FF4FB8","#9D50FF","#F5A623","#00E5FF","#fff","#FFD700"];
+                const pts=Array.from({length:140},()=>({
                   x:Math.random()*el.width,y:-10-Math.random()*200,
                   vx:(Math.random()-.5)*5,vy:Math.random()*4+2,
                   col:cols[Math.floor(Math.random()*cols.length)],
@@ -9692,25 +9692,51 @@ export default function App() {
                 draw();
               }}/>
             {/* Modal */}
-            <div style={{background:"#fff",borderRadius:24,padding:"36px 32px",maxWidth:420,width:"100%",textAlign:"center",boxShadow:"0 24px 80px rgba(26,10,20,.25)",animation:"fadeIn .3s ease",position:"relative",zIndex:2}}>
-              <div style={{width:72,height:72,borderRadius:20,background:"linear-gradient(135deg,#16A34A,#22C55E)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
-                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div style={{background:"#fff",borderRadius:28,padding:"40px 32px 32px",maxWidth:440,width:"100%",textAlign:"center",boxShadow:"0 32px 80px rgba(233,30,140,.2),0 8px 32px rgba(0,0,0,.15)",animation:"fadeIn .3s ease",position:"relative",zIndex:2,overflow:"hidden"}}>
+              {/* Pink top glow strip */}
+              <div style={{position:"absolute",top:0,left:0,right:0,height:4,background:"linear-gradient(90deg,#FF4FB8,#9D50FF,#E91E8C)"}}/>
+              {/* Hamster + icon */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:16}}>
+                <Ham size={40}/>
+                <div style={{width:40,height:40,borderRadius:12,background:"linear-gradient(135deg,#FF4FB8,#9D50FF)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
               </div>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,color:"#15803D",marginBottom:8}}>
-                Welcome to Beta Pro!
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:26,background:"linear-gradient(135deg,#E91E8C,#9D50FF)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6}}>
+                You're in! 🎉
               </div>
-              <div style={{fontSize:14,color:"#166534",fontWeight:600,marginBottom:6}}>
-                You've been granted Beta Pro access
+              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:15,color:"#0A0A0F",marginBottom:4}}>
+                Welcome to Teticoin Beta Pro
               </div>
-              <div style={{fontSize:13,color:"#6B7280",lineHeight:1.7,marginBottom:24}}>
-                Enjoy full Pro features — unlimited sessions, up to 200 participants, groups, custom coin labels, and more. Your access is active for <strong>90 days</strong>.
+              <div style={{fontSize:13,color:"#6B7280",lineHeight:1.7,marginBottom:20}}>
+                You've been personally selected as an early tester. Enjoy full Pro access — completely free for <strong style={{color:"#E91E8C"}}>90 days</strong>.
               </div>
-              <div style={{background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:12,padding:"12px 16px",marginBottom:24,fontSize:12,color:"#166534",fontWeight:500}}>
-                Have feedback? We'd love to hear it — reach us at <strong>hi.tetikus@gmail.com</strong>
+              {/* Features list */}
+              <div style={{background:"#FFF0F7",border:"1px solid rgba(233,30,140,.15)",borderRadius:16,padding:"16px 18px",marginBottom:20,textAlign:"left"}}>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:11,color:"#E91E8C",letterSpacing:1.5,textTransform:"uppercase",marginBottom:12}}>What you unlock</div>
+                {[
+                  ["🚀","Unlimited sessions","No cap on how many you run"],
+                  ["👥","Unlimited participants","Bring in the whole room"],
+                  ["🏆","Live leaderboard","Push rankings to everyone's screen"],
+                  ["🎨","Custom coin labels","Name each award button your way"],
+                  ["👤","Coinmaster mode","Let a co-host award coins too"],
+                  ["📊","Full session history","Review every coin ever awarded"],
+                ].map(([icon,title,sub])=>(
+                  <div key={title} style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:10}}>
+                    <span style={{fontSize:15,flexShrink:0,marginTop:1}}>{icon}</span>
+                    <div>
+                      <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:"#0A0A0F"}}>{title}</div>
+                      <div style={{fontSize:11,color:"#9CA3AF"}}>{sub}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{fontSize:11,color:"#9CA3AF",marginBottom:20}}>
+                Your feedback helps shape Teticoin — reach us at <strong style={{color:"#E91E8C"}}>hi.tetikus@gmail.com</strong>
               </div>
               <button onClick={()=>setShowBetaWelcome(false)}
-                style={{width:"100%",padding:"14px 0",background:"linear-gradient(135deg,#16A34A,#22C55E)",border:"none",borderRadius:13,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer"}}>
-                Start exploring →
+                style={{width:"100%",padding:"14px 0",background:"linear-gradient(135deg,#FF4FB8,#E91E8C)",border:"none",borderRadius:14,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:15,color:"#fff",cursor:"pointer",boxShadow:"0 6px 20px rgba(233,30,140,.35)"}}>
+                Let's go! →
               </button>
             </div>
           </div>
