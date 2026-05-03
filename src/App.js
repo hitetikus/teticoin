@@ -6944,10 +6944,9 @@ ${viewOnly?"":"<script>window.onload=function(){window.print();}<\/script>"}
 
 function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount=0, maxPax=0, trainer=null, onUpgrade, onClose }) {
   const [cancelConfirm, setCancelConfirm] = useState(false);
-  // Always fetch fresh planExpiry from Firebase on mount — the prop may be stale
   const [planExpiry, setPlanExpiry_] = useState(planExpiryProp);
   const [expiryLoading, setExpiryLoading] = useState(true);
-  const [storedInvoices, setStoredInvoices] = useState(null); // null = loading
+  const [storedInvoices, setStoredInvoices] = useState(null); // null=loading, []+=loaded
   useEffect(() => {
     async function fetchBillingData() {
       try {
@@ -6960,20 +6959,18 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
           getDoc(doc(db, "users", uid, "data", "planExpiry")),
           getDoc(doc(db, "users", uid, "data", "invoices")),
         ]);
-        if (exSnap.exists()) {
-          const val = exSnap.data().value;
-          if (val) setPlanExpiry_(val);
+        if (exSnap.exists() && exSnap.data().value) {
+          setPlanExpiry_(exSnap.data().value);
         } else if (planExpiryProp) {
           setPlanExpiry_(planExpiryProp);
         }
         if (invSnap.exists()) {
           const invs = invSnap.data().value || [];
-          // Sort newest first
-          setStoredInvoices([...invs].reverse());
+          setStoredInvoices([...invs].reverse()); // newest first
         } else {
           setStoredInvoices([]);
         }
-      } catch(e) { console.error("BillingPage fetch error:", e); setStoredInvoices([]); }
+      } catch(e) { console.error("BillingPage fetch:", e); setStoredInvoices([]); }
       setExpiryLoading(false);
     }
     fetchBillingData();
@@ -7002,11 +6999,10 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
   const renewLink = plan==="proY"
     ? "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
     : "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL";
-  // Build invoice list — prefer stored invoices (from Firestore), fall back to computed for legacy accounts
+  // Build invoice list — prefer stored invoices (appended on each payment), fall back to computed for legacy
   const invoices = (() => {
     if (isFree || isBetaPlan) return [];
-    // If stored invoices loaded and non-empty, use them
-    if (storedInvoices && storedInvoices.length > 0) return storedInvoices;
+    if (storedInvoices && storedInvoices.length > 0) return storedInvoices; // newest first
     // Legacy fallback: derive single invoice from planExpiry
     if (!planExpiry) return [];
     const isYearly = plan === "proY";
@@ -7014,7 +7010,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
     const refExpiry = new Date(planExpiry);
     const payDate = new Date(refExpiry);
     payDate.setDate(payDate.getDate() - periodDays);
-    return [{ date: payDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid", expiry:expiryLabel }];
+    return [{ date: payDate.toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}), amount:pd.price, status:"Paid", expiry:expiryLabel, billing: isYearly ? "yearly" : "monthly" }];
   })();
 
   return (
@@ -7096,7 +7092,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                         border:`1.5px solid ${isExpired||isExpiringSoon?"transparent":PINK+"66"}`,
                         borderRadius:99,fontSize:12,fontWeight:500,
                         color:isExpired||isExpiringSoon?"#fff":PINK,
-                        cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>
+                        cursor:"pointer",fontFamily:"Poppins,sans-serif",border:"none"}}>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                       {isExpired?"Reactivate plan":"Renew for next month"} — {pd.price}
                     </button>
@@ -7252,7 +7248,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                     onMouseOut={e=>e.currentTarget.style.background="#fff"}>
                     <div>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:14,color:TEXT}}>{inv.date}</div>
-                      <div style={{fontSize:11,color:SUB,marginTop:1}}>{inv.billing ? ("Pro · " + inv.billing) : (pd.name + " · " + pd.renewal)}</div>
+                      <div style={{fontSize:11,color:SUB,marginTop:1}}>{"Pro · " + (inv.billing || pd.renewal)}</div>
                     </div>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,textAlign:"right"}}>{inv.amount}</div>
                     <div style={{textAlign:"center"}}>
@@ -7315,7 +7311,7 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                     onMouseOut={e=>e.currentTarget.style.background="#fff"}>
                     <div>
                       <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:14,color:TEXT}}>{inv.date}</div>
-                      <div style={{fontSize:11,color:SUB,marginTop:1}}>{inv.billing ? ("Pro · " + inv.billing) : (pd.name + " · " + pd.renewal)}</div>
+                      <div style={{fontSize:11,color:SUB,marginTop:1}}>{"Pro · " + (inv.billing || pd.renewal)}</div>
                     </div>
                     <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:14,color:TEXT,textAlign:"right"}}>{inv.amount}</div>
                     <div style={{textAlign:"center"}}>
@@ -8782,28 +8778,8 @@ export default function App() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!trainer) return; // wait until logged in
-    const params = new URLSearchParams(window.location.search);
-    const payment = params.get("payment");
-    const planParam = params.get("plan");
-    if (payment === "success" && planParam) {
-      const planMap = {
-        pro_monthly:  "pro",
-        pro_yearly:   "proY",
-        one_time:     "oneTime",
-      };
-      const newPlan = planMap[planParam];
-      if (newPlan) {
-        setPlan(newPlan);
-        ss("plan", newPlan);
-        window.history.replaceState({}, "", window.location.pathname);
-        setScreen("home");
-      }
-    } else if (payment === "cancel") {
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-  }, [trainer]);
+  // Payment return is handled fully inside the onAuthStateChanged useEffect below
+  // (via handlePaymentReturn) — do NOT add a separate useEffect here that wipes the URL
 
   // ── Handle /join/CODE, /claim/TOKEN, /login URLs ──
   useEffect(() => {
@@ -8953,17 +8929,15 @@ export default function App() {
             const planVal = newPlan === "pro" ? "pro" : newPlan;
             setPlan(planVal);
             setPlanExpiry(newExpiry);
-            // Save plan first
             await ss("plan", planVal);
-            // Save expiry — primary path via ss(), plus direct Firestore write as safety net
             await ss("planExpiry", newExpiry);
             try {
               const { getFirestore, doc, setDoc, getDoc } = await import("firebase/firestore");
               const db2 = getFirestore();
               const uid = user.uid;
-              // Write expiry
+              // Write expiry (double-write safety net)
               await setDoc(doc(db2, "users", uid, "data", "planExpiry"), { value: newExpiry, updatedAt: Date.now() });
-              // Append invoice record to stored invoice history
+              // Append invoice record to Firestore invoice history
               const isYearly = planVal === "proY";
               const invSnap = await getDoc(doc(db2, "users", uid, "data", "invoices"));
               const existingInvs = invSnap.exists() ? (invSnap.data().value || []) : [];
@@ -8979,8 +8953,8 @@ export default function App() {
               };
               await setDoc(doc(db2, "users", uid, "data", "invoices"), { value: [...existingInvs, newInv], updatedAt: Date.now() });
             } catch(e) { console.error("payment save error:", e); }
-            setShowPaymentSuccess({ plan: planVal, expiry: newExpiry }); // show success modal
-          }, exp); // pass current expiry for stacking
+            setShowPaymentSuccess({ plan: planVal, expiry: newExpiry });
+          }, exp); // pass current expiry for stacking (+30 days on renewal)
 
           // ── Restore the correct screen based on the current URL path ──
           const restorePath = window.location.pathname;
