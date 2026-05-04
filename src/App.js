@@ -247,11 +247,11 @@ function playSound(big, negative=false) {
         const o = ctx.createOscillator(); o.connect(g);
         o.frequency.value = f; o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.2);
       });
-      g.gain.setValueAtTime(.85,ctx.currentTime); g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.55);
+      g.gain.setValueAtTime(.14,ctx.currentTime); g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.55);
     } else {
       const o = ctx.createOscillator(); o.connect(g);
       o.frequency.setValueAtTime(600,ctx.currentTime); o.frequency.exponentialRampToValueAtTime(900,ctx.currentTime+.1);
-      g.gain.setValueAtTime(.7,ctx.currentTime); g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.18);
+      g.gain.setValueAtTime(.08,ctx.currentTime); g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.18);
       o.start(); o.stop(ctx.currentTime+.18);
     }
   } catch {}
@@ -1907,9 +1907,12 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
   function playCoinSound(gained) {
     try {
-      const ctx = getAudioCtx();
+      // Recreate context if closed — can happen after long background/sleep on mobile
+      if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+        try { audioCtxRef.current = new (window.AudioContext||window.webkitAudioContext)(); } catch(e) {}
+      }
+      const ctx = audioCtxRef.current;
       if (!ctx) return;
-      // Resume must complete before scheduling — use promise chain
       const play = () => {
         const g = ctx.createGain();
         g.connect(ctx.destination);
@@ -1941,11 +1944,8 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.42);
         }
       };
-      if (ctx.state === "suspended") {
-        ctx.resume().then(play).catch(()=>{});
-      } else {
-        play();
-      }
+      // Always resume — state may be stale after phone sleep/background
+      ctx.resume().then(play).catch(()=>{});
     } catch(e) {}
   }
 
@@ -1953,11 +1953,19 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   playCoinSoundRef.current = playCoinSound;
   useEffect(() => {
     const unlock = () => { getAudioCtx(); };
+    // Resume AudioContext when user returns to tab / unlocks phone
+    const handleVisible = () => {
+      if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
+        audioCtxRef.current.resume().catch(()=>{});
+      }
+    };
     window.addEventListener("touchstart", unlock, {once:true, passive:true});
     window.addEventListener("click", unlock, {once:true});
+    document.addEventListener("visibilitychange", handleVisible);
     return () => {
       window.removeEventListener("touchstart", unlock);
       window.removeEventListener("click", unlock);
+      document.removeEventListener("visibilitychange", handleVisible);
     };
   }, []);
 
@@ -8521,9 +8529,9 @@ function SuperAdminDashboard({ onClose }) {
                   <div className="tc-card-tooltip">{tooltip}</div>
                 </div>
               )}
-              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
-                {icon && <span style={{color:color||SUB,flexShrink:0,alignSelf:"flex-start",marginTop:"1px"}}>{icon}</span>}
-                <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,lineHeight:"14px"}}>{label}</div>
+              <div style={{display:"flex",alignItems:"flex-start",gap:6,marginBottom:4}}>
+                {icon && <span style={{color:color||SUB,flexShrink:0,marginTop:1}}>{icon}</span>}
+                <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,lineHeight:1.25}}>{label}</div>
               </div>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:28,color:color||TEXT,lineHeight:1}}>{value}</div>
               {sub && <div style={{fontSize:11,color:SUB,marginTop:2}}>{sub}</div>}
@@ -8645,8 +8653,8 @@ function SuperAdminDashboard({ onClose }) {
                       <Card label="Coinmaster Sessions" value={usageData.totalCoinmastersEnabled.toLocaleString()} sub={usageData.totalSessions?`${Math.round(usageData.totalCoinmastersEnabled/usageData.totalSessions*100)}% of sessions had co-host`:""} color="#0891B2"
                         tooltip="Sessions where the Coinmaster co-host feature was enabled. Shows how widely the delegation feature is being used."
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>}/>
-                      <Card label="Coinmaster Codes Assigned" value={usageData.totalCoinmastersAssigned.toLocaleString()} sub={usageData.totalSessions?`avg ${(usageData.totalCoinmastersAssigned/usageData.totalSessions).toFixed(2)}/session`:""} color="#0891B2"
-                        tooltip="Total CM codes ever assigned to co-hosts. Can exceed Coinmaster Sessions if codes were refreshed mid-session."
+                      <Card label="Total Coinmaster Codes" value={usageData.totalCoinmastersAssigned.toLocaleString()} sub={usageData.totalSessions?`avg ${(usageData.totalCoinmastersAssigned/usageData.totalSessions).toFixed(2)}/session`:""} color="#0891B2"
+                        tooltip="Total CM codes ever generated. Can exceed Coinmaster Sessions if codes were refreshed mid-session."
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}/>
                       <Card label="Avg Session Duration" value={usageData.avgDuration!=null?`${usageData.avgDuration} min`:"N/A"} sub={usageData.avgDuration!=null?"based on sessions with end timestamp":"no end timestamps recorded yet"} color={TEXT}
                         tooltip="Average total active time per session. Sums all live segments (go-live → go-offline) per session, then averages across sessions with at least one closed segment."
