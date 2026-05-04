@@ -8507,16 +8507,32 @@ function SuperAdminDashboard({ onClose }) {
             });
           })();
 
-          const Card = ({label, value, sub, color="#0A0A0F", icon}) => (
-            <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px 20px",display:"flex",flexDirection:"column",gap:4}}>
-              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
-                {icon && <span style={{color:color||SUB}}>{icon}</span>}
-                <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1}}>{label}</div>
+          const Card = ({label, value, sub, color="#0A0A0F", icon, tooltip}) => {
+            const [tip, setTip] = React.useState(false);
+            return (
+              <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px 20px",display:"flex",flexDirection:"column",gap:4,position:"relative"}}>
+                {tooltip && (
+                  <div style={{position:"absolute",top:10,right:10}}
+                    onMouseEnter={()=>setTip(true)} onMouseLeave={()=>setTip(false)}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.2" strokeLinecap="round" style={{display:"block",cursor:"default",opacity:.5}}>
+                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    {tip && (
+                      <div style={{position:"absolute",top:18,right:0,width:180,background:"#1A1A2E",color:"#fff",fontSize:10,lineHeight:1.55,borderRadius:8,padding:"8px 10px",zIndex:999,pointerEvents:"none",boxShadow:"0 4px 16px rgba(0,0,0,.18)",fontFamily:"DM Sans,sans-serif",fontWeight:400}}>
+                        {tooltip}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div style={{display:"flex",alignItems:"flex-start",gap:6,marginBottom:4}}>
+                  {icon && <span style={{color:color||SUB,flexShrink:0,marginTop:1}}>{icon}</span>}
+                  <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,lineHeight:1.25}}>{label}</div>
+                </div>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:28,color:color||TEXT,lineHeight:1}}>{value}</div>
+                {sub && <div style={{fontSize:11,color:SUB,marginTop:2}}>{sub}</div>}
               </div>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:28,color:color||TEXT,lineHeight:1}}>{value}</div>
-              {sub && <div style={{fontSize:11,color:SUB,marginTop:2}}>{sub}</div>}
-            </div>
-          );
+            );
+          };
 
           const BarChart = ({data, color, maxVal, title, emptyMsg}) => (
             <div style={{background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"18px 20px"}}>
@@ -8619,26 +8635,34 @@ function SuperAdminDashboard({ onClose }) {
                     {/* Row 1: core session numbers */}
                     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:12}}>
                       <Card label="Total Sessions" value={usageData.totalSessions.toLocaleString()} color={PINK}
+                        tooltip="Total number of sessions ever created across all hosts. Includes archived sessions."
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}/>
                       <Card label="Total Participants" value={usageData.totalParticipants.toLocaleString()} sub={usageData.totalSessions?`avg ${(usageData.totalParticipants/usageData.totalSessions).toFixed(1)}/session`:""} color={PURPLE}
+                        tooltip="Sum of all participants across all sessions. One person joining 3 sessions counts as 3. The avg shows typical room size."
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>}/>
                       <Card label="Total Coins Awarded" value={usageData.totalCoins.toLocaleString()} color="#F59E0B"
+                        tooltip="Total coin points awarded across all sessions and all participants. Reflects overall engagement volume on the platform."
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}/>
                     </div>
                     {/* Row 2: coinmaster + groups + duration */}
                     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:12}}>
                       <Card label="Coinmaster Sessions" value={usageData.totalCoinmastersEnabled.toLocaleString()} sub={usageData.totalSessions?`${Math.round(usageData.totalCoinmastersEnabled/usageData.totalSessions*100)}% of sessions had co-host`:""} color="#0891B2"
+                        tooltip="Number of sessions where the Coinmaster (co-host) feature was enabled. Shows adoption of the delegation feature."
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>}/>
                       <Card label="Total Coinmaster Codes" value={usageData.totalCoinmastersAssigned.toLocaleString()} sub={usageData.totalSessions?`avg ${(usageData.totalCoinmastersAssigned/usageData.totalSessions).toFixed(2)}/session`:""} color="#0891B2"
+                        tooltip="Total CM codes ever generated. A session can generate multiple codes over its lifetime — higher than Coinmaster Sessions means codes were refreshed."
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}/>
                       <Card label="Avg Session Duration" value={usageData.avgDuration!=null?`${usageData.avgDuration} min`:"N/A"} sub={usageData.avgDuration!=null?"based on sessions with end timestamp":"no end timestamps recorded yet"} color={TEXT}
+                        tooltip="Average total active time per session. Calculated by summing all live segments (go-live → go-offline) and averaging across sessions that have at least one closed segment."
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}/>
                     </div>
                     {/* Row 3: groups + avg coin/participant */}
                     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:12}}>
                       <Card label="Total Groups Created" value={usageData.totalGroups.toLocaleString()} sub={usageData.totalSessions?`avg ${(usageData.totalGroups/usageData.totalSessions).toFixed(1)}/session`:""} color={GREEN}
+                        tooltip="Total group/team objects created across all sessions. Higher avg means hosts are regularly using the team competition feature."
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}/>
                       <Card label="Avg Coin per Participant" value={usageData.totalParticipants?Math.round(usageData.totalCoins/usageData.totalParticipants).toLocaleString():"—"} sub="average across all sessions" color={GREEN}
+                        tooltip="Total coins awarded ÷ total participants. A higher number means hosts are awarding frequently — a signal of active, engaged sessions."
                         icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>}/>
                     </div>
 
