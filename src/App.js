@@ -8093,6 +8093,10 @@ function SuperAdminDashboard({ onClose }) {
     .tc-admin-invite-panel { display:none; }
     .tc-admin-invite-toggle { display:flex; }
     .tc-admin-usage-wrap { padding:20px 16px; max-width:960px; margin:0 auto; box-sizing:border-box; width:100%; }
+    .tc-admin-hdr-center { display:none; }
+    .tc-admin-hdr-right { display:flex; flex-direction:column; align-items:flex-end; gap:1px; margin-left:auto; z-index:1; }
+    .tc-admin-hdr-right .hdr-title { font-family:'Plus Jakarta Sans',sans-serif; font-weight:900; font-size:16px; color:#0A0A0F; display:flex; align-items:center; gap:6px; }
+    .tc-admin-hdr-right .hdr-email-row { display:flex; align-items:center; gap:4px; }
     @media(min-width:900px) {
       .tc-admin-wrap { flex-direction:row; }
       .tc-admin-sidebar { display:flex; flex-direction:column; width:200px; flex-shrink:0; border-right:1px solid ${BORDER}; background:#fff; padding:16px 0; overflow-y:auto; }
@@ -8102,6 +8106,10 @@ function SuperAdminDashboard({ onClose }) {
       .tc-admin-invite-panel { display:block; width:280px; flex-shrink:0; }
       .tc-admin-invite-toggle { display:none; }
       .tc-admin-usage-wrap { padding:24px; }
+      .tc-admin-hdr-center { display:flex; position:absolute; left:0; right:0; align-items:center; justify-content:center; gap:8px; pointer-events:none; }
+      .tc-admin-hdr-right { flex-direction:row; align-items:center; gap:6px; }
+      .tc-admin-hdr-right .hdr-title { display:none; }
+      .tc-admin-hdr-right .hdr-email-row { flex-direction:row; }
     }
   `;
 
@@ -8115,19 +8123,27 @@ function SuperAdminDashboard({ onClose }) {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
         </button>
-        <div style={{position:"absolute",left:0,right:0,display:"flex",alignItems:"center",justifyContent:"center",gap:8,pointerEvents:"none"}}>
+        {/* Desktop: centred title */}
+        <div className="tc-admin-hdr-center">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:"#0A0A0F"}}>Admin Dashboard</div>
+          <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:18,color:"#0A0A0F"}}>Admin Dashboard</span>
         </div>
-        {superadminEmail && (
-          <div style={{marginLeft:"auto",zIndex:1,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:1}}>
-            <div style={{display:"flex",alignItems:"center",gap:4}}>
+        {/* Right side — mobile: title + email stacked; desktop: email row only */}
+        <div className="tc-admin-hdr-right">
+          {/* Mobile title row */}
+          <div className="hdr-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Admin Dashboard
+          </div>
+          {/* Email row — shown on both, styled differently */}
+          {superadminEmail && (
+            <div className="hdr-email-row">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               <span style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:600,fontSize:11,color:"rgba(255,255,255,0.75)"}}>Superadmin</span>
+              <span style={{fontSize:11,fontWeight:700,color:"#fff"}}>{superadminEmail}</span>
             </div>
-            <span style={{fontSize:11,fontWeight:700,color:"#fff"}}>{superadminEmail}</span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Toast */}
@@ -8224,20 +8240,18 @@ function SuperAdminDashboard({ onClose }) {
           {showInvitePanel && showInviteMobile && (
             <div className="tc-admin-invite-toggle" style={{padding:"16px",background:"#FAFAFA",borderBottom:`1px solid ${BORDER}`}}>
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Invite to Beta Pro</div>
-              <div style={{fontSize:12,color:SUB,marginBottom:10,lineHeight:1.6}}>Enter their email. Beta Pro activates automatically when they sign up or log in at <strong style={{color:TEXT}}>teticoin.com</strong>.</div>
-              <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{borderRadius:999}}/>
-                <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
-                  style={{padding:"10px 0",background:inviteBusy||!inviteEmail.trim()?"#E5E7EB":GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:inviteBusy||!inviteEmail.trim()?SUB:"#fff",cursor:inviteBusy||!inviteEmail.trim()?"not-allowed":"pointer",width:"100%"}}>
-                  {inviteBusy?"Sending…":"Send Invite"}
-                </button>
-              </div>
+              <div style={{fontSize:12,color:SUB,marginBottom:12,lineHeight:1.6}}>Beta Pro activates automatically when they sign up or log in at <strong style={{color:TEXT}}>teticoin.com</strong>.</div>
+              <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{borderRadius:999,width:"100%",marginBottom:8,display:"block"}}/>
+              <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
+                style={{padding:"11px 0",background:inviteBusy||!inviteEmail.trim()?"#E5E7EB":GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:inviteBusy||!inviteEmail.trim()?SUB:"#fff",cursor:inviteBusy||!inviteEmail.trim()?"not-allowed":"pointer",width:"100%",display:"block"}}>
+                {inviteBusy?"Sending…":"Send Invite"}
+              </button>
               {inviteMsg && <div style={{fontSize:12,color:inviteMsg.ok?"#16A34A":"#B45309",lineHeight:1.5,padding:"8px 12px",background:inviteMsg.ok?"#F0FDF4":"#FFFBEB",borderRadius:8,marginTop:8}}>{inviteMsg.text}</div>}
               {pendingInvites.length > 0 && (
-                <div style={{marginTop:14}}>
-                  <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Pending Invites ({pendingInvites.length})</div>
+                <div style={{marginTop:12}}>
+                  <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Pending ({pendingInvites.length})</div>
                   {pendingInvites.slice(0,3).map(inv => (
-                    <div key={inv.email} style={{fontSize:12,color:"#92400E",background:"#FFFBEB",borderRadius:8,padding:"8px 10px",marginBottom:6}}>{inv.email} · ⏳ not signed up</div>
+                    <div key={inv.email} style={{fontSize:12,color:"#92400E",background:"#FFFBEB",borderRadius:8,padding:"8px 10px",marginBottom:6,wordBreak:"break-all"}}>{inv.email} · ⏳ not signed up</div>
                   ))}
                 </div>
               )}
