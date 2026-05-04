@@ -8118,7 +8118,7 @@ function SuperAdminDashboard({ onClose }) {
       <style>{CSS}{adminCSS}</style>
 
       {/* Header */}
-      <div style={{background:"linear-gradient(90deg,#ffffff 0%,#ffffff 35%,#EF4444 75%,#B91C1C 100%)",borderBottom:"1px solid rgba(239,68,68,0.2)",padding:"0 20px",height:64,display:"flex",alignItems:"center",position:"relative",flexShrink:0}}>
+      <div style={{background:"linear-gradient(90deg,#FECACA 0%,#FCA5A5 30%,#EF4444 70%,#B91C1C 100%)",borderBottom:"1px solid rgba(239,68,68,0.2)",padding:"0 20px",height:64,display:"flex",alignItems:"center",position:"relative",flexShrink:0}}>
         <button onClick={onClose} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",cursor:"pointer",color:"#374151",fontFamily:"Plus Jakarta Sans,sans-serif",fontSize:14,fontWeight:600,padding:0,zIndex:1,flexShrink:0}}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back
@@ -8228,7 +8228,7 @@ function SuperAdminDashboard({ onClose }) {
           return (<div>
           {/* Mobile-only: show invite toggle button for Beta tab */}
           {showInvitePanel && (
-            <div className="tc-admin-invite-toggle" style={{padding:"10px 16px",background:SOFT,borderBottom:`1px solid ${BORDER}`}}>
+            <div className="tc-admin-invite-toggle" style={{padding:"10px 16px 14px",background:SOFT,borderBottom:`1px solid ${BORDER}`,margin:"-20px -24px 0",width:"calc(100% + 48px)"}}>
               <button onClick={()=>setShowInviteMobile(v=>!v)}
                 style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:showInviteMobile?GRAD:"#fff",border:`1.5px solid ${PINK}`,borderRadius:999,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:12,color:showInviteMobile?"#fff":PINK,cursor:"pointer",width:"100%",justifyContent:"center"}}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
@@ -8238,14 +8238,18 @@ function SuperAdminDashboard({ onClose }) {
           )}
           {/* Mobile invite panel — shows when toggle is open */}
           {showInvitePanel && showInviteMobile && (
-            <div className="tc-admin-invite-toggle" style={{padding:"16px",background:"#FAFAFA",borderBottom:`1px solid ${BORDER}`}}>
-              <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Invite to Beta Pro</div>
-              <div style={{fontSize:12,color:SUB,marginBottom:12,lineHeight:1.6}}>Beta Pro activates automatically when they sign up or log in at <strong style={{color:TEXT}}>teticoin.com</strong>.</div>
-              <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{borderRadius:999,width:"100%",marginBottom:8,display:"block"}}/>
-              <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
-                style={{padding:"11px 0",background:inviteBusy||!inviteEmail.trim()?"#E5E7EB":GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:inviteBusy||!inviteEmail.trim()?SUB:"#fff",cursor:inviteBusy||!inviteEmail.trim()?"not-allowed":"pointer",width:"100%",display:"block"}}>
-                {inviteBusy?"Sending…":"Send Invite"}
-              </button>
+            <div className="tc-admin-invite-toggle" style={{padding:"16px 16px 20px",background:SOFT,borderBottom:`1px solid ${BORDER}`,margin:"-20px -24px 0",width:"calc(100% + 48px)",flexDirection:"column"}}>
+              <div style={{textAlign:"center",marginBottom:12}}>
+                <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Invite to Beta Pro</div>
+                <div style={{fontSize:12,color:SUB,lineHeight:1.6}}>Beta Pro activates automatically when they sign up or log in at <strong style={{color:TEXT}}>teticoin.com</strong>.</div>
+              </div>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <Inp placeholder="Email address to invite" value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendBetaInvite()} style={{borderRadius:999,flex:1,minWidth:0}}/>
+                <button onClick={sendBetaInvite} disabled={inviteBusy||!inviteEmail.trim()}
+                  style={{padding:"11px 16px",background:inviteBusy||!inviteEmail.trim()?"#E5E7EB":GRAD,border:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:13,color:inviteBusy||!inviteEmail.trim()?SUB:"#fff",cursor:inviteBusy||!inviteEmail.trim()?"not-allowed":"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
+                  {inviteBusy?"Sending…":"Send Invite"}
+                </button>
+              </div>
               {inviteMsg && <div style={{fontSize:12,color:inviteMsg.ok?"#16A34A":"#B45309",lineHeight:1.5,padding:"8px 12px",background:inviteMsg.ok?"#F0FDF4":"#FFFBEB",borderRadius:8,marginTop:8}}>{inviteMsg.text}</div>}
               {pendingInvites.length > 0 && (
                 <div style={{marginTop:12}}>
@@ -8258,7 +8262,7 @@ function SuperAdminDashboard({ onClose }) {
             </div>
           )}
           {/* Layout: table left, invite panel right (desktop only) */}
-          <div style={{display:"flex",gap:24,alignItems:"start"}}>
+          <div style={{display:"flex",gap:24,alignItems:"start",marginTop:showInvitePanel?16:0}}>
             {/* Main table column */}
             <div style={{flex:1,minWidth:0}}>
           {/* Search bar */}
