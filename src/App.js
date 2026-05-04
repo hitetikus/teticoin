@@ -4579,7 +4579,19 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
     const code = ses.code;
     async function setOffline() {
       try {
-        await ssSessionPatch(ses.code, { live: false, lastHostPing: 0 });
+        // Close the open liveSegment by reading current session and patching
+        const current = await sgSession(ses.code);
+        if (current) {
+          const segs = current.liveSegments || [];
+          if (segs.length && segs[segs.length-1].end == null) {
+            segs[segs.length-1].end = Date.now();
+            await ssSessionPatch(ses.code, { live: false, lastHostPing: 0, liveSegments: segs });
+          } else {
+            await ssSessionPatch(ses.code, { live: false, lastHostPing: 0 });
+          }
+        } else {
+          await ssSessionPatch(ses.code, { live: false, lastHostPing: 0 });
+        }
       } catch(e) {}
     }
     // On true tab close: stamp lastHostPing=0 synchronously via sendBeacon so
@@ -4650,14 +4662,14 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
     } else {
       // Going live — also unarchive if needed
       if (ses.archived) {
-        mut(s=>{s.live=true; s.archived=false;});
+        mut(s=>{s.live=true; s.archived=false; if(!s.liveSegments) s.liveSegments=[]; s.liveSegments.push({start:Date.now(),end:null});});
         notify("Session unarchived and now Live");
       } else {
-        mut(s=>{s.live=true;}); notify("Session is now Live");
+        mut(s=>{s.live=true; if(!s.liveSegments) s.liveSegments=[]; s.liveSegments.push({start:Date.now(),end:null});}); notify("Session is now Live");
       }
     }
   }
-  function goOffline() { mut(s=>{s.live=false;}); setConfirmOffline(false); notify("Session is offline"); }
+  function goOffline() { mut(s=>{s.live=false; if(s.liveSegments?.length){const seg=s.liveSegments[s.liveSegments.length-1]; if(seg&&seg.end==null) seg.end=Date.now();}}); setConfirmOffline(false); notify("Session is offline"); }
   function renameSession(name) {
     const trimmed = name.trim();
     const duplicate = allSessions.some(s => s.name.toLowerCase() === trimmed.toLowerCase() && s.name.toLowerCase() !== init.name.toLowerCase());
@@ -4900,7 +4912,7 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
         }}
         onArchive={()=>{
           if(!window.confirm("Archive this session?")) return;
-          mut(s=>{s.live=false;s.archived=true;}); setShowSettings(false); onBack();
+          mut(s=>{s.live=false;s.archived=true; if(s.liveSegments?.length){const seg=s.liveSegments[s.liveSegments.length-1]; if(seg&&seg.end==null) seg.end=Date.now();}}); setShowSettings(false); onBack();
         }}
         onExport={()=>{
           triggerCsvDownload(buildParticipantsCsv(ses), `teticoin-${ses.code}-participants.csv`);
@@ -7983,10 +7995,20 @@ function SuperAdminDashboard({ onClose }) {
           hourlyActivity[d2.getHours()]++;
         }
 
-        // duration
-        if (s.startedAt && s.endedAt) {
+        // duration — sum all completed liveSegments for this session
+        if (s.liveSegments?.length) {
+          const totalMins = s.liveSegments.reduce((acc, seg) => {
+            if (seg.start && seg.end) {
+              const dur = (seg.end - seg.start) / 60000;
+              if (dur > 0 && dur < 1440) acc += dur; // ignore bad data (>24h)
+            }
+            return acc;
+          }, 0);
+          if (totalMins > 0) sessionDurations.push(totalMins);
+        } else if (s.startedAt && s.endedAt) {
+          // legacy fallback for old sessions
           const dur = (s.endedAt - s.startedAt) / 60000;
-          if (dur > 0 && dur < 1440) sessionDurations.push(dur); // ignore >24h (bad data)
+          if (dur > 0 && dur < 1440) sessionDurations.push(dur);
         }
       });
 
@@ -9986,7 +10008,7 @@ export default function App() {
     if (isFree && sessions.length >= sessionLimit) { setLimitModal("sessions"); return; }
     const code = genCode();
     const defaultCoins = await sg("defaultCoins");
-    const s = {code, name, createdAt:Date.now(), boardVisible:false, participants:[], groups:[], log:[], coinmasterEnabled:false, hostUid: _currentUid || null, ...(defaultCoins ? {otherCoins: defaultCoins} : {})};
+    const s = {code, name, createdAt:Date.now(), boardVisible:false, participants:[], groups:[], log:[], coinmasterEnabled:false, hostUid: _currentUid || null, liveSegments:[{start:Date.now(), end:null}], ...(defaultCoins ? {otherCoins: defaultCoins} : {})};
     await ssSession(code, s);
     const idx = [{code, name, date:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}), count:0}, ...sessions];
     setSessions(idx); await ss("sessions_index", idx);
