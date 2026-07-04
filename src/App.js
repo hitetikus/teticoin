@@ -1858,28 +1858,30 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       const limit = hostPlan !== "free" ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
       if (displayName.trim()) {
         // Fetch fresh session before writing to avoid overwriting recent host changes
-        const freshBase = await sgSession(init.code) || init;
-        const currentPax = (freshBase.participants||[]).length;
-        if (currentPax >= limit) { setStep("full"); setLoading && setLoading(false); return; }
-        const n = ((freshBase.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
-        const np = {id:Date.now(),name:displayName,av:mkAv(displayName),total:0,bk:{},gid:null,num:n,uid:u.uid,email:u.email||"",guestName:displayName};
-        prevTotalRef.current = 0;
-        setMyId(np.id);
-        const updated = {...freshBase,participants:[...(freshBase.participants||[]),np]};
-        setLive(updated); ssSession(init.code, updated); setStep("joined");
-        try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
-        // Write earnings entry
-        const now = Date.now();
-        import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
-          const db2 = getFirestore();
-          const ref = doc(db2,"users",u.uid,"data","earnings");
-          getDoc(ref).then(snap=>{
-            const prev = snap.exists() ? (snap.data().value||[]) : [];
-            if (!prev.find(e=>e.code===init.code)) {
-              setDoc(ref,{value:[{code:init.code,name:init.name,coins:0,joinedAt:now,lastUpdated:now},...prev],updatedAt:now});
-            }
+        ;(async()=>{
+          const freshBase = await sgSession(init.code) || init;
+          const currentPax = (freshBase.participants||[]).length;
+          if (currentPax >= limit) { setStep("full"); setLoading && setLoading(false); return; }
+          const n = ((freshBase.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+          const np = {id:Date.now(),name:displayName,av:mkAv(displayName),total:0,bk:{},gid:null,num:n,uid:u.uid,email:u.email||"",guestName:displayName};
+          prevTotalRef.current = 0;
+          setMyId(np.id);
+          const updated = {...freshBase,participants:[...(freshBase.participants||[]),np]};
+          setLive(updated); ssSession(init.code, updated); setStep("joined");
+          try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
+          // Write earnings entry
+          const now = Date.now();
+          import("firebase/firestore").then(({getFirestore,doc,getDoc,setDoc})=>{
+            const db2 = getFirestore();
+            const ref = doc(db2,"users",u.uid,"data","earnings");
+            getDoc(ref).then(snap=>{
+              const prev = snap.exists() ? (snap.data().value||[]) : [];
+              if (!prev.find(e=>e.code===init.code)) {
+                setDoc(ref,{value:[{code:init.code,name:init.name,coins:0,joinedAt:now,lastUpdated:now},...prev],updatedAt:now});
+              }
+            }).catch(()=>{});
           }).catch(()=>{});
-        }).catch(()=>{});
+        })();
         return;
       }
     }
