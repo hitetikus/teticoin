@@ -1797,6 +1797,8 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
   const isPro = hostPlan !== "free";
   const prevTotalRef = useRef(null);
+  const lastKnownMeRef = useRef(null);   // last good participant record — prevents "—" name on race drop
+  const lastRestoreRef = useRef(0);      // timestamp of last self-restore attempt (rate limit)
   const [coinFlash, setCoinFlash] = useState(null); // {pts, key}
   const [participantSoundOn, setParticipantSoundOn] = useState(false); // default muted — user taps to unmute
 
@@ -1853,14 +1855,17 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
         }
       } catch(e) {}
       // Logged-in user not yet in session — auto-join directly, no name screen needed
-      const currentPax = (init.participants||[]).length;
       const limit = hostPlan !== "free" ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
-      if (currentPax < limit && displayName.trim()) {
-        const n = ((init.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+      if (displayName.trim()) {
+        // Fetch fresh session before writing to avoid overwriting recent host changes
+        const freshBase = await sgSession(init.code) || init;
+        const currentPax = (freshBase.participants||[]).length;
+        if (currentPax >= limit) { setStep("full"); setLoading && setLoading(false); return; }
+        const n = ((freshBase.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
         const np = {id:Date.now(),name:displayName,av:mkAv(displayName),total:0,bk:{},gid:null,num:n,uid:u.uid,email:u.email||"",guestName:displayName};
         prevTotalRef.current = 0;
         setMyId(np.id);
-        const updated = {...init,participants:[...(init.participants||[]),np]};
+        const updated = {...freshBase,participants:[...(freshBase.participants||[]),np]};
         setLive(updated); ssSession(init.code, updated); setStep("joined");
         try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
         // Write earnings entry
@@ -2009,6 +2014,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       if (myId) {
         const me = (s.participants||[]).find(p => p.id === myId);
         if (me) {
+          lastKnownMeRef.current = me; // keep a fresh snapshot
           if (prevTotalRef.current !== null && me.total !== prevTotalRef.current) {
             const gained = me.total - prevTotalRef.current;
             if (soundOnRef.current) playCoinSoundRef.current(gained);
@@ -2016,6 +2022,17 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             setTimeout(() => setCoinFlash(null), 1500);
           }
           prevTotalRef.current = me.total;
+        } else if (lastKnownMeRef.current) {
+          // Participant was dropped by a concurrent host write — restore them
+          const now = Date.now();
+          if (now - lastRestoreRef.current > 10000) { // at most once per 10s
+            lastRestoreRef.current = now;
+            const restored = lastKnownMeRef.current;
+            const patched = {...s, participants: [...(s.participants||[]), restored]};
+            setLive(patched);
+            ssSession(init.code, patched);
+            return; // skip setLive(s) below
+          }
         }
       }
       setLive(s);
@@ -2056,21 +2073,23 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     }
   }
 
-  function directJoin(overrideName) {
-    const currentPax = (live.participants||[]).length;
-    const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
-    if (currentPax >= limit) { setStep("full"); return; }
+  async function directJoin(overrideName) {
     // Block host from joining their own session
     const currentUid = auth.currentUser?.uid || linkedUid || null;
     if (currentUid && live.hostUid && currentUid === live.hostUid) { setStep("hostblocked"); return; }
-    const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+    // Fetch fresh session to avoid overwriting recent host changes (race condition fix)
+    const freshBase = await sgSession(init.code) || live;
+    const currentPax = (freshBase.participants||[]).length;
+    const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
+    if (currentPax >= limit) { setStep("full"); return; }
+    const n = ((freshBase.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const joinName = overrideName || name.trim();
     const baseGuestName = name.trim() || joinName;
     const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,uid:currentUid,guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
     prevTotalRef.current = 0;
-    const u = {...live,participants:[...(live.participants||[]),np]};
+    const u = {...freshBase,participants:[...(freshBase.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
     // Persist so refresh restores the session
     try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
@@ -2101,21 +2120,23 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
   function notMe() { setStep("newpin"); }
 
-  function setNewPin() {
+  async function setNewPin() {
     if (pin.length !== 4) return;
-    const currentPax = (live.participants||[]).length;
-    const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
-    if (currentPax >= limit) { setStep("full"); return; }
     const currentUid = auth.currentUser?.uid || linkedUid || null;
     if (currentUid && live.hostUid && currentUid === live.hostUid) { setStep("hostblocked"); return; }
-    const n = ((live.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+    // Fetch fresh session to avoid overwriting recent host changes (race condition fix)
+    const freshBase = await sgSession(init.code) || live;
+    const currentPax = (freshBase.participants||[]).length;
+    const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
+    if (currentPax >= limit) { setStep("full"); return; }
+    const n = ((freshBase.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const joinName = linkedName || name.trim();
     const baseGuestName = name.trim() || joinName;
-    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,pin,uid:(auth.currentUser?.uid || linkedUid || null),guestName:baseGuestName};
+    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,pin,uid:currentUid,guestName:baseGuestName};
     setGuestName(baseGuestName);
     setMyId(np.id);
     prevTotalRef.current = 0;
-    const u = {...live,participants:[...(live.participants||[]),np]};
+    const u = {...freshBase,participants:[...(freshBase.participants||[]),np]};
     setLive(u); ssSession(init.code, u); setStep("joined");
     try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
     if (np.uid) {
@@ -2508,7 +2529,7 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     if (step === "directjoin_new") directJoin(name.trim() + " 2");
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const me = live?.participants?.find(p => p.id === myId);
+  const me = live?.participants?.find(p => p.id === myId) || lastKnownMeRef.current;
   const _cmPids = live?.coinmasterEnabled ? (live?.coinmasterPids||[]) : [];
   const _cmUids = live?.coinmasterEnabled ? (live?.coinmasterUids||[]) : [];
   const _isCMp = (p) => _cmPids.includes(p.id) || (p.uid && _cmUids.includes(p.uid));
