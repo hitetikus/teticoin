@@ -6439,18 +6439,21 @@ function ProfilePage({ trainer, onClose, onSaved }) {
   const [err, setErr] = useState("");
   const [linkBusy, setLinkBusy] = useState(false);
   const [linked, setLinked] = useState(false);
+  const [hasPassword, setHasPassword] = useState(true);
   const [resetSent, setResetSent] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteStats, setDeleteStats] = useState(null); // null=loading, {}=loaded
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteBusy, setDeleteBusy] = useState(false);
 
-  // Check if Google is already linked
+  // Check which sign-in methods are already set up
   useEffect(() => {
     const user = auth.currentUser;
     if (user) {
       const hasGoogle = user.providerData.some(p => p.providerId === "google.com");
       setLinked(hasGoogle);
+      const hasPw = user.providerData.some(p => p.providerId === "password");
+      setHasPassword(hasPw);
     }
   }, []);
 
@@ -6485,7 +6488,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
     try {
       await sendPasswordResetEmail(auth, trainer.email, { url: "https://teticoin.com/login" });
       setResetSent(true);
-      setMsg("Password reset email sent to " + trainer.email);
+      setMsg((hasPassword ? "Password reset email sent to " : "Password setup email sent to ") + trainer.email);
     } catch(e) { setErr("Failed to send reset email."); }
   }
 
@@ -6539,11 +6542,18 @@ function ProfilePage({ trainer, onClose, onSaved }) {
 
         {/* Password reset */}
         <div style={{marginBottom:20,background:"#fff",border:`1.5px solid ${BORDER}`,borderRadius:14,padding:"16px 18px"}}>
-          <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT,marginBottom:4}}>Password</div>
-          <div style={{fontSize:12,color:SUB,marginBottom:12}}>Send a reset link to your email to change your password.</div>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+            <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:14,color:TEXT}}>Password</div>
+            <div style={{fontSize:11,fontWeight:700,color:hasPassword?GREEN:SUB}}>{hasPassword?"Set ✓":"Not set"}</div>
+          </div>
+          <div style={{fontSize:12,color:SUB,marginBottom:12}}>
+            {hasPassword
+              ? "Send a reset link to your email to change your password."
+              : "You signed up with Google and don't have a password yet. Add one so you can also sign in with your email."}
+          </div>
           <button onClick={sendReset} disabled={resetSent}
-            style={{padding:"10px 18px",background:"none",border:`1.5px solid ${BORDER}`,borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:resetSent?SUB:TEXT,cursor:resetSent?"default":"pointer"}}>
-            {resetSent?"Reset email sent ✓":"Send Password Reset Email"}
+            style={{padding:"10px 18px",background:hasPassword?"none":GRAD,border:hasPassword?`1.5px solid ${BORDER}`:"none",borderRadius:10,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:700,fontSize:13,color:resetSent?SUB:(hasPassword?TEXT:"#fff"),cursor:resetSent?"default":"pointer"}}>
+            {resetSent?"Reset email sent ✓":(hasPassword?"Send Password Reset Email":"Add Password")}
           </button>
         </div>
 
