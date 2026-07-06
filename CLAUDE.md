@@ -12,7 +12,7 @@ points to participants in real time. Participants join via QR code —
 no account or app needed. Built by Tetikus (tetikus.com.my).
 
 ## Live URLs
-- App:     https://teticoin.tetikus.com.my
+- App:     https://teticoin.com
 - Repo:    https://github.com/hitetikus/teticoin
 - Deploy:  git add . && git commit -m "update" && git push
            (Vercel auto-deploys from main branch)

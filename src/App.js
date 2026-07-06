@@ -1653,7 +1653,7 @@ function Auth({ onDone, onBack, initialView="login", resetOobCode=null }) {
         const c = await signInWithEmailAndPassword(auth, resetEmail, pass);
         onDone({ name: c.user.displayName||resetEmail.split("@")[0]||"User", email: resetEmail, uid: c.user.uid });
       } else if (view==="forgot") {
-        await sendPasswordResetEmail(auth, email, { url: "https://teticoin.tetikus.com.my/login" });
+        await sendPasswordResetEmail(auth, email, { url: "https://teticoin.com/login" });
         setView("sent");
       } else if (view==="login") {
         const c = await signInWithEmailAndPassword(auth, email, pass);
@@ -6483,7 +6483,7 @@ function ProfilePage({ trainer, onClose, onSaved }) {
   async function sendReset() {
     setErr(""); setMsg("");
     try {
-      await sendPasswordResetEmail(auth, trainer.email, { url: "https://teticoin.tetikus.com.my/login" });
+      await sendPasswordResetEmail(auth, trainer.email, { url: "https://teticoin.com/login" });
       setResetSent(true);
       setMsg("Password reset email sent to " + trainer.email);
     } catch(e) { setErr("Failed to send reset email."); }
@@ -7900,7 +7900,7 @@ function SuperAdminDashboard({ onClose }) {
 
   async function resendReset(email) {
     try {
-      await sendPasswordResetEmail(auth, email, { url: "https://teticoin.tetikus.com.my/login" });
+      await sendPasswordResetEmail(auth, email, { url: "https://teticoin.com/login" });
       setActionMsg(`✅ Password reset sent to ${email} — ask them to check spam/junk too`);
       setTimeout(() => setActionMsg(null), 6000);
     } catch(e) {
