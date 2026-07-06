@@ -195,9 +195,32 @@ Each participant has a `bk` (breakdown) object tracking coins per action type.
 - EmailJS credentials are placeholder `xxxxxxx` — needs real credentials in `.env`
 - Firebase config is hardcoded — should be moved to environment variables for production
 
-## Error screenhot
--  C:\Users\User\Desktop\teticoin\screenshot of latest error
-- i want you to see the image i put there if any, refer to the conversation (if relevant) fix and remove that screenshot image from the folder so it doesn't get mixed up with future screenshot images i'm going to put later.
+## Error screenshot
+- Screenshots are dropped directly in the project root
+  (C:\Users\User\Desktop\teticoin), filename varies (e.g.
+  "Screenshot 2026-07-06 113513.png", "smtp.png").
+- Check the project root for any image file when the user references
+  a screenshot. Look at it, use it to inform the fix/discussion, then
+  delete it once reviewed so it doesn't get mixed up with the next one.
+
+## Known gotchas
+- Firebase Auth action emails (password reset, etc.) use Firebase's
+  default Action URL unless customized in Console → Authentication →
+  Templates. This project's Firebase project has a legacy Firebase
+  Hosting association with teticoin.com, so the *default* action link
+  already points to https://teticoin.com/__/auth/action?mode=...&oobCode=...
+  even though teticoin.com's DNS now resolves to Vercel, not Firebase
+  Hosting. Vercel's catch-all rewrite (vercel.json) serves index.html
+  for any path, so that link lands on the React app with the query
+  params intact — App.js reads `?mode=resetPassword&oobCode=...` from
+  the URL (see the `resetOobCode` state in the root App component) and
+  routes to a real "set new password" screen (Auth component,
+  view==="newpassword") using verifyPasswordResetCode/confirmPasswordReset.
+- Trying to explicitly set "Customize action URL" in Firebase Console
+  currently fails with "An error occurred updating action url" — cause
+  unresolved (not a domain/SMTP/permissions issue, ruled those out).
+  Not blocking: the default link already routes correctly via the
+  in-app handler above, so this toggle isn't needed.
 
 ## Commit edit
 don't ask me about commits, just commit automatically when done
