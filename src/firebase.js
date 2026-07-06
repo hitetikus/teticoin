@@ -17,6 +17,7 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });
 
 // ── Storage helpers (drop-in replacements for artifact storage) ──
 // All data stored under users/{uid}/data/{key}
