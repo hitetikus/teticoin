@@ -3295,6 +3295,16 @@ function QRModal({ session, onClose }) {
           colorLight: "#ffffff",
           correctLevel: window.QRCode.CorrectLevel.M,
         });
+        // Some mobile browsers draw the canvas/img at a native pixel size
+        // different from the 180x180 we asked for (devicePixelRatio
+        // quirks in this old library), and the box's overflow:hidden then
+        // silently crops the top finder pattern, breaking scans. Force
+        // both possible outputs to scale-to-fit instead of native-size.
+        container.querySelectorAll("canvas, img").forEach(el => {
+          el.style.width = "180px";
+          el.style.height = "180px";
+          el.style.maxWidth = "100%";
+        });
       }
     }
     if (window.QRCode) {
