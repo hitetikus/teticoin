@@ -3249,6 +3249,10 @@ function Projector({ session, onBack }) {
 }
 
 // ── QR Share sheet ──
+const QR_BOX_SIZE = 180;
+const QR_QUIET_ZONE = 14; // white margin around the code so low-end phone cameras can find the finder patterns
+const QR_CODE_SIZE = QR_BOX_SIZE - QR_QUIET_ZONE * 2;
+
 function QRModal({ session, onClose }) {
   const [copied, setCopied] = useState("");
   const qrRef = useRef(null);
@@ -3289,20 +3293,20 @@ function QRModal({ session, onClose }) {
       if (window.QRCode) {
         new window.QRCode(container, {
           text: url,
-          width: 180,
-          height: 180,
+          width: QR_CODE_SIZE,
+          height: QR_CODE_SIZE,
           colorDark: "#E91E8C",
           colorLight: "#ffffff",
           correctLevel: window.QRCode.CorrectLevel.M,
         });
         // Some mobile browsers draw the canvas/img at a native pixel size
-        // different from the 180x180 we asked for (devicePixelRatio
-        // quirks in this old library), and the box's overflow:hidden then
+        // different from the size we asked for (devicePixelRatio quirks
+        // in this old library), and the box's overflow:hidden then
         // silently crops the top finder pattern, breaking scans. Force
         // both possible outputs to scale-to-fit instead of native-size.
         container.querySelectorAll("canvas, img").forEach(el => {
-          el.style.width = "180px";
-          el.style.height = "180px";
+          el.style.width = QR_CODE_SIZE + "px";
+          el.style.height = QR_CODE_SIZE + "px";
           el.style.maxWidth = "100%";
         });
       }
@@ -3338,7 +3342,7 @@ function QRModal({ session, onClose }) {
         <div style={{padding:"0 20px 32px"}}>
           {/* Real QR code */}
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",background:BG,borderRadius:16,padding:"24px 20px",marginBottom:16}}>
-            <div style={{width:180,height:180,background:"#fff",borderRadius:0,padding:0,border:`1px solid ${BORDER}`,boxShadow:`0 4px 20px ${PINK}15`,marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+            <div style={{width:QR_BOX_SIZE,height:QR_BOX_SIZE,background:"#fff",borderRadius:0,padding:QR_QUIET_ZONE,border:`1px solid ${BORDER}`,boxShadow:`0 4px 20px ${PINK}15`,marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
               <div ref={qrRef}/>
             </div>
             <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:900,fontSize:22,letterSpacing:6,color:PINK,marginBottom:6}}>{session.code}</div>
