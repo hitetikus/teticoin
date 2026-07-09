@@ -97,11 +97,14 @@ Navigation between pages uses onBack() prop, not React Router.
 ## Plan/subscription
 Plans: free | pro | proY | team | teamY
 Stored in Firebase: ss("plan", value)
+Only Pro is self-serve/paid via Chip. Team/Enterprise is contact-only —
+both PricingPage (App.js) and the Landing.js pricing table show it as
+"Contact us" with no public price and a mailto: link, not a payment
+link. Team/teamY plan values still exist for entitlement checks, but
+are granted manually (superadmin), never through checkout.
 Chip payment links in PAYMENT_CONFIG constant in App.js:
-  Pro Monthly:  RM 16  → pay.chip-in.asia/GyQkRcSifMzzRwqpoL
-  Pro Yearly:   RM 169 → pay.chip-in.asia/RbxCqTYWGld5bJsSKl
-  Team Monthly: RM 32  → pay.chip-in.asia/4PzNZvVfRlvVVl2N1Y
-  Team Yearly:  RM 320 → pay.chip-in.asia/X4yoJ2E6269tJoE6xt
+  Pro Monthly: RM 29  → pay.chip-in.asia/GyQkRcSifMzzRwqpoL
+  Pro Yearly:  RM 269 → pay.chip-in.asia/RbxCqTYWGld5bJsSKl
 Return URL pattern: ?payment=success&plan=pro_monthly
 Pricing still under review
 Business model still under improvement
