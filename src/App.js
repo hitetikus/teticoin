@@ -71,6 +71,32 @@ async function ssParent(uid, email, name) {
 async function sgSession(code) { return await fsGetSession(code); }
 async function ssSession(code, data) { await fsSetSession(code, data); }
 
+// Race-safe session mutation — reads the CURRENT server document inside a
+// transaction and applies fn() to it, instead of blindly overwriting from
+// this tab's possibly-stale local state. Firestore automatically retries
+// on conflict, so concurrent writes (participants joining/restoring, other
+// rapid award calls, another client's edits) can never silently clobber
+// each other. Use this instead of ssSession(code, {...stale, ...}) for any
+// read-modify-write — e.g. adding/updating a participant, awarding coins.
+// fn may return `false` to abort without writing (e.g. a capacity check
+// that only holds true against fresh data, like "session just became full").
+async function ssSessionTx(code, fn) {
+  try {
+    const { getFirestore, doc, runTransaction } = await import("firebase/firestore");
+    const db = getFirestore();
+    const ref = doc(db, "sessions", code);
+    return await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) return null;
+      const data = snap.data();
+      const updated = JSON.parse(JSON.stringify(data));
+      if (fn(updated) === false) return null;
+      tx.set(ref, updated);
+      return updated;
+    });
+  } catch(e) { console.error("ssSessionTx error", e); return null; }
+}
+
 // Partial session update — only writes the specified fields, never overwrites coin data.
 // MUST use this for heartbeat/status flags to avoid overwriting concurrent coin awards.
 async function ssSessionPatch(code, fields) {
@@ -1896,19 +1922,14 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
             // Patch uid + display name back into Firestore session in background
             ;(async()=>{
               try {
-                const freshS = await sgSession(init.code);
-                if (freshS) {
-                  const patched = {
-                    ...freshS,
-                    participants: (freshS.participants||[]).map(p =>
-                      p.id === existingByPid.id
-                        ? {...p, uid: u.uid, email: u.email||"", name: displayName, av: mkAv(displayName), guestName: p.guestName || existingByPid.name}
-                        : p
-                    )
-                  };
-                  setLive(patched);
-                  ssSession(init.code, patched);
-                }
+                const patched = await ssSessionTx(init.code, s => {
+                  s.participants = (s.participants||[]).map(p =>
+                    p.id === existingByPid.id
+                      ? {...p, uid: u.uid, email: u.email||"", name: displayName, av: mkAv(displayName), guestName: p.guestName || existingByPid.name}
+                      : p
+                  );
+                });
+                if (patched) setLive(patched);
               } catch(e) {}
             })();
             return;
@@ -1920,15 +1941,17 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       if (displayName.trim()) {
         // Fetch fresh session before writing to avoid overwriting recent host changes
         ;(async()=>{
-          const freshBase = await sgSession(init.code) || init;
-          const currentPax = (freshBase.participants||[]).length;
-          if (currentPax >= limit) { setStep("full"); setLoading && setLoading(false); return; }
-          const n = ((freshBase.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
-          const np = {id:Date.now(),name:displayName,av:mkAv(displayName),total:0,bk:{},gid:null,num:n,uid:u.uid,email:u.email||"",guestName:displayName};
+          const np = {id:Date.now(),name:displayName,av:mkAv(displayName),total:0,bk:{},gid:null,num:1,uid:u.uid,email:u.email||"",guestName:displayName};
+          const updated = await ssSessionTx(init.code, s => {
+            const currentPax = (s.participants||[]).length;
+            if (currentPax >= limit) return false; // full — abort, don't write
+            np.num = ((s.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+            s.participants = [...(s.participants||[]), np];
+          });
+          if (!updated) { setStep("full"); setLoading && setLoading(false); return; }
           prevTotalRef.current = 0;
           setMyId(np.id);
-          const updated = {...freshBase,participants:[...(freshBase.participants||[]),np]};
-          setLive(updated); ssSession(init.code, updated); setStep("joined");
+          setLive(updated); setStep("joined");
           try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
           // Write earnings entry
           const now = Date.now();
@@ -2091,9 +2114,12 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
           if (now - lastRestoreRef.current > 10000) { // at most once per 10s
             lastRestoreRef.current = now;
             const restored = lastKnownMeRef.current;
-            const patched = {...s, participants: [...(s.participants||[]), restored]};
-            setLive(patched);
-            ssSession(init.code, patched);
+            const patched = await ssSessionTx(init.code, s2 => {
+              if (!(s2.participants||[]).find(p => p.id === restored.id)) {
+                s2.participants = [...(s2.participants||[]), restored];
+              }
+            });
+            if (patched) setLive(patched);
             return; // skip setLive(s) below
           }
         }
@@ -2140,20 +2166,21 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     // Block host from joining their own session
     const currentUid = auth.currentUser?.uid || linkedUid || null;
     if (currentUid && live.hostUid && currentUid === live.hostUid) { setStep("hostblocked"); return; }
-    // Fetch fresh session to avoid overwriting recent host changes (race condition fix)
-    const freshBase = await sgSession(init.code) || live;
-    const currentPax = (freshBase.participants||[]).length;
     const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
-    if (currentPax >= limit) { setStep("full"); return; }
-    const n = ((freshBase.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const joinName = overrideName || name.trim();
     const baseGuestName = name.trim() || joinName;
-    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,uid:currentUid,guestName:baseGuestName};
+    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:1,uid:currentUid,guestName:baseGuestName};
+    const u = await ssSessionTx(init.code, s => {
+      const currentPax = (s.participants||[]).length;
+      if (currentPax >= limit) return false; // full — abort, don't write
+      np.num = ((s.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+      s.participants = [...(s.participants||[]), np];
+    });
+    if (!u) { setStep("full"); return; }
     setGuestName(baseGuestName);
     setMyId(np.id);
     prevTotalRef.current = 0;
-    const u = {...freshBase,participants:[...(freshBase.participants||[]),np]};
-    setLive(u); ssSession(init.code, u); setStep("joined");
+    setLive(u); setStep("joined");
     // Persist so refresh restores the session
     try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
     // Write earnings entry on join (0 coins, session appears in history immediately)
@@ -2187,20 +2214,21 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     if (pin.length !== 4) return;
     const currentUid = auth.currentUser?.uid || linkedUid || null;
     if (currentUid && live.hostUid && currentUid === live.hostUid) { setStep("hostblocked"); return; }
-    // Fetch fresh session to avoid overwriting recent host changes (race condition fix)
-    const freshBase = await sgSession(init.code) || live;
-    const currentPax = (freshBase.participants||[]).length;
     const limit = isPro ? PRO_PAX_LIMIT : FREE_PAX_LIMIT;
-    if (currentPax >= limit) { setStep("full"); return; }
-    const n = ((freshBase.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
     const joinName = linkedName || name.trim();
     const baseGuestName = name.trim() || joinName;
-    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:n,pin,uid:currentUid,guestName:baseGuestName};
+    const np = {id:Date.now(),name:joinName,av:mkAv(joinName),total:0,bk:{},gid:null,num:1,pin,uid:currentUid,guestName:baseGuestName};
+    const u = await ssSessionTx(init.code, s => {
+      const currentPax = (s.participants||[]).length;
+      if (currentPax >= limit) return false; // full — abort, don't write
+      np.num = ((s.participants||[]).reduce((m,p)=>Math.max(m,p.num||0),0))+1;
+      s.participants = [...(s.participants||[]), np];
+    });
+    if (!u) { setStep("full"); return; }
     setGuestName(baseGuestName);
     setMyId(np.id);
     prevTotalRef.current = 0;
-    const u = {...freshBase,participants:[...(freshBase.participants||[]),np]};
-    setLive(u); ssSession(init.code, u); setStep("joined");
+    setLive(u); setStep("joined");
     try { localStorage.setItem("tc_pjoin", JSON.stringify({code:init.code,pid:np.id})); } catch(e) {}
     if (np.uid) {
       const now = Date.now();
@@ -2270,17 +2298,12 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
               setGuestName(existingByPid.guestName || existingByPid.name || "");
               setStep("joined");
               // Patch uid + name back into the existing slot in Firestore
-              const fresh2 = await sgSession(init.code);
-              if (fresh2) {
-                const patched = {
-                  ...fresh2,
-                  participants: (fresh2.participants||[]).map(p =>
-                    p.id === restoredId ? {...p, uid, name: displayName, av: mkAv(displayName), guestName: p.guestName || existingByPid.name} : p
-                  )
-                };
-                setLive(patched);
-                await ssSession(init.code, patched);
-              }
+              const patched = await ssSessionTx(init.code, s => {
+                s.participants = (s.participants||[]).map(p =>
+                  p.id === restoredId ? {...p, uid, name: displayName, av: mkAv(displayName), guestName: p.guestName || existingByPid.name} : p
+                );
+              });
+              if (patched) setLive(patched);
               setLoginModal(false);
               setShowLoginBanner(false);
               setLoginBusy(false);
@@ -2297,17 +2320,12 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
       }
 
       // Patch participant record in Firestore with uid and switch visible name to logged-in account
-      const fresh = await sgSession(init.code);
-      if (fresh) {
-        const updated = {
-          ...fresh,
-          participants: (fresh.participants||[]).map(p =>
-            p.id === myId ? {...p, uid, guestName: p.guestName || guestName || p.name, name: displayName, av: mkAv(displayName)} : p
-          )
-        };
-        setLive(updated);
-        await ssSession(init.code, updated);
-      }
+      const updated = await ssSessionTx(init.code, s => {
+        s.participants = (s.participants||[]).map(p =>
+          p.id === myId ? {...p, uid, guestName: p.guestName || guestName || p.name, name: displayName, av: mkAv(displayName)} : p
+        );
+      });
+      if (updated) setLive(updated);
       setLoginModal(false);
       setShowLoginBanner(false);
     } catch(err) {
@@ -2325,17 +2343,12 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
   async function switchBackToGuestName() {
     if (!myId) return;
     const fallbackName = guestName || name.trim() || "Guest";
-    const fresh = await sgSession(init.code);
-    if (fresh) {
-      const updated = {
-        ...fresh,
-        participants: (fresh.participants||[]).map(p =>
-          p.id === myId ? {...p, uid:null, name:fallbackName, av:mkAv(fallbackName), guestName:fallbackName} : p
-        )
-      };
-      setLive(updated);
-      await ssSession(init.code, updated);
-    }
+    const updated = await ssSessionTx(init.code, s => {
+      s.participants = (s.participants||[]).map(p =>
+        p.id === myId ? {...p, uid:null, name:fallbackName, av:mkAv(fallbackName), guestName:fallbackName} : p
+      );
+    });
+    if (updated) setLive(updated);
     setLinkedUid(null);
     setLinkedName(null);
     setShowLoginBanner(true);
@@ -2369,14 +2382,12 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     };
     await fsSetSession("claim-" + token, claimDoc);
     // Patch session participant with claimEmail + token
-    const fresh = await sgSession(init.code);
-    if (fresh) {
-      const updated = { ...fresh, participants: (fresh.participants||[]).map(p =>
+    const updated = await ssSessionTx(init.code, s => {
+      s.participants = (s.participants||[]).map(p =>
         p.id === myId ? { ...p, pendingBadge: { ...p.pendingBadge, claimToken: token, claimEmail: claimEmail.trim() } } : p
-      )};
-      setLive(updated);
-      await ssSession(init.code, updated);
-    }
+      );
+    });
+    if (updated) setLive(updated);
     const result = await sendClaimEmail({
       toEmail:         claimEmail.trim(),
       participantName: me.name,
@@ -2392,14 +2403,12 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
 
   async function dismissBadge() {
     if (!window.confirm("Are you sure? This badge will be permanently gone.")) return;
-    const fresh = await sgSession(init.code);
-    if (fresh) {
-      const updated = { ...fresh, participants: (fresh.participants||[]).map(p =>
+    const updated = await ssSessionTx(init.code, s => {
+      s.participants = (s.participants||[]).map(p =>
         p.id === myId ? { ...p, pendingBadge: null } : p
-      )};
-      setLive(updated);
-      await ssSession(init.code, updated);
-    }
+      );
+    });
+    if (updated) setLive(updated);
     setBadgeClaimStep("idle");
   }
 
@@ -2410,14 +2419,12 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
     const existing = await fsGet(uid, "badges") || [];
     await fsSet(uid, "badges", [...existing, badge]);
     // Clear pendingBadge from session record
-    const fresh = await sgSession(init.code);
-    if (fresh) {
-      const updated = { ...fresh, participants: (fresh.participants||[]).map(p =>
+    const updated = await ssSessionTx(init.code, s => {
+      s.participants = (s.participants||[]).map(p =>
         p.id === myId ? { ...p, pendingBadge: null, uid } : p
-      )};
-      setLive(updated);
-      await ssSession(init.code, updated);
-    }
+      );
+    });
+    if (updated) setLive(updated);
     setLinkedUid(uid);
     setLinkedName(user.displayName || user.email?.split("@")[0]);
     setBadgeClaimStep("idle");
@@ -3029,7 +3036,9 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
                         const taken = (live.participants||[]).some(p=>p.id!==myId&&p.name.trim().toLowerCase()===newName.toLowerCase());
                         if(taken){setEditNameErr("That name is already taken. Please choose a different name.");return;}
                         const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
-                        setLive(u); ssSession(init.code,u); setEditingName(false); setEditNameErr("");
+                        setLive(u);
+                        ssSessionTx(init.code, s => { s.participants = (s.participants||[]).map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p); });
+                        setEditingName(false); setEditNameErr("");
                       }
                       if(e.key==="Escape"){setEditingName(false);setEditNameErr("");}
                     }}
@@ -3040,7 +3049,9 @@ function ParticipantView({ session: init, hostPlan="free", onBack }) {
                     const taken = (live.participants||[]).some(p=>p.id!==myId&&p.name.trim().toLowerCase()===newName.toLowerCase());
                     if(taken){setEditNameErr("That name is already taken. Please choose a different name.");return;}
                     const u={...live,participants:live.participants.map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p)};
-                    setLive(u); ssSession(init.code,u); setEditingName(false); setEditNameErr("");
+                    setLive(u);
+                    ssSessionTx(init.code, s => { s.participants = (s.participants||[]).map(p=>p.id===myId?{...p,name:newName,av:mkAv(newName)}:p); });
+                    setEditingName(false); setEditNameErr("");
                   }} style={{padding:"0 10px",height:30,background:GRAD,border:"none",borderRadius:8,fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:12,color:"#fff",cursor:"pointer"}}>Save</button>
                   <button onClick={()=>{setEditingName(false);setEditNameErr("");}} style={{padding:"0 8px",height:30,background:"none",border:`1px solid ${BORDER}`,borderRadius:8,fontSize:13,color:SUB,cursor:"pointer"}}>✕</button>
                 </div>
@@ -3691,12 +3702,16 @@ function CoinmasterView({ session: init, selfId, onBack }) {
   }, [ses.live]);
 
   function mut(fn) {
+    // Optimistic local update — instant UI feedback, still correctly chains
+    // multiple rapid mut() calls against each other via React's state batching.
     setSes(prev => {
       const s = JSON.parse(JSON.stringify(prev));
       fn(s);
-      ssSession(s.code, s);
       return s;
     });
+    // Race-safe server write — see ssSessionTx for why this can't just be
+    // ssSession(s.code, s) using the local snapshot above.
+    ssSessionTx(ses.code, fn);
   }
   function notify(m, type="ok") { setToast({m,type}); setTimeout(()=>setToast(null), 2200); }
 
@@ -4739,14 +4754,19 @@ function Session({ session: init, plan="free", paxLimit=FREE_PAX_LIMIT, sessionC
     if (uid) ss("tourDone", true);
   }
 
-  // Firebase writes now happen directly inside mut() with the new state
+  // Optimistic local update — instant UI feedback, still correctly chains
+  // multiple rapid mut() calls against each other via React's state batching.
+  // The actual server write is race-safe (see ssSessionTx): it reads the
+  // CURRENT server document inside a transaction rather than trusting this
+  // tab's local state, so firing many mut() calls back-to-back (e.g. "Give
+  // everyone") can never silently lose awards to another client's write.
   function mut(fn) {
     setSes(prev => {
       const s = JSON.parse(JSON.stringify(prev));
       fn(s);
-      ssSession(s.code, s); // write to Firebase with the ACTUAL new state (not stale closure)
       return s;
     });
+    ssSessionTx(ses.code, fn);
   }
 
   // Auto-jump host to board tab when boardVisible changes (from poll or local toggle)
@@ -10233,13 +10253,13 @@ export default function App() {
           isPro={plan !== "free"}
           atLimit={plan === "free" && sessions.filter(s=>!s.archived).length >= 5}
           existingSessionNames={sessions.map(s=>s.name)}
-          onRename={async(name)=>{ const taken=sessions.some(x=>x.code!==cur.code&&x.name.toLowerCase()===name.toLowerCase()); if(taken)return; const s={...cur,name}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,name}:x); setSessions(idx); await ss("sessions_index",idx); }}
-          onToggleLive={async()=>{ const goingLive = cur.live===false; const s={...cur, live:goingLive, ...(goingLive&&cur.archived?{archived:false}:{})}; await ssSession(s.code, s); setCur(s); }}
+          onRename={async(name)=>{ const taken=sessions.some(x=>x.code!==cur.code&&x.name.toLowerCase()===name.toLowerCase()); if(taken)return; await ssSessionPatch(cur.code, {name}); setCur({...cur,name}); const idx=sessions.map(x=>x.code===cur.code?{...x,name}:x); setSessions(idx); await ss("sessions_index",idx); }}
+          onToggleLive={async()=>{ const goingLive = cur.live===false; const patch = { live:goingLive, ...(goingLive&&cur.archived?{archived:false}:{}) }; await ssSessionPatch(cur.code, patch); setCur({...cur,...patch}); }}
           onDuplicate={async()=>{ const activeCnt=sessions.filter(s=>!s.archived).length; if(isFree&&activeCnt>=sessionLimit)return; const code=genCode(); const dup={...JSON.parse(JSON.stringify(cur)),code,name:`${cur.name} (Copy)`,participants:[],log:[],boardVisible:false,live:true,coinmasterEnabled:false}; await ssSession(code, dup); const idx=[{code,name:dup.name,date:dup.createdAt,count:0},...sessions]; setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
-          onArchive={async()=>{ if(!window.confirm("Archive this session?")) return; const s={...cur,live:false,archived:true}; await ssSession(s.code, s); setCur(s); const idx=sessions.map(x=>x.code===s.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
+          onArchive={async()=>{ if(!window.confirm("Archive this session?")) return; await ssSessionPatch(cur.code, {live:false,archived:true}); setCur({...cur,live:false,archived:true}); const idx=sessions.map(x=>x.code===cur.code?{...x,archived:true}:x); setSessions(idx); await ss("sessions_index",idx); setScreen("home"); }}
           onExport={()=>{ triggerCsvDownload(buildParticipantsCsv(cur), `teticoin-${cur.code}-participants.csv`); }}
           onExportLog={()=>{ triggerCsvDownload(buildLogCsv(cur), `teticoin-${cur.code}-log.csv`); }}
-          onReset={async()=>{ if(!window.confirm("Reset all coins?")) return; const s={...cur,participants:(cur.participants||[]).map(p=>({...p,total:0,bk:{},hist:[]})),log:[]}; await ssSession(s.code, s); setCur(s); }}
+          onReset={async()=>{ if(!window.confirm("Reset all coins?")) return; const updated = await ssSessionTx(cur.code, s => { s.participants = (s.participants||[]).map(p=>({...p,total:0,bk:{},hist:[]})); s.log = []; }); if (updated) setCur(updated); }}
           onClose={()=>setScreen("home")}
         />
       </div>
@@ -10721,8 +10741,8 @@ export default function App() {
                           <div style={{display:"flex",flexShrink:0,borderLeft:`1px solid ${BORDER}`}}>
                             <button onClick={async()=>{
                               if(!window.confirm("Unarchive this session? It will move to inactive sessions.")) return;
-                              const full = await sgSession(s.code);
-                              if (full) { await ssSession(s.code, {...full, archived:false, live:false}); setSessions(prev=>prev.map(x=>x.code===s.code?{...x,archived:false,live:false}:x)); }
+                              await ssSessionPatch(s.code, {archived:false, live:false});
+                              setSessions(prev=>prev.map(x=>x.code===s.code?{...x,archived:false,live:false}:x));
                             }} title="Unarchive" style={{padding:"0 12px",height:"100%",background:"none",border:"none",cursor:"pointer",color:"#3B82F6",display:"flex",alignItems:"center",justifyContent:"center",minHeight:62,fontSize:11,fontWeight:700,fontFamily:"Plus Jakarta Sans,sans-serif"}}>
                               Restore
                             </button>
