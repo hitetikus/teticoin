@@ -9959,25 +9959,29 @@ export default function App() {
           // ── Handle payment return from Chip ──
           // The plan grant + invoice record are written by /api/chip-webhook
           // once it verifies the payment — never trust the redirect itself.
-          // Poll briefly for that write to land so the success screen shows
-          // real, server-confirmed data instead of anything from the URL.
+          // Runs in the background (not awaited) so the home screen renders
+          // immediately instead of sitting behind the full-screen loading
+          // spinner for the whole ~12s poll — a small toast covers progress.
           const paymentStatus = handlePaymentReturn();
           if (paymentStatus === "pending") {
             const priorExpiry = exp;
-            let landed = false;
-            for (let i = 0; i < 8 && !landed; i++) {
-              await new Promise(r => setTimeout(r, 1500));
-              const freshExpiry = await sg("planExpiry");
-              if (freshExpiry && freshExpiry !== priorExpiry) {
-                const freshPlan = await sg("plan");
-                setPlan(freshPlan); setPlanExpiry(freshExpiry);
-                const isExtension = !!priorExpiry;
-                const daysAdded = (new Date(freshExpiry) - new Date(priorExpiry || Date.now())) / 86400000;
-                setShowPaymentSuccess({ plan: freshPlan, expiry: freshExpiry, billing: daysAdded > 200 ? "yearly" : "monthly", isExtension });
-                landed = true;
+            (async () => {
+              homeNotify("Confirming your payment…");
+              let landed = false;
+              for (let i = 0; i < 8 && !landed; i++) {
+                await new Promise(r => setTimeout(r, 1500));
+                const freshExpiry = await sg("planExpiry");
+                if (freshExpiry && freshExpiry !== priorExpiry) {
+                  const freshPlan = await sg("plan");
+                  setPlan(freshPlan); setPlanExpiry(freshExpiry);
+                  const isExtension = !!priorExpiry;
+                  const daysAdded = (new Date(freshExpiry) - new Date(priorExpiry || Date.now())) / 86400000;
+                  setShowPaymentSuccess({ plan: freshPlan, expiry: freshExpiry, billing: daysAdded > 200 ? "yearly" : "monthly", isExtension });
+                  landed = true;
+                }
               }
-            }
-            if (!landed) homeNotify("Payment received — this can take a minute to activate. Refresh if it doesn't update.");
+              if (!landed) homeNotify("Payment received — this can take a minute to activate. Refresh if it doesn't update.");
+            })();
           }
 
           // ── Restore the correct screen based on the current URL path ──
