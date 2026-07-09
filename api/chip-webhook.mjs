@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { db } from "./_lib/admin.js";
+import { PRO_PRICE_RM } from "../src/pricing.config.js";
 
 function verifySignature(rawBody, signatureB64, publicKeyPem) {
   if (!signatureB64 || !publicKeyPem) return false;
@@ -67,7 +68,7 @@ export default {
           date: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
           plan: claim.plan,
           billing: claim.billing,
-          amount: claim.billing === "yearly" ? "RM 269" : "RM 29",
+          amount: claim.billing === "yearly" ? `RM ${PRO_PRICE_RM.yearly}` : `RM ${PRO_PRICE_RM.monthly}`,
           status: "Paid",
           expiry: newExpiry,
           paidAt: new Date().toISOString(),

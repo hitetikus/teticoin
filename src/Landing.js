@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { useState, useEffect } from "react";
+const { PRO_PRICE_RM, PRO_YEARLY_SAVINGS } = require("./pricing.config");
 
 const PINK   = "#FF4FB8";
 const PINK2  = "#E91E8C";
@@ -438,10 +439,10 @@ export default function LandingPage({ onGetStarted, onLogin }) {
     return () => observer.disconnect();
   }, []);
 
-  const proMonthly = 29;
-  const proYearly  = 269;
-  const proPerMonth = Math.round(proYearly / 12); // 22
-  const proSaving  = proMonthly * 12 - proYearly;  // 79
+  const proMonthly = PRO_PRICE_RM.monthly;
+  const proYearly  = PRO_PRICE_RM.yearly;
+  const proPerMonth = Math.round(proYearly / 12);
+  const proSaving  = PRO_YEARLY_SAVINGS;
 
   const N = {fontFamily:"Nunito,sans-serif"};
 
@@ -829,7 +830,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           <p className="lp-section-sub lp-fade-up lp-fade-up-d2">No commitments. No surprises. Just pick what works for you.</p>
           <div style={{display:"flex",justifyContent:"center",marginTop:28}}>
           <div className="lp-pricing-toggle lp-fade-up lp-fade-up-d3">
-            {[["monthly","Monthly"],["yearly","Yearly — save RM 79"]].map(([v,l]) => (
+            {[["monthly","Monthly"],["yearly",`Yearly — save RM ${proSaving}`]].map(([v,l]) => (
               <button key={v} onClick={() => setBilling(v)}
                 style={{background:billing===v?GRAD:"transparent",color:billing===v?"#fff":NEUT,
                   boxShadow:billing===v?"0 4px 16px rgba(255,79,184,0.25)":"none"}}>

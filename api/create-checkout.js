@@ -1,12 +1,13 @@
 const crypto = require("crypto");
 const { db, verifyAuth } = require("./_lib/admin");
+const { PRO_PRICE_RM } = require("../src/pricing.config");
 
 const CHIP_API_BASE = "https://gate.chip-in.asia/api/v1";
 const SITE_URL = "https://teticoin.com";
 
-// RM amounts in sen (smallest currency unit), must match PAYMENT_CONFIG.myr.pro in src/App.js
-// TEMP: monthly dropped to RM2 for a live payment-flow test — revert to 2900 after confirming.
-const PRO_PRICE = { monthly: 200, yearly: 26900 };
+// CHIP wants amounts in sen (smallest currency unit) — derived from
+// pricing.config.js so the real charge always matches what's displayed.
+const PRO_PRICE = { monthly: Math.round(PRO_PRICE_RM.monthly * 100), yearly: Math.round(PRO_PRICE_RM.yearly * 100) };
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return; }
