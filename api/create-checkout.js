@@ -5,7 +5,8 @@ const CHIP_API_BASE = "https://gate.chip-in.asia/api/v1";
 const SITE_URL = "https://teticoin.com";
 
 // RM amounts in sen (smallest currency unit), must match PAYMENT_CONFIG.myr.pro in src/App.js
-const PRO_PRICE = { monthly: 2900, yearly: 26900 };
+// TEMP: monthly dropped to RM2 for a live payment-flow test — revert to 2900 after confirming.
+const PRO_PRICE = { monthly: 200, yearly: 26900 };
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return; }
