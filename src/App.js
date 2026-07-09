@@ -84,29 +84,22 @@ async function ssSessionPatch(code, fields) {
   }
 }
 
-// Auto-claim beta invite if one exists for this email
+// Auto-claim beta invite if one exists for this email.
+// Granting a plan must never happen via a direct client Firestore write — it
+// goes through /api/claim-beta so a trusted server (verifying the ID token
+// itself) is the one deciding whether the invite is real and unexpired.
 async function claimBetaInvite(uid, email) {
   try {
-    const { getFirestore, doc, getDoc, setDoc, deleteDoc } = await import("firebase/firestore");
-    const db = getFirestore();
-    const key = email.toLowerCase().replace(/\./g,"_");
-    console.log("[claimBetaInvite] checking key:", key, "uid:", uid);
-    const inviteSnap = await getDoc(doc(db, "betaInvites", key));
-    console.log("[claimBetaInvite] invite exists:", inviteSnap.exists());
-    if (!inviteSnap.exists()) return null;
-    const { expiry } = inviteSnap.data();
-    console.log("[claimBetaInvite] expiry:", expiry);
-    // Already expired before they signed up — ignore
-    if (new Date(expiry) < new Date()) { await deleteDoc(doc(db, "betaInvites", key)); return null; }
-    // Assign beta plan
-    await Promise.all([
-      setDoc(doc(db, "users", uid, "data", "plan"),       { value: "beta",   updatedAt: Date.now() }),
-      setDoc(doc(db, "users", uid, "data", "planExpiry"), { value: expiry,   updatedAt: Date.now() }),
-      deleteDoc(doc(db, "betaInvites", key)), // consume the invite
-    ]);
-    console.log("[claimBetaInvite] SUCCESS — beta plan assigned");
-    return expiry;
-  } catch(e) { console.error("[claimBetaInvite] ERROR:", e.code, e.message); return null; }
+    if (!auth.currentUser) return null;
+    const token = await auth.currentUser.getIdToken();
+    const resp = await fetch("/api/claim-beta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data.expiry || null;
+  } catch(e) { console.error("[claimBetaInvite] ERROR:", e.message); return null; }
 }
 
 const DEMO = {
@@ -6055,62 +6048,59 @@ const PAYMENT_CONFIG = {
     pro:     { monthly: 29, yearly: 269, monthlyNote: "Early access price" },
     oneTime: { oneTime: 29 },
   },
-  // Plan IDs used in return URL ?plan=
-  planMap: {
-    pro_monthly:  { plan:"pro",     billing:"monthly"  },
-    pro_yearly:   { plan:"pro",     billing:"yearly"   },
-    one_time:     { plan:"oneTime", billing:"oneTime"  },
-  },
 };
 
-// ── Handle payment return from Chip ──
-// Call this on app load to detect ?payment=success&plan=xxx in URL
-async function handlePaymentReturn(onSuccess, currentExpiry) {
+// ── Detect payment return from Chip ──
+// The plan grant itself only ever happens server-side, via the signature-
+// verified /api/chip-webhook — this just clears the URL and tells the
+// caller whether to poll Firestore for the webhook's write landing.
+// Never trust ?payment=success from the URL to grant anything directly.
+function handlePaymentReturn() {
   const params = new URLSearchParams(window.location.search);
   const payment = params.get("payment");
-  const planParam = params.get("plan");
-  if (payment === "success" && planParam && PAYMENT_CONFIG.planMap[planParam]) {
-    const { plan, billing } = PAYMENT_CONFIG.planMap[planParam];
-    const daysToAdd = billing === "yearly" ? 365 : 30;
-    // Stack on current expiry if still active, otherwise start from today
-    const isExtension = !!(currentExpiry && new Date(currentExpiry) > new Date());
-    const baseDate = isExtension ? new Date(currentExpiry) : new Date();
-    const expiry = new Date(baseDate);
-    expiry.setDate(expiry.getDate() + daysToAdd);
-    await onSuccess(plan, expiry.toISOString(), billing, isExtension);
-    window.history.replaceState({}, "", window.location.pathname);
-    return true;
-  }
-  if (payment === "cancel") {
+  if (payment === "pending" || payment === "cancel") {
     window.history.replaceState({}, "", window.location.pathname);
   }
-  return false;
+  return payment;
 }
 
 function PricingPage({ currentPlan="free", onSelect, onClose, trainer=null }) {
   const [billing, setBilling] = useState("monthly");
-  const [confirmPay, setConfirmPay] = useState(null); // { label, price, link }
+  const [confirmPay, setConfirmPay] = useState(null); // { label, price, billing }
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState("");
 
   const proMonthly = 29;
   const proYearly  = 269;
   const proPerMonth = Math.round(proYearly / 12);
   const proSaving  = proMonthly * 12 - proYearly;
-  const proLink = billing === "monthly"
-    ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL"
-    : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl";
-
-  // Build Chip URL with prefilled name+email if available
-  function chipUrl(base) {
-    const params = new URLSearchParams();
-    if (trainer?.name) params.set("name", trainer.name);
-    if (trainer?.email) params.set("email", trainer.email);
-    const qs = params.toString();
-    return qs ? `${base}?${qs}` : base;
-  }
 
   // Open payment confirmation interstitial
-  function goToPay(label, price, link) {
-    setConfirmPay({ label, price, link: chipUrl(link) });
+  function goToPay(label, price, billingCycle) {
+    setPayError("");
+    setConfirmPay({ label, price, billing: billingCycle });
+  }
+
+  // Ask our server to open a Chip checkout tied to this signed-in user —
+  // never link straight to a static Chip link, so the plan grant can only
+  // ever come from a verified webhook, not a client-trusted redirect.
+  async function payNow() {
+    if (!auth.currentUser) { setPayError("Please sign in again and retry."); return; }
+    setPaying(true); setPayError("");
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const resp = await fetch("/api/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ billing: confirmPay.billing }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.url) throw new Error(data.error || "Could not start checkout");
+      window.location.href = data.url;
+    } catch (e) {
+      setPaying(false);
+      setPayError(e.message || "Could not start checkout — please try again.");
+    }
   }
 
   const NEUT   = "#6B7280";
@@ -6175,14 +6165,15 @@ function PricingPage({ currentPlan="free", onSelect, onClose, trainer=null }) {
               <div style={{fontFamily:"Plus Jakarta Sans,sans-serif",fontWeight:800,fontSize:22,color:LP_PINK}}>{confirmPay.price}</div>
               <div style={{fontSize:11,color:NEUT,marginTop:3}}>Adds to your existing expiry · one-time charge</div>
             </div>
+            {payError && <div style={{fontSize:12,color:"#DC2626",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:10,padding:"8px 12px",marginBottom:14}}>{payError}</div>}
             <div style={{display:"flex",gap:10}}>
-              <button onClick={()=>setConfirmPay(null)}
-                style={{flex:1,padding:"11px 0",borderRadius:99,border:"1.5px solid #E5E7EB",background:"#fff",fontSize:14,fontWeight:600,color:NEUT,cursor:"pointer",fontFamily:"DM Sans,sans-serif"}}>
+              <button onClick={()=>{ setConfirmPay(null); setPayError(""); }} disabled={paying}
+                style={{flex:1,padding:"11px 0",borderRadius:99,border:"1.5px solid #E5E7EB",background:"#fff",fontSize:14,fontWeight:600,color:NEUT,cursor:paying?"not-allowed":"pointer",fontFamily:"DM Sans,sans-serif",opacity:paying?0.6:1}}>
                 ← Back
               </button>
-              <button onClick={()=>{ window.location.href = confirmPay.link; }}
-                style={{flex:2,padding:"11px 0",borderRadius:99,border:"none",background:LP_GRAD,fontSize:14,fontWeight:700,color:"#fff",cursor:"pointer",fontFamily:"DM Sans,sans-serif"}}>
-                Pay now →
+              <button onClick={payNow} disabled={paying}
+                style={{flex:2,padding:"11px 0",borderRadius:99,border:"none",background:LP_GRAD,fontSize:14,fontWeight:700,color:"#fff",cursor:paying?"not-allowed":"pointer",fontFamily:"DM Sans,sans-serif",opacity:paying?0.7:1}}>
+                {paying ? "Starting checkout…" : "Pay now →"}
               </button>
             </div>
             <div style={{textAlign:"center",fontSize:11,color:"#9CA3AF",marginTop:12}}>Secure payment via <span style={{color:"#6C47FF",fontWeight:700}}>Chip</span> · FPX · Card · DuitNow</div>
@@ -6280,7 +6271,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose, trainer=null }) {
                   <button className="pp-btn pp-btn-primary" onClick={() => goToPay(
                     billing === "monthly" ? "Extend Pro — 1 Month" : "Extend Pro — 1 Year",
                     billing === "monthly" ? `RM ${proMonthly}` : `RM ${proYearly}`,
-                    billing === "monthly" ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL" : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
+                    billing
                   )}>
                     {billing === "monthly" ? `Extend 1 month — RM ${proMonthly}` : `Extend 1 year — RM ${proYearly} (save RM ${proSaving})`}
                   </button>
@@ -6291,7 +6282,7 @@ function PricingPage({ currentPlan="free", onSelect, onClose, trainer=null }) {
                   <button className="pp-btn pp-btn-primary" onClick={() => goToPay(
                     billing === "monthly" ? "Upgrade to Pro — Monthly" : "Upgrade to Pro — Yearly",
                     billing === "monthly" ? `RM ${proMonthly}/mo` : `RM ${proYearly}/yr`,
-                    billing === "monthly" ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL" : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
+                    billing
                   )}>
                     {billing === "monthly" ? `Upgrade to Pro — RM ${proMonthly}/mo` : `Upgrade to Pro — RM ${proYearly}/yr`}
                   </button>
@@ -7352,6 +7343,30 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
   const [planExpiry, setPlanExpiry_] = useState(planExpiryProp);
   const [expiryLoading, setExpiryLoading] = useState(true);
   const [storedInvoices, setStoredInvoices] = useState(null); // null=loading, []+=loaded
+  const [extending, setExtending] = useState(false); // billing cycle currently being started, or false
+  const [extendError, setExtendError] = useState("");
+
+  // Ask our server to open a Chip checkout tied to this signed-in user —
+  // never link straight to a static Chip link, so the plan grant can only
+  // ever come from a verified webhook, not a client-trusted redirect.
+  async function startExtend(billingCycle) {
+    if (!auth.currentUser) { setExtendError("Please sign in again and retry."); return; }
+    setExtending(billingCycle); setExtendError("");
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const resp = await fetch("/api/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ billing: billingCycle }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.url) throw new Error(data.error || "Could not start checkout");
+      window.location.href = data.url;
+    } catch (e) {
+      setExtending(false);
+      setExtendError(e.message || "Could not start checkout — please try again.");
+    }
+  }
   useEffect(() => {
     async function fetchBillingData() {
       try {
@@ -7401,17 +7416,6 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
   const daysLeft = planExpiry ? Math.ceil((new Date(planExpiry)-new Date())/(1000*60*60*24)) : null;
   const isExpiringSoon = daysLeft!==null && daysLeft<=7 && daysLeft>0;
   const isExpired = daysLeft!==null && daysLeft<=0;
-  const renewLink = plan==="proY"
-    ? "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"
-    : "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL";
-  // Chip URL with prefilled name+email
-  function chipUrlBilling(base) {
-    const params = new URLSearchParams();
-    if (trainer?.name) params.set("name", trainer.name);
-    if (trainer?.email) params.set("email", trainer.email);
-    const qs = params.toString();
-    return qs ? `${base}?${qs}` : base;
-  }
   // Build invoice list — stored invoices from Firestore only (appended on each payment)
   const invoices = (() => {
     if (isFree || isBetaPlan) return [];
@@ -7513,26 +7517,27 @@ function BillingPage({ plan="free", planExpiry:planExpiryProp=null, sessionCount
                   {/* Extend plan buttons + View all plans */}
                   {isPaidPro && (
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                      {extendError && <div style={{fontSize:12,color:"#DC2626"}}>{extendError}</div>}
                       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                        <button onClick={()=>{ window.location.href = chipUrlBilling("https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL"); }}
+                        <button onClick={()=>startExtend("monthly")} disabled={!!extending}
                           style={{display:"inline-flex",alignItems:"center",gap:6,
                             padding:"8px 14px",
                             background:"none",
                             border:`1.5px solid ${BLUE}`,
                             borderRadius:99,fontSize:12,fontWeight:600,
-                            color:BLUE,cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>
+                            color:BLUE,cursor:extending?"not-allowed":"pointer",fontFamily:"Poppins,sans-serif",opacity:extending?0.6:1}}>
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                          {isExpired ? "Reactivate" : "Extend"} 1 month — RM 29
+                          {extending==="monthly" ? "Starting…" : `${isExpired ? "Reactivate" : "Extend"} 1 month — RM 29`}
                         </button>
-                        <button onClick={()=>{ window.location.href = chipUrlBilling("https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl"); }}
+                        <button onClick={()=>startExtend("yearly")} disabled={!!extending}
                           style={{display:"inline-flex",alignItems:"center",gap:6,
                             padding:"8px 14px",
                             background:BLUE,
                             border:"none",
                             borderRadius:99,fontSize:12,fontWeight:600,
-                            color:"#fff",cursor:"pointer",fontFamily:"Poppins,sans-serif"}}>
+                            color:"#fff",cursor:extending?"not-allowed":"pointer",fontFamily:"Poppins,sans-serif",opacity:extending?0.6:1}}>
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                          Extend 1 year — RM 269 <span style={{fontSize:10,opacity:.85}}>(save RM 79)</span>
+                          {extending==="yearly" ? "Starting…" : <>Extend 1 year — RM 269 <span style={{fontSize:10,opacity:.85}}>(save RM 79)</span></>}
                         </button>
                       </div>
                       <button onClick={()=>{ onClose(); setTimeout(()=>onUpgrade(),100); }}
@@ -9952,36 +9957,28 @@ export default function App() {
           }
 
           // ── Handle payment return from Chip ──
-          const upgraded = await handlePaymentReturn(async (newPlan, newExpiry, billing, isExtension) => {
-            const planVal = newPlan === "pro" ? "pro" : newPlan;
-            const isYearly = billing === "yearly";
-            setPlan(planVal);
-            setPlanExpiry(newExpiry);
-            await ss("plan", planVal);
-            await ss("planExpiry", newExpiry);
-            try {
-              const { getFirestore, doc, setDoc, getDoc } = await import("firebase/firestore");
-              const db2 = getFirestore();
-              const uid = user.uid;
-              // Write expiry (double-write safety net)
-              await setDoc(doc(db2, "users", uid, "data", "planExpiry"), { value: newExpiry, updatedAt: Date.now() });
-              // Append invoice record to Firestore invoice history
-              const invSnap = await getDoc(doc(db2, "users", uid, "data", "invoices"));
-              const existingInvs = invSnap.exists() ? (invSnap.data().value || []) : [];
-              const newInv = {
-                id: Date.now().toString(),
-                date: new Date().toLocaleDateString("en-GB", {day:"numeric",month:"short",year:"numeric"}),
-                plan: planVal,
-                billing: isYearly ? "yearly" : "monthly",
-                amount: isYearly ? "RM 269" : "RM 29",
-                status: "Paid",
-                expiry: newExpiry,
-                paidAt: new Date().toISOString(),
-              };
-              await setDoc(doc(db2, "users", uid, "data", "invoices"), { value: [...existingInvs, newInv], updatedAt: Date.now() });
-            } catch(e) { console.error("payment save error:", e); }
-            setShowPaymentSuccess({ plan: planVal, expiry: newExpiry, billing: isYearly ? "yearly" : "monthly", isExtension: !!isExtension });
-          }, exp); // pass current expiry for stacking (+30 days on renewal)
+          // The plan grant + invoice record are written by /api/chip-webhook
+          // once it verifies the payment — never trust the redirect itself.
+          // Poll briefly for that write to land so the success screen shows
+          // real, server-confirmed data instead of anything from the URL.
+          const paymentStatus = handlePaymentReturn();
+          if (paymentStatus === "pending") {
+            const priorExpiry = exp;
+            let landed = false;
+            for (let i = 0; i < 8 && !landed; i++) {
+              await new Promise(r => setTimeout(r, 1500));
+              const freshExpiry = await sg("planExpiry");
+              if (freshExpiry && freshExpiry !== priorExpiry) {
+                const freshPlan = await sg("plan");
+                setPlan(freshPlan); setPlanExpiry(freshExpiry);
+                const isExtension = !!priorExpiry;
+                const daysAdded = (new Date(freshExpiry) - new Date(priorExpiry || Date.now())) / 86400000;
+                setShowPaymentSuccess({ plan: freshPlan, expiry: freshExpiry, billing: daysAdded > 200 ? "yearly" : "monthly", isExtension });
+                landed = true;
+              }
+            }
+            if (!landed) homeNotify("Payment received — this can take a minute to activate. Refresh if it doesn't update.");
+          }
 
           // ── Restore the correct screen based on the current URL path ──
           const restorePath = window.location.pathname;
@@ -10178,9 +10175,14 @@ export default function App() {
     const s = await sgSession(code);
     if (s) { setCur(s); window.history.pushState({}, "", `/session/${code}`); setScreen("session"); }
   }
+  // Currently unused by PricingPage's own buttons (paid plans go through
+  // payNow()/create-checkout, which is the only path Firestore rules allow
+  // to actually grant a paid plan) — kept only for a possible future
+  // explicit "downgrade to free" action, so it's intentionally restricted
+  // to that one case rather than accepting any plan id.
   async function handleSelectPlan(id, billing) {
-    const newPlan = id==="pro" && billing==="yearly" ? "proY" : id;
-    setPlan(newPlan); await ss("plan", newPlan);
+    if (id !== "free") return;
+    setPlan("free"); await ss("plan", "free");
     closePricing();
   }
 

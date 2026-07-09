@@ -442,7 +442,6 @@ export default function LandingPage({ onGetStarted, onLogin }) {
   const proYearly  = 269;
   const proPerMonth = Math.round(proYearly / 12); // 22
   const proSaving  = proMonthly * 12 - proYearly;  // 79
-  const proLink   = billing === "monthly" ? "https://pay.chip-in.asia/GyQkRcSifMzzRwqpoL" : "https://pay.chip-in.asia/RbxCqTYWGld5bJsSKl";
 
   const N = {fontFamily:"Nunito,sans-serif"};
 
@@ -899,7 +898,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
                   <li key={f}><Check/>{f}</li>
                 ))}
               </ul>
-              <button className="lp-plan-btn primary" onClick={() => window.location.href = proLink}>
+              <button className="lp-plan-btn primary" onClick={onGetStarted}>
                 {billing === "monthly" ? `Upgrade to Pro — RM ${proMonthly}/mo` : `Upgrade to Pro — RM ${proYearly}/yr`}
               </button>
               <div style={{textAlign:"center",fontSize:11,color:NEUT,marginTop:10}}>Cancel anytime · FPX · Card · DuitNow</div>

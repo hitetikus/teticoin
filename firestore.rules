@@ -1,0 +1,98 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isSuperadmin() {
+      return isAuth() && request.auth.token.email == "hi.tetikus@gmail.com";
+    }
+
+    function isSelf(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    function isSessionHost() {
+      return isAuth() && resource.data.hostUid == request.auth.uid;
+    }
+
+    function isSessionCoinmaster() {
+      return isAuth()
+          && resource.data.get("coinmasterUids", []).hasAny([request.auth.uid]);
+    }
+
+    function isParticipantWrite() {
+      let hostFields = ["hostUid", "code", "name", "live", "archived",
+                        "coinmasterEnabled", "coinmasterCode", "coinmasterUids",
+                        "quickCoins", "otherCoins", "groups", "createdAt"];
+      return !request.resource.data.diff(resource.data)
+                                   .affectedKeys()
+                                   .hasAny(hostFields);
+    }
+
+    // ── users/{uid} ──────────────────────────────────────────────────────────
+
+    match /users/{uid} {
+      allow read:   if isSelf(uid) || isSuperadmin();
+      allow create: if isSelf(uid);
+      allow update: if isSelf(uid)
+                    && !request.resource.data.diff(resource.data)
+                                             .affectedKeys()
+                                             .hasAny(["plan", "planExpiry"]);
+      allow delete: if isSuperadmin() || isSelf(uid);
+
+      match /data/{key} {
+        allow read: if isSelf(uid) || isSuperadmin();
+        // plan/planExpiry are the entitlement fields — a client can only ever
+        // downgrade itself to "free" here. Every paid or beta grant is
+        // written by a trusted server context (Admin SDK, which bypasses
+        // these rules entirely) after independently verifying a real Chip
+        // payment or a real beta invite: see api/chip-webhook.js and
+        // api/claim-beta.js. Do not add a self-write branch for any other
+        // plan value here — that reopens a free-upgrade hole.
+        allow write: if isSuperadmin()
+                     || (isSelf(uid) && key == "plan" && request.resource.data.value == "free")
+                     || (isSelf(uid) && key != "plan" && key != "planExpiry");
+        allow delete: if isSelf(uid) || isSuperadmin();
+      }
+    }
+
+    // ── sessions/{code} ──────────────────────────────────────────────────────
+
+    match /sessions/{code} {
+      allow read: if true;
+
+      allow create: if isAuth() && request.resource.data.hostUid == request.auth.uid;
+
+      allow update: if isSessionHost()
+                    || isSessionCoinmaster()
+                    || (isAuth() && (code.matches("^cm-.+") || code.matches("^claim-.+")))
+                    || isParticipantWrite();
+
+      allow delete: if isSessionHost();
+    }
+
+    // ── paymentClaims/{claimId} ───────────────────────────────────────────────
+
+    match /paymentClaims/{claimId} {
+      allow create: if isAuth()
+                    && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if isSuperadmin();
+    }
+
+    // ── betaInvites/{key} ────────────────────────────────────────────────────
+
+    match /betaInvites/{key} {
+      allow read:  if isAuth();
+      allow write: if isSuperadmin();
+    }
+
+    // ── Deny everything else ─────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
